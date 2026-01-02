@@ -1,0 +1,271 @@
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
+import { INTERVIEW_TYPES, type InterviewType, type InterviewStatus, INTERVIEW_TYPE_ORDER } from "./interviewTypes";
+
+// Get all sessions for a journey with computed status
+export const listSessionsWithStatus = query({
+  args: { journeyId: v.id("journeys") },
+  handler: async (ctx, args) => {
+    const sessions = await ctx.db
+      .query("interviewSessions")
+      .withIndex("by_journey", (q) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    // Compute status for each interview type
+    const typeStatuses: Record<string, { status: InterviewStatus; sessionId?: string }> = {};
+
+    for (const type of INTERVIEW_TYPE_ORDER) {
+      const typeConfig = INTERVIEW_TYPES[type];
+
+      // Find completed session
+      const completed = sessions.find(
+        s => s.interviewType === type && s.status === "completed"
+      );
+      if (completed) {
+        typeStatuses[type] = { status: "complete", sessionId: completed._id };
+        continue;
+      }
+
+      // Find active session
+      const active = sessions.find(
+        s => s.interviewType === type && s.status === "active"
+      );
+      if (active) {
+        typeStatuses[type] = { status: "in_progress", sessionId: active._id };
+        continue;
+      }
+
+      // Check dependencies
+      const allDepsMet = typeConfig.dependencies.every(dep =>
+        sessions.some(s => s.interviewType === dep && s.status === "completed")
+      );
+
+      typeStatuses[type] = { status: allDepsMet ? "available" : "locked" };
+    }
+
+    return typeStatuses;
+  },
+});
+
+// Get missing dependencies for a type
+export const getMissingDeps = query({
+  args: {
+    journeyId: v.id("journeys"),
+    interviewType: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const typeConfig = INTERVIEW_TYPES[args.interviewType as InterviewType];
+    if (!typeConfig) return [];
+
+    const sessions = await ctx.db
+      .query("interviewSessions")
+      .withIndex("by_journey", (q) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    return typeConfig.dependencies.filter(dep =>
+      !sessions.some(s => s.interviewType === dep && s.status === "completed")
+    );
+  },
+});
+
+// Get active session for a journey and type (or null)
+export const getActiveSession = query({
+  args: {
+    journeyId: v.id("journeys"),
+    interviewType: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.interviewType) {
+      // Get specific type
+      const sessions = await ctx.db
+        .query("interviewSessions")
+        .withIndex("by_journey_and_type", (q) =>
+          q.eq("journeyId", args.journeyId).eq("interviewType", args.interviewType)
+        )
+        .filter((q) => q.eq(q.field("status"), "active"))
+        .collect();
+      return sessions[0] ?? null;
+    } else {
+      // Get any active session (backwards compat)
+      const sessions = await ctx.db
+        .query("interviewSessions")
+        .withIndex("by_journey", (q) => q.eq("journeyId", args.journeyId))
+        .filter((q) => q.eq(q.field("status"), "active"))
+        .collect();
+      return sessions[0] ?? null;
+    }
+  },
+});
+
+// Get session by ID
+export const getSession = query({
+  args: { sessionId: v.id("interviewSessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.sessionId);
+  },
+});
+
+// Get messages for a session
+export const getMessages = query({
+  args: { sessionId: v.id("interviewSessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("interviewMessages")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect();
+  },
+});
+
+// Create a new interview session
+export const createSession = mutation({
+  args: {
+    journeyId: v.id("journeys"),
+    interviewType: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const type = args.interviewType as InterviewType;
+    const typeConfig = INTERVIEW_TYPES[type];
+    if (!typeConfig) throw new Error(`Invalid interview type: ${args.interviewType}`);
+
+    // Close any existing active sessions of THIS type
+    const activeSessions = await ctx.db
+      .query("interviewSessions")
+      .withIndex("by_journey_and_type", (q) =>
+        q.eq("journeyId", args.journeyId).eq("interviewType", args.interviewType)
+      )
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .collect();
+
+    for (const session of activeSessions) {
+      await ctx.db.patch(session._id, {
+        status: "archived",
+        completedAt: Date.now(),
+      });
+    }
+
+    const sessionId = await ctx.db.insert("interviewSessions", {
+      journeyId: args.journeyId,
+      interviewType: args.interviewType,
+      status: "active",
+      startedAt: Date.now(),
+    });
+
+    // Add initial AI message based on type - action-focused opening questions
+    const initialMessages: Record<InterviewType, string> = {
+      first_value: "Walk me through what happens when someone first opens your app. What's the first thing they DO?",
+      retention: "Think of a user who uses your product regularly. What specific actions do they take in a typical session?",
+      value_outcomes: "Tell me about a user who's getting real value from your product. What actions do they take?",
+      value_capture: "Walk me through how a user goes from trying your product to becoming a paying customer. What actions lead to conversion?",
+      churn: "Think of a user who stopped using your product. What were the last actions they took before leaving?",
+      overview: "I'd like to understand your product's user journey. Walk me through what a user DOES from signup to becoming a successful customer. Focus on specific actions they take.",
+    };
+
+    await ctx.db.insert("interviewMessages", {
+      sessionId,
+      role: "assistant",
+      content: initialMessages[type],
+      createdAt: Date.now(),
+    });
+
+    return sessionId;
+  },
+});
+
+// Mark a session as complete
+export const completeSession = mutation({
+  args: { sessionId: v.id("interviewSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
+    if (session.status !== "active") throw new Error("Session is not active");
+
+    await ctx.db.patch(args.sessionId, {
+      status: "completed",
+      completedAt: Date.now(),
+    });
+  },
+});
+
+// Reset a completed interview (archive and start fresh)
+export const resetSession = mutation({
+  args: {
+    journeyId: v.id("journeys"),
+    interviewType: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Archive existing sessions of this type
+    const sessions = await ctx.db
+      .query("interviewSessions")
+      .withIndex("by_journey_and_type", (q) =>
+        q.eq("journeyId", args.journeyId).eq("interviewType", args.interviewType)
+      )
+      .collect();
+
+    for (const session of sessions) {
+      if (session.status !== "archived") {
+        await ctx.db.patch(session._id, {
+          status: "archived",
+          completedAt: Date.now(),
+        });
+      }
+    }
+
+    // Create new session (reuse createSession logic)
+    const type = args.interviewType as InterviewType;
+    const typeConfig = INTERVIEW_TYPES[type];
+    if (!typeConfig) throw new Error(`Invalid interview type: ${args.interviewType}`);
+
+    const sessionId = await ctx.db.insert("interviewSessions", {
+      journeyId: args.journeyId,
+      interviewType: args.interviewType,
+      status: "active",
+      startedAt: Date.now(),
+    });
+
+    // Action-focused opening questions (same as createSession)
+    const initialMessages: Record<InterviewType, string> = {
+      first_value: "Walk me through what happens when someone first opens your app. What's the first thing they DO?",
+      retention: "Think of a user who uses your product regularly. What specific actions do they take in a typical session?",
+      value_outcomes: "Tell me about a user who's getting real value from your product. What actions do they take?",
+      value_capture: "Walk me through how a user goes from trying your product to becoming a paying customer. What actions lead to conversion?",
+      churn: "Think of a user who stopped using your product. What were the last actions they took before leaving?",
+      overview: "I'd like to understand your product's user journey. Walk me through what a user DOES from signup to becoming a successful customer. Focus on specific actions they take.",
+    };
+
+    await ctx.db.insert("interviewMessages", {
+      sessionId,
+      role: "assistant",
+      content: initialMessages[type],
+      createdAt: Date.now(),
+    });
+
+    return sessionId;
+  },
+});
+
+// Add a message to the session
+export const addMessage = mutation({
+  args: {
+    sessionId: v.id("interviewSessions"),
+    role: v.string(),
+    content: v.string(),
+    toolCalls: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          arguments: v.any(),
+          result: v.optional(v.string()),
+        })
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("interviewMessages", {
+      sessionId: args.sessionId,
+      role: args.role,
+      content: args.content,
+      toolCalls: args.toolCalls,
+      createdAt: Date.now(),
+    });
+  },
+});
