@@ -32,3 +32,6 @@ convex/*.js.map
 # Playwright
 playwright-report/
 test-results/
+
+# Git worktrees
+.worktrees/
