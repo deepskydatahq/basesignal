@@ -3,7 +3,7 @@ import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import Anthropic from "@anthropic-ai/sdk";
 import { INTERVIEW_TYPES, type InterviewType } from "./interviewTypes";
-import { validateActivityFormat, findDuplicate } from "./utils/validation";
+import { validateActivityFormat, findDuplicate } from "../src/shared/validation";
 
 const ACTIVITY_FORMAT_SECTION = `
 ACTIVITY FORMAT (REQUIRED):

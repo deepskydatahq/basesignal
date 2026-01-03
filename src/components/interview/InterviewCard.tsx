@@ -1,5 +1,5 @@
 import { Lock, Check, Circle, Loader2 } from "lucide-react";
-import { INTERVIEW_TYPES, type InterviewType, type InterviewStatus } from "../../../convex/interviewTypes";
+import { INTERVIEW_TYPES, type InterviewType, type InterviewStatus } from "../../shared/interviewTypes";
 
 interface InterviewCardProps {
   type: InterviewType;

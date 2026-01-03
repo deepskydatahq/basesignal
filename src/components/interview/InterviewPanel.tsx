@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
-import { INTERVIEW_TYPES, type InterviewType } from "../../../convex/interviewTypes";
+import { INTERVIEW_TYPES, type InterviewType } from "../../shared/interviewTypes";
 import InterviewChat from "./InterviewChat";
 
 interface InterviewPanelProps {

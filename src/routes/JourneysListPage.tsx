@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Star, Plus } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { JOURNEY_TYPES } from "../../convex/journeys";
+import { JOURNEY_TYPES } from "../shared/journeyTypes";
 
 // Type labels for display
 const TYPE_LABELS: Record<(typeof JOURNEY_TYPES)[number], string> = {

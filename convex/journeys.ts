@@ -2,16 +2,9 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
+import { JOURNEY_TYPES } from "../src/shared/journeyTypes";
 
-// Journey types that match interview types
-export const JOURNEY_TYPES = [
-  "overview",
-  "first_value",
-  "retention",
-  "value_outcomes",
-  "value_capture",
-  "churn",
-] as const;
+export { JOURNEY_TYPES };
 
 // Helper to get current authenticated user
 async function getCurrentUser(ctx: QueryCtx | MutationCtx) {

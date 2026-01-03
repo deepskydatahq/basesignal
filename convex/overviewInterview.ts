@@ -1,33 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { validateActivityFormat, findDuplicate, type Activity } from "./utils/validation";
+import { validateActivityFormat, findDuplicate, type Activity } from "../src/shared/validation";
+import {
+  LIFECYCLE_SLOTS,
+  REQUIRED_SLOTS,
+  SLOT_INFO,
+  type LifecycleSlot,
+} from "../src/shared/lifecycleSlots";
 
-// Lifecycle slot types
-export const LIFECYCLE_SLOTS = [
-  "account_creation",
-  "activation",
-  "core_usage",
-  "revenue",
-  "churn",
-] as const;
-
-export type LifecycleSlot = (typeof LIFECYCLE_SLOTS)[number];
-
-// Slots required for completion
-export const REQUIRED_SLOTS: LifecycleSlot[] = [
-  "account_creation",
-  "activation",
-  "core_usage",
-];
-
-// Display info for slots
-export const SLOT_INFO: Record<LifecycleSlot, { name: string; required: boolean }> = {
-  account_creation: { name: "Account Creation", required: true },
-  activation: { name: "Activation", required: true },
-  core_usage: { name: "Core Usage", required: true },
-  revenue: { name: "Revenue", required: false },
-  churn: { name: "Churn", required: false },
-};
+export { LIFECYCLE_SLOTS, REQUIRED_SLOTS, SLOT_INFO, type LifecycleSlot };
 
 // Get activities grouped by lifecycle slot
 export const getActivitiesBySlot = query({

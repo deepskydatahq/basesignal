@@ -1,6 +1,6 @@
 import { ArrowLeft, Check, RotateCcw } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { INTERVIEW_TYPES, type InterviewType } from "../../../convex/interviewTypes";
+import { INTERVIEW_TYPES, type InterviewType } from "../../shared/interviewTypes";
 import MessageList from "./MessageList";
 import InputArea from "./InputArea";
 

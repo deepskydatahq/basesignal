@@ -2,7 +2,7 @@ import { useQuery } from "convex/react";
 import { Check, Circle } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
-import { LIFECYCLE_SLOTS, SLOT_INFO, REQUIRED_SLOTS } from "../../../convex/overviewInterview";
+import { LIFECYCLE_SLOTS, SLOT_INFO, REQUIRED_SLOTS } from "../../shared/lifecycleSlots";
 
 interface OverviewJourneyMapProps {
   journeyId: Id<"journeys">;

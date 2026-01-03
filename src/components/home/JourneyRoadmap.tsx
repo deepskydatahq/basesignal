@@ -3,7 +3,7 @@ import { Lock, ChevronDown, Circle } from "lucide-react";
 import {
   INTERVIEW_TYPES,
   type InterviewType,
-} from "../../../convex/interviewTypes";
+} from "../../shared/interviewTypes";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 type JourneyDefault = {
