@@ -60,6 +60,29 @@ npm run lint
 
 ---
 
+## Testing
+
+Follow the testing skill at `.claude/skills/testing.md` for detailed patterns.
+
+**Quick reference:**
+- **Convex functions**: Use `convex-test` for business logic
+- **React components**: Use RTL with setup functions
+- **Pure functions**: Use Vitest directly
+
+**Commands:**
+```bash
+npm test          # Run tests in watch mode
+npm run test:run  # Run tests once
+```
+
+**Key patterns:**
+- Use `getByRole` as primary query
+- Use `userEvent.setup()` for interactions
+- Write workflow tests, not isolated assertions
+- Use setup functions instead of `beforeEach`
+
+---
+
 ## Critical Rules
 
 **Never mutate Convex state outside of mutations**
