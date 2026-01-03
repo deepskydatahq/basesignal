@@ -1,113 +1,103 @@
-import { describe, it, expect } from 'vitest'
-import { levenshtein, validateActivityFormat, findDuplicate } from '../../convex/utils/validation'
+import { expect, test } from 'vitest'
+import { levenshtein, validateActivityFormat, findDuplicate } from '../shared/validation'
 
-describe('levenshtein', () => {
-  it('returns 0 for identical strings', () => {
-    expect(levenshtein('hello', 'hello')).toBe(0)
-  })
+// levenshtein tests
 
-  it('returns string length for empty comparison', () => {
-    expect(levenshtein('hello', '')).toBe(5)
-    expect(levenshtein('', 'world')).toBe(5)
-  })
+test('levenshtein calculates string distance correctly', () => {
+  // Identical strings
+  expect(levenshtein('hello', 'hello')).toBe(0)
 
-  it('calculates single character difference', () => {
-    expect(levenshtein('cat', 'bat')).toBe(1)
-    expect(levenshtein('cat', 'cats')).toBe(1)
-  })
+  // Empty string comparisons
+  expect(levenshtein('hello', '')).toBe(5)
+  expect(levenshtein('', 'world')).toBe(5)
 
-  it('calculates multiple differences', () => {
-    expect(levenshtein('kitten', 'sitting')).toBe(3)
-    expect(levenshtein('Created', 'Made')).toBe(5)
-  })
+  // Single character differences
+  expect(levenshtein('cat', 'bat')).toBe(1)
+  expect(levenshtein('cat', 'cats')).toBe(1)
+
+  // Multiple differences
+  expect(levenshtein('kitten', 'sitting')).toBe(3)
+  expect(levenshtein('Created', 'Made')).toBe(5)
 })
 
-describe('validateActivityFormat', () => {
-  it('accepts valid entity + action', () => {
-    const result = validateActivityFormat('Account', 'Created')
-    expect(result.valid).toBe(true)
-    expect(result.error).toBeUndefined()
-  })
+// validateActivityFormat tests
 
-  it('rejects empty entity', () => {
-    const result = validateActivityFormat('', 'Created')
-    expect(result.valid).toBe(false)
-    expect(result.error).toContain('Entity is required')
-  })
+test('validateActivityFormat accepts valid entity + action combinations', () => {
+  const result = validateActivityFormat('Account', 'Created')
+  expect(result.valid).toBe(true)
+  expect(result.error).toBeUndefined()
 
-  it('rejects multi-word entity', () => {
-    const result = validateActivityFormat('User Account', 'Created')
-    expect(result.valid).toBe(false)
-    expect(result.error).toContain('single noun')
-  })
-
-  it('rejects non-past-tense action', () => {
-    const result = validateActivityFormat('Account', 'Create')
-    expect(result.valid).toBe(false)
-    expect(result.error).toContain('past tense')
-  })
-
-  it('accepts irregular past tense verbs', () => {
-    expect(validateActivityFormat('Email', 'Sent').valid).toBe(true)
-    expect(validateActivityFormat('Data', 'Built').valid).toBe(true)
-    expect(validateActivityFormat('File', 'Run').valid).toBe(true)
-  })
-
-  it('rejects vague terms', () => {
-    const result1 = validateActivityFormat('Onboarding', 'Completed')
-    expect(result1.valid).toBe(false)
-    expect(result1.error).toContain('vague')
-
-    const result2 = validateActivityFormat('Account', 'Setup')
-    expect(result2.valid).toBe(false)
-  })
+  // Irregular past tense verbs should be accepted
+  expect(validateActivityFormat('Email', 'Sent').valid).toBe(true)
+  expect(validateActivityFormat('Data', 'Built').valid).toBe(true)
+  expect(validateActivityFormat('File', 'Run').valid).toBe(true)
 })
 
-describe('findDuplicate', () => {
+test('validateActivityFormat rejects invalid formats', () => {
+  // Empty entity
+  const emptyEntity = validateActivityFormat('', 'Created')
+  expect(emptyEntity.valid).toBe(false)
+  expect(emptyEntity.error).toContain('Entity is required')
+
+  // Multi-word entity
+  const multiWord = validateActivityFormat('User Account', 'Created')
+  expect(multiWord.valid).toBe(false)
+  expect(multiWord.error).toContain('single noun')
+
+  // Non-past-tense action
+  const nonPastTense = validateActivityFormat('Account', 'Create')
+  expect(nonPastTense.valid).toBe(false)
+  expect(nonPastTense.error).toContain('past tense')
+
+  // Vague terms
+  const vagueEntity = validateActivityFormat('Onboarding', 'Completed')
+  expect(vagueEntity.valid).toBe(false)
+  expect(vagueEntity.error).toContain('vague')
+
+  const vagueAction = validateActivityFormat('Account', 'Setup')
+  expect(vagueAction.valid).toBe(false)
+})
+
+// findDuplicate tests
+
+test('findDuplicate detects exact and fuzzy matches', () => {
   const existingActivities = [
     { entity: 'Account', action: 'Created' },
     { entity: 'Project', action: 'Published' },
     { entity: 'Trial', action: 'Started' },
   ]
 
-  it('returns null when no duplicate exists', () => {
-    const result = findDuplicate('Report', 'Generated', existingActivities)
-    expect(result).toBeNull()
-  })
+  // Exact match (case-insensitive)
+  const exactMatch = findDuplicate('account', 'created', existingActivities)
+  expect(exactMatch).not.toBeNull()
+  expect(exactMatch?.entity).toBe('Account')
 
-  it('finds exact match (case-insensitive)', () => {
-    const result = findDuplicate('account', 'created', existingActivities)
-    expect(result).not.toBeNull()
-    expect(result?.entity).toBe('Account')
-  })
+  // Fuzzy match on full name
+  const fuzzyMatch = findDuplicate('Account', 'Createdd', existingActivities)
+  expect(fuzzyMatch).not.toBeNull()
 
-  it('finds fuzzy match on full name', () => {
-    // "Account Createdd" is distance 1 from "Account Created"
-    const result = findDuplicate('Account', 'Createdd', existingActivities)
-    expect(result).not.toBeNull()
-  })
+  // Similar action for same entity (typo)
+  const typoMatch = findDuplicate('Project', 'Publised', existingActivities)
+  expect(typoMatch).not.toBeNull()
+  expect(typoMatch?.entity).toBe('Project')
+})
 
-  it('finds similar action for same entity (typo)', () => {
-    // Same entity, typo in action: "Publised" vs "Published"
-    const result = findDuplicate('Project', 'Publised', existingActivities)
-    expect(result).not.toBeNull()
-    expect(result?.entity).toBe('Project')
-  })
+test('findDuplicate returns null for non-duplicates', () => {
+  const existingActivities = [
+    { entity: 'Account', action: 'Created' },
+    { entity: 'Project', action: 'Published' },
+    { entity: 'Trial', action: 'Started' },
+  ]
 
-  it('does not match different entities with similar actions', () => {
-    // "Report Created" should not match "Account Created" - different entities
-    const result = findDuplicate('Report', 'Created', existingActivities)
-    expect(result).toBeNull()
-  })
+  // No duplicate exists
+  expect(findDuplicate('Report', 'Generated', existingActivities)).toBeNull()
 
-  it('does not match opposite actions for same entity', () => {
-    // "Account Deleted" should NOT match "Account Created"
-    const result = findDuplicate('Account', 'Deleted', existingActivities)
-    expect(result).toBeNull()
-  })
+  // Different entities with similar actions should not match
+  expect(findDuplicate('Report', 'Created', existingActivities)).toBeNull()
 
-  it('returns null for empty existing list', () => {
-    const result = findDuplicate('Account', 'Created', [])
-    expect(result).toBeNull()
-  })
+  // Opposite actions for same entity should not match
+  expect(findDuplicate('Account', 'Deleted', existingActivities)).toBeNull()
+
+  // Empty list
+  expect(findDuplicate('Account', 'Created', [])).toBeNull()
 })

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { BriefingScreen } from "./BriefingScreen";
 
@@ -8,50 +8,49 @@ vi.mock("convex/react", () => ({
 }));
 
 // Mock react-router-dom
-const mockNavigate = vi.fn();
 vi.mock("react-router-dom", () => ({
-  useNavigate: () => mockNavigate,
+  useNavigate: () => vi.fn(),
 }));
 
-describe("BriefingScreen", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+function setup(props: { productName?: string } = {}) {
+  const productName = props.productName ?? "TestApp";
+  render(<BriefingScreen productName={productName} />);
+  return {
+    getStartButton: () => screen.getByRole("button", { name: /start setup/i }),
+  };
+}
 
-  it("renders the philosophy reminder", () => {
-    render(<BriefingScreen productName="TestApp" />);
-    expect(
-      screen.getByText(/we don't track clicks/i)
-    ).toBeInTheDocument();
-  });
+test("renders preparation checklist and output cards", () => {
+  setup({ productName: "Acme" });
 
-  it("renders all three checklist items", () => {
-    render(<BriefingScreen productName="TestApp" />);
-    expect(screen.getByText(/15 minutes/i)).toBeInTheDocument();
-    expect(screen.getByText(/TestApp's user journey/i)).toBeInTheDocument();
-    expect(screen.getByText(/colleague who knows/i)).toBeInTheDocument();
-  });
+  // Philosophy reminder
+  expect(screen.getByText(/we don't track clicks/i)).toBeInTheDocument();
 
-  it("renders all three output cards", () => {
-    render(<BriefingScreen productName="TestApp" />);
-    expect(screen.getByText("User Journey Map")).toBeInTheDocument();
-    expect(screen.getByText("Measurement Plan")).toBeInTheDocument();
-    expect(screen.getByText("Metric Catalog")).toBeInTheDocument();
-  });
+  // Checklist items
+  expect(screen.getByText(/15 minutes/i)).toBeInTheDocument();
+  expect(screen.getByText(/Acme's user journey/i)).toBeInTheDocument();
+  expect(screen.getByText(/colleague who knows/i)).toBeInTheDocument();
 
-  it("shows coming soon badges on placeholder outputs", () => {
-    render(<BriefingScreen productName="TestApp" />);
-    const comingSoonBadges = screen.getAllByText("Coming soon");
-    expect(comingSoonBadges).toHaveLength(2);
-  });
+  // Output cards
+  expect(screen.getByText("User Journey Map")).toBeInTheDocument();
+  expect(screen.getByText("Measurement Plan")).toBeInTheDocument();
+  expect(screen.getByText("Metric Catalog")).toBeInTheDocument();
 
-  it("renders the CTA button", () => {
-    render(<BriefingScreen productName="TestApp" />);
-    expect(screen.getByRole("button", { name: /start setup/i })).toBeInTheDocument();
-  });
+  // Fallback text when productName is empty
+  const { unmount } = render(<BriefingScreen productName="" />);
+  expect(screen.getByText(/your product's user journey/i)).toBeInTheDocument();
+  unmount();
+});
 
-  it("uses fallback text when productName is empty", () => {
-    render(<BriefingScreen productName="" />);
-    expect(screen.getByText(/your product's user journey/i)).toBeInTheDocument();
-  });
+test("shows coming soon badges and has start button enabled", () => {
+  const { getStartButton } = setup();
+
+  // Coming soon badges on placeholder outputs
+  const comingSoonBadges = screen.getAllByText("Coming soon");
+  expect(comingSoonBadges).toHaveLength(2);
+
+  // CTA button is present and enabled
+  const startButton = getStartButton();
+  expect(startButton).toBeInTheDocument();
+  expect(startButton).toBeEnabled();
 });
