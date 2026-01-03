@@ -85,6 +85,12 @@ npm run test:run  # Run tests once
 
 ## Critical Rules
 
+**Every feature must have tests**
+- Write tests for all new Convex functions and React components
+- Use `superpowers:subagent-driven-development` for multi-step implementations - it enforces tests per task
+- Use `superpowers:finishing-a-development-branch` to verify all tests pass before merging/pushing
+- Never mark work complete until `npm test` passes
+
 **Never mutate Convex state outside of mutations**
 - Queries are read-only - use `useQuery()` for reading
 - Mutations modify state - use `useMutation()` for create/update/delete
