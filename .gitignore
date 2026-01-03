@@ -28,3 +28,7 @@ convex/*.js.map
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright
+playwright-report/
+test-results/
