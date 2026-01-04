@@ -108,3 +108,9 @@ Each would export a function that takes a user ID and deletes specific data.
 - `@clerk/backend` - Clerk API calls
 - `convex/browser` - ConvexHttpClient for queries
 - Bun runtime - native fetch, TypeScript support
+
+## Implementation Notes
+
+- Uses `dotenv/config` for automatic .env.local loading
+- Internal mutation used for cascade delete (testable with convex-test)
+- Script exits with code 1 on any failure for scripting integration
