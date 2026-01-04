@@ -46,11 +46,11 @@ export const start = mutation({
 
     if (existing) return existing._id;
 
-    // Create new setup progress
+    // Create new setup progress - start with onboarding
     const now = Date.now();
     const progressId = await ctx.db.insert("setupProgress", {
       userId: user._id,
-      currentStep: "overview_interview",
+      currentStep: "onboarding",
       status: "active",
       stepsCompleted: [],
       startedAt: now,

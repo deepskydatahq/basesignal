@@ -8,6 +8,7 @@ interface SetupModeHeaderProps {
 }
 
 const STEPS = [
+  { id: "onboarding", label: "Getting Started" },
   { id: "overview_interview", label: "Overview Interview" },
   { id: "review_save", label: "Review & Save" },
 ];

@@ -4,6 +4,7 @@ import AuthPage from './routes/AuthPage'
 import OnboardingPage from './routes/OnboardingPage'
 import DashboardLayout from './routes/DashboardLayout'
 import SetupLayout from './routes/SetupLayout'
+import SetupOnboardingPage from './routes/SetupOnboardingPage'
 import SetupInterviewPage from './routes/SetupInterviewPage'
 import SetupReviewPage from './routes/SetupReviewPage'
 import SetupCompletePage from './routes/SetupCompletePage'
@@ -85,9 +86,23 @@ function AppRoutes() {
 
   // Setup mode: user is actively in setup
   if (setupInProgress && setupProgress?.status === 'active') {
+    // Determine current route based on step
+    const getSetupRoute = () => {
+      switch (setupProgress?.currentStep) {
+        case 'onboarding':
+          return 'onboarding';
+        case 'review_save':
+          return 'review';
+        case 'overview_interview':
+        default:
+          return 'interview';
+      }
+    };
+
     return (
       <Routes>
         <Route path="/setup" element={<SetupLayout />}>
+          <Route path="onboarding" element={<SetupOnboardingPage />} />
           <Route path="interview" element={<SetupInterviewPage />} />
           <Route path="review" element={<SetupReviewPage />} />
           <Route path="complete" element={<SetupCompletePage />} />
@@ -97,12 +112,7 @@ function AppRoutes() {
         {/* Redirect everything else to current setup step */}
         <Route
           path="*"
-          element={
-            <Navigate
-              to={`/setup/${setupProgress?.currentStep === 'review_save' ? 'review' : 'interview'}`}
-              replace
-            />
-          }
+          element={<Navigate to={`/setup/${getSetupRoute()}`} replace />}
         />
       </Routes>
     );
