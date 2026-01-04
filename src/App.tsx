@@ -28,6 +28,7 @@ function AppRoutes() {
     isAuthenticated,
     isLoading,
     needsOnboarding,
+    needsSetup,
     user,
     setupStatus,
     setupProgress,
@@ -38,11 +39,11 @@ function AppRoutes() {
 
   // Auto-start setup for users who haven't started yet
   useEffect(() => {
-    if (user && !setupStatus && !needsOnboarding) {
-      // User exists but no setup status - initialize setup
+    if (user && needsSetup && !needsOnboarding) {
+      // User exists but setup not started - initialize setup
       startSetup().catch(console.error);
     }
-  }, [user, setupStatus, needsOnboarding, startSetup]);
+  }, [user, needsSetup, needsOnboarding, startSetup]);
 
   if (isLoading) {
     return (
