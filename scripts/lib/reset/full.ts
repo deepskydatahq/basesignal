@@ -1,5 +1,5 @@
 import { ConvexHttpClient } from "convex/browser";
-import { internal } from "../../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { deleteClerkUser } from "../clerk-client";
 
@@ -23,7 +23,7 @@ export async function fullReset(
 ): Promise<ResetResult> {
   // Delete from Convex first
   console.log("🗑️  Deleting Convex data...");
-  const convexResult = await client.mutation(internal.devReset.deleteUserData, { userId });
+  const convexResult = await client.mutation(api.devReset.deleteUserData, { userId });
 
   const counts = convexResult.deletedCounts;
   console.log(`   - ${counts.interviewMessages} interview messages`);

@@ -1,6 +1,6 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { internal } from "./_generated/api";
+import { api } from "./_generated/api";
 import schema from "./schema";
 
 describe("devReset.deleteUserData", () => {
@@ -83,7 +83,7 @@ describe("devReset.deleteUserData", () => {
     });
 
     // Run the delete mutation
-    const result = await t.mutation(internal.devReset.deleteUserData, { userId });
+    const result = await t.mutation(api.devReset.deleteUserData, { userId });
 
     // Verify counts
     expect(result.deletedCounts.interviewMessages).toBe(1);
@@ -112,7 +112,7 @@ describe("devReset.deleteUserData", () => {
       });
     });
 
-    const result = await t.mutation(internal.devReset.deleteUserData, { userId });
+    const result = await t.mutation(api.devReset.deleteUserData, { userId });
 
     expect(result.deletedCounts.users).toBe(1);
     expect(result.deletedCounts.journeys).toBe(0);

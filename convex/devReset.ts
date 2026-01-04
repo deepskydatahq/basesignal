@@ -1,7 +1,8 @@
-import { internalMutation } from "./_generated/server";
+import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 
-export const deleteUserData = internalMutation({
+// Note: This is a public mutation for dev scripts. Safety checks are in the CLI.
+export const deleteUserData = mutation({
   args: {
     userId: v.id("users"),
   },
