@@ -49,6 +49,12 @@ test("renders Define button for not_defined status", () => {
   expect(screen.getByRole("button", { name: /define/i })).toBeInTheDocument();
 });
 
+test("renders View button for defined status", () => {
+  setup({ status: "defined" });
+
+  expect(screen.getByRole("button", { name: /view/i })).toBeInTheDocument();
+});
+
 test("renders Coming soon text for locked status", () => {
   setup({ status: "locked" });
 

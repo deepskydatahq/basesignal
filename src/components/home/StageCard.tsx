@@ -11,7 +11,7 @@ const ICONS = {
 
 type IconName = keyof typeof ICONS;
 
-export type StageStatus = "not_started" | "in_progress" | "complete" | "not_defined" | "locked";
+export type StageStatus = "not_started" | "in_progress" | "complete" | "not_defined" | "defined" | "locked";
 
 interface StageCardProps {
   title: string;
@@ -53,6 +53,12 @@ const STATUS_CONFIG: Record<
     badge: <Circle className="w-4 h-4 text-gray-300" />,
     buttonLabel: "Define",
     buttonVariant: "default",
+    opacity: "opacity-100",
+  },
+  defined: {
+    badge: <Check className="w-4 h-4 text-green-600" />,
+    buttonLabel: "View",
+    buttonVariant: "secondary",
     opacity: "opacity-100",
   },
   locked: {

@@ -31,7 +31,6 @@ function AppRoutes() {
     needsOnboarding,
     needsSetup,
     user,
-    setupStatus,
     setupProgress,
     setupInProgress,
   } = useAuthGuard();
