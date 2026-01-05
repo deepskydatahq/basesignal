@@ -9,7 +9,7 @@ export default function SetupInterviewPage() {
   const navigate = useNavigate();
   const user = useQuery(api.users.current);
   const setupProgress = useQuery(api.setupProgress.current);
-  const createJourney = useMutation(api.journeys.create);
+  const getOrCreateJourney = useMutation(api.journeys.getOrCreateForSetup);
   const updateProgress = useMutation(api.setupProgress.update);
 
   // Create overview journey if none exists
@@ -19,7 +19,7 @@ export default function SetupInterviewPage() {
       if (setupProgress.overviewJourneyId) return;
 
       // Create an overview journey for the setup interview
-      const journeyId = await createJourney({
+      const journeyId = await getOrCreateJourney({
         type: "overview",
         name: "Overview Journey",
       });
@@ -29,7 +29,7 @@ export default function SetupInterviewPage() {
       });
     }
     ensureJourney();
-  }, [user, setupProgress, createJourney, updateProgress]);
+  }, [user, setupProgress, getOrCreateJourney, updateProgress]);
 
   const handleComplete = async () => {
     await updateProgress({
