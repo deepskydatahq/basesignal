@@ -59,12 +59,14 @@ export default function SetupInterviewPage() {
 
   return (
     <div className="flex h-full">
-      {/* Left: Interview chat */}
-      <div className="w-1/2 border-r border-gray-200">
-        <OverviewInterviewPanel
-          journeyId={setupProgress.overviewJourneyId}
-          onComplete={handleComplete}
-        />
+      {/* Left: Interview chat - centered content */}
+      <div className="w-1/2 border-r border-gray-200 flex items-center justify-center">
+        <div className="w-full max-w-lg h-full">
+          <OverviewInterviewPanel
+            journeyId={setupProgress.overviewJourneyId}
+            onComplete={handleComplete}
+          />
+        </div>
       </div>
 
       {/* Right: Journey map */}
