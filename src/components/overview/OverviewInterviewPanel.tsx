@@ -55,6 +55,16 @@ export default function OverviewInterviewPanel({
 
   return (
     <div className="flex flex-col h-full">
+      {/* Headline */}
+      <div className="px-6 pt-6 pb-4">
+        <h1 className="text-xl font-semibold text-gray-900">
+          Define your user lifecycle
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Tell us how users move through your product
+        </p>
+      </div>
+
       {/* Messages */}
       <MessageList sessionId={activeSession._id} />
 
