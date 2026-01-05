@@ -157,7 +157,7 @@ export const createSession = mutation({
       value_outcomes: "Tell me about a user who's getting real value from your product. What actions do they take?",
       value_capture: "Walk me through how a user goes from trying your product to becoming a paying customer. What actions lead to conversion?",
       churn: "Think of a user who stopped using your product. What were the last actions they took before leaving?",
-      overview: "I'd like to understand your product's user journey. Walk me through what a user DOES from signup to becoming a successful customer. Focus on specific actions they take.",
+      overview: "Let's map out your product's user journey. First, a quick question: What does your product help users do? One sentence is fine.",
     };
 
     await ctx.db.insert("interviewMessages", {
@@ -229,7 +229,7 @@ export const resetSession = mutation({
       value_outcomes: "Tell me about a user who's getting real value from your product. What actions do they take?",
       value_capture: "Walk me through how a user goes from trying your product to becoming a paying customer. What actions lead to conversion?",
       churn: "Think of a user who stopped using your product. What were the last actions they took before leaving?",
-      overview: "I'd like to understand your product's user journey. Walk me through what a user DOES from signup to becoming a successful customer. Focus on specific actions they take.",
+      overview: "Let's map out your product's user journey. First, a quick question: What does your product help users do? One sentence is fine.",
     };
 
     await ctx.db.insert("interviewMessages", {
