@@ -26,7 +26,7 @@ export function BriefingScreen({ productName }: Props) {
 
       {/* What you'll need checklist */}
       <div className="space-y-3">
-        <h2 className="text-sm font-medium text-gray-700">What you'll need</h2>
+        <h2 className="text-sm font-medium text-gray-700">What you'll need now</h2>
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
@@ -55,7 +55,7 @@ export function BriefingScreen({ productName }: Props) {
 
       {/* What you'll walk away with - 3 output cards */}
       <div className="space-y-3">
-        <h2 className="text-sm font-medium text-gray-700">What you'll walk away with</h2>
+        <h2 className="text-sm font-medium text-gray-700">What you'll walk away with after 15m</h2>
         <div className="grid grid-cols-3 gap-3">
           {/* User Journey Map */}
           <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-3">
