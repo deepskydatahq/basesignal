@@ -1,8 +1,9 @@
-import { expect, test, vi } from "vitest";
+import { expect, test, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MeasurementFoundationCard } from "./MeasurementFoundationCard";
 import { MemoryRouter } from "react-router-dom";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 const mockNavigate = vi.fn();
 
@@ -12,6 +13,10 @@ vi.mock("react-router-dom", async () => {
     ...actual,
     useNavigate: () => mockNavigate,
   };
+});
+
+beforeEach(() => {
+  mockNavigate.mockClear();
 });
 
 type FoundationStatus = Parameters<typeof MeasurementFoundationCard>[0]["status"];
@@ -70,19 +75,15 @@ test("navigates to setup interview when clicking Start on overview", async () =>
     overviewInterview: { status: "not_started", journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
   });
 
-  // Find the Start button in the Overview Interview card
-  const overviewCard = screen.getByText("Overview Interview").closest("div")?.parentElement;
-  const startButton = overviewCard?.querySelector("button");
-
-  if (startButton) {
-    await user.click(startButton);
-    expect(mockNavigate).toHaveBeenCalledWith("/setup/interview");
-  }
+  // Overview Interview is the first card with a Start button
+  const startButtons = screen.getAllByRole("button", { name: /start/i });
+  await user.click(startButtons[0]);
+  expect(mockNavigate).toHaveBeenCalledWith("/setup/interview");
 });
 
 test("navigates to journey when clicking View on complete overview", async () => {
   const { user } = setup({
-    overviewInterview: { status: "complete", journeyId: "journey123" as any, slotsCompleted: 5, slotsTotal: 5 },
+    overviewInterview: { status: "complete", journeyId: "journey123" as Id<"journeys">, slotsCompleted: 5, slotsTotal: 5 },
   });
 
   const viewButton = screen.getByRole("button", { name: /view/i });
