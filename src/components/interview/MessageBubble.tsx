@@ -20,26 +20,26 @@ export default function MessageBubble({
   const isUser = role === "user";
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[85%] rounded-lg px-4 py-2 ${
-          isUser
-            ? "bg-blue-600 text-white"
-            : "bg-gray-100 text-gray-900"
-        }`}
-      >
-        {/* Message content */}
-        <p className="text-sm whitespace-pre-wrap">{content}</p>
+    <div
+      className={`${
+        isUser
+          ? "pl-4 border-l-2 border-gray-300"
+          : ""
+      }`}
+    >
+      {/* Message content */}
+      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+        {content}
+      </p>
 
-        {/* Tool calls (for assistant messages) */}
-        {toolCalls && toolCalls.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-gray-200/50 space-y-1">
-            {toolCalls.map((tool, i) => (
-              <ToolCallBadge key={i} toolCall={tool} />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Tool calls (for assistant messages) */}
+      {toolCalls && toolCalls.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-gray-200 space-y-1">
+          {toolCalls.map((tool, i) => (
+            <ToolCallBadge key={i} toolCall={tool} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
