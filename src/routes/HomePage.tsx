@@ -1,14 +1,11 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { ProductProfileCard } from "../components/home/ProductProfileCard";
-import { JourneyRoadmap } from "../components/home/JourneyRoadmap";
-import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MeasurementFoundationCard } from "../components/home/MeasurementFoundationCard";
 
 export default function HomePage() {
   const user = useQuery(api.users.current);
-  const defaults = useQuery(api.journeys.getDefaultsByType);
+  const foundationStatus = useQuery(api.setupProgress.foundationStatus);
 
   if (!user) {
     return (
@@ -29,22 +26,9 @@ export default function HomePage() {
         revenueModels={user.revenueModels}
       />
 
-      {/* Journey Roadmap or Empty State */}
-      {defaults && Object.values(defaults).some((j) => j !== null) ? (
-        <JourneyRoadmap defaults={defaults} />
-      ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <h2 className="text-base font-medium text-gray-900">No journey yet</h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Create your first journey to start mapping how {user.userTerminology ?? "users"} find value.
-          </p>
-          <Link to="/journeys">
-            <Button className="mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Journey
-            </Button>
-          </Link>
-        </div>
+      {/* Measurement Foundation Card */}
+      {foundationStatus && (
+        <MeasurementFoundationCard status={foundationStatus} />
       )}
     </div>
   );
