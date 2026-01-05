@@ -339,6 +339,35 @@ function buildOverviewPrompt(activitiesBySlot: Record<string, unknown[]>): strin
     })
     .join("\n");
 
+  const totalActivities = Object.values(activitiesBySlot)
+    .reduce((sum, activities) => sum + (activities as unknown[]).length, 0);
+
+  // Determine conversation phase based on activities captured
+  const phaseInstructions = totalActivities === 0
+    ? `CONVERSATION PHASE: Opening
+
+You're just starting. Warm up the user with simple, concrete questions before diving deep.
+
+OPENING SEQUENCE (follow this order):
+1. First, ask: "What does your product help users do? One sentence is fine."
+   - This gets them talking with low pressure
+   - Listen for clues about their domain
+
+2. After they answer, ask: "How does someone create an account? Email signup, SSO, invite-only?"
+   - Concrete and easy to answer
+   - When they answer, add an account_creation activity (e.g., "Account Created")
+
+3. Then ask: "What's the first thing a new user does after signing up?"
+   - This starts their journey thinking
+   - Add this as an activation activity
+
+4. After these 3 questions, transition: "Great. Now let's map out what happens between that first action and when they become a successful customer. Walk me through it."
+   - Now you can explore the full journey
+   - Continue adding activities as they describe them`
+    : `CONVERSATION PHASE: Deep Exploration
+
+The user has warmed up. Continue mapping their journey by asking about gaps in the lifecycle stages.`;
+
   return `You are conducting an Overview Interview to map the user's product journey.
 
 YOUR GOAL: Capture the key activities across 5 lifecycle stages:
@@ -350,14 +379,9 @@ YOUR GOAL: Capture the key activities across 5 lifecycle stages:
 
 CURRENT STATE:
 ${slotStatus}
-${ACTIVITY_FORMAT_SECTION}
-APPROACH:
-1. Start with a story-based question: "Walk me through what happens from when someone discovers your product to when they become a successful, paying customer."
-2. As they narrate, extract activities and add them to appropriate slots
-3. After the initial story, check for gaps in required slots
-4. Ask targeted follow-ups: "How does someone cancel?" "When do they first pay?"
-5. Once all 3 required slots have activities, offer to wrap up
 
+${phaseInstructions}
+${ACTIVITY_FORMAT_SECTION}
 TONE:
 - Neutral and professional
 - Efficient — no filler
