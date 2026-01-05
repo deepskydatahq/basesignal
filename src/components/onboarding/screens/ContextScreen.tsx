@@ -6,6 +6,7 @@ import { Checkbox } from "../../ui/checkbox";
 
 interface ContextData {
   productName: string;
+  websiteUrl: string;
   role: string;
   hasMultiUserAccounts: boolean;
   businessType: string | undefined;
@@ -37,6 +38,7 @@ const revenueModelOptions = [
 
 export function ContextScreen({ onNext }: Props) {
   const [productName, setProductName] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [role, setRole] = useState("");
   const [hasMultiUserAccounts, setHasMultiUserAccounts] = useState<boolean | null>(null);
   const [businessType, setBusinessType] = useState<string | undefined>(undefined);
@@ -63,6 +65,7 @@ export function ContextScreen({ onNext }: Props) {
     if (!canContinue || hasMultiUserAccounts === null) return;
     onNext({
       productName: productName.trim(),
+      websiteUrl: websiteUrl.trim(),
       role,
       hasMultiUserAccounts,
       businessType: hasMultiUserAccounts ? undefined : businessType,
@@ -94,10 +97,24 @@ export function ContextScreen({ onNext }: Props) {
           />
         </div>
 
+        {/* Question 1b: Website URL */}
+        <div
+          className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          style={{ animationDelay: "50ms", animationFillMode: "backwards" }}
+        >
+          <Label htmlFor="websiteUrl">What's your website? (optional)</Label>
+          <Input
+            id="websiteUrl"
+            placeholder="e.g., acme.com"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+          />
+        </div>
+
         {/* Question 2: Role */}
         <div
           className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
-          style={{ animationDelay: "75ms", animationFillMode: "backwards" }}
+          style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
         >
           <Label>What's your role?</Label>
           <div className="flex flex-wrap gap-2">
@@ -120,7 +137,7 @@ export function ContextScreen({ onNext }: Props) {
         {/* Question 3: Multi-user accounts */}
         <div
           className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
-          style={{ animationDelay: "150ms", animationFillMode: "backwards" }}
+          style={{ animationDelay: "175ms", animationFillMode: "backwards" }}
         >
           <Label>Can an account have multiple users?</Label>
           <div className="flex flex-wrap gap-2">
@@ -153,7 +170,7 @@ export function ContextScreen({ onNext }: Props) {
               ? "max-h-24 opacity-100"
               : "max-h-0 opacity-0"
           }`}
-          style={{ animationDelay: "225ms", animationFillMode: "backwards" }}
+          style={{ animationDelay: "250ms", animationFillMode: "backwards" }}
         >
           <Label>Is this a B2C or B2B product?</Label>
           <div className="flex flex-wrap gap-2">
@@ -176,7 +193,7 @@ export function ContextScreen({ onNext }: Props) {
         {/* Question 5: Revenue models (multi-select) */}
         <div
           className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
-          style={{ animationDelay: "300ms", animationFillMode: "backwards" }}
+          style={{ animationDelay: "325ms", animationFillMode: "backwards" }}
         >
           <Label>How do you monetize?</Label>
           <div className="space-y-2">

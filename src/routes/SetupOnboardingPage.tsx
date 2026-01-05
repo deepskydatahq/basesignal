@@ -10,6 +10,7 @@ import { Button } from "../components/ui/button";
 
 interface ContextData {
   productName: string;
+  websiteUrl: string;
   role: string;
   hasMultiUserAccounts: boolean;
   businessType: string | undefined;
@@ -26,6 +27,7 @@ export default function SetupOnboardingPage() {
   const [step, setStep] = useState(0);
   const [context, setContext] = useState<ContextData>({
     productName: "",
+    websiteUrl: "",
     role: "",
     hasMultiUserAccounts: false,
     businessType: undefined,
@@ -37,6 +39,7 @@ export default function SetupOnboardingPage() {
     try {
       await updateOnboarding({
         productName: data.productName,
+        websiteUrl: data.websiteUrl,
         role: data.role,
         hasMultiUserAccounts: data.hasMultiUserAccounts,
         businessType: data.businessType,
