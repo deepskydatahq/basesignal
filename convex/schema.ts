@@ -22,6 +22,7 @@ export default defineSchema({
 
     // Onboarding context (collected during onboarding)
     productName: v.optional(v.string()),
+    websiteUrl: v.optional(v.string()),
     userTerminology: v.optional(v.string()), // DEPRECATED: kept for migration
     role: v.optional(v.string()),
 

@@ -64,6 +64,7 @@ export const createOrGetUser = mutation({
 export const updateOnboarding = mutation({
   args: {
     productName: v.optional(v.string()),
+    websiteUrl: v.optional(v.string()),
     userTerminology: v.optional(v.string()),
     hasMultiUserAccounts: v.optional(v.boolean()),
     businessType: v.optional(v.string()),
@@ -137,6 +138,7 @@ export const resetOnboarding = mutation({
       onboardingComplete: false,
       onboardingStep: undefined,
       productName: undefined,
+      websiteUrl: undefined,
       userTerminology: undefined,
       hasMultiUserAccounts: undefined,
       businessType: undefined,
