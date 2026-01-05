@@ -19,7 +19,7 @@ test("renders philosophy content with journey visualization", () => {
 
   // Problem statement
   expect(
-    screen.getByText(/tracking plans focus on interactions/i)
+    screen.getByText(/typical tracking plans focus on interactions/i)
   ).toBeInTheDocument();
 
   // Shift statement

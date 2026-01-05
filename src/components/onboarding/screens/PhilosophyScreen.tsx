@@ -10,7 +10,7 @@ export function PhilosophyScreen({ onNext }: Props) {
       {/* Problem statement */}
       <div className="space-y-3">
         <h1 className="text-xl font-medium">
-          Tracking plans focus on interactions
+          Typical tracking plans focus on interactions
         </h1>
         <p className="text-gray-600">
           Where users click, what they view. But clicks don't tell you if users succeeded.
@@ -24,6 +24,9 @@ export function PhilosophyScreen({ onNext }: Props) {
         <div className="p-2 bg-gray-100 rounded">form_submitted: settings</div>
         <div className="p-2 bg-gray-100 rounded text-gray-400">...but did they succeed?</div>
       </div>
+
+      {/* Divider */}
+      <div className="border-t border-gray-200" />
 
       {/* Shift statement */}
       <div className="space-y-3">
