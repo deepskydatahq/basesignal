@@ -241,3 +241,82 @@ export const reset = mutation({
     });
   },
 });
+
+// Get foundation status for homepage progress card
+export const foundationStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return {
+        overviewInterview: { status: "not_started" as const, journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
+        firstValue: { status: "not_defined" as const, journeyId: null },
+        measurementPlan: { status: "locked" as const },
+        metricCatalog: { status: "locked" as const },
+      };
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      return {
+        overviewInterview: { status: "not_started" as const, journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
+        firstValue: { status: "not_defined" as const, journeyId: null },
+        measurementPlan: { status: "locked" as const },
+        metricCatalog: { status: "locked" as const },
+      };
+    }
+
+    // Get setup progress
+    const progress = await ctx.db
+      .query("setupProgress")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    // Get user's journeys
+    const journeys = await ctx.db
+      .query("journeys")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const overviewJourney = journeys.find((j) => j.type === "overview") ?? null;
+    const firstValueJourney = journeys.find((j) => j.type === "first_value") ?? null;
+
+    // Calculate slots completed for overview journey
+    let slotsCompleted = 0;
+    if (overviewJourney) {
+      const stages = await ctx.db
+        .query("stages")
+        .withIndex("by_journey", (q) => q.eq("journeyId", overviewJourney._id))
+        .collect();
+      const filledSlots = new Set(stages.map((s) => s.lifecycleSlot).filter(Boolean));
+      slotsCompleted = filledSlots.size;
+    }
+
+    // Derive overview interview status
+    let overviewStatus: "not_started" | "in_progress" | "complete" = "not_started";
+    if (progress?.status === "completed") {
+      overviewStatus = "complete";
+    } else if (progress?.currentStep === "overview_interview") {
+      overviewStatus = "in_progress";
+    }
+
+    return {
+      overviewInterview: {
+        status: overviewStatus,
+        journeyId: overviewJourney?._id ?? null,
+        slotsCompleted,
+        slotsTotal: 5,
+      },
+      firstValue: {
+        status: firstValueJourney ? ("defined" as const) : ("not_defined" as const),
+        journeyId: firstValueJourney?._id ?? null,
+      },
+      measurementPlan: { status: "locked" as const },
+      metricCatalog: { status: "locked" as const },
+    };
+  },
+});
