@@ -90,3 +90,71 @@ describe("journeys", () => {
     ]);
   });
 });
+
+describe("getOrCreateForSetup", () => {
+  it("creates a new journey when none exists", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "setup-test-user",
+        email: "setup@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "setup-test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|setup-test-user",
+    });
+
+    const journeyId = await asUser.mutation(api.journeys.getOrCreateForSetup, {
+      type: "overview",
+      name: "Overview Journey",
+    });
+
+    expect(journeyId).toBeDefined();
+
+    const journey = await asUser.query(api.journeys.get, { id: journeyId });
+    expect(journey?.name).toBe("Overview Journey");
+    expect(journey?.type).toBe("overview");
+  });
+
+  it("returns existing journey instead of creating duplicate", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "idempotent-test-user",
+        email: "idempotent@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "idempotent-test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|idempotent-test-user",
+    });
+
+    // First call creates
+    const firstId = await asUser.mutation(api.journeys.getOrCreateForSetup, {
+      type: "overview",
+      name: "Overview Journey",
+    });
+
+    // Second call returns same ID
+    const secondId = await asUser.mutation(api.journeys.getOrCreateForSetup, {
+      type: "overview",
+      name: "Overview Journey",
+    });
+
+    expect(secondId).toEqual(firstId);
+
+    // Verify only one journey exists
+    const journeys = await asUser.query(api.journeys.listByUser, {});
+    const overviewJourneys = journeys.filter((j) => j.type === "overview");
+    expect(overviewJourneys).toHaveLength(1);
+  });
+});

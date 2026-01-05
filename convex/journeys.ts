@@ -92,6 +92,48 @@ export const get = query({
   },
 });
 
+// Get or create journey for setup flow (idempotent)
+export const getOrCreateForSetup = mutation({
+  args: {
+    type: v.union(
+      v.literal("overview"),
+      v.literal("first_value"),
+      v.literal("retention"),
+      v.literal("value_outcomes"),
+      v.literal("value_capture"),
+      v.literal("churn")
+    ),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // Check for existing journey of this type
+    const existing = await ctx.db
+      .query("journeys")
+      .withIndex("by_user_and_type", (q) =>
+        q.eq("userId", user._id).eq("type", args.type)
+      )
+      .first();
+
+    if (existing) {
+      return existing._id;
+    }
+
+    // Create new journey
+    const now = Date.now();
+    return await ctx.db.insert("journeys", {
+      userId: user._id,
+      type: args.type,
+      name: args.name,
+      isDefault: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
 // Create a new journey with auto-default logic
 export const create = mutation({
   args: {
