@@ -60,6 +60,53 @@ npm run lint
 
 ---
 
+## Development Workflow
+
+This project uses a three-stage issue pipeline with Claude Code commands.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│   /new-feature ──┐                                                      │
+│   /retro ────────┼──► stage:brainstorm ──► stage:plan ──► stage:ready   │
+│                  │         │                   │              │         │
+│                  │    /brainstorm         /plan-issue    /pick-issue    │
+│                  │                                       run-issue.sh   │
+│                  │                                            │         │
+│                  └────────────────────────────────────────────┘         │
+│                              (retro discovers more issues)              │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Issue Stages
+
+| Stage | Label | Description |
+|-------|-------|-------------|
+| **Brainstorm** | `stage:brainstorm` | Needs design exploration |
+| **Plan** | `stage:plan` | Needs implementation plan |
+| **Ready** | `stage:ready` | Has plan, ready to code |
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/new-feature` | Brainstorm idea → design doc → GitHub issue |
+| `/brainstorm` | Process `stage:brainstorm` queue |
+| `/plan-issue` | Process `stage:plan` queue |
+| `/pick-issue` | Process `stage:ready` queue |
+| `/retro` | Post-implementation analysis |
+
+### Headless Automation
+
+```bash
+./run-issue.sh                    # Single issue
+./run-issue.sh --loop             # Process all ready issues
+./run-issue.sh --random --max 5   # Random 5 issues
+```
+
+---
+
 ## Testing
 
 Follow the testing skill at `.claude/skills/testing.md` for detailed patterns.
