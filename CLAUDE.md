@@ -118,7 +118,9 @@ ROADMAP.md         ← "Where investing?" (periodic)
     ↓
 HYPOTHESES.md      ← "What bets?" (living)
     ↓
-Feature → Issue Pipeline → /retro
+product epic       ← "What tasks test this?" (per hypothesis)
+    ↓
+Epic + Issues → Issue Pipeline → /retro
     ↓
 product iteration  ← "What did we learn?"
 ```
@@ -130,12 +132,13 @@ product iteration  ← "What did we learn?"
 | `product vision` | VISION.md | Rarely (pivots only) |
 | `product roadmap` | ROADMAP.md | Periodic (monthly/quarterly) |
 | `product hypotheses` | HYPOTHESES.md | Constantly (living) |
+| `product epic` | Creates GitHub epic + issues | Per hypothesis |
 | `product iteration` | Updates HYPOTHESES.md | After features |
 
 ### The Flow
 
 1. **Starting:** `product vision` → `product roadmap` → `product hypotheses`
-2. **Day-to-day:** `product hypotheses select` → creates `stage:brainstorm` issue
+2. **Day-to-day:** `product epic` → creates epic + `stage:brainstorm` child issues
 3. **After feature:** `product iteration` → update learnings → next hypothesis
 
 ### Special Labels
