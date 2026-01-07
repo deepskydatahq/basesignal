@@ -107,6 +107,46 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 
 ---
 
+## Product Thinking
+
+Strategic product commands that sit above the development workflow.
+
+```
+VISION.md          ← "What transformation?" (rarely)
+    ↓
+ROADMAP.md         ← "Where investing?" (periodic)
+    ↓
+HYPOTHESES.md      ← "What bets?" (living)
+    ↓
+Feature → Issue Pipeline → /retro
+    ↓
+product iteration  ← "What did we learn?"
+```
+
+### Product Commands
+
+| Command | Document | Updates |
+|---------|----------|---------|
+| `product vision` | VISION.md | Rarely (pivots only) |
+| `product roadmap` | ROADMAP.md | Periodic (monthly/quarterly) |
+| `product hypotheses` | HYPOTHESES.md | Constantly (living) |
+| `product iteration` | Updates HYPOTHESES.md | After features |
+
+### The Flow
+
+1. **Starting:** `product vision` → `product roadmap` → `product hypotheses`
+2. **Day-to-day:** `product hypotheses select` → creates `stage:brainstorm` issue
+3. **After feature:** `product iteration` → update learnings → next hypothesis
+
+### Special Labels
+
+| Label | Purpose |
+|-------|---------|
+| `hypothesis` | Issue tests a product hypothesis |
+| `epic` | Large issue that breaks into children |
+
+---
+
 ## Testing
 
 Follow the testing skill at `.claude/skills/testing.md` for detailed patterns.
