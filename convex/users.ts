@@ -35,6 +35,34 @@ export const createFromWebhook = internalMutation({
   },
 });
 
+// Called by Clerk webhook - updates user profile from webhook payload
+export const updateFromWebhook = internalMutation({
+  args: {
+    clerkId: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+  },
+  handler: async (ctx, { clerkId, email, name, image }) => {
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .first();
+
+    if (!existingUser) {
+      // User doesn't exist - ignore (might have been deleted)
+      return;
+    }
+
+    // Update user profile fields
+    await ctx.db.patch(existingUser._id, {
+      ...(email !== undefined && { email }),
+      ...(name !== undefined && { name }),
+      ...(image !== undefined && { image }),
+    });
+  },
+});
+
 // Get user by email address (for dev reset scripts)
 export const getByEmail = query({
   args: { email: v.string() },
