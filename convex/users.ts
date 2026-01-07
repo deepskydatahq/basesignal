@@ -1,5 +1,39 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+
+// Called by Clerk webhook - creates user from webhook payload
+export const createFromWebhook = internalMutation({
+  args: {
+    clerkId: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+  },
+  handler: async (ctx, { clerkId, email, name, image }) => {
+    // Check if user already exists (idempotent)
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .first();
+
+    if (existingUser) {
+      return existingUser._id;
+    }
+
+    // Create new user
+    const userId = await ctx.db.insert("users", {
+      clerkId,
+      email,
+      name,
+      image,
+      onboardingComplete: false,
+      setupStatus: "not_started",
+      createdAt: Date.now(),
+    });
+
+    return userId;
+  },
+});
 
 // Get user by email address (for dev reset scripts)
 export const getByEmail = query({
