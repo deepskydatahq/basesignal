@@ -27,7 +27,7 @@
 ---
 
 ### H2: Interview Completion
-**Status:** 🟡 Untested (implemented, awaiting user feedback)
+**Status:** 🔵 Testing
 
 **Belief:** We believe users will complete a 15-minute guided interview without dropping off.
 
@@ -38,7 +38,7 @@
 **Investment Area:** Interview Completion
 
 **Evidence:**
-- (none yet)
+- Jan 2026: Epic created (#9) with 7 tasks
 
 **Next Steps:** If validated, proceed to onboard more users. If invalidated, identify friction points and simplify.
 
@@ -100,4 +100,4 @@
 
 ## Next Action
 
-**Get 5 users through the flow.** This single action tests H1, H2, and H3 simultaneously. Prioritize recruiting test users over building new features.
+**Work through epic #9.** Deploy to staging, recruit test users, run sessions. See [Epic: Test H2 - Interview Completion](https://github.com/deepskydatahq/basesignal/issues/9) for task breakdown.
