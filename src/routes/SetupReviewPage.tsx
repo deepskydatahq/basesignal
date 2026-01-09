@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { Button } from "../components/ui/button";
@@ -17,6 +17,27 @@ export default function SetupReviewPage() {
 
   const overviewJourneyId = progress?.overviewJourneyId;
   const hasMeasurementPlan = (measurementEntities?.length ?? 0) > 0;
+
+  const metrics = useQuery(api.metrics.list, {});
+  const generateFromOverview = useMutation(api.metricCatalog.generateFromOverview);
+  const generateFromFirstValue = useMutation(api.metricCatalog.generateFromFirstValue);
+  const [isGeneratingMetrics, setIsGeneratingMetrics] = useState(false);
+
+  const metricsCount = metrics?.length ?? 0;
+  const hasMetrics = metricsCount > 0;
+
+  const handleGenerateMetrics = async () => {
+    if (!overviewJourneyId) return;
+    setIsGeneratingMetrics(true);
+    try {
+      await generateFromOverview({ journeyId: overviewJourneyId });
+      await generateFromFirstValue({ journeyId: overviewJourneyId });
+    } catch (error) {
+      console.error("Failed to generate metrics:", error);
+    } finally {
+      setIsGeneratingMetrics(false);
+    }
+  };
 
   const handleSaveAndComplete = async () => {
     setIsSaving(true);
@@ -131,22 +152,63 @@ export default function SetupReviewPage() {
           </div>
         </Card>
 
-        {/* Metric Catalog - Coming Soon */}
-        <Card className="p-6 bg-gray-50 border-dashed">
+        {/* Metric Catalog */}
+        <Card className={`p-6 ${hasMetrics ? "" : overviewJourneyId ? "" : "bg-gray-50 border-dashed"}`}>
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-gray-400" />
+            <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
+              hasMetrics ? "bg-green-100" : overviewJourneyId ? "bg-amber-100" : "bg-gray-200"
+            }`}>
+              <BarChart3 className={`w-6 h-6 ${
+                hasMetrics ? "text-green-600" : overviewJourneyId ? "text-amber-600" : "text-gray-400"
+              }`} />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-gray-400">Metric Catalog</h3>
-                <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
-                  Coming soon
-                </span>
+                <h3 className={`font-semibold ${hasMetrics || overviewJourneyId ? "text-gray-900" : "text-gray-400"}`}>
+                  Metric Catalog
+                </h3>
+                {hasMetrics ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                    <Check className="w-3 h-3" />
+                    {metricsCount} metrics
+                  </span>
+                ) : overviewJourneyId ? (
+                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    Ready to generate
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
+                    Coming soon
+                  </span>
+                )}
               </div>
-              <p className="text-sm text-gray-400">
-                Key metrics derived from your journey stages.
+              <p className={`text-sm ${hasMetrics || overviewJourneyId ? "text-gray-600" : "text-gray-400"}`}>
+                {hasMetrics
+                  ? "Key metrics derived from your journey stages."
+                  : "Key metrics derived from your journey stages."}
               </p>
+              {overviewJourneyId && !hasMetrics && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={handleGenerateMetrics}
+                  disabled={isGeneratingMetrics}
+                >
+                  {isGeneratingMetrics ? "Generating..." : "Generate"}
+                  {!isGeneratingMetrics && <ChevronRight className="w-4 h-4 ml-1" />}
+                </Button>
+              )}
+              {hasMetrics && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => navigate("/metric-catalog")}
+                >
+                  View
+                </Button>
+              )}
             </div>
           </div>
         </Card>
