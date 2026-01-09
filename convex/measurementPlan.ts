@@ -977,3 +977,45 @@ export const importFromJourneyIncremental = mutation({
     };
   },
 });
+
+// Delete all measurement plan data for current user (for regeneration)
+export const deleteAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // Delete all properties
+    const properties = await ctx.db
+      .query("measurementProperties")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const p of properties) {
+      await ctx.db.delete(p._id);
+    }
+
+    // Delete all activities
+    const activities = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const a of activities) {
+      await ctx.db.delete(a._id);
+    }
+
+    // Delete all entities
+    const entities = await ctx.db
+      .query("measurementEntities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    for (const e of entities) {
+      await ctx.db.delete(e._id);
+    }
+
+    return {
+      deletedEntities: entities.length,
+      deletedActivities: activities.length,
+      deletedProperties: properties.length,
+    };
+  },
+});

@@ -163,3 +163,23 @@ export const generateFromFirstValue = mutation({
     }
   },
 });
+
+// Delete all metrics for current user (for regeneration)
+export const deleteAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    const metrics = await ctx.db
+      .query("metrics")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const m of metrics) {
+      await ctx.db.delete(m._id);
+    }
+
+    return { deletedMetrics: metrics.length };
+  },
+});
