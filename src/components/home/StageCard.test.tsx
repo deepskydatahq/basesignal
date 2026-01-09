@@ -84,3 +84,33 @@ test("does not call onClick for locked status", async () => {
   // Card should not be interactive
   expect(onClick).not.toHaveBeenCalled();
 });
+
+test("renders badge text when provided", () => {
+  setup({
+    title: "Metric Catalog",
+    status: "in_progress",
+    badgeText: "5/8 metrics",
+  });
+
+  expect(screen.getByText("5/8 metrics")).toBeInTheDocument();
+});
+
+test("does not render badge when not provided", () => {
+  setup({
+    title: "Metric Catalog",
+    status: "in_progress",
+  });
+
+  // Should not have badge text, but still has title
+  expect(screen.getByText("Metric Catalog")).toBeInTheDocument();
+});
+
+test("renders badge text for complete status", () => {
+  setup({
+    title: "Metric Catalog",
+    status: "complete",
+    badgeText: "8 metrics",
+  });
+
+  expect(screen.getByText("8 metrics")).toBeInTheDocument();
+});

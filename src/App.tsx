@@ -19,6 +19,7 @@ import SyntheticEventPage from './routes/SyntheticEventPage'
 import ValueRulesPage from './routes/ValueRulesPage'
 import JourneysListPage from './routes/JourneysListPage'
 import JourneyEditorPage from './routes/JourneyEditorPage'
+import MetricCatalogPage from './routes/MetricCatalogPage'
 import { SetupResumeScreen } from './components/setup/SetupResumeScreen'
 import { useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
@@ -135,6 +136,7 @@ function AppRoutes() {
         <Route path="sources/amplitude/:connectionId/value-rules" element={<ValueRulesPage />} />
         <Route path="journeys" element={<JourneysListPage />} />
         <Route path="journeys/:journeyId" element={<JourneyEditorPage />} />
+        <Route path="metric-catalog" element={<MetricCatalogPage />} />
       </Route>
     </Routes>
   );

@@ -252,7 +252,7 @@ export const foundationStatus = query({
         overviewInterview: { status: "not_started" as const, journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
         firstValue: { status: "not_defined" as const, journeyId: null },
         measurementPlan: { status: "locked" as const },
-        metricCatalog: { status: "locked" as const },
+        metricCatalog: { status: "locked" as const, metricsCount: 0 },
       };
     }
 
@@ -266,7 +266,7 @@ export const foundationStatus = query({
         overviewInterview: { status: "not_started" as const, journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
         firstValue: { status: "not_defined" as const, journeyId: null },
         measurementPlan: { status: "locked" as const },
-        metricCatalog: { status: "locked" as const },
+        metricCatalog: { status: "locked" as const, metricsCount: 0 },
       };
     }
 
@@ -298,10 +298,25 @@ export const foundationStatus = query({
 
     // Derive overview interview status
     let overviewStatus: "not_started" | "in_progress" | "complete" = "not_started";
-    if (progress?.status === "completed") {
+    const overviewComplete = progress?.status === "completed";
+    if (overviewComplete) {
       overviewStatus = "complete";
     } else if (progress?.currentStep === "overview_interview") {
       overviewStatus = "in_progress";
+    }
+
+    // Calculate metric catalog status
+    const metrics = await ctx.db
+      .query("metrics")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const metricsCount = metrics.length;
+
+    let metricCatalogStatus: "locked" | "in_progress" | "complete" = "locked";
+    if (metricsCount > 0) {
+      metricCatalogStatus = "complete";
+    } else if (overviewComplete) {
+      metricCatalogStatus = "in_progress";
     }
 
     return {
@@ -316,7 +331,7 @@ export const foundationStatus = query({
         journeyId: firstValueJourney?._id ?? null,
       },
       measurementPlan: { status: "locked" as const },
-      metricCatalog: { status: "locked" as const },
+      metricCatalog: { status: metricCatalogStatus, metricsCount },
     };
   },
 });

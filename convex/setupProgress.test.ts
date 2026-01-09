@@ -219,4 +219,153 @@ describe("setupProgress.foundationStatus", () => {
     expect(status.overviewInterview.slotsCompleted).toBe(2);
     expect(status.overviewInterview.slotsTotal).toBe(5);
   });
+
+  it("returns locked for metricCatalog when overview is not complete", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        clerkId: "test-user",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|test-user",
+    });
+
+    const status = await asUser.query(api.setupProgress.foundationStatus, {});
+
+    expect(status.metricCatalog.status).toBe("locked");
+    expect(status.metricCatalog.metricsCount).toBe(0);
+  });
+
+  it("returns in_progress for metricCatalog when overview complete but no metrics", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "My Overview",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("setupProgress", {
+        userId,
+        currentStep: "review_save",
+        status: "completed",
+        stepsCompleted: ["onboarding", "overview_interview", "review_save"],
+        startedAt: Date.now(),
+        lastActiveAt: Date.now(),
+        completedAt: Date.now(),
+        remindersSent: 0,
+        overviewJourneyId: journeyId,
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|test-user",
+    });
+
+    const status = await asUser.query(api.setupProgress.foundationStatus, {});
+
+    expect(status.metricCatalog.status).toBe("in_progress");
+    expect(status.metricCatalog.metricsCount).toBe(0);
+  });
+
+  it("returns complete for metricCatalog when metrics exist", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "My Overview",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("setupProgress", {
+        userId,
+        currentStep: "review_save",
+        status: "completed",
+        stepsCompleted: ["onboarding", "overview_interview", "review_save"],
+        startedAt: Date.now(),
+        lastActiveAt: Date.now(),
+        completedAt: Date.now(),
+        remindersSent: 0,
+        overviewJourneyId: journeyId,
+      });
+    });
+
+    // Add some metrics
+    await t.run(async (ctx) => {
+      await ctx.db.insert("metrics", {
+        userId,
+        name: "New Users",
+        definition: "Test",
+        formula: "Test",
+        whyItMatters: "Test",
+        howToImprove: "Test",
+        category: "reach",
+        metricType: "default",
+        templateKey: "new_users",
+        order: 1,
+        createdAt: Date.now(),
+      });
+      await ctx.db.insert("metrics", {
+        userId,
+        name: "DAU",
+        definition: "Test",
+        formula: "Test",
+        whyItMatters: "Test",
+        howToImprove: "Test",
+        category: "engagement",
+        metricType: "default",
+        templateKey: "dau",
+        order: 2,
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|test-user",
+    });
+
+    const status = await asUser.query(api.setupProgress.foundationStatus, {});
+
+    expect(status.metricCatalog.status).toBe("complete");
+    expect(status.metricCatalog.metricsCount).toBe(2);
+  });
 });

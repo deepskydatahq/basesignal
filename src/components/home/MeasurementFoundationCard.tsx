@@ -15,7 +15,10 @@ interface FoundationStatus {
     journeyId: Id<"journeys"> | null;
   };
   measurementPlan: { status: "locked" };
-  metricCatalog: { status: "locked" };
+  metricCatalog: {
+    status: "locked" | "in_progress" | "complete";
+    metricsCount: number;
+  };
 }
 
 interface MeasurementFoundationCardProps {
@@ -41,11 +44,24 @@ export function MeasurementFoundationCard({ status }: MeasurementFoundationCardP
     }
   };
 
+  const handleMetricCatalogClick = () => {
+    navigate("/metric-catalog");
+  };
+
   // Map overview status to StageStatus
   const overviewStageStatus: StageStatus = status.overviewInterview.status;
 
   // Map firstValue status to StageStatus
   const firstValueStageStatus: StageStatus = status.firstValue.status;
+
+  // Map metricCatalog status to StageStatus
+  const metricCatalogStageStatus: StageStatus = status.metricCatalog.status;
+
+  // Generate badge text for metric catalog
+  const metricCatalogBadgeText =
+    status.metricCatalog.metricsCount > 0
+      ? `${status.metricCatalog.metricsCount} metrics`
+      : undefined;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -89,7 +105,9 @@ export function MeasurementFoundationCard({ status }: MeasurementFoundationCardP
           title="Metric Catalog"
           description="Generate your product metrics"
           icon="BarChart3"
-          status="locked"
+          status={metricCatalogStageStatus}
+          badgeText={metricCatalogBadgeText}
+          onClick={status.metricCatalog.status !== "locked" ? handleMetricCatalogClick : undefined}
         />
       </div>
     </div>

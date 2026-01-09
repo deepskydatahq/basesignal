@@ -321,4 +321,28 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_session", ["sessionId"]),
+
+  metrics: defineTable({
+    // Identity - using userId for now (products table doesn't exist yet)
+    userId: v.id("users"),
+
+    // Content
+    name: v.string(),                    // "Activation Rate"
+    definition: v.string(),              // Plain language, personalized
+    formula: v.string(),                 // Human-readable, with activity names
+    whyItMatters: v.string(),            // Business context
+    howToImprove: v.string(),            // Actionable levers
+
+    // Categorization (for UI badges)
+    category: v.string(),                // "reach" | "engagement" | "value_delivery" | "value_capture"
+
+    // Metadata
+    metricType: v.string(),              // "default" | "generated"
+    templateKey: v.optional(v.string()), // "activation_rate" - links to template
+    relatedActivityId: v.optional(v.id("stages")),  // Optional journey link
+    order: v.number(),                   // Display sequence
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_order", ["userId", "order"]),
 });

@@ -19,6 +19,7 @@ interface StageCardProps {
   icon: IconName;
   status: StageStatus;
   progressText?: string;
+  badgeText?: string;
   onClick?: () => void;
 }
 
@@ -75,6 +76,7 @@ export function StageCard({
   icon,
   status,
   progressText,
+  badgeText,
   onClick,
 }: StageCardProps) {
   const Icon = ICONS[icon];
@@ -92,7 +94,12 @@ export function StageCard({
       {/* Header row: icon + badge */}
       <div className="flex items-center justify-between mb-3">
         <Icon className="w-5 h-5 text-gray-600" />
-        {config.badge}
+        <div className="flex items-center gap-2">
+          {badgeText && (
+            <span className="text-xs text-gray-500">{badgeText}</span>
+          )}
+          {config.badge}
+        </div>
       </div>
 
       {/* Title */}

@@ -27,7 +27,7 @@ function setup(status: Partial<FoundationStatus> = {}) {
     overviewInterview: { status: "not_started", journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
     firstValue: { status: "not_defined", journeyId: null },
     measurementPlan: { status: "locked" },
-    metricCatalog: { status: "locked" },
+    metricCatalog: { status: "locked", metricsCount: 0 },
     ...status,
   };
   render(
@@ -95,6 +95,62 @@ test("navigates to journey when clicking View on complete overview", async () =>
 test("shows Coming soon for locked stages", () => {
   setup();
 
+  const comingSoonTexts = screen.getAllByText(/coming soon/i);
+  expect(comingSoonTexts).toHaveLength(2); // Measurement Plan + Metric Catalog
+});
+
+test("navigates to metric-catalog when clicking on in_progress metric catalog", async () => {
+  const { user } = setup({
+    overviewInterview: { status: "complete", journeyId: "journey123" as Id<"journeys">, slotsCompleted: 5, slotsTotal: 5 },
+    metricCatalog: { status: "in_progress", metricsCount: 0 },
+  });
+
+  const continueButtons = screen.getAllByRole("button", { name: /continue/i });
+  // The metric catalog Continue button
+  await user.click(continueButtons[0]);
+
+  expect(mockNavigate).toHaveBeenCalledWith("/metric-catalog");
+});
+
+test("navigates to metric-catalog when clicking on complete metric catalog", async () => {
+  const { user } = setup({
+    overviewInterview: { status: "complete", journeyId: "journey123" as Id<"journeys">, slotsCompleted: 5, slotsTotal: 5 },
+    metricCatalog: { status: "complete", metricsCount: 8 },
+  });
+
+  // There should be two View buttons: one for overview and one for metric catalog
+  const viewButtons = screen.getAllByRole("button", { name: /view/i });
+  // Second view button should be for metric catalog (first is overview)
+  await user.click(viewButtons[1]);
+
+  expect(mockNavigate).toHaveBeenCalledWith("/metric-catalog");
+});
+
+test("shows badge text for in_progress metric catalog", () => {
+  setup({
+    overviewInterview: { status: "complete", journeyId: "journey123" as Id<"journeys">, slotsCompleted: 5, slotsTotal: 5 },
+    metricCatalog: { status: "in_progress", metricsCount: 5 },
+  });
+
+  expect(screen.getByText("5 metrics")).toBeInTheDocument();
+});
+
+test("shows badge text for complete metric catalog", () => {
+  setup({
+    overviewInterview: { status: "complete", journeyId: "journey123" as Id<"journeys">, slotsCompleted: 5, slotsTotal: 5 },
+    metricCatalog: { status: "complete", metricsCount: 8 },
+  });
+
+  expect(screen.getByText("8 metrics")).toBeInTheDocument();
+});
+
+test("metric catalog card is locked when overview not complete", () => {
+  setup({
+    overviewInterview: { status: "in_progress", journeyId: null, slotsCompleted: 2, slotsTotal: 5 },
+    metricCatalog: { status: "locked", metricsCount: 0 },
+  });
+
+  // Should show "Coming soon" for locked metric catalog
   const comingSoonTexts = screen.getAllByText(/coming soon/i);
   expect(comingSoonTexts).toHaveLength(2); // Measurement Plan + Metric Catalog
 });
