@@ -295,6 +295,29 @@ export default defineSchema({
     .index("by_from", ["fromStageId"])
     .index("by_to", ["toStageId"]),
 
+  measurementEntities: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    suggestedFrom: v.optional(v.string()), // "overview_interview", "first_value", "manual"
+    createdAt: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_user_and_name", ["userId", "name"]),
+
+  measurementActivities: defineTable({
+    userId: v.id("users"),
+    entityId: v.id("measurementEntities"),
+    name: v.string(),           // Full "Account Created" format
+    action: v.string(),         // Just the action part: "Created"
+    description: v.optional(v.string()),
+    lifecycleSlot: v.optional(v.string()), // account_creation, activation, core_usage, revenue, churn
+    isFirstValue: v.boolean(),  // Marks the activation moment
+    suggestedFrom: v.optional(v.string()), // "overview_interview", "first_value", "manual"
+    createdAt: v.number(),
+  }).index("by_user", ["userId"])
+    .index("by_entity", ["entityId"])
+    .index("by_user_and_name", ["userId", "name"]),
+
   interviewSessions: defineTable({
     journeyId: v.id("journeys"),
     interviewType: v.optional(v.string()), // "first_value" | "retention" | "value_outcomes" | "value_capture" | "churn"
@@ -345,4 +368,17 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_and_order", ["userId", "order"]),
+
+  measurementProperties: defineTable({
+    userId: v.id("users"),
+    entityId: v.id("measurementEntities"),
+    name: v.string(),
+    dataType: v.string(), // "string" | "number" | "boolean" | "timestamp"
+    description: v.optional(v.string()),
+    isRequired: v.boolean(),
+    suggestedFrom: v.optional(v.string()), // "template" | "llm" | "manual"
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_entity", ["entityId"]),
 });

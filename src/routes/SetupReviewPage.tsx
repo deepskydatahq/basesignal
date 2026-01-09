@@ -4,18 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { Map, FileText, BarChart3, Check } from "lucide-react";
+import { Map, FileText, BarChart3, Check, ChevronRight } from "lucide-react";
+import { GeneratePlanModal } from "../components/setup/GeneratePlanModal";
 
 export default function SetupReviewPage() {
   const navigate = useNavigate();
   const user = useQuery(api.users.current);
-  // TODO: Will use these when Overview Journey interview creates an actual journey
-  // const progress = useQuery(api.setupProgress.current);
-  // const completeSetup = useMutation(api.setupProgress.complete);
+  const progress = useQuery(api.setupProgress.current);
+  const measurementEntities = useQuery(api.measurementPlan.listEntities);
   const [isSaving, setIsSaving] = useState(false);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
 
-  // TODO: Get actual journey from progress.overviewJourneyId
-  // For now, we'll create a placeholder journey
+  const overviewJourneyId = progress?.overviewJourneyId;
+  const hasMeasurementPlan = (measurementEntities?.length ?? 0) > 0;
 
   const handleSaveAndComplete = async () => {
     setIsSaving(true);
@@ -70,22 +71,62 @@ export default function SetupReviewPage() {
           </div>
         </Card>
 
-        {/* Measurement Plan - Coming Soon */}
-        <Card className="p-6 bg-gray-50 border-dashed">
+        {/* Measurement Plan */}
+        <Card className={`p-6 ${hasMeasurementPlan ? "" : overviewJourneyId ? "" : "bg-gray-50 border-dashed"}`}>
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-gray-400" />
+            <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
+              hasMeasurementPlan ? "bg-green-100" : overviewJourneyId ? "bg-purple-100" : "bg-gray-200"
+            }`}>
+              <FileText className={`w-6 h-6 ${
+                hasMeasurementPlan ? "text-green-600" : overviewJourneyId ? "text-purple-600" : "text-gray-400"
+              }`} />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-gray-400">Measurement Plan</h3>
-                <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
-                  Coming soon
-                </span>
+                <h3 className={`font-semibold ${hasMeasurementPlan || overviewJourneyId ? "text-gray-900" : "text-gray-400"}`}>
+                  Measurement Plan
+                </h3>
+                {hasMeasurementPlan ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                    <Check className="w-3 h-3" />
+                    {measurementEntities?.length} entities
+                  </span>
+                ) : overviewJourneyId ? (
+                  <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                    Ready to generate
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">
+                    Coming soon
+                  </span>
+                )}
               </div>
-              <p className="text-sm text-gray-400">
-                Tracking recommendations based on your journey.
+              <p className={`text-sm ${hasMeasurementPlan || overviewJourneyId ? "text-gray-600" : "text-gray-400"}`}>
+                {hasMeasurementPlan
+                  ? "Entities and activities extracted from your journey."
+                  : "Tracking recommendations based on your journey."}
               </p>
+              {overviewJourneyId && !hasMeasurementPlan && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => setShowGenerateModal(true)}
+                >
+                  Generate
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
+              {hasMeasurementPlan && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => navigate("/measurement-plan")}
+                >
+                  View
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -121,6 +162,16 @@ export default function SetupReviewPage() {
           {isSaving ? "Saving..." : "Save & Complete Setup"}
         </Button>
       </div>
+
+      {/* Generate Measurement Plan Modal */}
+      {overviewJourneyId && (
+        <GeneratePlanModal
+          isOpen={showGenerateModal}
+          onClose={() => setShowGenerateModal(false)}
+          journeyId={overviewJourneyId}
+          onComplete={() => setShowGenerateModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -368,4 +368,139 @@ describe("setupProgress.foundationStatus", () => {
     expect(status.metricCatalog.status).toBe("complete");
     expect(status.metricCatalog.metricsCount).toBe(2);
   });
+
+  it("returns locked for measurementPlan when overview is not complete", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("users", {
+        clerkId: "test-user",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|test-user",
+    });
+
+    const status = await asUser.query(api.setupProgress.foundationStatus, {});
+
+    expect(status.measurementPlan.status).toBe("locked");
+    expect(status.measurementPlan.entitiesCount).toBe(0);
+  });
+
+  it("returns available for measurementPlan when overview complete but no entities", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "My Overview",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("setupProgress", {
+        userId,
+        currentStep: "review_save",
+        status: "completed",
+        stepsCompleted: ["onboarding", "overview_interview", "review_save"],
+        startedAt: Date.now(),
+        lastActiveAt: Date.now(),
+        completedAt: Date.now(),
+        remindersSent: 0,
+        overviewJourneyId: journeyId,
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|test-user",
+    });
+
+    const status = await asUser.query(api.setupProgress.foundationStatus, {});
+
+    expect(status.measurementPlan.status).toBe("available");
+    expect(status.measurementPlan.entitiesCount).toBe(0);
+  });
+
+  it("returns ready for measurementPlan when entities exist", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "My Overview",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("setupProgress", {
+        userId,
+        currentStep: "review_save",
+        status: "completed",
+        stepsCompleted: ["onboarding", "overview_interview", "review_save"],
+        startedAt: Date.now(),
+        lastActiveAt: Date.now(),
+        completedAt: Date.now(),
+        remindersSent: 0,
+        overviewJourneyId: journeyId,
+      });
+    });
+
+    // Add measurement entities
+    await t.run(async (ctx) => {
+      await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Account",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+      await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Project",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "test-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|test-user",
+    });
+
+    const status = await asUser.query(api.setupProgress.foundationStatus, {});
+
+    expect(status.measurementPlan.status).toBe("ready");
+    expect(status.measurementPlan.entitiesCount).toBe(2);
+  });
 });

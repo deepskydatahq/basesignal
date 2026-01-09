@@ -251,7 +251,7 @@ export const foundationStatus = query({
       return {
         overviewInterview: { status: "not_started" as const, journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
         firstValue: { status: "not_defined" as const, journeyId: null },
-        measurementPlan: { status: "locked" as const },
+        measurementPlan: { status: "locked" as const, entitiesCount: 0 },
         metricCatalog: { status: "locked" as const, metricsCount: 0 },
       };
     }
@@ -265,7 +265,7 @@ export const foundationStatus = query({
       return {
         overviewInterview: { status: "not_started" as const, journeyId: null, slotsCompleted: 0, slotsTotal: 5 },
         firstValue: { status: "not_defined" as const, journeyId: null },
-        measurementPlan: { status: "locked" as const },
+        measurementPlan: { status: "locked" as const, entitiesCount: 0 },
         metricCatalog: { status: "locked" as const, metricsCount: 0 },
       };
     }
@@ -305,6 +305,20 @@ export const foundationStatus = query({
       overviewStatus = "in_progress";
     }
 
+    // Calculate measurement plan status
+    const measurementEntities = await ctx.db
+      .query("measurementEntities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+    const entitiesCount = measurementEntities.length;
+
+    let measurementPlanStatus: "locked" | "available" | "ready" = "locked";
+    if (entitiesCount > 0) {
+      measurementPlanStatus = "ready";
+    } else if (overviewComplete) {
+      measurementPlanStatus = "available";
+    }
+
     // Calculate metric catalog status
     const metrics = await ctx.db
       .query("metrics")
@@ -330,7 +344,7 @@ export const foundationStatus = query({
         status: firstValueJourney ? ("defined" as const) : ("not_defined" as const),
         journeyId: firstValueJourney?._id ?? null,
       },
-      measurementPlan: { status: "locked" as const },
+      measurementPlan: { status: measurementPlanStatus, entitiesCount },
       metricCatalog: { status: metricCatalogStatus, metricsCount },
     };
   },
