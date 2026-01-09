@@ -380,5 +380,6 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_entity", ["entityId"]),
+    .index("by_entity", ["entityId"])
+    .index("by_entity_and_name", ["entityId", "name"]),
 });
