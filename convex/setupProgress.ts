@@ -1,4 +1,5 @@
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 
 // Get current user's setup progress
@@ -208,6 +209,12 @@ export const complete = mutation({
     await ctx.db.patch(user._id, {
       setupStatus: "complete",
       setupCompletedAt: now,
+    });
+
+    // Auto-generate measurement plan from journey
+    await ctx.runMutation(internal.measurementPlan.generateFromJourneyInternal, {
+      userId: user._id,
+      journeyId: args.overviewJourneyId,
     });
   },
 });

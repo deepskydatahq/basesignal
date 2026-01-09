@@ -3,6 +3,48 @@ import { describe, it, expect } from "vitest";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
+// Helper to set up user with journey for complete mutation tests
+async function setupUserWithJourney(t: ReturnType<typeof convexTest>) {
+  const userId = await t.run(async (ctx) => {
+    return await ctx.db.insert("users", {
+      clerkId: "test-user",
+      email: "test@example.com",
+      createdAt: Date.now(),
+    });
+  });
+
+  const asUser = t.withIdentity({
+    subject: "test-user",
+    issuer: "https://clerk.test",
+    tokenIdentifier: "https://clerk.test|test-user",
+  });
+
+  // Start setup
+  await asUser.mutation(api.setupProgress.start, {});
+
+  // Create overview journey with stages
+  const journeyId = await asUser.mutation(api.journeys.create, {
+    type: "overview",
+    name: "Overview Journey",
+  });
+
+  await t.run(async (ctx) => {
+    await ctx.db.insert("stages", {
+      journeyId,
+      name: "Account Created",
+      type: "activity",
+      entity: "Account",
+      action: "Created",
+      lifecycleSlot: "account_creation",
+      position: { x: 100, y: 100 },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+
+  return { userId, asUser, journeyId };
+}
+
 describe("setupProgress.foundationStatus", () => {
   it("returns not_started status when no setup progress exists", async () => {
     const t = convexTest(schema);
@@ -502,5 +544,22 @@ describe("setupProgress.foundationStatus", () => {
 
     expect(status.measurementPlan.status).toBe("ready");
     expect(status.measurementPlan.entitiesCount).toBe(2);
+  });
+});
+
+describe("setupProgress.complete", () => {
+  it("auto-generates measurement plan on completion", async () => {
+    const t = convexTest(schema);
+    const { asUser, journeyId } = await setupUserWithJourney(t);
+
+    // Complete setup
+    await asUser.mutation(api.setupProgress.complete, {
+      overviewJourneyId: journeyId,
+    });
+
+    // Verify measurement plan was auto-generated
+    const entities = await asUser.query(api.measurementPlan.listEntities);
+    expect(entities.length).toBeGreaterThan(0);
+    expect(entities.map((e) => e.name)).toContain("Account");
   });
 });
