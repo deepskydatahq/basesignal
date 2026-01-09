@@ -63,6 +63,7 @@ export function AddEntityDialog({
       onSuccess?.();
       onClose();
     } catch (err) {
+      console.error("Failed to create entity:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create entity";
       setError(errorMessage);
