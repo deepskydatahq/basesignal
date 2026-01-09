@@ -1,0 +1,197 @@
+import { expect, test, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import MeasurementPlanPage from "./MeasurementPlanPage";
+import type { Id } from "../../convex/_generated/dataModel";
+
+// Mock data that can be changed per test
+let mockGetFullPlan: unknown = [];
+let mockListEntities: unknown = [];
+
+// Track query call count to return correct mock
+let queryCallCount = 0;
+
+vi.mock("convex/react", () => ({
+  useQuery: () => {
+    queryCallCount++;
+    // First call is getFullPlan, second call is listEntities
+    if (queryCallCount === 1) {
+      return mockGetFullPlan;
+    }
+    if (queryCallCount === 2) {
+      return mockListEntities;
+    }
+    // Return undefined for any other queries
+    return undefined;
+  },
+  useMutation: () => vi.fn(),
+}));
+
+// Mock the api import
+vi.mock("../../convex/_generated/api", () => ({
+  api: {
+    measurementPlan: {
+      getFullPlan: "measurementPlan:getFullPlan",
+      listEntities: "measurementPlan:listEntities",
+      createEntity: "measurementPlan:createEntity",
+      createActivity: "measurementPlan:createActivity",
+      updateEntity: "measurementPlan:updateEntity",
+      deleteEntity: "measurementPlan:deleteEntity",
+      updateProperty: "measurementPlan:updateProperty",
+      deleteProperty: "measurementPlan:deleteProperty",
+      computeJourneyDiff: "measurementPlan:computeJourneyDiff",
+      importFromJourneyIncremental: "measurementPlan:importFromJourneyIncremental",
+    },
+    journeys: {
+      listByUser: "journeys:listByUser",
+      get: "journeys:get",
+    },
+  },
+}));
+
+// Mock child components to simplify testing
+vi.mock("@/components/measurement/ImportFromJourneyModal", () => ({
+  ImportFromJourneyModal: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="import-modal">Import Modal</div> : null,
+}));
+
+vi.mock("@/components/measurement/AddPropertyDialog", () => ({
+  AddPropertyDialog: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="add-property-dialog">Add Property Dialog</div> : null,
+}));
+
+vi.mock("@/components/measurement/AddActivityModal", () => ({
+  AddActivityModal: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="add-activity-modal">Add Activity Modal</div> : null,
+}));
+
+vi.mock("@/components/measurement/EditActivityModal", () => ({
+  EditActivityModal: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="edit-activity-modal">Edit Activity Modal</div> : null,
+}));
+
+vi.mock("@/components/measurement/AddEntityDialog", () => ({
+  AddEntityDialog: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="add-entity-dialog">Add Entity Dialog</div> : null,
+}));
+
+function setup() {
+  render(
+    <MemoryRouter>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+}
+
+beforeEach(() => {
+  queryCallCount = 0;
+  mockGetFullPlan = [];
+  mockListEntities = [];
+});
+
+test("renders page title", () => {
+  setup();
+  expect(
+    screen.getByRole("heading", { level: 1, name: /measurement plan/i })
+  ).toBeInTheDocument();
+});
+
+test("shows loading state when data is undefined", () => {
+  mockGetFullPlan = undefined;
+  setup();
+  expect(screen.getByText(/loading/i)).toBeInTheDocument();
+});
+
+test("shows empty state when no entities", () => {
+  // mockGetFullPlan is already [] by default from beforeEach
+  setup();
+  expect(screen.getByText(/no measurement plan yet/i)).toBeInTheDocument();
+});
+
+test("renders entity cards when data exists", () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [],
+      properties: [],
+    },
+    {
+      entity: {
+        _id: "e2" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "User",
+        createdAt: Date.now(),
+      },
+      activities: [],
+      properties: [],
+    },
+  ];
+
+  setup();
+
+  expect(screen.getByText("Account")).toBeInTheDocument();
+  expect(screen.getByText("User")).toBeInTheDocument();
+});
+
+test("shows activity and property counts on entity cards", () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          name: "Account Created",
+        },
+        {
+          _id: "a2" as Id<"measurementActivities">,
+          name: "Account Activated",
+        },
+      ],
+      properties: [
+        {
+          _id: "p1" as Id<"measurementProperties">,
+          name: "plan_type",
+        },
+      ],
+    },
+  ];
+
+  setup();
+
+  expect(screen.getByText("2 activities")).toBeInTheDocument();
+  expect(screen.getByText("1 property")).toBeInTheDocument();
+});
+
+test("shows Add Entity button", () => {
+  setup();
+  expect(
+    screen.getByRole("button", { name: /add entity/i })
+  ).toBeInTheDocument();
+});
+
+test("shows Add Activity button", () => {
+  setup();
+  expect(
+    screen.getByRole("button", { name: /add activity/i })
+  ).toBeInTheDocument();
+});
+
+test("shows Import from Journey buttons", () => {
+  setup();
+  // There are two Import from Journey buttons: one in header, one in empty state
+  const buttons = screen.getAllByRole("button", { name: /import from journey/i });
+  expect(buttons.length).toBeGreaterThanOrEqual(1);
+});
