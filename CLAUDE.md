@@ -70,11 +70,13 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 │   /new-feature ──┐                                                      │
 │   /retro ────────┼──► stage:brainstorm ──► stage:plan ──► stage:ready   │
 │                  │         │                   │              │         │
-│                  │    /brainstorm         /plan-issue    /pick-issue    │
-│                  │                                       run-issue.sh   │
+│                  │  /brainstorm-issue     /plan-issue    /pick-issue    │
+│                  │                       plan-issues.sh   run-issue.sh  │
 │                  │                                            │         │
 │                  └────────────────────────────────────────────┘         │
 │                              (retro discovers more issues)              │
+│                                                                         │
+│   /brainstorm-epics ──► product-epic ──► stage:brainstorm (children)    │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -92,7 +94,8 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 | Command | Description |
 |---------|-------------|
 | `/new-feature` | Brainstorm idea → design doc → GitHub issue |
-| `/brainstorm` | Process `stage:brainstorm` queue |
+| `/brainstorm-epics` | Generate epic candidates from vision + roadmap |
+| `/brainstorm-issue` | Process `stage:brainstorm` queue |
 | `/plan-issue` | Process `stage:plan` queue |
 | `/pick-issue` | Process `stage:ready` queue |
 | `/retro` | Post-implementation analysis |
@@ -100,10 +103,18 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 ### Headless Automation
 
 ```bash
-./run-issue.sh                    # Single issue
-./run-issue.sh --loop             # Process all ready issues
-./run-issue.sh --random --max 5   # Random 5 issues
+# Plan issues (stage:plan → stage:ready)
+./plan-issues.sh                    # Single issue
+./plan-issues.sh --loop             # Process all plan issues
+./plan-issues.sh --max 5            # Limit to 5 issues
+
+# Implement issues (stage:ready → done)
+./run-issue.sh                      # Single issue
+./run-issue.sh --loop               # Process all ready issues
+./run-issue.sh --random --max 5     # Random 5 issues
 ```
+
+Both scripts support `--continue-on-error` to keep going if an issue fails.
 
 ---
 
