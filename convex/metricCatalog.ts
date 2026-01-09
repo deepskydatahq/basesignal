@@ -16,6 +16,80 @@ async function getCurrentUser(ctx: MutationCtx) {
   return user;
 }
 
+// Generate overview metrics (New Users, MAU, DAU, DAU/MAU, 7-Day Retention, Core Action Frequency)
+export const generateFromOverview = mutation({
+  args: { journeyId: v.id("journeys") },
+  handler: async (ctx, { journeyId }) => {
+    // 1. Get authenticated user
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    // 2. Get the overview journey
+    const journey = await ctx.db.get(journeyId);
+    if (!journey) throw new Error("Journey not found");
+    if (journey.userId !== user._id) throw new Error("Not authorized");
+
+    // 3. Get stages for this journey
+    const stages = await ctx.db
+      .query("stages")
+      .withIndex("by_journey", (q) => q.eq("journeyId", journeyId))
+      .collect();
+
+    // 4. Find core_usage stage for {{coreAction}} slot (with fallback)
+    const coreUsageStage = stages.find((s) => s.lifecycleSlot === "core_usage");
+    const coreAction = coreUsageStage?.name ?? "Core Action";
+
+    // 5. Get existing metrics to check for duplicates
+    const existingMetrics = await ctx.db
+      .query("metrics")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const existingTemplateKeys = new Set(
+      existingMetrics.map((m) => m.templateKey).filter(Boolean)
+    );
+
+    // 6. Get overview templates
+    const overviewTemplates = getTemplatesByPhase("overview");
+
+    // 7. Generate metrics that don't already exist
+    let order = 1;
+    const now = Date.now();
+    let created = 0;
+    let skipped = 0;
+
+    for (const template of overviewTemplates) {
+      // Skip if already generated
+      if (existingTemplateKeys.has(template.key)) {
+        skipped++;
+        continue;
+      }
+
+      // Interpolate coreAction into template (only core_action_frequency uses it currently)
+      const interpolate = (text: string) =>
+        text.replace(/\{\{coreAction\}\}/g, coreAction);
+
+      await ctx.db.insert("metrics", {
+        userId: user._id,
+        name: template.name,
+        definition: interpolate(template.definition),
+        formula: interpolate(template.formula),
+        whyItMatters: interpolate(template.whyItMatters),
+        howToImprove: interpolate(template.howToImprove),
+        category: template.category,
+        metricType: "generated",
+        templateKey: template.key,
+        relatedActivityId: coreUsageStage?._id,
+        order: order++,
+        createdAt: now,
+      });
+      created++;
+    }
+
+    return { created, skipped };
+  },
+});
+
 // Generate first_value metrics (Activation Rate, Time to First Value)
 export const generateFromFirstValue = mutation({
   args: { journeyId: v.id("journeys") },

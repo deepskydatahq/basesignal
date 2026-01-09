@@ -1,6 +1,68 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { INTERVIEW_TYPES, type InterviewType, type InterviewStatus, INTERVIEW_TYPE_ORDER } from "./interviewTypes";
+import { getTemplatesByPhase } from "../src/shared/metricTemplates";
+
+// Helper to generate overview metrics (duplicated to avoid circular deps with internal mutations)
+async function generateOverviewMetrics(ctx: MutationCtx, journeyId: string, userId: string) {
+  // 1. Get stages for this journey
+  const stages = await ctx.db
+    .query("stages")
+    .withIndex("by_journey", (q) => q.eq("journeyId", journeyId as any))
+    .collect();
+
+  // 2. Find core_usage stage for {{coreAction}} slot (with fallback)
+  const coreUsageStage = stages.find((s) => s.lifecycleSlot === "core_usage");
+  const coreAction = coreUsageStage?.name ?? "Core Action";
+
+  // 3. Get existing metrics to check for duplicates
+  const existingMetrics = await ctx.db
+    .query("metrics")
+    .withIndex("by_user", (q) => q.eq("userId", userId as any))
+    .collect();
+
+  const existingTemplateKeys = new Set(
+    existingMetrics.map((m) => m.templateKey).filter(Boolean)
+  );
+
+  // 4. Get overview templates
+  const overviewTemplates = getTemplatesByPhase("overview");
+
+  // 5. Generate metrics that don't already exist
+  let order = 1;
+  const now = Date.now();
+  let created = 0;
+
+  for (const template of overviewTemplates) {
+    // Skip if already generated
+    if (existingTemplateKeys.has(template.key)) {
+      continue;
+    }
+
+    // Interpolate coreAction into template
+    const interpolate = (text: string) =>
+      text.replace(/\{\{coreAction\}\}/g, coreAction);
+
+    await ctx.db.insert("metrics", {
+      userId: userId as any,
+      name: template.name,
+      definition: interpolate(template.definition),
+      formula: interpolate(template.formula),
+      whyItMatters: interpolate(template.whyItMatters),
+      howToImprove: interpolate(template.howToImprove),
+      category: template.category,
+      metricType: "generated",
+      templateKey: template.key,
+      relatedActivityId: coreUsageStage?._id,
+      order: order++,
+      createdAt: now,
+    });
+    created++;
+  }
+
+  return { created };
+}
 
 // Get all sessions for a journey with computed status
 export const listSessionsWithStatus = query({
@@ -183,6 +245,19 @@ export const completeSession = mutation({
       status: "completed",
       completedAt: Date.now(),
     });
+
+    // Trigger metric generation for overview interviews
+    if (session.interviewType === "overview") {
+      const journey = await ctx.db.get(session.journeyId);
+      if (journey) {
+        try {
+          await generateOverviewMetrics(ctx, session.journeyId, journey.userId);
+        } catch (error) {
+          // Log but don't fail completion if metric generation fails
+          console.error("Failed to generate overview metrics:", error);
+        }
+      }
+    }
   },
 });
 
