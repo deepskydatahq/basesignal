@@ -24,14 +24,7 @@ import {
   parseActivityName,
   validateActivityFormat,
 } from "../../shared/validation";
-
-const LIFECYCLE_SLOTS = [
-  { value: "account_creation", label: "Account Creation" },
-  { value: "activation", label: "Activation" },
-  { value: "core_usage", label: "Core Usage" },
-  { value: "revenue", label: "Revenue" },
-  { value: "churn", label: "Churn" },
-];
+import { LIFECYCLE_SLOTS } from "./lifecycleSlots";
 
 interface AddActivityModalProps {
   open: boolean;
