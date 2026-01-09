@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { levenshtein, validateActivityFormat, findDuplicate } from '../shared/validation'
+import { levenshtein, validateActivityFormat, findDuplicate, parseActivityName } from '../shared/validation'
 
 // levenshtein tests
 
@@ -100,4 +100,31 @@ test('findDuplicate returns null for non-duplicates', () => {
 
   // Empty list
   expect(findDuplicate('Account', 'Created', [])).toBeNull()
+})
+
+// parseActivityName tests
+
+test('parseActivityName extracts entity and action from "Account Created"', () => {
+  const result = parseActivityName('Account Created')
+  expect(result).toEqual({ entity: 'Account', action: 'Created' })
+})
+
+test('parseActivityName handles multi-word action "User Signed Up"', () => {
+  const result = parseActivityName('User Signed Up')
+  expect(result).toEqual({ entity: 'User', action: 'Signed Up' })
+})
+
+test('parseActivityName handles single word (no action)', () => {
+  const result = parseActivityName('Account')
+  expect(result).toEqual({ entity: 'Account', action: '' })
+})
+
+test('parseActivityName handles empty string', () => {
+  const result = parseActivityName('')
+  expect(result).toEqual({ entity: '', action: '' })
+})
+
+test('parseActivityName trims whitespace', () => {
+  const result = parseActivityName('  Account   Created  ')
+  expect(result).toEqual({ entity: 'Account', action: 'Created' })
 })

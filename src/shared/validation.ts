@@ -144,3 +144,25 @@ export function findDuplicate(
 
   return null;
 }
+
+/**
+ * Parse an activity name into entity and action parts.
+ * "Account Created" → { entity: "Account", action: "Created" }
+ * "User Signed Up" → { entity: "User", action: "Signed Up" }
+ */
+export function parseActivityName(name: string): { entity: string; action: string } {
+  const trimmed = name.trim()
+  if (!trimmed) {
+    return { entity: '', action: '' }
+  }
+
+  const parts = trimmed.split(/\s+/)
+  if (parts.length === 1) {
+    return { entity: parts[0], action: '' }
+  }
+
+  // First word is entity, rest is action
+  const entity = parts[0]
+  const action = parts.slice(1).join(' ')
+  return { entity, action }
+}
