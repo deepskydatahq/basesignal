@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 
 // Helper to get current authenticated user
@@ -184,6 +184,95 @@ export const importFromJourney = mutation({
       entitiesCreated,
       activitiesCreated,
     };
+  },
+});
+
+// Internal mutation for auto-generation (called from setupProgress.complete)
+export const generateFromJourneyInternal = internalMutation({
+  args: {
+    userId: v.id("users"),
+    journeyId: v.id("journeys"),
+  },
+  handler: async (ctx, args) => {
+    // Verify journey exists and belongs to user
+    const journey = await ctx.db.get(args.journeyId);
+    if (!journey || journey.userId !== args.userId) {
+      return { success: false, error: "Journey not found" };
+    }
+
+    // Get all stages from journey
+    const stages = await ctx.db
+      .query("stages")
+      .withIndex("by_journey", (q) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    // Get existing entities to avoid duplicates
+    const existingEntities = await ctx.db
+      .query("measurementEntities")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    const existingEntityNames = new Set(
+      existingEntities.map((e) => e.name.toLowerCase())
+    );
+    const entityNameToId = new Map(
+      existingEntities.map((e) => [e.name.toLowerCase(), e._id])
+    );
+
+    // Get existing activities to avoid duplicates
+    const existingActivities = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+    const existingActivityNames = new Set(
+      existingActivities.map((a) => a.name.toLowerCase())
+    );
+
+    const now = Date.now();
+    let entitiesCreated = 0;
+    let activitiesCreated = 0;
+
+    // Process stages with entity/action
+    for (const stage of stages) {
+      if (!stage.entity || !stage.action) continue;
+
+      const entityLower = stage.entity.toLowerCase();
+      const activityName = stage.name;
+      const activityLower = activityName.toLowerCase();
+
+      // Create entity if not exists
+      if (!existingEntityNames.has(entityLower)) {
+        const entityId = await ctx.db.insert("measurementEntities", {
+          userId: args.userId,
+          name: stage.entity,
+          suggestedFrom: "overview_interview",
+          createdAt: now,
+        });
+        entityNameToId.set(entityLower, entityId);
+        existingEntityNames.add(entityLower);
+        entitiesCreated++;
+      }
+
+      // Create activity if not exists
+      if (!existingActivityNames.has(activityLower)) {
+        const entityId = entityNameToId.get(entityLower);
+        if (entityId) {
+          await ctx.db.insert("measurementActivities", {
+            userId: args.userId,
+            entityId,
+            name: activityName,
+            action: stage.action,
+            lifecycleSlot: stage.lifecycleSlot,
+            isFirstValue: false,
+            suggestedFrom: "overview_interview",
+            createdAt: now,
+          });
+          existingActivityNames.add(activityLower);
+          activitiesCreated++;
+        }
+      }
+    }
+
+    return { success: true, entitiesCreated, activitiesCreated };
   },
 });
 

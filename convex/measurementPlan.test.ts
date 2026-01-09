@@ -1,6 +1,6 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 describe("measurementPlan.extractFromJourney", () => {
@@ -1188,5 +1188,423 @@ describe("importFromJourneyIncremental", () => {
     expect(plan[0].entity.name).toBe("Account");
     expect(plan[0].activities).toHaveLength(1);
     expect(plan[0].activities[0].name).toBe("Account Activated");
+  });
+});
+
+describe("generateFromJourneyInternal", () => {
+  it("creates entities and activities from journey stages", async () => {
+    const t = convexTest(schema);
+
+    // Create user directly in db (not through auth)
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user-internal",
+        email: "internal-test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    // Create journey directly in db
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Test Journey",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    // Add stages with entity/action
+    await t.run(async (ctx) => {
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Created",
+        type: "activity",
+        entity: "Account",
+        action: "Created",
+        lifecycleSlot: "account_creation",
+        position: { x: 100, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Profile Completed",
+        type: "activity",
+        entity: "Profile",
+        action: "Completed",
+        lifecycleSlot: "activation",
+        position: { x: 200, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    // Call internal mutation directly (no auth needed)
+    const result = await t.mutation(
+      internal.measurementPlan.generateFromJourneyInternal,
+      {
+        userId,
+        journeyId,
+      }
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.entitiesCreated).toBe(2);
+    expect(result.activitiesCreated).toBe(2);
+
+    // Verify entities were created
+    const entities = await t.run(async (ctx) => {
+      return await ctx.db.query("measurementEntities").collect();
+    });
+    expect(entities).toHaveLength(2);
+    expect(entities.map((e) => e.name).sort()).toEqual(["Account", "Profile"]);
+    expect(entities[0].suggestedFrom).toBe("overview_interview");
+
+    // Verify activities were created
+    const activities = await t.run(async (ctx) => {
+      return await ctx.db.query("measurementActivities").collect();
+    });
+    expect(activities).toHaveLength(2);
+    expect(activities.map((a) => a.name).sort()).toEqual([
+      "Account Created",
+      "Profile Completed",
+    ]);
+    expect(activities[0].suggestedFrom).toBe("overview_interview");
+  });
+
+  it("skips stages without entity/action", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user-skip",
+        email: "skip-test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Test Journey",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    // Add entry stage without entity/action
+    await t.run(async (ctx) => {
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Entry Point",
+        type: "entry",
+        position: { x: 0, y: 0 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      // Add one valid stage
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Created",
+        type: "activity",
+        entity: "Account",
+        action: "Created",
+        lifecycleSlot: "account_creation",
+        position: { x: 100, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const result = await t.mutation(
+      internal.measurementPlan.generateFromJourneyInternal,
+      {
+        userId,
+        journeyId,
+      }
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.entitiesCreated).toBe(1);
+    expect(result.activitiesCreated).toBe(1);
+  });
+
+  it("does not create duplicate entities (case-insensitive)", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user-dup",
+        email: "dup-test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    // Pre-create an entity
+    await t.run(async (ctx) => {
+      await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Account",
+        suggestedFrom: "manual",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Test Journey",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Created",
+        type: "activity",
+        entity: "Account",
+        action: "Created",
+        lifecycleSlot: "account_creation",
+        position: { x: 100, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const result = await t.mutation(
+      internal.measurementPlan.generateFromJourneyInternal,
+      {
+        userId,
+        journeyId,
+      }
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.entitiesCreated).toBe(0); // Not created (already exists)
+    expect(result.activitiesCreated).toBe(1); // Activity is new
+
+    // Verify only 1 entity exists
+    const entities = await t.run(async (ctx) => {
+      return await ctx.db.query("measurementEntities").collect();
+    });
+    expect(entities).toHaveLength(1);
+  });
+
+  it("does not create duplicate activities (case-insensitive)", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user-act-dup",
+        email: "act-dup-test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    // Pre-create an entity and activity
+    const entityId = await t.run(async (ctx) => {
+      return await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Account",
+        suggestedFrom: "manual",
+        createdAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Account Created",
+        action: "Created",
+        lifecycleSlot: "account_creation",
+        isFirstValue: false,
+        suggestedFrom: "manual",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Test Journey",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Created",
+        type: "activity",
+        entity: "Account",
+        action: "Created",
+        lifecycleSlot: "account_creation",
+        position: { x: 100, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const result = await t.mutation(
+      internal.measurementPlan.generateFromJourneyInternal,
+      {
+        userId,
+        journeyId,
+      }
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.entitiesCreated).toBe(0);
+    expect(result.activitiesCreated).toBe(0); // Not created (already exists)
+
+    // Verify only 1 activity exists
+    const activities = await t.run(async (ctx) => {
+      return await ctx.db.query("measurementActivities").collect();
+    });
+    expect(activities).toHaveLength(1);
+  });
+
+  it("returns error for non-existent journey", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user-err",
+        email: "err-test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    // Create a different user's journey
+    const otherUserId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "other-user",
+        email: "other@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const otherJourneyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId: otherUserId,
+        type: "overview",
+        name: "Other Journey",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    // Try to generate from other user's journey
+    const result = await t.mutation(
+      internal.measurementPlan.generateFromJourneyInternal,
+      {
+        userId,
+        journeyId: otherJourneyId,
+      }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Journey not found");
+  });
+
+  it("handles multiple activities for same entity", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-user-multi",
+        email: "multi-test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Test Journey",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    // Add multiple activities for the same entity
+    await t.run(async (ctx) => {
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Created",
+        type: "activity",
+        entity: "Account",
+        action: "Created",
+        lifecycleSlot: "account_creation",
+        position: { x: 100, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Verified",
+        type: "activity",
+        entity: "Account",
+        action: "Verified",
+        lifecycleSlot: "activation",
+        position: { x: 200, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      await ctx.db.insert("stages", {
+        journeyId,
+        name: "Account Upgraded",
+        type: "activity",
+        entity: "Account",
+        action: "Upgraded",
+        lifecycleSlot: "revenue",
+        position: { x: 300, y: 100 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const result = await t.mutation(
+      internal.measurementPlan.generateFromJourneyInternal,
+      {
+        userId,
+        journeyId,
+      }
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.entitiesCreated).toBe(1); // Only one entity
+    expect(result.activitiesCreated).toBe(3); // Three activities
+
+    // Verify entity was created once
+    const entities = await t.run(async (ctx) => {
+      return await ctx.db.query("measurementEntities").collect();
+    });
+    expect(entities).toHaveLength(1);
+    expect(entities[0].name).toBe("Account");
+
+    // Verify all activities are linked to the same entity
+    const activities = await t.run(async (ctx) => {
+      return await ctx.db.query("measurementActivities").collect();
+    });
+    expect(activities).toHaveLength(3);
+    const entityIds = new Set(activities.map((a) => a.entityId));
+    expect(entityIds.size).toBe(1); // All linked to same entity
   });
 });
