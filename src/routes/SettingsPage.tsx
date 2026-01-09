@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { DevToolsSection } from '@/components/settings/DevToolsSection'
 
 export default function SettingsPage() {
   return (
@@ -62,6 +63,8 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <DevToolsSection />
       </div>
     </div>
   )
