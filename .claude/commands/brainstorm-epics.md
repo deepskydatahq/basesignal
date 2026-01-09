@@ -13,6 +13,13 @@ Generate epic candidates by combining strategic context with user ideas. Present
 - When you have ideas to explore
 - When stuck on what to work on
 
+## Prerequisites
+
+- VISION.md should exist (run `/product-vision` if not)
+- ROADMAP.md should exist (run `/product-roadmap` if not)
+
+If either file is missing, the command can still run but will have less strategic context. Consider creating them first for better results.
+
 ## Position in Workflow
 
 ```
@@ -109,25 +116,32 @@ Which would you like to pursue? (Enter number, or "none" to refine)
 
 ### 6. Hand Off to product-epic
 
-Spawn a subagent to run product-epic with the candidate spec:
+Spawn a subagent to run product-epic with the candidate spec. The subagent will receive the candidate spec in its prompt and use it as input to product-epic.
+
+Use the Task tool:
 
 ```
-Task tool with prompt:
+Task tool (general-purpose):
+  description: "Create epic from candidate"
+  prompt: |
+    Execute the product-epic command with this candidate spec:
 
-"Run the product-epic command with this candidate spec:
+    Candidate Spec:
+    - Type: candidate
+    - Title: [Selected epic title]
+    - Problem: [Problem statement]
+    - Scope: [S/M/L]
+    - Roadmap Area: [Focus area]
+    - Children Sketch:
+      - [Child 1]
+      - [Child 2]
+      - [Child 3]
 
-{
-  "type": "candidate",
-  "title": "[Selected epic title]",
-  "problem": "[Problem statement]",
-  "scope": "[S/M/L]",
-  "roadmap_area": "[Focus area]",
-  "children_sketch": ["Child 1", "Child 2", "Child 3"]
-}
-
-Use the brainstorming skill to expand the children_sketch into full child issues.
-Create the epic and all child issues.
-Return the epic number and child issue numbers."
+    Follow the product-epic command instructions for candidate-driven mode:
+    1. Use the children sketch as starting point for step 2
+    2. Use steps 3a, 4a, 5a for issue creation
+    3. Skip step 6 (no HYPOTHESES.md update)
+    4. Return the epic number and child issue numbers
 ```
 
 ### 7. Report Results
