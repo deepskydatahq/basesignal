@@ -4,11 +4,14 @@
 // - {{coreAction}} → Core usage activity from overview journey
 // - {{productName}} → User's product name
 
-export type MetricCategory =
-  | "reach"
-  | "engagement"
-  | "value_delivery"
-  | "value_capture";
+export const METRIC_CATEGORIES = [
+  "reach",
+  "engagement",
+  "value_delivery",
+  "value_capture",
+] as const;
+
+export type MetricCategory = (typeof METRIC_CATEGORIES)[number];
 
 export type MetricTemplate = {
   key: string;
@@ -145,3 +148,79 @@ export function getTemplatesByPhase(
 export function getTemplateByKey(key: string): MetricTemplate | undefined {
   return METRIC_TEMPLATES.find((t) => t.key === key);
 }
+
+// Convenience getters matching the implementation plan naming
+export function getOverviewTemplates(): MetricTemplate[] {
+  return getTemplatesByPhase("overview");
+}
+
+export function getFirstValueTemplates(): MetricTemplate[] {
+  return getTemplatesByPhase("first_value");
+}
+
+export function getAllTemplates(): MetricTemplate[] {
+  return [...METRIC_TEMPLATES];
+}
+
+// Template interpolation types and functions
+export type TemplateSlots = {
+  productName: string;
+  coreAction?: string; // from core_usage stage
+  firstValueActivity?: string; // from first_value activation stage
+};
+
+export type InterpolatedTemplate = Omit<MetricTemplate, "generatedAfter">;
+
+/**
+ * Replaces {{slotName}} placeholders in template fields with actual values.
+ * Missing optional slots are replaced with a generic fallback.
+ */
+export function interpolateTemplate(
+  template: MetricTemplate,
+  slots: TemplateSlots
+): InterpolatedTemplate {
+  const replacements: Record<string, string> = {
+    "{{productName}}": slots.productName,
+    "{{coreAction}}": slots.coreAction ?? "core action",
+    "{{firstValueActivity}}": slots.firstValueActivity ?? "first value action",
+  };
+
+  const interpolate = (text: string): string => {
+    let result = text;
+    for (const [placeholder, value] of Object.entries(replacements)) {
+      result = result.replaceAll(placeholder, value);
+    }
+    return result;
+  };
+
+  return {
+    key: template.key,
+    name: interpolate(template.name),
+    definition: interpolate(template.definition),
+    formula: interpolate(template.formula),
+    whyItMatters: interpolate(template.whyItMatters),
+    howToImprove: interpolate(template.howToImprove),
+    category: template.category,
+  };
+}
+
+/**
+ * Interpolates all templates with the given slots.
+ */
+export function interpolateTemplates(
+  templates: MetricTemplate[],
+  slots: TemplateSlots
+): InterpolatedTemplate[] {
+  return templates.map((t) => interpolateTemplate(t, slots));
+}
+
+// Category display information for UI
+export const CATEGORY_INFO: Record<
+  MetricCategory,
+  { label: string; color: string }
+> = {
+  reach: { label: "Reach", color: "blue" },
+  engagement: { label: "Engagement", color: "green" },
+  value_delivery: { label: "Value Delivery", color: "purple" },
+  value_capture: { label: "Value Capture", color: "orange" },
+};
