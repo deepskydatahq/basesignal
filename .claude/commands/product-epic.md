@@ -9,9 +9,13 @@ Break a hypothesis into an epic with child issues for testing.
 
 ## Purpose
 
-Bridges strategy → tactics. Takes a hypothesis from HYPOTHESES.md and creates:
-- One epic issue (the hypothesis itself)
-- Multiple child issues (tasks needed to test it)
+Bridges strategy → tactics. Takes either:
+- A hypothesis from HYPOTHESES.md (hypothesis-driven), or
+- A candidate spec from brainstorm-epics (idea-driven)
+
+And creates:
+- One epic issue (the hypothesis or candidate itself)
+- Multiple child issues (tasks needed to test/implement it)
 
 ## When to Use
 
@@ -51,7 +55,9 @@ Check if a candidate spec was provided as argument to the command.
 
 ### 2. Brainstorm Tasks
 
-Invoke `superpowers:brainstorming` skill to identify tasks needed to test the hypothesis.
+**If candidate-driven:** Use the `children_sketch` from the candidate spec as a starting point. Expand each sketch item into a properly scoped task with clear completion criteria.
+
+**If hypothesis-driven:** Invoke `superpowers:brainstorming` skill to identify tasks needed to test the hypothesis.
 
 Consider:
 - What do we need to **prepare** before testing?
