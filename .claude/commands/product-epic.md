@@ -1,5 +1,5 @@
 ---
-description: Break a hypothesis into an epic with child issues for testing
+description: Create epic with child issues from hypothesis or candidate spec
 allowed-tools: Bash(git:*), Bash(gh issue create:*), Bash(gh issue edit:*), Bash(gh label list:*), Skill, Read, Write, Glob, Grep
 ---
 
@@ -25,6 +25,18 @@ Bridges strategy → tactics. Takes a hypothesis from HYPOTHESES.md and creates:
 - GitHub labels `epic`, `hypothesis`, and `stage:brainstorm` must exist
 
 ## Instructions
+
+### 0. Detect Input Mode
+
+Check if a candidate spec was provided as argument to the command.
+
+**If argument contains JSON-like candidate spec:**
+- Parse the spec (title, problem, scope, roadmap_area, children_sketch)
+- Skip to step 2 (Brainstorm Tasks) using children_sketch as starting point
+- Use candidate-driven labels and formatting (see step 3a, 4a, 5a)
+
+**If no argument or argument is a hypothesis ID (e.g., "H2"):**
+- Proceed with current hypothesis-driven flow (steps 1-7)
 
 ### 1. Select Hypothesis
 
@@ -83,6 +95,38 @@ EOF
 
 Note the epic issue number for the next step.
 
+### 3a. Create Epic Issue (Candidate-Driven)
+
+If working from a candidate spec instead of hypothesis:
+
+```bash
+gh issue create \
+  --title "Epic: [Title from spec]" \
+  --label "epic" \
+  --body "$(cat <<'EOF'
+## Problem
+
+[Problem from candidate spec]
+
+## Roadmap Area
+
+[roadmap_area from candidate spec]
+
+---
+
+## Tasks
+
+(Child issues will be linked here after creation)
+
+---
+
+*Created via `brainstorm-epics`*
+EOF
+)"
+```
+
+Note: No `hypothesis` label. Attribution says `brainstorm-epics`.
+
 ### 4. Create Child Issues
 
 For each task identified in step 2:
@@ -112,6 +156,36 @@ EOF
 ```
 
 Collect all child issue numbers.
+
+### 4a. Create Child Issues (Candidate-Driven)
+
+If working from a candidate spec:
+
+```bash
+gh issue create \
+  --title "[Task title]" \
+  --label "stage:brainstorm" \
+  --body "$(cat <<'EOF'
+## Context
+
+Part of epic #[EPIC_NUMBER]: [Epic Title]
+
+## Goal
+
+[What this task accomplishes]
+
+## Done When
+
+[Clear completion criteria]
+
+---
+
+*Created via `brainstorm-epics`*
+EOF
+)"
+```
+
+Note: No hypothesis reference in context.
 
 ### 5. Update Epic with Tasklist
 
@@ -143,7 +217,37 @@ EOF
 )"
 ```
 
-### 6. Update HYPOTHESES.md
+### 5a. Update Epic with Tasklist (Candidate-Driven)
+
+```bash
+gh issue edit [EPIC_NUMBER] --body "$(cat <<'EOF'
+## Problem
+
+[Problem from candidate spec]
+
+## Roadmap Area
+
+[roadmap_area from candidate spec]
+
+---
+
+## Tasks
+
+- [ ] #[CHILD_1] - [Task 1 title]
+- [ ] #[CHILD_2] - [Task 2 title]
+- [ ] #[CHILD_3] - [Task 3 title]
+...
+
+---
+
+*Created via `brainstorm-epics`*
+EOF
+)"
+```
+
+### 6. Update HYPOTHESES.md (Hypothesis-Driven Only)
+
+**Skip this step if working from a candidate spec.**
 
 Change the hypothesis status from 🟡 Untested to 🔵 Testing.
 
@@ -155,10 +259,14 @@ Add to Evidence section:
 
 ### 7. Commit Changes
 
+**If hypothesis-driven:**
 ```bash
 git add HYPOTHESES.md
 git commit -m "docs: start testing [H#] - [Hypothesis Name]"
 ```
+
+**If candidate-driven:**
+No commit needed (no files changed, just GitHub issues created).
 
 ## Pipeline Integration
 
