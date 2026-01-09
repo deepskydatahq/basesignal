@@ -7,19 +7,29 @@ import type { Id } from "../../convex/_generated/dataModel";
 // Mock data that can be changed per test
 let mockGetFullPlan: unknown = [];
 let mockListEntities: unknown = [];
-
-// Track query call count to return correct mock
-let queryCallCount = 0;
+let mockFoundationStatus: unknown = {
+  overviewInterview: { status: "complete", journeyId: null },
+  measurementPlan: { status: "ready", entitiesCount: 0 },
+};
+let mockJourneyDiff: unknown = null;
 
 vi.mock("convex/react", () => ({
-  useQuery: () => {
-    queryCallCount++;
-    // First call is getFullPlan, second call is listEntities
-    if (queryCallCount === 1) {
+  useQuery: (queryName: unknown) => {
+    // Match based on the query string
+    if (queryName === "measurementPlan:getFullPlan") {
       return mockGetFullPlan;
     }
-    if (queryCallCount === 2) {
+    if (queryName === "measurementPlan:listEntities") {
       return mockListEntities;
+    }
+    if (queryName === "setupProgress:foundationStatus") {
+      return mockFoundationStatus;
+    }
+    if (queryName === "measurementPlan:computeJourneyDiff") {
+      return mockJourneyDiff;
+    }
+    if (queryName === "skip") {
+      return undefined;
     }
     // Return undefined for any other queries
     return undefined;
@@ -41,10 +51,15 @@ vi.mock("../../convex/_generated/api", () => ({
       deleteProperty: "measurementPlan:deleteProperty",
       computeJourneyDiff: "measurementPlan:computeJourneyDiff",
       importFromJourneyIncremental: "measurementPlan:importFromJourneyIncremental",
+      importFromJourney: "measurementPlan:importFromJourney",
+      deleteAll: "measurementPlan:deleteAll",
     },
     journeys: {
       listByUser: "journeys:listByUser",
       get: "journeys:get",
+    },
+    setupProgress: {
+      foundationStatus: "setupProgress:foundationStatus",
     },
   },
 }));
@@ -75,6 +90,11 @@ vi.mock("@/components/measurement/AddEntityDialog", () => ({
     isOpen ? <div data-testid="add-entity-dialog">Add Entity Dialog</div> : null,
 }));
 
+vi.mock("@/components/measurement/RegenerateConfirmDialog", () => ({
+  RegenerateConfirmDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="regenerate-confirm-dialog">Regenerate Confirm Dialog</div> : null,
+}));
+
 function setup() {
   render(
     <MemoryRouter>
@@ -84,9 +104,13 @@ function setup() {
 }
 
 beforeEach(() => {
-  queryCallCount = 0;
   mockGetFullPlan = [];
   mockListEntities = [];
+  mockFoundationStatus = {
+    overviewInterview: { status: "complete", journeyId: null },
+    measurementPlan: { status: "ready", entitiesCount: 0 },
+  };
+  mockJourneyDiff = null;
 });
 
 test("renders page title", () => {
@@ -175,14 +199,40 @@ test("shows activity and property counts on entity cards", () => {
   expect(screen.getByText("1 property")).toBeInTheDocument();
 });
 
-test("shows Add Entity button", () => {
+test("shows Add Entity button when data exists", () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [],
+      properties: [],
+    },
+  ];
   setup();
   expect(
     screen.getByRole("button", { name: /add entity/i })
   ).toBeInTheDocument();
 });
 
-test("shows Add Activity button", () => {
+test("shows Add Activity button when data exists", () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [],
+      properties: [],
+    },
+  ];
   setup();
   expect(
     screen.getByRole("button", { name: /add activity/i })

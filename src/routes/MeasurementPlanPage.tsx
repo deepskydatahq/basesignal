@@ -1,36 +1,79 @@
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import type { Id, Doc } from "../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { FileText, Download, Plus, RefreshCw } from "lucide-react";
 import { ImportFromJourneyModal } from "@/components/measurement/ImportFromJourneyModal";
 import { AddPropertyDialog } from "@/components/measurement/AddPropertyDialog";
 import { AddActivityModal } from "@/components/measurement/AddActivityModal";
+import { EditActivityModal } from "@/components/measurement/EditActivityModal";
 import { PropertyList } from "@/components/measurement/PropertyList";
+import { AddEntityDialog } from "@/components/measurement/AddEntityDialog";
+import { EntityCard } from "@/components/measurement/EntityCard";
+import { RegenerateConfirmDialog } from "@/components/measurement/RegenerateConfirmDialog";
 
 export default function MeasurementPlanPage() {
   const fullPlan = useQuery(api.measurementPlan.getFullPlan);
   const entities = useQuery(api.measurementPlan.listEntities);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  const [showAddEntityDialog, setShowAddEntityDialog] = useState(false);
   const [activityEntityId, setActivityEntityId] = useState<Id<"measurementEntities"> | undefined>();
-  const [expandedEntities, setExpandedEntities] = useState<Set<string>>(new Set());
   const [addPropertyFor, setAddPropertyFor] = useState<{
     entityId: Id<"measurementEntities">;
     entityName: string;
   } | null>(null);
+  const [editActivity, setEditActivity] = useState<Doc<"measurementActivities"> | null>(null);
 
-  const toggleEntity = (entityId: string) => {
-    setExpandedEntities((prev) => {
-      const next = new Set(prev);
-      if (next.has(entityId)) {
-        next.delete(entityId);
-      } else {
-        next.add(entityId);
-      }
-      return next;
-    });
+  const foundationStatus = useQuery(api.setupProgress.foundationStatus);
+  const deleteAllMeasurement = useMutation(api.measurementPlan.deleteAll);
+  const importFromJourneyMutation = useMutation(api.measurementPlan.importFromJourney);
+  const journeyDiff = useQuery(
+    api.measurementPlan.computeJourneyDiff,
+    foundationStatus?.overviewInterview?.journeyId
+      ? { journeyId: foundationStatus.overviewInterview.journeyId }
+      : "skip"
+  );
+
+  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
+  const hasJourney = foundationStatus?.overviewInterview?.journeyId != null;
+  const journeyId = foundationStatus?.overviewInterview?.journeyId;
+
+  const handleGenerate = async () => {
+    if (!journeyId || !journeyDiff) return;
+    setIsRegenerating(true);
+    try {
+      const allEntities = [
+        ...journeyDiff.newEntities.map((e) => e.name),
+        ...journeyDiff.existingEntities.map((e) => e.name),
+      ];
+      const allActivities = [
+        ...journeyDiff.newActivities.map((a) => a.name),
+        ...journeyDiff.existingActivities.map((a) => a.name),
+      ];
+      await importFromJourneyMutation({
+        journeyId,
+        selectedEntities: allEntities,
+        selectedActivities: allActivities,
+      });
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!journeyId || !journeyDiff) return;
+    setIsRegenerating(true);
+    try {
+      await deleteAllMeasurement({});
+      await handleGenerate();
+    } finally {
+      setIsRegenerating(false);
+      setShowRegenerateDialog(false);
+    }
   };
 
   if (fullPlan === undefined) {
@@ -64,11 +107,29 @@ export default function MeasurementPlanPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => { setActivityEntityId(undefined); setShowActivityModal(true); }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Activity
-          </Button>
-          <Button onClick={() => setShowImportModal(true)}>
+          {isEmpty && hasJourney && (
+            <Button onClick={handleGenerate} disabled={isRegenerating || !journeyDiff}>
+              <Download className="w-4 h-4 mr-2" />
+              {isRegenerating ? "Generating..." : "Generate from Journey"}
+            </Button>
+          )}
+          {!isEmpty && (
+            <>
+              <Button variant="outline" onClick={() => setShowRegenerateDialog(true)}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Regenerate
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddEntityDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Entity
+              </Button>
+              <Button onClick={() => { setActivityEntityId(undefined); setShowActivityModal(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Activity
+              </Button>
+            </>
+          )}
+          <Button variant="outline" onClick={() => setShowImportModal(true)}>
             <Download className="w-4 h-4 mr-2" />
             Import from Journey
           </Button>
@@ -92,122 +153,92 @@ export default function MeasurementPlanPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {fullPlan.map(({ entity, activities, properties }) => {
-            const isExpanded = expandedEntities.has(entity._id);
-
-            return (
-              <div
-                key={entity._id}
-                className="border rounded-lg overflow-hidden bg-white"
-              >
-                {/* Entity Header */}
-                <button
-                  type="button"
-                  onClick={() => toggleEntity(entity._id)}
-                  className="w-full px-4 py-3 flex items-center gap-3 bg-gray-50 hover:bg-gray-100 transition-colors border-b"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-500" />
-                  )}
-                  <span className="font-medium text-gray-900">{entity.name}</span>
-                  <span className="text-xs text-gray-500">
-                    {activities.length} activities, {properties.length} properties
-                  </span>
-                  {entity.suggestedFrom && (
-                    <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                      from {entity.suggestedFrom.replace(/_/g, " ")}
-                    </span>
-                  )}
-                </button>
-
-                {/* Entity Content */}
-                {isExpanded && (
-                  <div className="p-4 space-y-4">
-                    {/* Description */}
-                    {entity.description && (
-                      <p className="text-sm text-gray-600">{entity.description}</p>
-                    )}
-
-                    {/* Activities */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Activities
-                        </h4>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActivityEntityId(entity._id);
-                            setShowActivityModal(true);
-                          }}
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Add Activity
-                        </Button>
-                      </div>
-                      {activities.length > 0 && (
-                        <div className="grid gap-2">
-                          {activities.map((activity) => (
-                            <div
-                              key={activity._id}
-                              className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md"
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {activity.name}
-                                </span>
-                                {activity.isFirstValue && (
-                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-                                    First Value
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {activity.lifecycleSlot && (
-                                  <span className="text-xs text-gray-500">
-                                    {activity.lifecycleSlot.replace(/_/g, " ")}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+          {fullPlan.map(({ entity, activities, properties }) => (
+            <EntityCard
+              key={entity._id}
+              id={entity._id}
+              name={entity.name}
+              description={entity.description}
+              suggestedFrom={entity.suggestedFrom}
+              activityCount={activities.length}
+              propertyCount={properties.length}
+            >
+              {/* Activities section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Activities
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivityEntityId(entity._id);
+                      setShowActivityModal(true);
+                    }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Activity
+                  </Button>
+                </div>
+                {activities.length > 0 && (
+                  <div className="grid gap-2">
+                    {activities.map((activity) => (
+                      <button
+                        key={activity._id}
+                        type="button"
+                        onClick={() => setEditActivity(activity)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">
+                            {activity.name}
+                          </span>
+                          {activity.isFirstValue && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                              First Value
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Properties */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          Properties
-                        </h4>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAddPropertyFor({
-                              entityId: entity._id,
-                              entityName: entity.name,
-                            });
-                          }}
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Add Property
-                        </Button>
-                      </div>
-                      <PropertyList properties={properties} />
-                    </div>
-
+                        <div className="flex items-center gap-2">
+                          {activity.lifecycleSlot && (
+                            <span className="text-xs text-gray-500">
+                              {activity.lifecycleSlot.replace(/_/g, " ")}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-            );
-          })}
+
+              {/* Properties section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Properties
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAddPropertyFor({
+                        entityId: entity._id,
+                        entityName: entity.name,
+                      });
+                    }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Property
+                  </Button>
+                </div>
+                <PropertyList properties={properties} />
+              </div>
+            </EntityCard>
+          ))}
         </div>
       )}
 
@@ -239,6 +270,29 @@ export default function MeasurementPlanPage() {
           preselectedEntityId={activityEntityId}
         />
       )}
+
+      {/* Edit Activity Modal */}
+      <EditActivityModal
+        open={editActivity !== null}
+        onClose={() => setEditActivity(null)}
+        activity={editActivity}
+      />
+
+      {/* Add Entity Dialog */}
+      <AddEntityDialog
+        isOpen={showAddEntityDialog}
+        onClose={() => setShowAddEntityDialog(false)}
+      />
+
+      {/* Regenerate Confirm Dialog */}
+      <RegenerateConfirmDialog
+        open={showRegenerateDialog}
+        onOpenChange={setShowRegenerateDialog}
+        title="Regenerate Measurement Plan?"
+        description="This will delete all existing entities, activities, and properties, then regenerate them from your journey. This action cannot be undone."
+        onConfirm={handleRegenerate}
+        isLoading={isRegenerating}
+      />
     </div>
   );
 }
