@@ -1,24 +1,120 @@
-import { expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { expect, test, vi, beforeEach } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import MetricCatalogPage from "./MetricCatalogPage";
 
-// Mock useQuery to return empty metrics
-vi.mock("convex/react", async () => {
-  const actual = await vi.importActual("convex/react");
-  return {
-    ...actual,
-    useQuery: () => [],
-  };
+// Mock Convex
+const mockUseQuery = vi.fn();
+vi.mock("convex/react", () => ({
+  useQuery: (...args: unknown[]) => mockUseQuery(...args),
+}));
+
+// Mock the api import
+vi.mock("../../convex/_generated/api", () => ({
+  api: {
+    metrics: {
+      list: "metrics:list",
+    },
+  },
+}));
+
+const mockMetrics = [
+  {
+    _id: "metric1",
+    name: "New Users",
+    definition: "Count of new signups per period",
+    formula: "Count(signups)",
+    category: "reach",
+    whyItMatters: "Shows acquisition health",
+    howToImprove: "Improve marketing",
+    order: 1,
+  },
+  {
+    _id: "metric2",
+    name: "DAU",
+    definition: "Daily active users count",
+    formula: "Count(active users per day)",
+    category: "engagement",
+    whyItMatters: "Core engagement metric",
+    howToImprove: "Add sticky features",
+    order: 2,
+  },
+];
+
+function setup() {
+  const user = userEvent.setup();
+  render(<MetricCatalogPage />);
+  return { user };
+}
+
+beforeEach(() => {
+  mockUseQuery.mockReset();
 });
 
-test("renders Metric Catalog heading", () => {
-  render(<MetricCatalogPage />);
+test("shows loading state while metrics are loading", () => {
+  mockUseQuery.mockReturnValue(undefined);
+  setup();
 
-  expect(screen.getByRole("heading", { name: /metric catalog/i })).toBeInTheDocument();
+  expect(screen.getByText(/loading/i)).toBeInTheDocument();
 });
 
-test("shows empty state message when no metrics", () => {
-  render(<MetricCatalogPage />);
+test("shows empty state when no metrics exist", () => {
+  mockUseQuery.mockReturnValue([]);
+  setup();
 
-  expect(screen.getByText(/no metrics yet/i)).toBeInTheDocument();
+  expect(screen.getByText(/complete the overview interview/i)).toBeInTheDocument();
+});
+
+test("renders page title and subtitle", () => {
+  mockUseQuery.mockReturnValue(mockMetrics);
+  setup();
+
+  expect(screen.getByRole("heading", { name: "Metric Catalog" })).toBeInTheDocument();
+  expect(screen.getByText(/your personalized metrics/i)).toBeInTheDocument();
+});
+
+test("renders metric cards in grid", () => {
+  mockUseQuery.mockReturnValue(mockMetrics);
+  setup();
+
+  expect(screen.getByText("New Users")).toBeInTheDocument();
+  expect(screen.getByText("DAU")).toBeInTheDocument();
+});
+
+test("opens detail panel when metric card is clicked", async () => {
+  mockUseQuery.mockReturnValue(mockMetrics);
+  const { user } = setup();
+
+  await user.click(screen.getByText("New Users"));
+
+  // Panel should now be visible
+  const panel = screen.getByRole("complementary");
+  expect(within(panel).getByText("New Users")).toBeInTheDocument();
+  expect(within(panel).getByText("Shows acquisition health")).toBeInTheDocument();
+});
+
+test("closes detail panel when close button is clicked", async () => {
+  mockUseQuery.mockReturnValue(mockMetrics);
+  const { user } = setup();
+
+  // Open panel
+  await user.click(screen.getByText("New Users"));
+  expect(screen.getByRole("complementary")).toBeInTheDocument();
+
+  // Close panel
+  await user.click(screen.getByRole("button", { name: /close/i }));
+  expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+});
+
+test("switches selected metric when different card is clicked", async () => {
+  mockUseQuery.mockReturnValue(mockMetrics);
+  const { user } = setup();
+
+  // Open first metric
+  await user.click(screen.getByText("New Users"));
+  expect(within(screen.getByRole("complementary")).getByText("New Users")).toBeInTheDocument();
+
+  // Click second metric
+  await user.click(screen.getByText("DAU"));
+  expect(within(screen.getByRole("complementary")).getByText("DAU")).toBeInTheDocument();
 });

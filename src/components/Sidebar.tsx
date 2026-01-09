@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Home, Route, Settings, Lock } from 'lucide-react'
+import { Home, Route, Settings, Lock, BarChart3 } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -20,6 +20,7 @@ interface NavItemConfig {
 const navItems: NavItemConfig[] = [
   { icon: Home, label: 'Home', to: '/', requiresSetupComplete: true },
   { icon: Route, label: 'Journeys', to: '/journeys', requiresSetupComplete: true },
+  { icon: BarChart3, label: 'Metrics', to: '/metric-catalog', requiresSetupComplete: true },
 ]
 
 interface NavItemProps {
