@@ -47,6 +47,22 @@ export const list = query({
   },
 });
 
+// Get metric by template key (for checking if already generated)
+export const getByTemplateKey = query({
+  args: { templateKey: v.string() },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return null;
+
+    const metrics = await ctx.db
+      .query("metrics")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    return metrics.find((m) => m.templateKey === args.templateKey) ?? null;
+  },
+});
+
 // Count metrics for current user (for dashboard status)
 export const count = query({
   args: {},

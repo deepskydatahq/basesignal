@@ -140,6 +140,90 @@ describe("metrics", () => {
     });
   });
 
+  describe("getByTemplateKey", () => {
+    it("returns metric by template key", async () => {
+      const t = convexTest(schema);
+      const { asUser, userId } = await setupUser(t);
+
+      await t.run(async (ctx) => {
+        await ctx.db.insert("metrics", {
+          userId,
+          name: "Activation Rate",
+          definition: "Test",
+          formula: "Test",
+          whyItMatters: "Test",
+          howToImprove: "Test",
+          category: "value_delivery",
+          metricType: "default",
+          templateKey: "activation_rate",
+          order: 1,
+          createdAt: Date.now(),
+        });
+      });
+
+      const metric = await asUser.query(api.metrics.getByTemplateKey, {
+        templateKey: "activation_rate",
+      });
+      expect(metric).not.toBeNull();
+      expect(metric?.name).toBe("Activation Rate");
+    });
+
+    it("returns null when template key not found", async () => {
+      const t = convexTest(schema);
+      const { asUser } = await setupUser(t);
+
+      const metric = await asUser.query(api.metrics.getByTemplateKey, {
+        templateKey: "nonexistent",
+      });
+      expect(metric).toBeNull();
+    });
+
+    it("returns null for another user's metric with same template key", async () => {
+      const t = convexTest(schema);
+
+      // Create first user's metric
+      const otherUserId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+          clerkId: "other-user",
+          email: "other@example.com",
+          createdAt: Date.now(),
+        });
+      });
+
+      await t.run(async (ctx) => {
+        await ctx.db.insert("metrics", {
+          userId: otherUserId,
+          name: "Other Activation Rate",
+          definition: "Test",
+          formula: "Test",
+          whyItMatters: "Test",
+          howToImprove: "Test",
+          category: "value_delivery",
+          metricType: "default",
+          templateKey: "activation_rate",
+          order: 1,
+          createdAt: Date.now(),
+        });
+      });
+
+      // Second user tries to get by template key
+      const { asUser } = await setupUser(t);
+      const metric = await asUser.query(api.metrics.getByTemplateKey, {
+        templateKey: "activation_rate",
+      });
+      expect(metric).toBeNull();
+    });
+
+    it("returns null for unauthenticated users", async () => {
+      const t = convexTest(schema);
+
+      const metric = await t.query(api.metrics.getByTemplateKey, {
+        templateKey: "activation_rate",
+      });
+      expect(metric).toBeNull();
+    });
+  });
+
   describe("count", () => {
     it("returns count of metrics for user", async () => {
       const t = convexTest(schema);
