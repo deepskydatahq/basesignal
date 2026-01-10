@@ -41,6 +41,8 @@ export function EntityCard({
   const [editDescription, setEditDescription] = useState(description ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const updateEntity = useMutation(api.measurementPlan.updateEntity);
   const deleteEntity = useMutation(api.measurementPlan.deleteEntity);
@@ -75,16 +77,30 @@ export function EntityCard({
     setError(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const hasChildren = activityCount > 0 || propertyCount > 0;
-    const message = hasChildren
-      ? `This entity has ${activityCount} activities and ${propertyCount} properties that will also be deleted. Delete entity "${name}"?`
-      : `Delete entity "${name}"?`;
+    const warning = hasChildren
+      ? `This entity has ${activityCount} activit${activityCount === 1 ? "y" : "ies"} and ${propertyCount} propert${propertyCount === 1 ? "y" : "ies"} that will also be deleted.\n\n`
+      : "";
 
-    if (window.confirm(message)) {
-      deleteEntity({ id }).catch((err) => {
-        console.error("Failed to delete entity:", err);
-      });
+    const confirmed = window.confirm(
+      `${warning}Are you sure you want to delete "${name}"?`
+    );
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await deleteEntity({ id });
+    } catch (err) {
+      console.error("Failed to delete entity:", err);
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete entity"
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -174,6 +190,7 @@ export function EntityCard({
               e.stopPropagation();
               setIsEditing(true);
             }}
+            aria-label="Edit entity"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -185,11 +202,20 @@ export function EntityCard({
               e.stopPropagation();
               handleDelete();
             }}
+            disabled={isDeleting}
+            aria-label={isDeleting ? "Deleting..." : "Delete entity"}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className={`h-4 w-4 ${isDeleting ? "animate-pulse" : ""}`} />
           </Button>
         </div>
       </div>
+
+      {/* Delete error */}
+      {deleteError && (
+        <div className="mx-4 mb-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          {deleteError}
+        </div>
+      )}
 
       {/* Content (when expanded) */}
       {isExpanded && children && (

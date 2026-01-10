@@ -5,8 +5,10 @@ import MetricCatalogPage from "./MetricCatalogPage";
 
 // Mock Convex
 const mockUseQuery = vi.fn();
+const mockUseMutation = vi.fn().mockReturnValue(vi.fn());
 vi.mock("convex/react", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useMutation: () => mockUseMutation(),
 }));
 
 // Mock the api import
@@ -15,8 +17,37 @@ vi.mock("../../convex/_generated/api", () => ({
     metrics: {
       list: "metrics:list",
     },
+    setupProgress: {
+      foundationStatus: "setupProgress:foundationStatus",
+    },
+    metricCatalog: {
+      generateFromOverview: "metricCatalog:generateFromOverview",
+      generateFromFirstValue: "metricCatalog:generateFromFirstValue",
+      deleteAll: "metricCatalog:deleteAll",
+    },
   },
 }));
+
+const mockFoundationStatus = {
+  overviewInterview: {
+    status: "complete" as const,
+    journeyId: "journey1",
+    slotsCompleted: 5,
+    slotsTotal: 5,
+  },
+  firstValue: {
+    status: "defined" as const,
+    journeyId: "journey1",
+  },
+  measurementPlan: {
+    status: "available" as const,
+    entitiesCount: 0,
+  },
+  metricCatalog: {
+    status: "complete" as const,
+    metricsCount: 2,
+  },
+};
 
 const mockMetrics = [
   {
@@ -47,26 +78,37 @@ function setup() {
   return { user };
 }
 
+// Helper to setup mock for both queries
+function setupMocks(metricsValue: unknown) {
+  mockUseQuery.mockImplementation((query: string) => {
+    if (query === "metrics:list") return metricsValue;
+    if (query === "setupProgress:foundationStatus") return mockFoundationStatus;
+    return undefined;
+  });
+}
+
 beforeEach(() => {
   mockUseQuery.mockReset();
 });
 
 test("shows loading state while metrics are loading", () => {
-  mockUseQuery.mockReturnValue(undefined);
+  setupMocks(undefined);
   setup();
 
   expect(screen.getByText(/loading/i)).toBeInTheDocument();
 });
 
 test("shows empty state when no metrics exist", () => {
-  mockUseQuery.mockReturnValue([]);
+  setupMocks([]);
   setup();
 
-  expect(screen.getByText(/complete the overview interview/i)).toBeInTheDocument();
+  // With a completed journey, shows generate button
+  expect(screen.getByText(/ready to generate your personalized metric catalog/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /generate metric catalog/i })).toBeInTheDocument();
 });
 
 test("renders page title and subtitle", () => {
-  mockUseQuery.mockReturnValue(mockMetrics);
+  setupMocks(mockMetrics);
   setup();
 
   expect(screen.getByRole("heading", { name: "Metric Catalog" })).toBeInTheDocument();
@@ -74,7 +116,7 @@ test("renders page title and subtitle", () => {
 });
 
 test("renders metric cards in grid", () => {
-  mockUseQuery.mockReturnValue(mockMetrics);
+  setupMocks(mockMetrics);
   setup();
 
   expect(screen.getByText("New Users")).toBeInTheDocument();
@@ -82,7 +124,7 @@ test("renders metric cards in grid", () => {
 });
 
 test("opens detail panel when metric card is clicked", async () => {
-  mockUseQuery.mockReturnValue(mockMetrics);
+  setupMocks(mockMetrics);
   const { user } = setup();
 
   await user.click(screen.getByText("New Users"));
@@ -94,7 +136,7 @@ test("opens detail panel when metric card is clicked", async () => {
 });
 
 test("closes detail panel when close button is clicked", async () => {
-  mockUseQuery.mockReturnValue(mockMetrics);
+  setupMocks(mockMetrics);
   const { user } = setup();
 
   // Open panel
@@ -107,7 +149,7 @@ test("closes detail panel when close button is clicked", async () => {
 });
 
 test("switches selected metric when different card is clicked", async () => {
-  mockUseQuery.mockReturnValue(mockMetrics);
+  setupMocks(mockMetrics);
   const { user } = setup();
 
   // Open first metric

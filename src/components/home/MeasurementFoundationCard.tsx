@@ -14,7 +14,10 @@ interface FoundationStatus {
     status: "defined" | "not_defined";
     journeyId: Id<"journeys"> | null;
   };
-  measurementPlan: { status: "locked" };
+  measurementPlan: {
+    status: "locked" | "available" | "ready";
+    entitiesCount: number;
+  };
   metricCatalog: {
     status: "locked" | "in_progress" | "complete";
     metricsCount: number;
