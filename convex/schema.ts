@@ -324,6 +324,16 @@ export default defineSchema({
     status: v.string(), // "active" | "completed" | "archived"
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
+    // First Value candidate state (Issue #32/#33)
+    pendingCandidate: v.optional(v.object({
+      activityName: v.string(),
+      reasoning: v.string(),
+    })),
+    confirmedFirstValue: v.optional(v.object({
+      activityName: v.string(),
+      reasoning: v.string(),
+      confirmedAt: v.number(),
+    })),
   })
     .index("by_journey", ["journeyId"])
     .index("by_journey_and_type", ["journeyId", "interviewType"]),
@@ -344,6 +354,19 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_session", ["sessionId"]),
+
+  firstValueDefinitions: defineTable({
+    userId: v.id("users"),
+    activityId: v.optional(v.id("measurementActivities")),
+    activityName: v.string(),
+    reasoning: v.string(),
+    expectedTimeframe: v.string(),
+    successCriteria: v.optional(v.string()),
+    additionalContext: v.optional(v.string()),
+    confirmedAt: v.number(),
+    source: v.string(), // "interview" | "manual_edit"
+  })
+    .index("by_user", ["userId"]),
 
   metrics: defineTable({
     // Identity - using userId for now (products table doesn't exist yet)

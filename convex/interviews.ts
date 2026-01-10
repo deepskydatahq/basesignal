@@ -318,6 +318,57 @@ export const resetSession = mutation({
   },
 });
 
+// Confirm the pending First Value candidate
+export const confirmFirstValueCandidate = mutation({
+  args: { sessionId: v.id("interviewSessions") },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) throw new Error("Session not found");
+    if (!session.pendingCandidate) throw new Error("No pending candidate to confirm");
+
+    // Move pending to confirmed
+    await ctx.db.patch(args.sessionId, {
+      confirmedFirstValue: {
+        activityName: session.pendingCandidate.activityName,
+        reasoning: session.pendingCandidate.reasoning,
+        confirmedAt: Date.now(),
+      },
+      pendingCandidate: undefined,
+    });
+
+    return { confirmed: true };
+  },
+});
+
+// Dismiss the pending First Value candidate
+export const dismissFirstValueCandidate = mutation({
+  args: { sessionId: v.id("interviewSessions") },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      pendingCandidate: undefined,
+    });
+
+    return { dismissed: true };
+  },
+});
+
+// Set pending First Value candidate (called by AI)
+export const setPendingCandidate = mutation({
+  args: {
+    sessionId: v.id("interviewSessions"),
+    candidate: v.object({
+      activityName: v.string(),
+      reasoning: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      pendingCandidate: args.candidate,
+    });
+    return { success: true };
+  },
+});
+
 // Add a message to the session
 export const addMessage = mutation({
   args: {

@@ -1,16 +1,37 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { Check, Circle } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { api } from "../../../convex/_generated/api";
 import { LIFECYCLE_SLOTS, SLOT_INFO, REQUIRED_SLOTS } from "../../shared/lifecycleSlots";
+import { FirstValueCandidateCard } from "../interview/FirstValueCandidateCard";
 
 interface OverviewJourneyMapProps {
   journeyId: Id<"journeys">;
+  sessionId?: Id<"interviewSessions">;
 }
 
-export default function OverviewJourneyMap({ journeyId }: OverviewJourneyMapProps) {
+export default function OverviewJourneyMap({ journeyId, sessionId }: OverviewJourneyMapProps) {
   const activitiesBySlot = useQuery(api.overviewInterview.getActivitiesBySlot, { journeyId });
   const completionStatus = useQuery(api.overviewInterview.checkCompletionStatus, { journeyId });
+  const session = useQuery(
+    api.interviews.getSession,
+    sessionId ? { sessionId } : "skip"
+  );
+
+  const confirmCandidate = useMutation(api.interviews.confirmFirstValueCandidate);
+  const dismissCandidate = useMutation(api.interviews.dismissFirstValueCandidate);
+
+  const handleConfirm = async () => {
+    if (sessionId) {
+      await confirmCandidate({ sessionId });
+    }
+  };
+
+  const handleKeepExploring = async () => {
+    if (sessionId) {
+      await dismissCandidate({ sessionId });
+    }
+  };
 
   if (!activitiesBySlot) {
     return (
@@ -22,6 +43,18 @@ export default function OverviewJourneyMap({ journeyId }: OverviewJourneyMapProp
 
   return (
     <div className="flex-1 overflow-y-auto p-6">
+      {/* Pending First Value Candidate */}
+      {session?.pendingCandidate && (
+        <div className="mb-6">
+          <FirstValueCandidateCard
+            activityName={session.pendingCandidate.activityName}
+            reasoning={session.pendingCandidate.reasoning}
+            onConfirm={handleConfirm}
+            onKeepExploring={handleKeepExploring}
+          />
+        </div>
+      )}
+
       <div className="space-y-6">
         {LIFECYCLE_SLOTS.map((slot) => {
           const activities = activitiesBySlot[slot] || [];

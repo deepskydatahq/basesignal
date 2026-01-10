@@ -26,7 +26,8 @@ const MAX_ITERATIONS_RESPONSE = "I've made several updates to the journey. What 
 // Build tools with dynamic stage context and interview type filtering
 function buildJourneyTools(
   stages: Array<{ name: string; entity?: string; action?: string }>,
-  interviewType: InterviewType
+  interviewType: InterviewType,
+  session?: { confirmedFirstValue?: { activityName: string; reasoning: string; confirmedAt: number } }
 ): Anthropic.Tool[] {
   const typeConfig = INTERVIEW_TYPES[interviewType];
   const existingActivities = stages
@@ -37,6 +38,28 @@ function buildJourneyTools(
     : "No activities added yet.";
 
   const tools: Anthropic.Tool[] = [];
+
+  // First Value tool for first_value interview (only if not already confirmed)
+  if (interviewType === "first_value" && !session?.confirmedFirstValue) {
+    tools.push({
+      name: "propose_first_value_candidate",
+      description: `Propose an activity as the First Value moment when you have high confidence this is where users first experience value. Only call when confident. ${existingNote}`,
+      input_schema: {
+        type: "object" as const,
+        properties: {
+          activity_name: {
+            type: "string",
+            description: "The Entity Action name (e.g., 'Project Published')"
+          },
+          reasoning: {
+            type: "string",
+            description: "Why this is the First Value moment - what value does the user experience?"
+          }
+        },
+        required: ["activity_name", "reasoning"]
+      }
+    });
+  }
 
   // Stage tools only for types that build stages
   if (typeConfig.outputs.stages) {
@@ -233,6 +256,20 @@ FOCUS ON:
 GOALS:
 1. Build the journey path from signup to first value
 2. Each stage must be a specific user action, not a phase
+
+FIRST VALUE DETECTION:
+When you identify a strong First Value candidate during the conversation:
+- The activity should represent the FIRST moment users get real value
+- Not just completing setup, but actually experiencing the benefit
+- Look for moments where users SEE RESULTS, not just take actions
+- Call propose_first_value_candidate with clear reasoning
+- Only propose when confident - it's okay to gather more context first
+
+AFTER CONFIRMATION:
+When the user confirms a First Value candidate (you'll see it in the session state):
+- Ask about expected timeframe: "How quickly should new users reach this moment? Within their first session, within 24 hours, within their first week, or a custom timeframe?"
+- Ask about success criteria: "What does success look like when they reach this moment? How would you know they truly got value?"
+- After both answers, summarize and offer to complete the interview
 
 Ask concrete questions. When you identify an action, add it using entity + action format.`,
 
@@ -438,9 +475,26 @@ async function executeToolCall(
   journeyId: any,
   stages: Array<{ _id: string; name: string; entity?: string; action?: string }>,
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  sessionId?: any
 ): Promise<string> {
   switch (toolName) {
+    case "propose_first_value_candidate": {
+      const activityName = args.activity_name as string;
+      const reasoning = args.reasoning as string;
+
+      if (!sessionId) {
+        return "error: No session ID provided for First Value candidate";
+      }
+
+      // Store pending candidate on session
+      await ctx.runMutation(api.interviews.setPendingCandidate, {
+        sessionId,
+        candidate: { activityName, reasoning }
+      });
+
+      return `Proposed "${activityName}" as First Value candidate. Awaiting user confirmation on the journey map.`;
+    }
     case "add_stage": {
       const entity = args.entity as string;
       const action = args.action as string;
@@ -727,7 +781,7 @@ export const chat = action({
         // Detailed interviews use stage/transition tools
         const graphContext = serializeGraph(journey, stages, transitions);
         systemPrompt = buildInterviewPrompt(interviewType, graphContext);
-        tools = buildJourneyTools(stages, interviewType);
+        tools = buildJourneyTools(stages, interviewType, session);
       }
 
       // Call Claude
@@ -769,7 +823,8 @@ export const chat = action({
                 session.journeyId,
                 currentStages,
                 toolUse.name,
-                toolUse.input as Record<string, unknown>
+                toolUse.input as Record<string, unknown>,
+                args.sessionId
               );
           toolResults.push(result);
           allToolCalls.push({
