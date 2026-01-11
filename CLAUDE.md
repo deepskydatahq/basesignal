@@ -70,8 +70,9 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 │   /new-feature ──┐                                                      │
 │   /retro ────────┼──► stage:brainstorm ──► stage:plan ──► stage:ready   │
 │                  │         │                   │              │         │
-│                  │  /brainstorm-issue     /plan-issue    /pick-issue    │
-│                  │                       plan-issues.sh   run-issue.sh  │
+│                  │    /brainstorm          /plan-issue    /pick-issue   │
+│                  │    /brainstorm-auto    plan-issues.sh  run-issue.sh  │
+│                  │   brainstorm-issues.sh                     │         │
 │                  │                                            │         │
 │                  └────────────────────────────────────────────┘         │
 │                              (retro discovers more issues)              │
@@ -95,7 +96,8 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 |---------|-------------|
 | `/new-feature` | Brainstorm idea → design doc → GitHub issue |
 | `/brainstorm-epics` | Generate epic candidates from vision + roadmap |
-| `/brainstorm-issue` | Process `stage:brainstorm` queue |
+| `/brainstorm` | Interactive brainstorm for `stage:brainstorm` queue |
+| `/brainstorm-auto` | Autonomous brainstorm with expert personas (Butterfield + Abramov + Jobs) |
 | `/plan-issue` | Process `stage:plan` queue |
 | `/pick-issue` | Process `stage:ready` queue |
 | `/retro` | Post-implementation analysis |
@@ -103,6 +105,11 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 ### Headless Automation
 
 ```bash
+# Brainstorm issues (stage:brainstorm → stage:plan)
+./brainstorm-issues.sh              # Single issue
+./brainstorm-issues.sh --loop       # Process all brainstorm issues
+./brainstorm-issues.sh 15           # Brainstorm specific issue #15
+
 # Plan issues (stage:plan → stage:ready)
 ./plan-issues.sh                    # Single issue
 ./plan-issues.sh --loop             # Process all plan issues
@@ -114,7 +121,7 @@ This project uses a three-stage issue pipeline with Claude Code commands.
 ./run-issue.sh --random --max 5     # Random 5 issues
 ```
 
-Both scripts support `--continue-on-error` to keep going if an issue fails.
+All scripts support `--random`, `--loop`, `--max N`, and `--continue-on-error` flags.
 
 ---
 

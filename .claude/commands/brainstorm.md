@@ -113,6 +113,21 @@ Document structure:
 <How do we know it works?>
 ```
 
+### 6a. Validate Before Stage Advancement
+
+Before advancing to any stage beyond brainstorm, verify brainstorming work is documented:
+
+1. **Check for brainstorm output** in issue comments:
+   - Look for "Brainstorming Complete" or "Auto-Brainstorming Complete" marker
+   - OR design document saved to `docs/plans/YYYY-MM-DD-*-design.md`
+
+2. **If validation fails:**
+   - Report: "Cannot advance #<number>: no brainstorm output documented. Complete the brainstorming session first."
+   - Remove `in-progress` label and stop
+   - Do NOT proceed with stage transition
+
+3. **If validation passes:** Continue to next section
+
 ### 7. Create Child Issues (if breaking down)
 
 For each child issue:
@@ -187,40 +202,4 @@ Created:
 - #<child1> - <title> (stage:<stage>)
 - #<child2> - <title> (stage:<stage>)
 Original #<number> closed.
-```
-
-## Example Flow
-
-```
-> /brainstorm
-
-Issues needing brainstorming:
-#15 - Add metric trend visualization (enhancement)
-#18 - Fix journey export timeout (bug)
-
-Selecting #18 (bug, older) - claiming with in-progress label...
-
-[Invokes superpowers:brainstorming]
-
-Let me explore the current export implementation...
-
-[Reads src/components/journey/ExportButton.tsx]
-[Checks convex/journeys.ts for export functions]
-
-First question: What file format is timing out?
-
-1. JSON export - should be instant
-2. PNG/SVG image - React Flow rendering
-3. PDF - involves canvas conversion
-
-...
-
-[Brainstorming continues with questions and design exploration]
-
-Outcome: Single piece
-
-Design Decision: Use chunked export with progress indicator.
-Moving to: stage:plan
-
-Issue #18 updated with design decisions.
 ```

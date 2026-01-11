@@ -1,11 +1,15 @@
 ---
-description: Generate epic candidates from vision, roadmap, and ideas
+description: Generate epic candidates from vision, roadmap, and ideas (self-directed or expert-driven)
 allowed-tools: Bash(git:*), Bash(gh issue list:*), Bash(gh issue view:*), Skill, Task, Read, Glob, Grep
 ---
 
 # Brainstorm Epics
 
-Generate epic candidates by combining strategic context with user ideas. Present 3-5 structured candidates, let user select, then hand off to product-epic for creation.
+Generate epic candidates by combining strategic context with user ideas. Choose between:
+- **Self-directed**: Guided exploration of your own ideas
+- **Product Expert**: Let expert personas (Butterfield + Abramov + Jobs) generate and review 3 candidates
+
+Present structured candidates, let user select, then hand off to product-epic for creation.
 
 ## When to Use
 
@@ -23,13 +27,21 @@ If either file is missing, the command can still run but will have less strategi
 ## Position in Workflow
 
 ```
-VISION.md + ROADMAP.md + User Ideas + GitHub Issues + Codebase
+                         brainstorm-epics
                               │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+             Self-Directed        Product Expert
+                    │                   │
+                    ▼                   ▼
+         User explores ideas    Expert Panel generates:
+         with guidance          - Product Expert (Butterfield)
+                    │           - Technical Expert (Abramov)
+                    │           - Design Review (Jobs)
+                    │                   │
+                    └─────────┬─────────┘
                               ▼
-                      brainstorm-epics
-                              │
-                              ▼
-                    3-5 structured candidates
+                    3 structured candidates
                               │
                               ▼
                        user selects
@@ -40,7 +52,18 @@ VISION.md + ROADMAP.md + User Ideas + GitHub Issues + Codebase
 
 ## Instructions
 
-### 1. Gather Context
+### 1. Ask Brainstorming Mode
+
+First, ask the user how they want to brainstorm:
+
+> "How would you like to brainstorm epics?
+> 1. **Self-directed** - I'll guide you through exploring ideas
+> 2. **Product Expert** - Let an expert panel (Butterfield + Abramov + Jobs) generate candidates"
+
+**If Self-directed:** Continue to step 2
+**If Product Expert:** Skip to step 2b (Expert-Driven Mode)
+
+### 2. Gather Context (Self-Directed)
 
 Run these in parallel:
 
@@ -49,7 +72,7 @@ Run these in parallel:
 3. Run `gh issue list --state open --limit 50` - get open issues to avoid duplicates
 4. Run `git log --oneline -30` - understand recent momentum
 
-### 2. Ask User for Input
+### 2a. Ask User for Input
 
 > "Do you have specific ideas you want to explore, or should we brainstorm from scratch based on vision and roadmap?"
 
@@ -61,7 +84,116 @@ Run these in parallel:
 - May ask: "Any areas feeling particularly painful right now?"
 - May ask: "Anything you've been thinking about but haven't written down?"
 
-### 3. Brainstorm Candidates
+### 2b. Expert-Driven Mode
+
+If user selected Product Expert mode, launch an expert brainstorming session:
+
+#### 2b.1 Gather Context
+Run these in parallel:
+1. Read VISION.md
+2. Read ROADMAP.md
+3. Run `gh issue list --state open --limit 50`
+4. Run `git log --oneline -30`
+
+#### 2b.2 Launch Expert Panel
+
+Use the Task tool to launch a Product Expert agent (haiku model) with this prompt:
+
+```
+You are a product expert generating epic candidates for a software project.
+
+## Your Principles (Butterfield-style)
+- "We don't sell saddles here" - focus on transformation, not features
+- Job to be done - what is the user really trying to accomplish?
+- Reduce friction ruthlessly - every click is a chance to lose someone
+- Magic moments - design for delight, not just utility
+- Simplicity is respect for the user's time
+- Iterate on real usage, not opinions
+
+## Context
+
+### Vision
+{VISION.md content}
+
+### Roadmap
+{ROADMAP.md content}
+
+### Open Issues (avoid duplicates)
+{gh issue list output}
+
+### Recent Momentum
+{git log output}
+
+## Your Task
+
+Generate exactly 3 epic candidates that would create the most value.
+
+For each candidate, provide:
+1. **Title**: Clear, actionable epic name
+2. **Problem**: What pain point or opportunity (2-3 sentences)
+3. **Transformation**: What better version of the user does this enable?
+4. **Magic Moment**: What would make someone say "wow"?
+5. **Scope**: S / M / L
+6. **Roadmap Connection**: Which focus area this serves
+7. **Why Now**: What makes this timely
+8. **Potential Children**: 3-5 rough task ideas
+
+Focus on transformation over features. Challenge whether proposed features are actually needed.
+```
+
+#### 2b.3 Review with Technical Expert
+
+After Product Expert generates candidates, launch a Technical Expert agent (haiku model):
+
+```
+Review these epic candidates from a technical perspective.
+
+## Your Principles (Abramov-style)
+- Start with why - what problem are we actually solving?
+- Minimal API surface - the best API needs no documentation
+- Composition over configuration
+- Question assumptions - "everyone does it" is not a reason
+
+## Candidates
+{Product Expert output}
+
+## Your Task
+For each candidate:
+1. Flag any technical complexity or risks
+2. Suggest simpler alternatives if over-engineered
+3. Note implementation considerations
+4. Rate feasibility: Easy / Medium / Hard
+
+Keep it brief - 2-3 sentences per candidate.
+```
+
+#### 2b.4 Simplification Review
+
+Launch Design Reviewer agent (haiku model) for final check:
+
+```
+Review these epic candidates for ruthless simplification.
+
+## Your Principles (Jobs-style)
+- "Focus means saying no" - what can be removed?
+- Simple can be harder than complex
+- No excuses for complexity
+
+## Candidates with Technical Notes
+{Combined output}
+
+## Your Task
+For each candidate:
+1. What would you cut or simplify?
+2. Is this truly essential or "nice to have"?
+3. Rate: STRONG / GOOD / WEAK
+
+Output a final ranking with brief justification.
+```
+
+Then proceed to step 4 (Present Candidates) with the expert-generated candidates.
+
+### 3. Brainstorm Candidates (Self-Directed)
 
 Invoke `superpowers:brainstorming` skill to generate 3-5 epic candidates.
 
@@ -157,8 +289,16 @@ Next: Run `/brainstorm` to design the first issue, or `/plan-issue` if design is
 
 ## Example Flow
 
+### Self-Directed Mode
+
 ```
 > /brainstorm-epics
+
+How would you like to brainstorm epics?
+1. **Self-directed** - I'll guide you through exploring ideas
+2. **Product Expert** - Let an expert panel generate candidates
+
+> 1
 
 Let me gather context first...
 
@@ -174,20 +314,58 @@ Great, let me explore that idea in context of your vision and roadmap...
 
 [Invokes brainstorming skill]
 
-Here are 4 epic candidates:
+Here are 3 epic candidates:
 
 ### Candidate 1: Metric Catalog Export Formats
-**Problem:** Users complete the interview but can't easily share the metric catalog with their team or import into other tools.
-**Scope:** M
-**Roadmap Connection:** Measurement Foundation
-**Why now:** Core interview flow works; outputs are the missing payoff
-**Potential children:**
-- Design export format options (CSV, Notion, PDF)
-- Implement CSV export
-- Implement Notion integration
-- Add export UI to metric catalog view
+**Problem:** Users complete the interview but can't easily share...
+[continues as before]
+```
 
-### Candidate 2: Metric Definitions Enhancement
+### Product Expert Mode
+
+```
+> /brainstorm-epics
+
+How would you like to brainstorm epics?
+1. **Self-directed** - I'll guide you through exploring ideas
+2. **Product Expert** - Let an expert panel generate candidates
+
+> 2
+
+Launching expert panel...
+
+[Gathering context: VISION.md, ROADMAP.md, issues, commits]
+
+**Product Expert (Butterfield)** is generating candidates...
+
+[Product Expert generates 3 candidates focused on user transformation]
+
+**Technical Expert (Abramov)** is reviewing...
+
+[Technical Expert adds feasibility notes and simplification suggestions]
+
+**Design Reviewer (Jobs)** is doing final check...
+
+[Design Reviewer ranks candidates: STRONG / GOOD / WEAK]
+
+---
+
+Here are 3 expert-generated epic candidates:
+
+### Candidate 1: [Title] ⭐ STRONG
+**Problem:** ...
+**Transformation:** ...
+**Magic Moment:** ...
+**Technical Notes:** Easy feasibility, aligns with existing patterns
+**Scope:** M
+**Roadmap Connection:** [Area]
+**Why now:** ...
+**Potential children:**
+- Task 1
+- Task 2
+- Task 3
+
+### Candidate 2: [Title] - GOOD
 ...
 
 ---

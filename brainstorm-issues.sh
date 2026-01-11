@@ -1,6 +1,9 @@
 #!/bin/bash
-# Plan issues in headless Claude Code
-# Usage: ./plan-issues.sh [--random] [--loop] [--max N] [--continue-on-error]
+# Brainstorm issues in headless Claude Code
+# Usage: ./brainstorm-issues.sh [ISSUE_NUMBER] [--random] [--loop] [--max N] [--continue-on-error]
+#
+# Arguments:
+#   ISSUE_NUMBER        Specific issue to brainstorm (skips claiming)
 #
 # Options:
 #   --random            Pick issues randomly instead of in order
@@ -11,10 +14,17 @@
 set -e
 
 # Parse args
+SPECIFIC_ISSUE=""
 PICK_RANDOM=false
 LOOP_MODE=false
 MAX_ISSUES=0
 CONTINUE_ON_ERROR=false
+
+# Check if first argument is a number (specific issue)
+if [[ $# -gt 0 && "$1" =~ ^[0-9]+$ ]]; then
+    SPECIFIC_ISSUE="$1"
+    shift
+fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -36,114 +46,43 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: ./plan-issues.sh [--random] [--loop] [--max N] [--continue-on-error]"
+            echo "Usage: ./brainstorm-issues.sh [ISSUE_NUMBER] [--random] [--loop] [--max N] [--continue-on-error]"
             exit 1
             ;;
     esac
 done
 
-# Function to fetch plan issues
-fetch_plan_issues() {
-    gh issue list --state open --label "stage:plan" --json number,title,labels --jq '
+# Function to fetch brainstorm issues
+fetch_brainstorm_issues() {
+    gh issue list --state open --label "stage:brainstorm" --json number,title,labels --jq '
         [.[] | select(.labels | map(.name) | index("in-progress") | not)]
     '
+}
+
+# Function to fetch specific issue
+fetch_specific_issue() {
+    local ISSUE_NUMBER="$1"
+    gh issue view "$ISSUE_NUMBER" --json number,title
 }
 
 # Function to process a single issue
 process_issue() {
     local ISSUE_NUMBER="$1"
     local ISSUE_TITLE="$2"
+    local SKIP_CLAIM="$3"
 
     echo "Selected: #$ISSUE_NUMBER - $ISSUE_TITLE"
 
-    # Claim the issue
-    echo "Claiming issue (adding in-progress label)..."
-    gh issue edit "$ISSUE_NUMBER" --add-label in-progress
+    # Claim the issue (unless skipping)
+    if [[ "$SKIP_CLAIM" != "true" ]]; then
+        echo "Claiming issue (adding in-progress label)..."
+        gh issue edit "$ISSUE_NUMBER" --add-label in-progress
+    else
+        echo "Skipping claim (specific issue mode)"
+    fi
 
-    # Get full issue content
-    echo "Fetching issue details..."
-    ISSUE_BODY=$(gh issue view "$ISSUE_NUMBER" --json body,title,comments --jq '
-        "# Issue: \(.title)\n\n## Description\n\(.body)\n\n## Comments\n" +
-        (.comments | map("---\n\(.body)") | join("\n\n"))
-    ')
-
-    # Build the prompt
-    PROMPT="Plan GitHub issue #$ISSUE_NUMBER: $ISSUE_TITLE
-
-$ISSUE_BODY
-
----
-
-## Instructions
-
-You are creating an implementation plan for this issue. Follow these steps:
-
-### 1. Invoke the Writing Plans Skill
-
-Use the \`superpowers:writing-plans\` skill with this argument:
-\`\`\`
-Issue #$ISSUE_NUMBER: $ISSUE_TITLE
-\`\`\`
-
-The skill will guide you through:
-- Exploring the codebase to understand current state
-- Identifying all files that need changes
-- Breaking work into specific, ordered TDD steps
-- Including test strategy
-
-### 2. Testing Strategy
-
-Include appropriate testing in the plan:
-- Identify what needs to be tested
-- Determine the testing approach based on the project's existing patterns
-- Specify test commands if the project has a test suite
-
-### 3. Save the Plan
-
-Save the detailed plan to: \`docs/plans/$(date +%Y-%m-%d)-<feature-name>.md\`
-
-### 4. Add Plan Summary to Issue
-
-After creating the full plan document, add a summary comment to the issue:
-
-\`\`\`bash
-gh issue comment $ISSUE_NUMBER --body \"\$(cat <<'EOF'
-## Implementation Plan
-
-**Plan document:** \`docs/plans/<filename>.md\`
-
-### Overview
-<1-2 sentence summary of approach>
-
-### Tasks
-<N> TDD tasks covering:
-- <brief task list>
-
-### Testing
-- [ ] Run project test suite to verify changes
-
----
-*Plan created via headless session*
-EOF
-)\"
-\`\`\`
-
-### 5. Move to Ready
-
-\`\`\`bash
-gh issue edit $ISSUE_NUMBER --remove-label \"stage:plan\" --remove-label \"in-progress\" --add-label \"stage:ready\"
-\`\`\`
-
-## Output Format
-
-When complete, report:
-- Plan document location
-- Number of tasks
-- Issue moved to stage:ready
-
-## Start
-
-Begin planning now."
+    # Build the prompt - delegate to /brainstorm-auto
+    PROMPT="Run /brainstorm-auto $ISSUE_NUMBER"
 
     # Run Claude Code in headless mode
     echo ""
@@ -159,11 +98,28 @@ Begin planning now."
 PROCESSED=0
 FAILED=0
 
-# Main loop
+# Specific issue mode
+if [[ -n "$SPECIFIC_ISSUE" ]]; then
+    echo "Fetching issue #$SPECIFIC_ISSUE..."
+    ISSUE_DATA=$(fetch_specific_issue "$SPECIFIC_ISSUE")
+
+    if [[ -z "$ISSUE_DATA" ]]; then
+        echo "Error: Issue #$SPECIFIC_ISSUE not found"
+        exit 1
+    fi
+
+    ISSUE_NUMBER=$(echo "$ISSUE_DATA" | jq -r '.number')
+    ISSUE_TITLE=$(echo "$ISSUE_DATA" | jq -r '.title')
+
+    process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE" "true"
+    exit 0
+fi
+
+# Queue mode - main loop
 while true; do
     # Fetch issues fresh each iteration (to see newly completed ones)
-    echo "Fetching stage:plan issues..."
-    ISSUES=$(fetch_plan_issues)
+    echo "Fetching stage:brainstorm issues..."
+    ISSUES=$(fetch_brainstorm_issues)
 
     # Check if any issues available
     COUNT=$(echo "$ISSUES" | jq 'length')
@@ -171,18 +127,18 @@ while true; do
         if [[ "$PROCESSED" -gt 0 ]]; then
             echo ""
             echo "=========================================="
-            echo "All issues planned!"
+            echo "All issues brainstormed!"
             echo "  Completed: $PROCESSED"
             echo "  Failed: $FAILED"
             echo "=========================================="
         else
-            echo "No issues with stage:plan available (all may be in-progress)."
-            echo "Run /brainstorm to process the brainstorming queue, or /new-feature to create issues."
+            echo "No issues with stage:brainstorm available (all may be in-progress)."
+            echo "Run /new-feature to create issues, or /brainstorm-epics to generate epics."
         fi
         exit 0
     fi
 
-    echo "Found $COUNT issue(s) needing planning"
+    echo "Found $COUNT issue(s) needing brainstorming"
 
     # Check if we've hit max
     if [[ "$MAX_ISSUES" -gt 0 && "$PROCESSED" -ge "$MAX_ISSUES" ]]; then
@@ -210,7 +166,7 @@ while true; do
     # Process the issue
     if [[ "$CONTINUE_ON_ERROR" == true ]]; then
         set +e
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
+        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE" "false"
         EXIT_CODE=$?
         set -e
 
@@ -223,7 +179,7 @@ while true; do
             PROCESSED=$((PROCESSED + 1))
         fi
     else
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
+        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE" "false"
         PROCESSED=$((PROCESSED + 1))
     fi
 
@@ -234,8 +190,8 @@ while true; do
 
     echo ""
     echo "=========================================="
-    echo "Issue #$ISSUE_NUMBER planned. Moving to next..."
-    echo "  Progress: $PROCESSED planned, $FAILED failed"
+    echo "Issue #$ISSUE_NUMBER brainstormed. Moving to next..."
+    echo "  Progress: $PROCESSED brainstormed, $FAILED failed"
     echo "=========================================="
     echo ""
 

@@ -1,6 +1,6 @@
 ---
 description: Pick the next GitHub issue ready for development and implement it
-allowed-tools: Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh issue edit:*), Bash(gh issue close:*), Bash(npm run lint:*), Bash(npm run test:*), Bash(npx tsc:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Skill, Read, Write, Edit, Glob, Grep
+allowed-tools: Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh issue edit:*), Bash(gh issue close:*), Bash(npm run:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Skill, Read, Write, Edit, Glob, Grep
 ---
 
 # Pick Issue
@@ -58,23 +58,6 @@ The issue should have a detailed implementation plan. Follow it:
 - Run tests as specified
 - Commit changes appropriately
 
-**Basesignal Patterns** (reference CLAUDE.md):
-
-| What | Pattern |
-|------|---------|
-| Convex queries | `useQuery(api.module.functionName, { args })` |
-| Convex mutations | `useMutation(api.module.functionName)` |
-| Components | Functional with hooks, no class components |
-| Styling | Tailwind CSS + Clarity UI design system |
-
-**Testing Conventions** (reference @testing.md):
-
-| What to test | Tool | Pattern |
-|--------------|------|---------|
-| Convex functions | `convex-test` | Use `setupJourney()` helper for auth |
-| React components | RTL | Use `setup()` function, `getByRole` queries |
-| Pure functions | Vitest | Direct unit tests |
-
 If the plan is missing or unclear:
 - The issue may have been incorrectly staged
 - Remove `in-progress` and route back: `gh issue edit <number> --remove-label "in-progress" --remove-label "stage:ready" --add-label "stage:plan"`
@@ -85,17 +68,14 @@ If the plan is missing or unclear:
 Run all verification checks before marking complete:
 
 ```bash
-# Lint check
-npm run lint
-
-# Type check
-npx tsc --noEmit
-
-# Run tests
-npm run test:run
+# Run your project's test suite
+# Examples:
+# npm run test
+# pytest
+# dbt test
 ```
 
-**All three must pass before closing the issue.**
+**All checks must pass before closing the issue.**
 
 If any check fails:
 - Fix the issues
@@ -115,9 +95,8 @@ Implemented in commit <sha>.
 - <summary of changes>
 
 ## Verification
-- [x] `npm run lint` - passed
-- [x] `npx tsc --noEmit` - passed
-- [x] `npm run test:run` - passed
+- [x] Tests passed
+- [x] Linting passed
 
 ---
 *Closed via /pick-issue*
@@ -133,71 +112,9 @@ Selected: #<number> - <title>
 [Implementation...]
 
 Verification:
-- Lint: passed
-- TypeScript: passed
 - Tests: passed
+- Lint: passed
 
 Completed: #<number>
 Commit: <sha>
 ```
-
-## Example Flow
-
-```
-> /pick-issue
-
-Issues ready for development:
-#24 - Fix activity validation error messages (bug, stage:ready)
-#28 - Add metric trend visualization (enhancement, stage:ready)
-
-Selecting #24 (bug, older) - claiming with in-progress label...
-
-[Fetches full issue context with implementation plan]
-
-Implementation Plan shows 4 steps:
-1. Enhance validation error types in convex/activities.ts
-2. Create error message mapping in src/lib/validation-errors.ts
-3. Update ActivityEditor error display
-4. Add tests
-
-Starting implementation...
-
-[Step 1: Reads convex/activities.ts, adds error codes]
-[Step 2: Creates src/lib/validation-errors.ts]
-[Step 3: Updates ActivityEditor.tsx with new error handling]
-[Step 4: Adds tests using convex-test and RTL]
-
-Running verification...
-
-$ npm run lint
-No issues found.
-
-$ npx tsc --noEmit
-No type errors.
-
-$ npm run test:run
-Tests: 42 passed, 0 failed
-
-All checks passed!
-
-[Commits changes]
-[Closes issue with structured comment]
-
-Completed: #24
-Commit: abc1234
-```
-
-## Working with Specific Issues
-
-```
-> /pick-issue 28
-
-Fetching issue #28...
-
-[Proceeds with implementation regardless of labels]
-```
-
-This is useful when:
-- You want to work on a specific issue
-- The issue hasn't been labeled yet
-- You're resuming work on an in-progress issue

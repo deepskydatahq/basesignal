@@ -33,7 +33,7 @@ Use the `superpowers:brainstorming` skill to guide roadmap creation/refinement.
 
 Read VISION.md first. Every roadmap item must trace back to the transformation.
 
-If VISION.md doesn't exist, suggest running `product vision` first.
+If VISION.md doesn't exist, suggest running `/product-vision` first.
 
 ### 3. Identify Investment Areas
 

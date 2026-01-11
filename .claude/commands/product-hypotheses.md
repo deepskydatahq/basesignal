@@ -60,7 +60,7 @@ When to use: Periodically, or when hypotheses feel stale.
 
 ### Update After Feature Work
 
-When to use: After running `product iteration` on completed feature.
+When to use: After running `/product-iteration` on completed feature.
 
 1. Which hypothesis did this feature test?
 2. What did we learn?
@@ -103,7 +103,7 @@ When to use: When deciding what to build next.
    **Investment Area:** [from roadmap]
 
    ---
-   *Created via `product hypotheses select`*
+   *Created via /product-hypotheses*
    EOF
    )"
    ```

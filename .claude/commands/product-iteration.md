@@ -96,7 +96,7 @@ gh issue create --title "[Iteration Name]" --label "hypothesis,stage:brainstorm"
 - Test: [How we'll know]
 
 ---
-*Created via `product iteration`*
+*Created via /product-iteration*
 EOF
 )"
 ```
@@ -142,7 +142,7 @@ Present findings as:
 ## After Running This Command
 
 1. HYPOTHESES.md should be updated with learnings
-2. If major insight, consider running `product roadmap` to review investment areas
+2. If major insight, consider running `/product-roadmap` to review investment areas
 3. Created issues enter the dev workflow: `/brainstorm` → `/plan-issue` → `/pick-issue`
 
 ## Connection to Dev Workflow
@@ -152,7 +152,7 @@ Present findings as:
     ↓
 /retro → technical follow-ups → stage:* issues
     ↓
-product iteration → product insights → HYPOTHESES.md + optional issues
+/product-iteration → product insights → HYPOTHESES.md + optional issues
     ↓
-product hypotheses select → next bet → stage:brainstorm issue
+/product-hypotheses select → next bet → stage:brainstorm issue
 ```

@@ -49,6 +49,21 @@ Review:
 - Linked design documents in `docs/plans/`
 - Scope and constraints
 
+### 3a. Validate Brainstorm Complete
+
+Before writing an implementation plan, verify the issue has been through brainstorming:
+
+1. **Check for brainstorm output** in issue body/comments:
+   - Look for "Brainstorming Complete" or "Auto-Brainstorming Complete" marker
+   - OR design document referenced in `docs/plans/YYYY-MM-DD-*-design.md`
+
+2. **If validation fails:**
+   - Report: "Cannot plan #<number>: no brainstorm output found. Run `/brainstorm <number>` first."
+   - Remove `in-progress` label: `gh issue edit <number> --remove-label "in-progress"`
+   - Stop (do not proceed with planning)
+
+3. **If validation passes:** Continue to write implementation plan
+
 ### 4. Write Implementation Plan
 
 Invoke the `superpowers:writing-plans` skill to create a detailed plan:
@@ -57,17 +72,7 @@ Invoke the `superpowers:writing-plans` skill to create a detailed plan:
 - Identify all files that need changes
 - Break work into specific, ordered steps
 - Consider edge cases and error handling
-- Include test strategy (see testing conventions below)
-
-**Testing Conventions** (reference @testing.md for full patterns):
-
-| What to test | Tool | Pattern |
-|--------------|------|---------|
-| Convex functions | `convex-test` | Use `setupJourney()` helper for auth |
-| React components | RTL | Use `setup()` function, `getByRole` queries |
-| Pure functions | Vitest | Direct unit tests |
-
-Test commands: `npm run test:run` (single run), `npm test` (watch mode)
+- Include test strategy
 
 ### 5. Add Plan to Issue
 
@@ -81,20 +86,20 @@ gh issue comment <number> --body "$(cat <<'EOF'
 ### Steps
 
 1. **<Step title>**
-   - File: `<path/to/file.ts>` or `<path/to/Component.tsx>`
+   - File: `<path/to/file>`
    - Change: <what to do>
    - Details: <specifics if needed>
 
 2. **<Step title>**
-   - File: `<path/to/file.ts>`
+   - File: `<path/to/file>`
    - Change: <what to do>
 
 ... (all steps)
 
 ### Testing
-- [ ] Convex function tests using `convex-test` (if backend changes)
-- [ ] Component tests using RTL (if UI changes)
-- [ ] Run `npm run test:run` to verify all tests pass
+- [ ] Unit tests for new functionality
+- [ ] Integration tests if applicable
+- [ ] Run test suite to verify
 
 ### Risks & Mitigations
 - <risk>: <mitigation>
@@ -104,6 +109,20 @@ gh issue comment <number> --body "$(cat <<'EOF'
 EOF
 )"
 ```
+
+### 5a. Validate Plan Complete
+
+Before moving to stage:ready, verify the implementation plan was added:
+
+1. **Check for plan output** in issue comments:
+   - Look for "Implementation Plan" marker in comments
+   - OR plan document saved to `docs/plans/YYYY-MM-DD-*-plan.md`
+
+2. **If validation fails:**
+   - Report: "Cannot advance #<number> to stage:ready: no implementation plan documented."
+   - Do NOT proceed with stage transition
+
+3. **If validation passes:** Continue with transition
 
 ### 6. Move to Ready
 
@@ -122,54 +141,5 @@ Plan added to issue with N steps.
 Moved to: stage:ready
 
 Issue #<number> is now ready for implementation.
-Run /pick-issue to start working on it.
-```
-
-## Example Flow
-
-```
-> /plan-issue
-
-Issues needing planning:
-#22 - Add journey duplication feature (enhancement)
-#24 - Fix activity validation error messages (bug)
-
-Selecting #24 (bug, older) - claiming with in-progress label...
-
-[Invokes superpowers:writing-plans]
-
-Let me explore the current validation implementation...
-
-[Reads convex/activities.ts]
-[Checks src/components/journey/ActivityEditor.tsx]
-
-Understanding the structure:
-- Validation happens in convex/activities.ts via validateActivity()
-- Errors surface in ActivityEditor.tsx through useMutation error handling
-
-Implementation Plan:
-
-1. **Enhance validation error types**
-   - File: `convex/activities.ts`
-   - Change: Add specific error codes for entity/action validation
-
-2. **Create error message mapping**
-   - File: `src/lib/validation-errors.ts`
-   - Change: Map error codes to user-friendly messages
-
-3. **Update ActivityEditor error display**
-   - File: `src/components/journey/ActivityEditor.tsx`
-   - Change: Use new error mapping, show inline errors
-
-4. **Add tests**
-   - File: `convex/activities.test.ts` - convex-test for validation
-   - File: `src/components/journey/ActivityEditor.test.tsx` - RTL for UI
-
-[Plan added to issue]
-
-Plan added to issue with 4 steps.
-Moved to: stage:ready
-
-Issue #24 is now ready for implementation.
 Run /pick-issue to start working on it.
 ```

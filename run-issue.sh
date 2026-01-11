@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run ready issues in headless Claude Code
+# Run/implement issues in headless Claude Code
 # Usage: ./run-issue.sh [--random] [--loop] [--max N] [--continue-on-error]
 #
 # Options:
@@ -76,54 +76,67 @@ $ISSUE_BODY
 
 ## Instructions
 
-1. Follow the implementation plan in the issue comments
-2. Make the necessary code changes
-3. Run tests to verify changes work
-4. Commit changes with appropriate message referencing #$ISSUE_NUMBER
+You are implementing this issue. The issue should have a detailed implementation plan in the comments.
 
-## Completion Workflow
+### 1. Review the Plan
 
-When implementation is complete and tests pass:
+Read through the implementation plan carefully. If no plan exists:
+- Remove in-progress and route back to planning:
+  \`gh issue edit $ISSUE_NUMBER --remove-label \"in-progress\" --remove-label \"stage:ready\" --add-label \"stage:plan\"\`
+- Report that the issue lacks a plan and stop.
 
-1. **Close the issue with a structured comment:**
+### 2. Implement
+
+Follow the implementation plan step by step:
+- Work through each task in order
+- Write tests as specified in the plan
+- Run tests to verify your changes work
+- Commit changes with clear messages
+
+### 3. Verify
+
+Before completing, run verification:
+- Run the project's test suite if one exists
+- Ensure the build succeeds if applicable
+- Check that your implementation matches the requirements
+
+### 4. Complete
+
+After implementation is done and verified:
 
 \`\`\`bash
+# Get the commit SHA
+COMMIT_SHA=\$(git rev-parse --short HEAD)
+
+# Close the issue
+gh issue edit $ISSUE_NUMBER --remove-label \"in-progress\"
 gh issue close $ISSUE_NUMBER --comment \"\$(cat <<'EOF'
-## Completed
+Implemented in commit \$COMMIT_SHA.
 
-**Commit:** <commit-sha>
+## Changes
+- <summary of changes made>
 
-### Changes
-- <file1>: <what changed>
-- <file2>: <what changed>
-
-### Summary
-<1-2 sentences describing what was done>
-
-### Tests
-- [x] <test that was run/passed>
+## Verification
+- [x] Implementation complete
+- [x] Tests passing (if applicable)
 
 ---
-*Implemented via headless session*
+*Closed via headless session*
 EOF
-)\"\`\`\`
+)\"
+\`\`\`
 
-2. **Decide whether to run retrospective:**
+## Output Format
 
-   Consider running \`/retro\` if ANY of these apply:
-   - You noticed related code that could be improved
-   - You saw similar patterns elsewhere that need the same fix
-   - You found TODOs or tech debt while working
-   - The change touched multiple files that may have adjacent issues
-
-   If yes: Run the /retro skill to discover and create follow-up issues.
-   The retro will automatically assign stage labels (stage:brainstorm, stage:plan, or stage:ready) to any issues it creates.
-
-   If no: Just report completion and exit.
+When complete, report:
+- Issue number and title
+- Summary of changes made
+- Commit SHA
+- Verification status
 
 ## Start
 
-Begin implementing now."
+Begin implementation now."
 
     # Run Claude Code in headless mode
     echo ""
@@ -151,18 +164,18 @@ while true; do
         if [[ "$PROCESSED" -gt 0 ]]; then
             echo ""
             echo "=========================================="
-            echo "All issues processed!"
+            echo "All issues implemented!"
             echo "  Completed: $PROCESSED"
             echo "  Failed: $FAILED"
             echo "=========================================="
         else
             echo "No issues with stage:ready available (all may be in-progress)."
-            echo "Run /plan-issue to process the planning queue, or /brainstorm for brainstorming queue."
+            echo "Run /plan-issue to process the planning queue, or /brainstorm to create issues."
         fi
         exit 0
     fi
 
-    echo "Found $COUNT ready issue(s)"
+    echo "Found $COUNT issue(s) ready for implementation"
 
     # Check if we've hit max
     if [[ "$MAX_ISSUES" -gt 0 && "$PROCESSED" -ge "$MAX_ISSUES" ]]; then
@@ -214,8 +227,8 @@ while true; do
 
     echo ""
     echo "=========================================="
-    echo "Issue #$ISSUE_NUMBER complete. Moving to next..."
-    echo "  Progress: $PROCESSED processed, $FAILED failed"
+    echo "Issue #$ISSUE_NUMBER implemented. Moving to next..."
+    echo "  Progress: $PROCESSED implemented, $FAILED failed"
     echo "=========================================="
     echo ""
 
