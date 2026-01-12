@@ -52,10 +52,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Function to fetch brainstorm issues
+# Function to fetch brainstorm issues (sorted by number ascending for dependency order)
 fetch_brainstorm_issues() {
     gh issue list --state open --label "stage:brainstorm" --json number,title,labels --jq '
-        [.[] | select(.labels | map(.name) | index("in-progress") | not)]
+        [.[] | select(.labels | map(.name) | index("in-progress") | not)] | sort_by(.number)
     '
 }
 

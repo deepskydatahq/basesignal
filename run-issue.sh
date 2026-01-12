@@ -42,10 +42,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Function to fetch ready issues
+# Function to fetch ready issues (sorted by number ascending for dependency order)
 fetch_ready_issues() {
     gh issue list --state open --label "stage:ready" --json number,title,labels --jq '
-        [.[] | select(.labels | map(.name) | index("in-progress") | not)]
+        [.[] | select(.labels | map(.name) | index("in-progress") | not)] | sort_by(.number)
     '
 }
 
