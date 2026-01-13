@@ -52,6 +52,13 @@ function formatRevenueModels(revenueModels?: string[]): string | null {
 
 export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [editValues, setEditValues] = useState({
+    productName: data.productName ?? "",
+    websiteUrl: data.websiteUrl ?? "",
+    hasMultiUserAccounts: data.hasMultiUserAccounts ?? null,
+    businessType: data.businessType ?? undefined,
+    revenueModels: data.revenueModels ?? [],
+  });
 
   const isComplete = Boolean(data.productName);
   const businessLine = formatBusinessLine(
@@ -59,6 +66,52 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
     data.businessType
   );
   const revenueLine = formatRevenueModels(data.revenueModels);
+
+  if (isEditing) {
+    return (
+      <ProfileSection
+        title="Core Identity"
+        status={isComplete ? "complete" : "not_started"}
+        statusLabel={isComplete ? "Complete" : "Not Started"}
+      >
+        <div className="space-y-5">
+          {/* Product Name */}
+          <div className="space-y-2">
+            <Label htmlFor="productName">Product Name</Label>
+            <Input
+              id="productName"
+              placeholder="e.g., Acme App"
+              value={editValues.productName}
+              onChange={(e) =>
+                setEditValues({ ...editValues, productName: e.target.value })
+              }
+            />
+          </div>
+
+          {/* Website URL */}
+          <div className="space-y-2">
+            <Label htmlFor="websiteUrl">Website URL</Label>
+            <Input
+              id="websiteUrl"
+              placeholder="https://example.com"
+              value={editValues.websiteUrl}
+              onChange={(e) =>
+                setEditValues({ ...editValues, websiteUrl: e.target.value })
+              }
+            />
+          </div>
+
+          {/* Actions placeholder - will be added in next task */}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+              <X className="w-4 h-4 mr-1" />
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </ProfileSection>
+    );
+  }
 
   return (
     <ProfileSection

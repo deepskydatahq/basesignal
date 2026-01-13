@@ -79,3 +79,11 @@ test("shows Not Started status when productName is not set", () => {
 
   expect(screen.getByText("Not Started")).toBeInTheDocument();
 });
+
+test("shows edit form when Edit button is clicked", async () => {
+  const { user } = setup({ productName: "Acme App" });
+
+  await user.click(screen.getByRole("button", { name: /edit/i }));
+
+  expect(screen.getByLabelText(/product name/i)).toBeInTheDocument();
+});
