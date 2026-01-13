@@ -4,6 +4,7 @@ import { OnboardingModal } from "../components/onboarding/OnboardingModal";
 import { PhilosophyScreen } from "../components/onboarding/screens/PhilosophyScreen";
 import { ContextScreen } from "../components/onboarding/screens/ContextScreen";
 import { TrackingMaturityScreen, type TrackingMaturityData } from "../components/onboarding/screens/TrackingMaturityScreen";
+import { CommunityJoinScreen } from "../components/onboarding/screens/CommunityJoinScreen";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Check, Map, BarChart3, List } from "lucide-react";
@@ -18,7 +19,7 @@ interface ContextData {
   revenueModels: string[];
 }
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 export default function SetupOnboardingPage() {
   const navigate = useNavigate();
@@ -84,10 +85,10 @@ export default function SetupOnboardingPage() {
     navigate("/setup/interview");
   };
 
-  // Map internal step to visual progress (0,1 = step 0, 2 = step 1, 3 = step 2)
-  const visualStep = step <= 1 ? 0 : step === 2 ? 1 : 2;
+  // Map internal step to visual progress (0,1 = step 0, 2 = step 1, 3 = step 2, 4 = step 3)
+  const visualStep = step <= 1 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
 
-  // Determine modal size based on step
+  // Determine modal size based on step (briefing is wide, others are medium)
   const modalSize = step === 3 ? "wide" : "medium";
 
   const screens = [
@@ -102,7 +103,12 @@ export default function SetupOnboardingPage() {
     <SetupBriefingScreen
       key="briefing"
       productName={context.productName}
-      onStart={handleStartInterview}
+      onStart={() => setStep(4)}
+    />,
+    <CommunityJoinScreen
+      key="community"
+      onNext={handleStartInterview}
+      onBack={() => setStep(3)}
     />,
   ];
 
