@@ -2,6 +2,14 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ProfileSection, ProfileSectionStatus } from "./ProfileSection";
 
+function formatDate(timestamp: number): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(timestamp));
+}
+
 export function FirstValueSection() {
   const definition = useQuery(api.firstValue.getDefinition);
 
@@ -46,9 +54,12 @@ export function FirstValueSection() {
     >
       <div className="space-y-2">
         <p className="text-gray-900 font-medium">{definition.activityName}</p>
-        <p className="text-sm text-gray-500">
-          Expected: {definition.expectedTimeframe}
-        </p>
+        <div className="flex items-center gap-4 text-sm text-gray-500">
+          <span>Expected: {definition.expectedTimeframe}</span>
+          {definition.confirmedAt && (
+            <span>Confirmed: {formatDate(definition.confirmedAt)}</span>
+          )}
+        </div>
       </div>
     </ProfileSection>
   );

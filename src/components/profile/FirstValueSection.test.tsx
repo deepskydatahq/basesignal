@@ -55,4 +55,22 @@ describe("FirstValueSection", () => {
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
     });
   });
+
+  describe("confirmed state", () => {
+    test("shows Complete badge and confirmation date", () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: 1736553600000, // Jan 11, 2025
+        source: "interview",
+      };
+      setup();
+
+      expect(screen.getByText("Complete")).toBeInTheDocument();
+      expect(screen.getByText("Report Created")).toBeInTheDocument();
+      expect(screen.getByText(/jan 11, 2025/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+    });
+  });
 });
