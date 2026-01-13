@@ -31,6 +31,12 @@ export default defineSchema({
     businessType: v.optional(v.string()), // "b2c" | "b2b" (only set if single-user)
     revenueModels: v.optional(v.array(v.string())), // ["transactions", "tier_subscription", "seat_subscription", "volume_based"]
 
+    // Tracking Maturity (collected during onboarding)
+    trackingStatus: v.optional(v.string()),           // "full" | "partial" | "minimal" | "none"
+    trackingPainPoint: v.optional(v.string()),        // "what_to_track" | "inconsistent" | "no_outcomes" | "trust" | "other"
+    trackingPainPointOther: v.optional(v.string()),   // Custom text if "other"
+    analyticsTools: v.optional(v.array(v.string())), // Array of tool IDs
+
     // Setup Mode (replaces onboarding fields)
     setupStatus: v.optional(v.string()),  // "not_started" | "in_progress" | "complete"
     setupCompletedAt: v.optional(v.number()),
