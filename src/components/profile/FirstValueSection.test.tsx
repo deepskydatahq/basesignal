@@ -73,4 +73,37 @@ describe("FirstValueSection", () => {
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
     });
   });
+
+  describe("edit form toggle", () => {
+    test("clicking Define opens edit form", async () => {
+      mockDefinition = null;
+      const { user } = setup();
+
+      await user.click(screen.getByRole("button", { name: /define/i }));
+
+      expect(screen.getByLabelText(/activity name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/expected timeframe/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /cancel/i })
+      ).toBeInTheDocument();
+    });
+
+    test("clicking Edit opens form with current values", async () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: 1736553600000,
+        source: "interview",
+      };
+      const { user } = setup();
+
+      await user.click(screen.getByRole("button", { name: /edit/i }));
+
+      expect(screen.getByLabelText(/activity name/i)).toHaveValue(
+        "Report Created"
+      );
+    });
+  });
 });
