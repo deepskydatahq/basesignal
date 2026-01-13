@@ -2,6 +2,7 @@ import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
+import { clerkTheme } from "./clerkTheme";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
@@ -13,7 +14,13 @@ if (!clerkPubKey) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      appearance={{
+        baseTheme: clerkTheme,
+        variables: clerkTheme.variables,
+      }}
+    >
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         {children}
       </ConvexProviderWithClerk>
