@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { OnboardingModal } from "../components/onboarding/OnboardingModal";
 import { PhilosophyScreen } from "../components/onboarding/screens/PhilosophyScreen";
 import { ContextScreen } from "../components/onboarding/screens/ContextScreen";
+import { TrackingMaturityScreen, type TrackingMaturityData } from "../components/onboarding/screens/TrackingMaturityScreen";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Check, Map, BarChart3, List } from "lucide-react";
@@ -22,8 +23,10 @@ const TOTAL_STEPS = 3;
 export default function SetupOnboardingPage() {
   const navigate = useNavigate();
   const updateOnboarding = useMutation(api.users.updateOnboarding);
+  const updateTrackingMaturity = useMutation(api.users.updateTrackingMaturity);
   const updateSetupProgress = useMutation(api.setupProgress.update);
 
+  // Internal step: 0=philosophy, 1=context, 2=tracking, 3=briefing
   const [step, setStep] = useState(0);
   const [context, setContext] = useState<ContextData>({
     productName: "",
@@ -33,6 +36,7 @@ export default function SetupOnboardingPage() {
     businessType: undefined,
     revenueModels: [],
   });
+  const [trackingMaturity, setTrackingMaturity] = useState<TrackingMaturityData | null>(null);
 
   const handleContextSubmit = async (data: ContextData) => {
     setContext(data);
@@ -44,12 +48,31 @@ export default function SetupOnboardingPage() {
         hasMultiUserAccounts: data.hasMultiUserAccounts,
         businessType: data.businessType,
         revenueModels: data.revenueModels,
-        onboardingStep: "briefing",
+        onboardingStep: "tracking",
       });
-      setStep(2);
+      setStep(2); // Go to tracking maturity
     } catch (error) {
       console.error("Failed to save onboarding data:", error);
     }
+  };
+
+  const handleTrackingMaturitySubmit = async (data: TrackingMaturityData) => {
+    setTrackingMaturity(data);
+    try {
+      await updateTrackingMaturity({
+        trackingStatus: data.trackingStatus,
+        trackingPainPoint: data.trackingPainPoint,
+        trackingPainPointOther: data.trackingPainPointOther,
+        analyticsTools: data.analyticsTools,
+      });
+      setStep(3); // Go to briefing
+    } catch (error) {
+      console.error("Failed to save tracking maturity data:", error);
+    }
+  };
+
+  const handleTrackingMaturityBack = () => {
+    setStep(1); // Back to context
   };
 
   const handleStartInterview = async () => {
@@ -61,12 +84,21 @@ export default function SetupOnboardingPage() {
     navigate("/setup/interview");
   };
 
+  // Map internal step to visual progress (0,1 = step 0, 2 = step 1, 3 = step 2)
+  const visualStep = step <= 1 ? 0 : step === 2 ? 1 : 2;
+
   // Determine modal size based on step
-  const modalSize = step === 2 ? "wide" : "medium";
+  const modalSize = step === 3 ? "wide" : "medium";
 
   const screens = [
     <PhilosophyScreen key="philosophy" onNext={() => setStep(1)} />,
     <ContextScreen key="context" onNext={handleContextSubmit} />,
+    <TrackingMaturityScreen
+      key="tracking"
+      initialData={trackingMaturity ?? undefined}
+      onNext={handleTrackingMaturitySubmit}
+      onBack={handleTrackingMaturityBack}
+    />,
     <SetupBriefingScreen
       key="briefing"
       productName={context.productName}
@@ -76,7 +108,7 @@ export default function SetupOnboardingPage() {
 
   return (
     <div className="flex-1 flex items-center justify-center p-8">
-      <OnboardingModal currentStep={step} totalSteps={TOTAL_STEPS} size={modalSize}>
+      <OnboardingModal currentStep={visualStep} totalSteps={TOTAL_STEPS} size={modalSize}>
         {screens[step]}
       </OnboardingModal>
     </div>
