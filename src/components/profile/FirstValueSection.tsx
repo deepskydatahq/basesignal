@@ -32,11 +32,14 @@ function formatDate(timestamp: number): string {
 
 export function FirstValueSection() {
   const definition = useQuery(api.firstValue.getDefinition);
+  const updateDefinition = useMutation(api.firstValue.updateDefinition);
   const [isEditing, setIsEditing] = useState(false);
   const [activityName, setActivityName] = useState("");
   const [expectedTimeframe, setExpectedTimeframe] = useState(
     TIMEFRAME_OPTIONS[1]
   );
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Three states: not_started (null), in_progress (defined but not confirmed), complete (confirmed)
   const status: ProfileSectionStatus = !definition
@@ -61,11 +64,36 @@ export function FirstValueSection() {
       setActivityName("");
       setExpectedTimeframe(TIMEFRAME_OPTIONS[1]);
     }
+    setError(null);
     setIsEditing(true);
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!activityName.trim()) {
+      setError("Activity name is required");
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      await updateDefinition({
+        activityName: activityName.trim(),
+        reasoning: "",
+        expectedTimeframe,
+      });
+      setIsEditing(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (isEditing) {
@@ -103,14 +131,20 @@ export function FirstValueSection() {
               </SelectContent>
             </Select>
           </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={handleCancel}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
               <X className="w-4 h-4 mr-1" />
               Cancel
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
               <Check className="w-4 h-4 mr-1" />
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>

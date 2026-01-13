@@ -106,4 +106,54 @@ describe("FirstValueSection", () => {
       );
     });
   });
+
+  describe("form submission", () => {
+    test("calls mutation on save", async () => {
+      mockDefinition = null;
+      mockUpdateDefinition.mockResolvedValue("def123");
+      const { user } = setup();
+
+      await user.click(screen.getByRole("button", { name: /define/i }));
+      await user.type(
+        screen.getByLabelText(/activity name/i),
+        "Project Published"
+      );
+      await user.click(screen.getByRole("button", { name: /save/i }));
+
+      await waitFor(() => {
+        expect(mockUpdateDefinition).toHaveBeenCalledWith({
+          activityName: "Project Published",
+          reasoning: "",
+          expectedTimeframe: "Within 3 days",
+        });
+      });
+    });
+
+    test("shows validation error for empty activity name", async () => {
+      mockDefinition = null;
+      const { user } = setup();
+
+      await user.click(screen.getByRole("button", { name: /define/i }));
+      await user.click(screen.getByRole("button", { name: /save/i }));
+
+      expect(
+        screen.getByText(/activity name is required/i)
+      ).toBeInTheDocument();
+      expect(mockUpdateDefinition).not.toHaveBeenCalled();
+    });
+
+    test("cancel closes form without saving", async () => {
+      mockDefinition = null;
+      const { user } = setup();
+
+      await user.click(screen.getByRole("button", { name: /define/i }));
+      await user.type(screen.getByLabelText(/activity name/i), "Test");
+      await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+      expect(
+        screen.queryByLabelText(/activity name/i)
+      ).not.toBeInTheDocument();
+      expect(mockUpdateDefinition).not.toHaveBeenCalled();
+    });
+  });
 });
