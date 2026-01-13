@@ -533,6 +533,35 @@ export const deleteActivity = mutation({
   },
 });
 
+export const setFirstValue = mutation({
+  args: {
+    activityId: v.id("measurementActivities"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    const activity = await ctx.db.get(args.activityId);
+    if (!activity) throw new Error("Activity not found");
+    if (activity.userId !== user._id) throw new Error("Not authorized");
+
+    // Clear isFirstValue from all user's activities
+    const allActivities = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    for (const act of allActivities) {
+      if (act.isFirstValue && act._id !== args.activityId) {
+        await ctx.db.patch(act._id, { isFirstValue: false });
+      }
+    }
+
+    // Set this activity as First Value
+    await ctx.db.patch(args.activityId, { isFirstValue: true });
+  },
+});
+
 // ============================================
 // PROPERTIES
 // ============================================

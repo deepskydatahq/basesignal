@@ -647,6 +647,137 @@ describe("measurementActivities CRUD", () => {
   });
 });
 
+describe("setFirstValue", () => {
+  it("marks an activity as First Value", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "set-fv-user",
+        email: "set-fv@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "set-fv-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|set-fv-user",
+    });
+
+    const entityId = await asUser.mutation(api.measurementPlan.createEntity, {
+      name: "Account",
+    });
+
+    const activityId = await asUser.mutation(api.measurementPlan.createActivity, {
+      entityId,
+      name: "Account Activated",
+      action: "Activated",
+      isFirstValue: false,
+    });
+
+    await asUser.mutation(api.measurementPlan.setFirstValue, {
+      activityId,
+    });
+
+    const activity = await asUser.query(api.measurementPlan.getActivity, {
+      id: activityId,
+    });
+
+    expect(activity?.isFirstValue).toBe(true);
+  });
+
+  it("clears previous First Value when setting new one", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "clear-fv-user",
+        email: "clear-fv@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "clear-fv-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|clear-fv-user",
+    });
+
+    const entityId = await asUser.mutation(api.measurementPlan.createEntity, {
+      name: "Account",
+    });
+
+    const activity1Id = await asUser.mutation(api.measurementPlan.createActivity, {
+      entityId,
+      name: "Account Created",
+      action: "Created",
+      isFirstValue: true,
+    });
+
+    const activity2Id = await asUser.mutation(api.measurementPlan.createActivity, {
+      entityId,
+      name: "Account Activated",
+      action: "Activated",
+      isFirstValue: false,
+    });
+
+    // Set activity2 as First Value
+    await asUser.mutation(api.measurementPlan.setFirstValue, {
+      activityId: activity2Id,
+    });
+
+    const activity1 = await asUser.query(api.measurementPlan.getActivity, {
+      id: activity1Id,
+    });
+    const activity2 = await asUser.query(api.measurementPlan.getActivity, {
+      id: activity2Id,
+    });
+
+    expect(activity1?.isFirstValue).toBe(false);
+    expect(activity2?.isFirstValue).toBe(true);
+  });
+
+  it("throws error for unauthenticated user", async () => {
+    const t = convexTest(schema);
+
+    // Create a valid activity ID first
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "unauth-test-user",
+        email: "unauth@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const entityId = await t.run(async (ctx) => {
+      return await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Account",
+        createdAt: Date.now(),
+      });
+    });
+
+    const activityId = await t.run(async (ctx) => {
+      return await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Account Created",
+        action: "Created",
+        isFirstValue: false,
+        createdAt: Date.now(),
+      });
+    });
+
+    // Try to call mutation without authentication
+    await expect(
+      t.mutation(api.measurementPlan.setFirstValue, {
+        activityId,
+      })
+    ).rejects.toThrow("Not authenticated");
+  });
+});
+
 describe("measurementProperties CRUD", () => {
   it("can create and retrieve a property", async () => {
     const t = convexTest(schema);
