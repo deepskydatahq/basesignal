@@ -39,3 +39,16 @@ test("renders complete state with green check icon", () => {
   const badge = screen.getByText("Complete").closest("div");
   expect(badge).toHaveClass("text-green-700");
 });
+
+test("renders in_progress state with blue indicator", () => {
+  setup({
+    title: "User Journey",
+    status: "in_progress",
+    statusLabel: "In Progress",
+  });
+
+  expect(screen.getByText("User Journey")).toBeInTheDocument();
+  expect(screen.getByText("In Progress")).toBeInTheDocument();
+  const badge = screen.getByText("In Progress").closest("div");
+  expect(badge).toHaveClass("text-blue-600");
+});
