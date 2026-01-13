@@ -1,3 +1,10 @@
+const REVENUE_MODEL_LABELS: Record<string, string> = {
+  transactions: "Transactions",
+  tier_subscription: "Tier Subscription",
+  seat_subscription: "Seat Subscription",
+  volume_based: "Volume Based",
+};
+
 interface ProfileHeaderProps {
   identity: {
     productName?: string;
@@ -36,6 +43,14 @@ export function ProfileHeader({ identity }: ProfileHeaderProps) {
           <span className="inline-flex items-center rounded-full bg-gray-900 px-2.5 py-0.5 text-xs font-medium text-white">
             {businessTypeBadge}
           </span>
+          {identity.revenueModels?.map((model) => (
+            <span
+              key={model}
+              className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700"
+            >
+              {REVENUE_MODEL_LABELS[model] ?? model}
+            </span>
+          ))}
         </div>
       </div>
     </header>

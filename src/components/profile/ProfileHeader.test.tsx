@@ -92,3 +92,41 @@ test("shows B2C badge when hasMultiUserAccounts is false and no businessType", (
 
   expect(screen.getByText("B2C")).toBeInTheDocument();
 });
+
+test("renders revenue model badges with formatted labels", () => {
+  setup({
+    identity: {
+      productName: "My App",
+      revenueModels: ["seat_subscription", "transactions"],
+    },
+  });
+
+  expect(screen.getByText("Seat Subscription")).toBeInTheDocument();
+  expect(screen.getByText("Transactions")).toBeInTheDocument();
+});
+
+test("handles empty revenueModels array", () => {
+  setup({
+    identity: {
+      productName: "My App",
+      revenueModels: [],
+    },
+  });
+
+  // Should still render without errors, just no revenue badges
+  expect(
+    screen.getByRole("heading", { name: "My App" })
+  ).toBeInTheDocument();
+});
+
+test("handles unknown revenue model gracefully", () => {
+  setup({
+    identity: {
+      productName: "My App",
+      revenueModels: ["unknown_model"],
+    },
+  });
+
+  // Falls back to displaying the raw value
+  expect(screen.getByText("unknown_model")).toBeInTheDocument();
+});
