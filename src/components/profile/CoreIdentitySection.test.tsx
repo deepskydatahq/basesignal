@@ -123,3 +123,16 @@ test("Save button calls updateOnboarding mutation", async () => {
     expect.objectContaining({ productName: "New Name" })
   );
 });
+
+test("Cancel button reverts changes and closes edit form", async () => {
+  const { user } = setup({ productName: "Acme" });
+
+  await user.click(screen.getByRole("button", { name: /edit/i }));
+  await user.clear(screen.getByLabelText(/product name/i));
+  await user.type(screen.getByLabelText(/product name/i), "Changed Name");
+  await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+  // Should be back in display mode with original value
+  expect(screen.getByText("Acme")).toBeInTheDocument();
+  expect(screen.queryByLabelText(/product name/i)).not.toBeInTheDocument();
+});

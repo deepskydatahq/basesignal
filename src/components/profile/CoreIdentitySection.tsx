@@ -104,6 +104,17 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
     setIsEditing(false);
   };
 
+  const handleCancel = () => {
+    setEditValues({
+      productName: data.productName ?? "",
+      websiteUrl: data.websiteUrl ?? "",
+      hasMultiUserAccounts: data.hasMultiUserAccounts ?? null,
+      businessType: data.businessType ?? undefined,
+      revenueModels: data.revenueModels ?? [],
+    });
+    setIsEditing(false);
+  };
+
   const isComplete = Boolean(data.productName);
   const businessLine = formatBusinessLine(
     data.hasMultiUserAccounts,
@@ -234,7 +245,7 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+            <Button variant="ghost" size="sm" onClick={handleCancel}>
               <X className="w-4 h-4 mr-1" />
               Cancel
             </Button>
