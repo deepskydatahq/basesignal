@@ -149,6 +149,33 @@ export const updateOnboarding = mutation({
   },
 });
 
+export const updateTrackingMaturity = mutation({
+  args: {
+    trackingStatus: v.string(),
+    trackingPainPoint: v.string(),
+    trackingPainPointOther: v.optional(v.string()),
+    analyticsTools: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    await ctx.db.patch(user._id, {
+      trackingStatus: args.trackingStatus,
+      trackingPainPoint: args.trackingPainPoint,
+      trackingPainPointOther: args.trackingPainPointOther,
+      analyticsTools: args.analyticsTools,
+    });
+  },
+});
+
 // Dev helper: Reset setup to test the flow again
 export const resetSetup = mutation({
   args: {},
