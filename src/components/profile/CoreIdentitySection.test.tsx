@@ -67,3 +67,15 @@ test("renders empty state when no data provided", () => {
 
   expect(screen.getByText("No profile information yet")).toBeInTheDocument();
 });
+
+test("shows Complete status when productName is set", () => {
+  setup({ productName: "Acme App" });
+
+  expect(screen.getByText("Complete")).toBeInTheDocument();
+});
+
+test("shows Not Started status when productName is not set", () => {
+  setup({});
+
+  expect(screen.getByText("Not Started")).toBeInTheDocument();
+});
