@@ -46,3 +46,28 @@ test("renders empty state when no plan provided", () => {
     screen.getByText(/No measurement plan yet/)
   ).toBeInTheDocument();
 });
+
+test("renders entity count in status label when plan has entities", () => {
+  setup([
+    {
+      entity: { _id: "entity1" as Id<"measurementEntities">, name: "User" },
+      activities: [
+        { _id: "act1" as Id<"measurementActivities">, name: "Signed Up" },
+      ],
+      properties: [],
+    },
+    {
+      entity: { _id: "entity2" as Id<"measurementEntities">, name: "Account" },
+      activities: [],
+      properties: [],
+    },
+    {
+      entity: { _id: "entity3" as Id<"measurementEntities">, name: "Feature" },
+      activities: [],
+      properties: [],
+    },
+  ]);
+
+  expect(screen.getByText("Measurement Plan")).toBeInTheDocument();
+  expect(screen.getByText("3 entities")).toBeInTheDocument();
+});
