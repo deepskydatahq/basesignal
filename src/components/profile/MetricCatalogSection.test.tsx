@@ -70,3 +70,18 @@ test("groups metrics by category with category headers", () => {
   expect(screen.getByText("Daily Active Users")).toBeInTheDocument();
   expect(screen.getByText("Activation Rate")).toBeInTheDocument();
 });
+
+test("hides categories that have no metrics", () => {
+  setup([
+    { _id: "1", name: "New Users", category: "reach" },
+    { _id: "2", name: "Activation Rate", category: "value_delivery" },
+  ]);
+
+  // Only populated categories should appear
+  expect(screen.getByText("Reach")).toBeInTheDocument();
+  expect(screen.getByText("Value Delivery")).toBeInTheDocument();
+
+  // Empty categories should not appear
+  expect(screen.queryByText("Engagement")).not.toBeInTheDocument();
+  expect(screen.queryByText("Value Capture")).not.toBeInTheDocument();
+});
