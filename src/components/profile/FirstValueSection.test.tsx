@@ -37,4 +37,22 @@ describe("FirstValueSection", () => {
       ).toBeInTheDocument();
     });
   });
+
+  describe("defined state (pending confirmation)", () => {
+    test("shows In Progress badge and activity name", () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: null,
+        source: "manual_edit",
+      };
+      setup();
+
+      expect(screen.getByText("In Progress")).toBeInTheDocument();
+      expect(screen.getByText("Report Created")).toBeInTheDocument();
+      expect(screen.getByText(/within 3 days/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+    });
+  });
 });
