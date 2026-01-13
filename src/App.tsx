@@ -8,7 +8,7 @@ import SetupOnboardingPage from './routes/SetupOnboardingPage'
 import SetupInterviewPage from './routes/SetupInterviewPage'
 import SetupReviewPage from './routes/SetupReviewPage'
 import SetupCompletePage from './routes/SetupCompletePage'
-import HomePage from './routes/HomePage'
+import { ProfilePage } from './components/profile/ProfilePage'
 import SettingsPage from './routes/SettingsPage'
 import AmplitudeConnectPage from './routes/AmplitudeConnectPage'
 import AmplitudeEventsPage from './routes/AmplitudeEventsPage'
@@ -126,7 +126,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Navigate to="/" replace />} />
       <Route path="/setup/*" element={<Navigate to="/" replace />} />
       <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="sources/amplitude/connect" element={<AmplitudeConnectPage />} />
         <Route path="sources/amplitude/:connectionId/events" element={<AmplitudeEventsPage />} />

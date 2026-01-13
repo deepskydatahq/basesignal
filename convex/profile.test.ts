@@ -49,7 +49,7 @@ describe("profile.getProfileData", () => {
   it("returns complete profile data for user with all sections populated", async () => {
     const t = convexTest(schema);
 
-    const { userId, journeyId } = await t.run(async (ctx) => {
+    const { journeyId } = await t.run(async (ctx) => {
       const userId = await ctx.db.insert("users", {
         clerkId: "full-profile-user",
         email: "full@example.com",
