@@ -17,7 +17,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <ClerkProvider
       publishableKey={clerkPubKey}
       appearance={{
-        baseTheme: clerkTheme,
         variables: clerkTheme.variables,
       }}
     >

@@ -50,7 +50,7 @@ describe("AuthProvider", () => {
     const clerkProvider = screen.getByTestId("clerk-provider");
     const appearance = JSON.parse(clerkProvider.getAttribute("data-appearance") || "{}");
 
-    expect(appearance.baseTheme).toBeDefined();
+    expect(appearance.variables).toBeDefined();
     expect(appearance.variables?.colorPrimary).toBe("hsl(0, 0%, 0%)");
   });
 });
