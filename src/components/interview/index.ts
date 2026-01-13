@@ -7,3 +7,7 @@ export { default as InputArea } from "./InputArea";
 export { TimeframeQuickSelect } from "./TimeframeQuickSelect";
 export { FirstValueCandidateCard } from "./FirstValueCandidateCard";
 export { InterviewCompletionCard } from "./InterviewCompletionCard";
+export { default as InterviewHistoryButton } from "./InterviewHistoryButton";
+export { default as InterviewHistoryDrawer } from "./InterviewHistoryDrawer";
+export { default as SessionCard } from "./SessionCard";
+export { default as TranscriptView } from "./TranscriptView";

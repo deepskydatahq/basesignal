@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import JourneyCanvas from "../components/journey/JourneyCanvas";
 import StageDetailPanel from "../components/journey/StageDetailPanel";
 import { useAutoLayout } from "../components/journey/useAutoLayout";
-import { InterviewPanel } from "../components/interview";
+import { InterviewPanel, InterviewHistoryButton, InterviewHistoryDrawer } from "../components/interview";
 import { Button } from "../components/ui/button";
 
 export default function JourneyEditorPage() {
@@ -36,6 +36,7 @@ export default function JourneyEditorPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const [isInterviewOpen, setIsInterviewOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const selectedStage = stages?.find((s) => s._id === selectedStageId);
 
   const { calculateLayout } = useAutoLayout();
@@ -215,6 +216,10 @@ export default function JourneyEditorPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <InterviewHistoryButton
+              journeyId={journeyId as Id<"journeys">}
+              onClick={() => setIsHistoryOpen(true)}
+            />
             <Button variant="outline" size="sm" onClick={handleOrganize}>
               Organize
             </Button>
@@ -261,6 +266,13 @@ export default function JourneyEditorPage() {
           />
         </div>
       )}
+
+      {/* Interview History Drawer */}
+      <InterviewHistoryDrawer
+        journeyId={journeyId as Id<"journeys">}
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+      />
     </div>
   );
 }
