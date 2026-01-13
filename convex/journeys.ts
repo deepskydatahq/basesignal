@@ -33,6 +33,34 @@ export const listByUser = query({
   },
 });
 
+// Get all journeys for current user with First Value status
+export const listWithFirstValueStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return [];
+
+    const journeys = await ctx.db
+      .query("journeys")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Check if any activity has isFirstValue: true
+    const firstValueActivity = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.eq(q.field("isFirstValue"), true))
+      .first();
+
+    const hasFirstValue = !!firstValueActivity;
+
+    return journeys.map((journey) => ({
+      ...journey,
+      hasFirstValue,
+    }));
+  },
+});
+
 // Get default journey per type for home page
 export const getDefaultsByType = query({
   args: {},

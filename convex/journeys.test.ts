@@ -158,3 +158,81 @@ describe("getOrCreateForSetup", () => {
     expect(overviewJourneys).toHaveLength(1);
   });
 });
+
+describe("listWithFirstValueStatus", () => {
+  it("returns hasFirstValue: false when no activities are marked", async () => {
+    const t = convexTest(schema);
+
+    await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "fv-status-user",
+        email: "fv@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "fv-status-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|fv-status-user",
+    });
+
+    await asUser.mutation(api.journeys.create, {
+      type: "first_value",
+      name: "My First Value Journey",
+    });
+
+    const journeys = await asUser.query(api.journeys.listWithFirstValueStatus, {});
+
+    expect(journeys).toHaveLength(1);
+    expect(journeys[0].hasFirstValue).toBe(false);
+  });
+
+  it("returns hasFirstValue: true when an activity is marked", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "fv-marked-user",
+        email: "fv-marked@example.com",
+        createdAt: Date.now(),
+      });
+    });
+
+    const asUser = t.withIdentity({
+      subject: "fv-marked-user",
+      issuer: "https://clerk.test",
+      tokenIdentifier: "https://clerk.test|fv-marked-user",
+    });
+
+    await asUser.mutation(api.journeys.create, {
+      type: "first_value",
+      name: "My First Value Journey",
+    });
+
+    // Create entity and activity with isFirstValue: true
+    const entityId = await t.run(async (ctx) => {
+      return await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Account",
+        createdAt: Date.now(),
+      });
+    });
+
+    await t.run(async (ctx) => {
+      return await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Account Activated",
+        action: "Activated",
+        isFirstValue: true,
+        createdAt: Date.now(),
+      });
+    });
+
+    const journeys = await asUser.query(api.journeys.listWithFirstValueStatus, {});
+
+    expect(journeys).toHaveLength(1);
+    expect(journeys[0].hasFirstValue).toBe(true);
+  });
+});
