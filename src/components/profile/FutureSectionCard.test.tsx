@@ -35,3 +35,18 @@ test("renders locked state with 50% opacity and dashed border when isReady is fa
   // Prerequisite text should be visible
   expect(screen.getByText("Requires: Overview Interview")).toBeInTheDocument();
 });
+
+test("renders ready state with enabled button when isReady is true", () => {
+  setup({ isReady: true });
+
+  expect(screen.getByText("Heartbeat Event")).toBeInTheDocument();
+
+  // Button should be enabled
+  const button = screen.getByRole("button", { name: "Start Interview" });
+  expect(button).not.toBeDisabled();
+
+  // Prerequisite text should NOT be visible
+  expect(
+    screen.queryByText("Requires: Overview Interview")
+  ).not.toBeInTheDocument();
+});
