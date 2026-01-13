@@ -37,6 +37,22 @@ const businessTypeOptions = [
   { label: "B2B", value: "b2b" },
 ];
 
+const revenueModelOptions = [
+  { label: "One-time transactions", value: "transactions" },
+  { label: "Tier subscription", value: "tier_subscription" },
+  { label: "Seat-based subscription", value: "seat_subscription" },
+  { label: "Usage/credit-based", value: "volume_based" },
+];
+
+function toggleRevenueModel(
+  currentModels: string[],
+  value: string
+): string[] {
+  return currentModels.includes(value)
+    ? currentModels.filter((v) => v !== value)
+    : [...currentModels, value];
+}
+
 function formatBusinessLine(
   hasMultiUserAccounts?: boolean,
   businessType?: string
@@ -164,6 +180,36 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
                 >
                   {option.label}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Revenue Models */}
+          <div className="space-y-2">
+            <Label>Revenue Models</Label>
+            <div className="space-y-2">
+              {revenueModelOptions.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`revenue-${option.value}`}
+                    checked={editValues.revenueModels.includes(option.value)}
+                    onCheckedChange={() =>
+                      setEditValues((prev) => ({
+                        ...prev,
+                        revenueModels: toggleRevenueModel(
+                          prev.revenueModels,
+                          option.value
+                        ),
+                      }))
+                    }
+                  />
+                  <label
+                    htmlFor={`revenue-${option.value}`}
+                    className="text-sm text-gray-700 cursor-pointer select-none"
+                  >
+                    {option.label}
+                  </label>
+                </div>
               ))}
             </div>
           </div>

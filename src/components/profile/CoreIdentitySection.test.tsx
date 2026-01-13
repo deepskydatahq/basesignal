@@ -99,3 +99,14 @@ test("edit form shows multi-user account options", async () => {
   expect(screen.getByRole("button", { name: "Yes" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "No" })).toBeInTheDocument();
 });
+
+test("edit form shows revenue model checkboxes", async () => {
+  const { user } = setup({ productName: "Acme" });
+
+  await user.click(screen.getByRole("button", { name: /edit/i }));
+
+  expect(screen.getByLabelText("One-time transactions")).toBeInTheDocument();
+  expect(screen.getByLabelText("Tier subscription")).toBeInTheDocument();
+  expect(screen.getByLabelText("Seat-based subscription")).toBeInTheDocument();
+  expect(screen.getByLabelText("Usage/credit-based")).toBeInTheDocument();
+});
