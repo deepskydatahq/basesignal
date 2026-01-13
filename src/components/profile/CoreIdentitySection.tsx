@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Check, X, ExternalLink } from "lucide-react";
@@ -114,6 +114,23 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
     });
     setIsEditing(false);
   };
+
+  // Sync editValues when data prop changes
+  useEffect(() => {
+    setEditValues({
+      productName: data.productName ?? "",
+      websiteUrl: data.websiteUrl ?? "",
+      hasMultiUserAccounts: data.hasMultiUserAccounts ?? null,
+      businessType: data.businessType ?? undefined,
+      revenueModels: data.revenueModels ?? [],
+    });
+  }, [
+    data.productName,
+    data.websiteUrl,
+    data.hasMultiUserAccounts,
+    data.businessType,
+    data.revenueModels,
+  ]);
 
   const isComplete = Boolean(data.productName);
   const businessLine = formatBusinessLine(
