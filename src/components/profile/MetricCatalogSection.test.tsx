@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -29,6 +29,10 @@ function setup(metrics: Metric[] = []) {
   );
   return { user };
 }
+
+beforeEach(() => {
+  mockNavigate.mockReset();
+});
 
 test("renders empty state when no metrics provided", () => {
   setup([]);
@@ -84,4 +88,14 @@ test("hides categories that have no metrics", () => {
   // Empty categories should not appear
   expect(screen.queryByText("Engagement")).not.toBeInTheDocument();
   expect(screen.queryByText("Value Capture")).not.toBeInTheDocument();
+});
+
+test("navigates to /metric-catalog when View Full Catalog is clicked", async () => {
+  const { user } = setup([
+    { _id: "1", name: "New Users", category: "reach" },
+  ]);
+
+  await user.click(screen.getByRole("button", { name: "View Full Catalog" }));
+
+  expect(mockNavigate).toHaveBeenCalledWith("/metric-catalog");
 });
