@@ -27,6 +27,16 @@ const revenueModelDisplayLabels: Record<string, string> = {
   volume_based: "Usage-based",
 };
 
+const multiUserOptions = [
+  { label: "No", value: false },
+  { label: "Yes", value: true },
+];
+
+const businessTypeOptions = [
+  { label: "B2C", value: "b2c" },
+  { label: "B2B", value: "b2b" },
+];
+
 function formatBusinessLine(
   hasMultiUserAccounts?: boolean,
   businessType?: string
@@ -101,7 +111,64 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
             />
           </div>
 
-          {/* Actions placeholder - will be added in next task */}
+          {/* Multi-user accounts */}
+          <div className="space-y-2">
+            <Label>Can an account have multiple users?</Label>
+            <div className="flex flex-wrap gap-2">
+              {multiUserOptions.map((option) => (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  onClick={() => {
+                    setEditValues((prev) => ({
+                      ...prev,
+                      hasMultiUserAccounts: option.value,
+                      businessType:
+                        option.value === true ? undefined : prev.businessType,
+                    }));
+                  }}
+                  className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+                    editValues.hasMultiUserAccounts === option.value
+                      ? "bg-black text-white border-black"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* B2C/B2B (conditional) */}
+          <div
+            className={`space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${
+              editValues.hasMultiUserAccounts === false
+                ? "max-h-24 opacity-100"
+                : "max-h-0 opacity-0"
+            }`}
+          >
+            <Label>B2C or B2B?</Label>
+            <div className="flex flex-wrap gap-2">
+              {businessTypeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setEditValues({ ...editValues, businessType: option.value })
+                  }
+                  className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+                    editValues.businessType === option.value
+                      ? "bg-black text-white border-black"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
               <X className="w-4 h-4 mr-1" />

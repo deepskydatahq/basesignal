@@ -87,3 +87,15 @@ test("shows edit form when Edit button is clicked", async () => {
 
   expect(screen.getByLabelText(/product name/i)).toBeInTheDocument();
 });
+
+test("edit form shows multi-user account options", async () => {
+  const { user } = setup({ productName: "Acme" });
+
+  await user.click(screen.getByRole("button", { name: /edit/i }));
+
+  expect(
+    screen.getByText("Can an account have multiple users?")
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Yes" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "No" })).toBeInTheDocument();
+});
