@@ -51,3 +51,44 @@ test("omits description when not provided", () => {
   // Should only have the heading, no paragraph
   expect(screen.queryByRole("paragraph")).not.toBeInTheDocument();
 });
+
+test("shows B2B badge when hasMultiUserAccounts is true", () => {
+  setup({ identity: { productName: "My App", hasMultiUserAccounts: true } });
+
+  expect(screen.getByText("B2B")).toBeInTheDocument();
+});
+
+test("shows B2B badge when businessType is b2b", () => {
+  setup({
+    identity: {
+      productName: "My App",
+      hasMultiUserAccounts: false,
+      businessType: "b2b",
+    },
+  });
+
+  expect(screen.getByText("B2B")).toBeInTheDocument();
+});
+
+test("shows B2C badge when single-user and businessType is b2c", () => {
+  setup({
+    identity: {
+      productName: "My App",
+      hasMultiUserAccounts: false,
+      businessType: "b2c",
+    },
+  });
+
+  expect(screen.getByText("B2C")).toBeInTheDocument();
+});
+
+test("shows B2C badge when hasMultiUserAccounts is false and no businessType", () => {
+  setup({
+    identity: {
+      productName: "My App",
+      hasMultiUserAccounts: false,
+    },
+  });
+
+  expect(screen.getByText("B2C")).toBeInTheDocument();
+});
