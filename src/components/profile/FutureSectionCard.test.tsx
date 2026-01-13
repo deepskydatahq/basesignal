@@ -50,3 +50,20 @@ test("renders ready state with enabled button when isReady is true", () => {
     screen.queryByText("Requires: Overview Interview")
   ).not.toBeInTheDocument();
 });
+
+test("renders custom title, description, and prerequisite", () => {
+  setup({
+    title: "Activation Definition",
+    description: "Define what it means for a user to be activated.",
+    prerequisite: "Requires: First Value definition",
+    isReady: false,
+  });
+
+  expect(screen.getByText("Activation Definition")).toBeInTheDocument();
+  expect(
+    screen.getByText("Define what it means for a user to be activated.")
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText("Requires: First Value definition")
+  ).toBeInTheDocument();
+});
