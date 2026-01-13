@@ -1,5 +1,6 @@
 import { SignIn, SignUp } from "@clerk/clerk-react";
 import { useState } from "react";
+import { clerkAppearance } from "../lib/clerkTheme";
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -16,34 +17,12 @@ export default function AuthPage() {
         <div className="w-full max-w-md">
           {mode === "signin" ? (
             <SignIn
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "shadow-none w-full",
-                  headerTitle: "text-2xl font-semibold",
-                  headerSubtitle: "text-neutral-500",
-                  socialButtonsBlockButton: "h-12 text-base",
-                  formFieldInput: "h-12",
-                  formButtonPrimary: "h-12 text-base bg-neutral-900 hover:bg-neutral-800",
-                  footerAction: "hidden",
-                },
-              }}
+              appearance={clerkAppearance}
               forceRedirectUrl="/"
             />
           ) : (
             <SignUp
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "shadow-none w-full",
-                  headerTitle: "text-2xl font-semibold",
-                  headerSubtitle: "text-neutral-500",
-                  socialButtonsBlockButton: "h-12 text-base",
-                  formFieldInput: "h-12",
-                  formButtonPrimary: "h-12 text-base bg-neutral-900 hover:bg-neutral-800",
-                  footerAction: "hidden",
-                },
-              }}
+              appearance={clerkAppearance}
               forceRedirectUrl="/"
             />
           )}
