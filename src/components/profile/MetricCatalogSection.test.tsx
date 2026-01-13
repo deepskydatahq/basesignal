@@ -39,3 +39,14 @@ test("renders empty state when no metrics provided", () => {
     screen.getByText(/No metrics in your catalog yet/)
   ).toBeInTheDocument();
 });
+
+test("renders metric count in status label when metrics exist", () => {
+  setup([
+    { _id: "1", name: "New Users", category: "reach" },
+    { _id: "2", name: "Daily Active Users", category: "engagement" },
+    { _id: "3", name: "Activation Rate", category: "value_delivery" },
+  ]);
+
+  expect(screen.getByText("Metric Catalog")).toBeInTheDocument();
+  expect(screen.getByText("3 metrics")).toBeInTheDocument();
+});
