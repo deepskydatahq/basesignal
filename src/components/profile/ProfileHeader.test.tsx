@@ -130,3 +130,45 @@ test("handles unknown revenue model gracefully", () => {
   // Falls back to displaying the raw value
   expect(screen.getByText("unknown_model")).toBeInTheDocument();
 });
+
+test("shows correct count text", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 4, total: 11 },
+  });
+
+  expect(screen.getByText("4 of 11")).toBeInTheDocument();
+});
+
+test("shows progress bar with correct width for percentage", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 5, total: 10 },
+  });
+
+  // 5/10 = 50%
+  const progressBar = screen.getByTestId("progress-bar-fill");
+  expect(progressBar).toHaveStyle({ width: "50%" });
+});
+
+test("handles 0% completeness", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 0, total: 11 },
+  });
+
+  expect(screen.getByText("0 of 11")).toBeInTheDocument();
+  const progressBar = screen.getByTestId("progress-bar-fill");
+  expect(progressBar).toHaveStyle({ width: "0%" });
+});
+
+test("handles 100% completeness", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 11, total: 11 },
+  });
+
+  expect(screen.getByText("11 of 11")).toBeInTheDocument();
+  const progressBar = screen.getByTestId("progress-bar-fill");
+  expect(progressBar).toHaveStyle({ width: "100%" });
+});

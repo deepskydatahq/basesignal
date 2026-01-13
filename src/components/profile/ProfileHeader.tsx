@@ -19,13 +19,20 @@ interface ProfileHeaderProps {
   };
 }
 
-export function ProfileHeader({ identity }: ProfileHeaderProps) {
+export function ProfileHeader({
+  identity,
+  completeness,
+}: ProfileHeaderProps) {
   // Derive business type badge - B2B if multi-user OR explicit b2b
   const businessTypeBadge = identity.hasMultiUserAccounts
     ? "B2B"
     : identity.businessType === "b2b"
       ? "B2B"
       : "B2C";
+
+  const percentage = Math.round(
+    (completeness.completed / completeness.total) * 100
+  );
 
   return (
     <header className="mb-8">
@@ -51,6 +58,20 @@ export function ProfileHeader({ identity }: ProfileHeaderProps) {
               {REVENUE_MODEL_LABELS[model] ?? model}
             </span>
           ))}
+        </div>
+
+        {/* Collapsed completeness indicator */}
+        <div className="flex items-center gap-2">
+          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              data-testid="progress-bar-fill"
+              className="h-full bg-black rounded-full transition-all"
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+          <span className="text-sm text-gray-600">
+            {completeness.completed} of {completeness.total}
+          </span>
         </div>
       </div>
     </header>
