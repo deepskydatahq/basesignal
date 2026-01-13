@@ -63,6 +63,14 @@ test("shows complete status when metrics exist", () => {
   expect(statusBadge).toHaveClass("text-green-700");
 });
 
+test("shows not_started status when no metrics exist", () => {
+  setup([]);
+
+  // The status badge should indicate not_started (gray styling)
+  const statusBadge = screen.getByText("0 metrics").closest("div");
+  expect(statusBadge).toHaveClass("text-gray-500");
+});
+
 test("groups metrics by category with category headers", () => {
   setup([
     { _id: "1", name: "New Users", category: "reach" },
