@@ -369,6 +369,57 @@ export const setPendingCandidate = mutation({
   },
 });
 
+// Get all sessions for a journey with computed metadata
+export const getSessionHistory = query({
+  args: { journeyId: v.id("journeys") },
+  handler: async (ctx, args) => {
+    const sessions = await ctx.db
+      .query("interviewSessions")
+      .withIndex("by_journey", (q) => q.eq("journeyId", args.journeyId))
+      .collect();
+
+    return Promise.all(sessions.map(async (session) => {
+      const messages = await ctx.db
+        .query("interviewMessages")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect();
+
+      // Count activities added from tool calls
+      const activitiesAdded = messages.reduce((count, msg) => {
+        if (!msg.toolCalls) return count;
+        return count + msg.toolCalls.filter(tc =>
+          tc.name === "add_activity" || tc.name === "add_stage"
+        ).length;
+      }, 0);
+
+      return {
+        ...session,
+        messageCount: messages.length,
+        activitiesAdded,
+      };
+    }));
+  },
+});
+
+// Get formatted transcript for a session
+export const getTranscript = query({
+  args: { sessionId: v.id("interviewSessions") },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("interviewMessages")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .order("asc")
+      .collect();
+
+    return messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+      timestamp: msg.createdAt,
+      toolCalls: msg.toolCalls,
+    }));
+  },
+});
+
 // Add a message to the session
 export const addMessage = mutation({
   args: {
