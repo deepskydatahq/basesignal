@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id, Doc } from "../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Plus, RefreshCw } from "lucide-react";
+import { FileText, Download, Plus, RefreshCw, Target } from "lucide-react";
 import { ImportFromJourneyModal } from "@/components/measurement/ImportFromJourneyModal";
 import { AddPropertyDialog } from "@/components/measurement/AddPropertyDialog";
 import { AddActivityModal } from "@/components/measurement/AddActivityModal";
@@ -29,6 +29,7 @@ export default function MeasurementPlanPage() {
   const foundationStatus = useQuery(api.setupProgress.foundationStatus);
   const deleteAllMeasurement = useMutation(api.measurementPlan.deleteAll);
   const importFromJourneyMutation = useMutation(api.measurementPlan.importFromJourney);
+  const setFirstValue = useMutation(api.measurementPlan.setFirstValue);
   const journeyDiff = useQuery(
     api.measurementPlan.computeJourneyDiff,
     foundationStatus?.overviewInterview?.journeyId
@@ -185,13 +186,15 @@ export default function MeasurementPlanPage() {
                 {activities.length > 0 && (
                   <div className="grid gap-2">
                     {activities.map((activity) => (
-                      <button
+                      <div
                         key={activity._id}
-                        type="button"
-                        onClick={() => setEditActivity(activity)}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors text-left"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
                       >
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditActivity(activity)}
+                          className="flex items-center gap-2 text-left flex-1"
+                        >
                           <span className="text-sm font-medium text-gray-900">
                             {activity.name}
                           </span>
@@ -200,15 +203,29 @@ export default function MeasurementPlanPage() {
                               First Value
                             </span>
                           )}
-                        </div>
+                        </button>
                         <div className="flex items-center gap-2">
                           {activity.lifecycleSlot && (
                             <span className="text-xs text-gray-500">
                               {activity.lifecycleSlot.replace(/_/g, " ")}
                             </span>
                           )}
+                          {!activity.isFirstValue && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFirstValue({ activityId: activity._id });
+                              }}
+                              title="Mark as First Value"
+                            >
+                              <Target className="w-3.5 h-3.5 text-gray-400 hover:text-green-600" />
+                            </Button>
+                          )}
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 )}

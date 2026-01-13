@@ -202,10 +202,9 @@ function JourneyRow({
         </button>
         <span className="text-sm font-medium text-gray-900">{journey.name}</span>
         {journey.hasFirstValue && (
-          <CheckCircle2
-            className="w-4 h-4 text-green-500"
-            title="First Value defined"
-          />
+          <span title="First Value defined">
+            <CheckCircle2 className="w-4 h-4 text-green-500" />
+          </span>
         )}
       </div>
 
