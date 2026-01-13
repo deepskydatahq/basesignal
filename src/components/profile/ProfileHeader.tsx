@@ -18,6 +18,10 @@ export function ProfileHeader({ identity }: ProfileHeaderProps) {
       <h1 className="text-2xl font-bold text-gray-900">
         {identity.productName || "Your Product"}
       </h1>
+
+      {identity.productDescription && (
+        <p className="mt-1 text-gray-600">{identity.productDescription}</p>
+      )}
     </header>
   );
 }
