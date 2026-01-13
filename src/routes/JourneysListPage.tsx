@@ -3,7 +3,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { Star, Plus } from "lucide-react";
+import { Star, Plus, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { JOURNEY_TYPES } from "../shared/journeyTypes";
@@ -29,7 +29,7 @@ const getDefaultName = (typeLabel: string) => {
 
 export default function JourneysListPage() {
   const user = useQuery(api.users.current);
-  const journeys = useQuery(api.journeys.listByUser);
+  const journeys = useQuery(api.journeys.listWithFirstValueStatus);
 
   if (!user || !journeys) {
     return (
@@ -92,6 +92,7 @@ function JourneyTypeSection({
     name: string;
     isDefault?: boolean;
     updatedAt: number;
+    hasFirstValue: boolean;
   }>;
 }) {
   const navigate = useNavigate();
@@ -179,6 +180,7 @@ function JourneyRow({
     name: string;
     isDefault?: boolean;
     updatedAt: number;
+    hasFirstValue: boolean;
   };
   onSetDefault: () => void;
 }) {
@@ -199,6 +201,12 @@ function JourneyRow({
           />
         </button>
         <span className="text-sm font-medium text-gray-900">{journey.name}</span>
+        {journey.hasFirstValue && (
+          <CheckCircle2
+            className="w-4 h-4 text-green-500"
+            title="First Value defined"
+          />
+        )}
       </div>
 
       <div className="flex items-center gap-4">
