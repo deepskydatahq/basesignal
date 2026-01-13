@@ -55,6 +55,14 @@ test("renders metric count in status label when metrics exist", () => {
   expect(screen.getByText("3 metrics")).toBeInTheDocument();
 });
 
+test("shows complete status when metrics exist", () => {
+  setup([{ _id: "1", name: "New Users", category: "reach" }]);
+
+  // The status badge should indicate complete (green styling)
+  const statusBadge = screen.getByText("1 metrics").closest("div");
+  expect(statusBadge).toHaveClass("text-green-700");
+});
+
 test("groups metrics by category with category headers", () => {
   setup([
     { _id: "1", name: "New Users", category: "reach" },
