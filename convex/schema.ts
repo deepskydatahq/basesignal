@@ -41,6 +41,11 @@ export default defineSchema({
     setupStatus: v.optional(v.string()),  // "not_started" | "in_progress" | "complete"
     setupCompletedAt: v.optional(v.number()),
 
+    // Community join tracking
+    communityJoined: v.optional(v.boolean()),
+    communityJoinedAt: v.optional(v.number()),
+    communityJoinMethod: v.optional(v.string()), // "honor" | "magic_code" | "email_fallback"
+
     createdAt: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"])
@@ -69,6 +74,9 @@ export default defineSchema({
     // Outputs created (references)
     overviewJourneyId: v.optional(v.id("journeys")),
     // Future: measurementPlanId, metricCatalogId
+
+    // Community join status
+    communityJoinStatus: v.optional(v.string()), // "pending" | "verified" | "skipped_email"
 
   }).index("by_user", ["userId"])
     .index("by_status", ["status"])
