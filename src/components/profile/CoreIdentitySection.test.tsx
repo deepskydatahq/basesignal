@@ -110,3 +110,16 @@ test("edit form shows revenue model checkboxes", async () => {
   expect(screen.getByLabelText("Seat-based subscription")).toBeInTheDocument();
   expect(screen.getByLabelText("Usage/credit-based")).toBeInTheDocument();
 });
+
+test("Save button calls updateOnboarding mutation", async () => {
+  const { user, mockMutate } = setup({ productName: "Acme" });
+
+  await user.click(screen.getByRole("button", { name: /edit/i }));
+  await user.clear(screen.getByLabelText(/product name/i));
+  await user.type(screen.getByLabelText(/product name/i), "New Name");
+  await user.click(screen.getByRole("button", { name: /save/i }));
+
+  expect(mockMutate).toHaveBeenCalledWith(
+    expect.objectContaining({ productName: "New Name" })
+  );
+});

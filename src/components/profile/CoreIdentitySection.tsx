@@ -77,6 +77,7 @@ function formatRevenueModels(revenueModels?: string[]): string | null {
 }
 
 export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
+  const updateOnboarding = useMutation(api.users.updateOnboarding);
   const [isEditing, setIsEditing] = useState(false);
   const [editValues, setEditValues] = useState({
     productName: data.productName ?? "",
@@ -85,6 +86,23 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
     businessType: data.businessType ?? undefined,
     revenueModels: data.revenueModels ?? [],
   });
+
+  const handleSave = async () => {
+    await updateOnboarding({
+      productName: editValues.productName || undefined,
+      websiteUrl: editValues.websiteUrl || undefined,
+      hasMultiUserAccounts: editValues.hasMultiUserAccounts ?? undefined,
+      businessType:
+        editValues.hasMultiUserAccounts === true
+          ? undefined
+          : editValues.businessType,
+      revenueModels:
+        editValues.revenueModels.length > 0
+          ? editValues.revenueModels
+          : undefined,
+    });
+    setIsEditing(false);
+  };
 
   const isComplete = Boolean(data.productName);
   const businessLine = formatBusinessLine(
@@ -219,6 +237,10 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
               <X className="w-4 h-4 mr-1" />
               Cancel
+            </Button>
+            <Button size="sm" onClick={handleSave}>
+              <Check className="w-4 h-4 mr-1" />
+              Save
             </Button>
           </div>
         </div>
