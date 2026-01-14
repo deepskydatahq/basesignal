@@ -163,6 +163,48 @@ export const METRIC_TEMPLATES: MetricTemplate[] = [
   },
 ];
 
+// Slot-specific metric templates
+// Each slot has variations appropriate for that lifecycle stage
+export const SLOT_METRIC_TEMPLATES: Record<LifecycleSlot, SlotVariationTemplate[]> = {
+  account_creation: [
+    {
+      variation: "rate",
+      name: "{{activity}} Rate",
+      definition: "Percentage of visitors who complete {{activity}}. This is the conversion rate at the top of your acquisition funnel.",
+      formula: "COUNT(users who completed {{activity}}) / COUNT(visitors) × 100%",
+      whyItMatters: "Your account creation rate determines how efficiently you convert interest into registered users. Low rates indicate friction in signup.",
+      howToImprove: "Simplify signup forms, reduce required fields, add social login options, improve page load speed, add trust signals.",
+      category: "reach",
+      primaryOnly: true,
+    },
+    {
+      variation: "time_to",
+      name: "Time to {{activity}}",
+      definition: "Median time from first site visit to completing {{activity}}. Measures how quickly visitors convert to users.",
+      formula: "MEDIAN(time_of_{{activity}} - time_of_first_visit)",
+      whyItMatters: "Longer time to signup often means lost users. Users who don't sign up quickly may never return.",
+      howToImprove: "Add prominent CTAs, reduce decision friction, offer immediate value preview, implement exit-intent captures.",
+      category: "reach",
+      primaryOnly: true,
+    },
+    {
+      variation: "cohort",
+      name: "{{activity}} by Cohort",
+      definition: "{{activity}} rate segmented by signup week/month. Tracks how acquisition quality changes over time.",
+      formula: "{{activity}} Rate grouped by cohort_week",
+      whyItMatters: "Cohort analysis reveals whether your acquisition is improving. Declining rates may indicate channel saturation.",
+      howToImprove: "A/B test signup flows, experiment with new channels, refine targeting, improve landing pages.",
+      category: "reach",
+      primaryOnly: true,
+    },
+  ],
+  // Other slots defined in subsequent tasks
+  activation: [],
+  core_usage: [],
+  revenue: [],
+  churn: [],
+};
+
 // Helper to get templates by generation phase
 export function getTemplatesByPhase(
   phase: "overview" | "first_value"

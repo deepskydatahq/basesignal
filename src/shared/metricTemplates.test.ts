@@ -14,6 +14,7 @@ import {
   METRIC_VARIATIONS,
   LIFECYCLE_SLOTS,
   type SlotVariationTemplate,
+  SLOT_METRIC_TEMPLATES,
 } from "./metricTemplates";
 
 describe("METRIC_CATEGORIES", () => {
@@ -335,5 +336,27 @@ describe("SlotVariationTemplate type", () => {
 
     expect(template.variation).toBe("rate");
     expect(template.primaryOnly).toBe(false);
+  });
+});
+
+describe("SLOT_METRIC_TEMPLATES", () => {
+  describe("account_creation slot", () => {
+    it("has rate, time_to, and cohort variations (no frequency for one-time event)", () => {
+      const templates = SLOT_METRIC_TEMPLATES.account_creation;
+      const variations = templates.map(t => t.variation);
+
+      expect(variations).toContain("rate");
+      expect(variations).toContain("time_to");
+      expect(variations).toContain("cohort");
+      expect(variations).not.toContain("frequency");
+    });
+
+    it("rate template uses {{activity}} placeholder", () => {
+      const rateTemplate = SLOT_METRIC_TEMPLATES.account_creation.find(
+        t => t.variation === "rate"
+      );
+      expect(rateTemplate?.name).toContain("{{activity}}");
+      expect(rateTemplate?.definition).toContain("{{activity}}");
+    });
   });
 });
