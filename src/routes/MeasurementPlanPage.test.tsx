@@ -112,14 +112,17 @@ vi.mock("@/components/measurement/ActivityDetailPanel", () => ({
   ActivityDetailPanel: ({
     activity,
     onClose,
+    onEdit,
   }: {
     activity: unknown;
     onClose: () => void;
+    onEdit?: () => void;
   }) =>
     activity ? (
       <div data-testid="activity-detail-panel">
         Activity Detail Panel
         <button onClick={onClose}>Close</button>
+        {onEdit && <button onClick={onEdit}>Edit</button>}
       </div>
     ) : null,
 }));
@@ -354,4 +357,49 @@ test("opens activity detail panel when activity is clicked", async () => {
   await userEvent.click(screen.getByText("Account Created"));
 
   expect(screen.getByTestId("activity-detail-panel")).toBeInTheDocument();
+});
+
+test("opens edit modal from activity detail panel edit button", async () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          lifecycleSlot: "account_creation",
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  render(
+    <MemoryRouter>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // Expand entity and open panel
+  await userEvent.click(screen.getByText("Account"));
+  await userEvent.click(screen.getByText("Account Created"));
+
+  // Click edit in the panel (using the exact text from our mock)
+  const panelElement = screen.getByTestId("activity-detail-panel");
+  const editButton = panelElement.querySelector("button:last-child");
+  await userEvent.click(editButton!);
+
+  expect(screen.getByTestId("edit-activity-modal")).toBeInTheDocument();
 });

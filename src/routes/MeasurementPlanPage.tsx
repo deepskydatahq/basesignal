@@ -35,6 +35,7 @@ export default function MeasurementPlanPage() {
     name: string;
     entityName: string;
     lifecycleSlot: string;
+    activityDoc: Doc<"measurementActivities">;
   } | null>(null);
 
   const navigate = useNavigate();
@@ -251,6 +252,7 @@ export default function MeasurementPlanPage() {
                               name: activity.name,
                               entityName: entity.name,
                               lifecycleSlot: activity.lifecycleSlot ?? "",
+                              activityDoc: activity,
                             })
                           }
                           className="flex items-center gap-2 text-left flex-1"
@@ -365,10 +367,18 @@ export default function MeasurementPlanPage() {
       {selectedActivityForPanel && (
         <div className="fixed inset-y-0 right-0 z-40">
           <ActivityDetailPanel
-            activity={selectedActivityForPanel}
+            activity={{
+              name: selectedActivityForPanel.name,
+              entityName: selectedActivityForPanel.entityName,
+              lifecycleSlot: selectedActivityForPanel.lifecycleSlot,
+            }}
             derivedMetrics={getDerivedMetrics(selectedActivityForPanel.name)}
             onClose={() => setSelectedActivityForPanel(null)}
             onMetricClick={handleMetricClick}
+            onEdit={() => {
+              setEditActivity(selectedActivityForPanel.activityDoc);
+              setSelectedActivityForPanel(null);
+            }}
           />
         </div>
       )}
