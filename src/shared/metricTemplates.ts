@@ -27,6 +27,18 @@ export const LIFECYCLE_SLOTS = [
 ] as const;
 export type LifecycleSlot = (typeof LIFECYCLE_SLOTS)[number];
 
+// Template for generating metrics from a specific slot + variation combination
+export type SlotVariationTemplate = {
+  variation: MetricVariation;
+  name: string;           // e.g., "{{activity}} Rate" - uses {{activity}} placeholder
+  definition: string;     // Rich pre-written guidance
+  formula: string;
+  whyItMatters: string;
+  howToImprove: string;
+  category: MetricCategory;
+  primaryOnly: boolean;   // true = skip for secondary activities (isFirstValue=false)
+};
+
 export type MetricTemplate = {
   key: string;
   name: string;

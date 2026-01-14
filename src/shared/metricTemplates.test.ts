@@ -13,6 +13,7 @@ import {
   type MetricTemplate,
   METRIC_VARIATIONS,
   LIFECYCLE_SLOTS,
+  type SlotVariationTemplate,
 } from "./metricTemplates";
 
 describe("METRIC_CATEGORIES", () => {
@@ -316,5 +317,23 @@ describe("Metric Variations", () => {
       "revenue",
       "churn",
     ]);
+  });
+});
+
+describe("SlotVariationTemplate type", () => {
+  it("accepts a valid template object", () => {
+    const template: SlotVariationTemplate = {
+      variation: "rate",
+      name: "{{activity}} Rate",
+      definition: "Percentage of users who complete {{activity}}",
+      formula: "COUNT(completed) / COUNT(eligible) * 100%",
+      whyItMatters: "Shows conversion effectiveness",
+      howToImprove: "Reduce friction in the flow",
+      category: "value_delivery",
+      primaryOnly: false,
+    };
+
+    expect(template.variation).toBe("rate");
+    expect(template.primaryOnly).toBe(false);
   });
 });
