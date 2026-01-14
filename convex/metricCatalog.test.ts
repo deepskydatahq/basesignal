@@ -640,7 +640,7 @@ describe("generateFromOverview", () => {
     ).rejects.toThrow("Not authorized");
   });
 
-  it("links sourceActivityId to the core_usage measurementActivity", async () => {
+  it("links engagement metrics to core_usage activity via sourceActivityId", async () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
@@ -685,12 +685,19 @@ describe("generateFromOverview", () => {
     });
 
     const metrics = await asUser.query(api.metrics.list, {});
-    const coreActionMetric = metrics.find(
-      (m) => m.templateKey === "core_action_frequency"
-    );
 
-    expect(coreActionMetric).toBeDefined();
-    expect(coreActionMetric?.sourceActivityId).toBe(activityId!);
+    // All engagement metrics should have sourceActivityId pointing to core_usage activity
+    const engagementMetrics = metrics.filter((m) => m.category === "engagement");
+    expect(engagementMetrics.length).toBe(5); // mau, dau, dau_mau_ratio, retention_d7, core_action_frequency
+
+    for (const metric of engagementMetrics) {
+      expect(metric.sourceActivityId).toBe(activityId!);
+    }
+
+    // Reach metrics should NOT have sourceActivityId
+    const reachMetrics = metrics.filter((m) => m.category === "reach");
+    expect(reachMetrics.length).toBe(1);
+    expect(reachMetrics[0].sourceActivityId).toBeUndefined();
   });
 });
 
