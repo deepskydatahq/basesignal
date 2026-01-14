@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { MetricDetailPanel } from "./MetricDetailPanel";
 
 const mockMetric = {
@@ -20,7 +21,11 @@ function setup(props: Partial<Parameters<typeof MetricDetailPanel>[0]> = {}) {
     onClose,
     ...props,
   };
-  render(<MetricDetailPanel {...defaultProps} />);
+  render(
+    <MemoryRouter>
+      <MetricDetailPanel {...defaultProps} />
+    </MemoryRouter>
+  );
   return { user, onClose };
 }
 
@@ -98,4 +103,21 @@ test("does not render Source Event section when sourceEventName is not provided"
   setup();
 
   expect(screen.queryByText("Source Event")).not.toBeInTheDocument();
+});
+
+test("renders Source Activity link when sourceActivityName is provided", () => {
+  setup({ sourceActivityName: "Account Created" });
+
+  expect(screen.getByText("Source Activity")).toBeInTheDocument();
+  const link = screen.getByRole("link", { name: /account created/i });
+  expect(link).toHaveAttribute(
+    "href",
+    "/measurement-plan?highlight=Account%20Created"
+  );
+});
+
+test("does not render Source Activity section when sourceActivityName is not provided", () => {
+  setup();
+
+  expect(screen.queryByText("Source Activity")).not.toBeInTheDocument();
 });

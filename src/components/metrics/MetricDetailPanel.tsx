@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { CategoryBadge, type MetricCategory } from "./CategoryBadge";
 
 interface MetricData {
@@ -15,6 +16,7 @@ interface MetricDetailPanelProps {
   onClose: () => void;
   sourceEventName?: string;
   onSourceEventClick?: () => void;
+  sourceActivityName?: string;
 }
 
 export function MetricDetailPanel({
@@ -22,6 +24,7 @@ export function MetricDetailPanel({
   onClose,
   sourceEventName,
   onSourceEventClick,
+  sourceActivityName,
 }: MetricDetailPanelProps) {
   return (
     <aside
@@ -81,6 +84,20 @@ export function MetricDetailPanel({
             >
               {sourceEventName}
             </button>
+          </section>
+        )}
+
+        {/* Source Activity */}
+        {sourceActivityName && (
+          <section className="pt-4 border-t">
+            <h3 className="text-sm font-medium text-gray-700 mb-1">Source Activity</h3>
+            <Link
+              to={`/measurement-plan?highlight=${encodeURIComponent(sourceActivityName)}`}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              {sourceActivityName}
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </section>
         )}
       </div>
