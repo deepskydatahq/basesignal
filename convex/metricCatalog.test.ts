@@ -517,11 +517,11 @@ describe("generateFromOverview", () => {
     expect(orders).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it("uses fallback 'Core Action' when no core_usage activity found", async () => {
+  it("skips engagement metrics when no core_usage activity found", async () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    // Create journey without any measurementActivities
+    // Create journey without any measurementActivities (no core_usage)
     const journeyId = await t.run(async (ctx) => {
       return await ctx.db.insert("journeys", {
         userId,
@@ -533,17 +533,27 @@ describe("generateFromOverview", () => {
       });
     });
 
-    // Should still generate with fallback
-    await asUser.mutation(api.metricCatalog.generateFromOverview, {
+    // Generate metrics
+    const result = await asUser.mutation(api.metricCatalog.generateFromOverview, {
       journeyId,
     });
 
+    // Should only create reach metric (new_users), skip engagement metrics
     const metrics = await asUser.query(api.metrics.list, {});
-    expect(metrics).toHaveLength(6);
+    expect(metrics).toHaveLength(1);
+    expect(metrics[0].templateKey).toBe("new_users");
 
-    // core_action_frequency should use fallback
-    const coreActionMetric = metrics.find((m) => m.templateKey === "core_action_frequency");
-    expect(coreActionMetric).toBeDefined();
+    // Verify engagement metrics were skipped
+    const templateKeys = metrics.map((m) => m.templateKey);
+    expect(templateKeys).not.toContain("mau");
+    expect(templateKeys).not.toContain("dau");
+    expect(templateKeys).not.toContain("dau_mau_ratio");
+    expect(templateKeys).not.toContain("retention_d7");
+    expect(templateKeys).not.toContain("core_action_frequency");
+
+    // Return value should indicate what was created
+    expect(result.created).toBe(1);
+    expect(result.skipped).toBe(0); // skipped due to duplicates, not missing activity
   });
 
   it("throws error when journey not found", async () => {
