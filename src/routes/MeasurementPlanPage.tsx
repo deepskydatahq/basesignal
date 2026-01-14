@@ -212,6 +212,7 @@ export default function MeasurementPlanPage() {
               suggestedFrom={entity.suggestedFrom}
               activityCount={activities.length}
               propertyCount={properties.length}
+              defaultExpanded={activities.some((a) => a.name === highlightActivity)}
             >
               {/* Activities section */}
               <div className="space-y-2">

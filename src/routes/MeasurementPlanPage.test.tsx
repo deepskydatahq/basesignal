@@ -353,6 +353,42 @@ test("opens activity detail panel when activity is clicked", async () => {
   expect(screen.getByTestId("activity-detail-panel")).toBeInTheDocument();
 });
 
+test("auto-expands entity card containing highlighted activity", async () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  render(
+    <MemoryRouter initialEntries={["/measurement-plan?highlight=Account%20Created"]}>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // Activity should be visible immediately (entity auto-expanded)
+  expect(screen.getByText("Account Created")).toBeInTheDocument();
+});
+
 test("highlights activity when URL has highlight param", async () => {
   mockGetFullPlan = [
     {
@@ -385,9 +421,7 @@ test("highlights activity when URL has highlight param", async () => {
     </MemoryRouter>
   );
 
-  // First expand the entity card
-  await userEvent.click(screen.getByText("Account"));
-
+  // Entity should be auto-expanded due to highlight param
   // The activity row should have highlight styling
   // The structure is: div (activity row) > button > span (contains text)
   // We need to find the containing div that has the className with ring-2
