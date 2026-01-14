@@ -245,3 +245,42 @@ test("shows Import from Journey buttons", () => {
   const buttons = screen.getAllByRole("button", { name: /import from journey/i });
   expect(buttons.length).toBeGreaterThanOrEqual(1);
 });
+
+test("renders without error when navigated with highlight state", () => {
+  // Setup mock data with an activity
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  // Render with navigation state that includes highlightActivity
+  // Uses custom MemoryRouter to inject location.state
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/measurement-plan", state: { highlightActivity: "Account Created" } }]}>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // Component should render without error - activity count is visible in collapsed state
+  expect(screen.getByText("1 activity")).toBeInTheDocument();
+});

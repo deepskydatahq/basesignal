@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id, Doc } from "../../convex/_generated/dataModel";
@@ -14,6 +15,10 @@ import { EntityCard } from "@/components/measurement/EntityCard";
 import { RegenerateConfirmDialog } from "@/components/measurement/RegenerateConfirmDialog";
 
 export default function MeasurementPlanPage() {
+  const location = useLocation();
+  const highlightActivity = (location.state as { highlightActivity?: string } | null)?.highlightActivity;
+  const activityRefs = useRef<Map<string, HTMLElement>>(new Map());
+
   const fullPlan = useQuery(api.measurementPlan.getFullPlan);
   const entities = useQuery(api.measurementPlan.listEntities);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -76,6 +81,16 @@ export default function MeasurementPlanPage() {
       setShowRegenerateDialog(false);
     }
   };
+
+  // Scroll to highlighted activity when navigated from metric catalog
+  useEffect(() => {
+    if (highlightActivity && activityRefs.current.has(highlightActivity)) {
+      const element = activityRefs.current.get(highlightActivity);
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Clear state to avoid re-highlighting on re-renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [highlightActivity, fullPlan]);
 
   if (fullPlan === undefined) {
     return (
@@ -188,6 +203,9 @@ export default function MeasurementPlanPage() {
                     {activities.map((activity) => (
                       <div
                         key={activity._id}
+                        ref={(el) => {
+                          if (el) activityRefs.current.set(activity.name, el);
+                        }}
                         className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
                       >
                         <button
