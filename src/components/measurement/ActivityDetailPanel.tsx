@@ -1,4 +1,4 @@
-import { X, ChevronRight } from "lucide-react";
+import { X, ChevronRight, Pencil } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { CategoryBadge, type MetricCategory } from "../metrics/CategoryBadge";
 
@@ -17,6 +17,7 @@ interface ActivityDetailPanelProps {
   derivedMetrics: DerivedMetric[];
   onClose: () => void;
   onMetricClick: (metricId: Id<"metrics">) => void;
+  onEdit?: () => void;
 }
 
 export function ActivityDetailPanel({
@@ -24,6 +25,7 @@ export function ActivityDetailPanel({
   derivedMetrics,
   onClose,
   onMetricClick,
+  onEdit,
 }: ActivityDetailPanelProps) {
   if (!activity) return null;
 
@@ -38,13 +40,24 @@ export function ActivityDetailPanel({
           <h2 className="text-lg font-medium text-gray-900">{activity.name}</h2>
           <p className="text-sm text-gray-500 mt-1">{activity.entityName}</p>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Close panel"
-          className="p-1 text-gray-400 hover:text-gray-600"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex gap-1">
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              aria-label="Edit activity"
+              className="p-1 text-gray-400 hover:text-gray-600"
+            >
+              <Pencil className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            aria-label="Close panel"
+            className="p-1 text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Content */}

@@ -14,15 +14,17 @@ function setup(props: Partial<Parameters<typeof ActivityDetailPanel>[0]> = {}) {
   const user = userEvent.setup();
   const onClose = props.onClose ?? vi.fn();
   const onMetricClick = props.onMetricClick ?? vi.fn();
+  const onEdit = props.onEdit ?? vi.fn();
   const defaultProps = {
     activity: mockActivity,
     derivedMetrics: [],
     onClose,
     onMetricClick,
+    onEdit,
     ...props,
   };
   render(<ActivityDetailPanel {...defaultProps} />);
-  return { user, onClose, onMetricClick };
+  return { user, onClose, onMetricClick, onEdit };
 }
 
 test("renders activity name in header", () => {
@@ -89,4 +91,13 @@ test("calls onMetricClick when metric is clicked", async () => {
   await user.click(screen.getByRole("button", { name: /activation rate/i }));
 
   expect(onMetricClick).toHaveBeenCalledWith("m1");
+});
+
+test("calls onEdit when edit button is clicked", async () => {
+  const onEdit = vi.fn();
+  const { user } = setup({ onEdit });
+
+  await user.click(screen.getByRole("button", { name: /edit/i }));
+
+  expect(onEdit).toHaveBeenCalledOnce();
 });
