@@ -78,3 +78,15 @@ test("renders metric category badges", () => {
 
   expect(screen.getByText("Value Delivery")).toBeInTheDocument();
 });
+
+test("calls onMetricClick when metric is clicked", async () => {
+  const onMetricClick = vi.fn();
+  const derivedMetrics = [
+    { id: "m1" as Id<"metrics">, name: "Activation Rate", category: "value_delivery" },
+  ];
+  const { user } = setup({ derivedMetrics, onMetricClick });
+
+  await user.click(screen.getByRole("button", { name: /activation rate/i }));
+
+  expect(onMetricClick).toHaveBeenCalledWith("m1");
+});
