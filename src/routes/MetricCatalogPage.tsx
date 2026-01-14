@@ -11,7 +11,7 @@ import { RegenerateConfirmDialog } from "@/components/measurement/RegenerateConf
 
 export default function MetricCatalogPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const metrics = useQuery(api.metrics.list, {});
   const [selectedMetricId, setSelectedMetricId] = useState<string | null>(null);
 
@@ -147,6 +147,25 @@ export default function MetricCatalogPage() {
           </Button>
         )}
       </div>
+
+      {/* Filter indicator */}
+      {activityFilter && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-md">
+          <span>Filtered by: <strong>{activityFilter}</strong></span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2"
+            onClick={() => {
+              const newParams = new URLSearchParams(searchParams);
+              newParams.delete("activity");
+              setSearchParams(newParams);
+            }}
+          >
+            Clear filter
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-6">
         {/* Metric Grid */}

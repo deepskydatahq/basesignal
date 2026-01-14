@@ -228,6 +228,45 @@ test("filters metrics by activity when URL has activity param", () => {
   expect(screen.queryByText("DAU")).not.toBeInTheDocument();
 });
 
+test("shows filter indicator and clear button when activity filter is active", () => {
+  const metricsWithActivity = [
+    {
+      _id: "metric1",
+      name: "Activation Rate",
+      definition: "Users who activated",
+      formula: "Activated / Signed up",
+      category: "value_delivery",
+      whyItMatters: "Shows activation health",
+      howToImprove: "Improve onboarding",
+      order: 1,
+      sourceActivityId: "activity1",
+    },
+  ];
+
+  const mockActivities = [
+    {
+      _id: "activity1",
+      name: "Account Created",
+      entityId: "entity1",
+      action: "Created",
+    },
+  ];
+
+  mockUseQuery.mockImplementation((query: string) => {
+    if (query === "metrics:list") return metricsWithActivity;
+    if (query === "setupProgress:foundationStatus") return mockFoundationStatus;
+    if (query === "measurementPlan:listActivities") return mockActivities;
+    return undefined;
+  });
+
+  setup(["/metric-catalog?activity=Account%20Created"]);
+
+  // Should show filter indicator
+  expect(screen.getByText(/filtered by/i)).toBeInTheDocument();
+  expect(screen.getByText("Account Created")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /clear filter/i })).toBeInTheDocument();
+});
+
 test("shows source activity link in detail panel when metric has sourceActivityId", async () => {
   const metricsWithActivity = [
     {
