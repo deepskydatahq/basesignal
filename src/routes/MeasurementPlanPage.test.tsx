@@ -1,5 +1,6 @@
 import { expect, test, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import MeasurementPlanPage from "./MeasurementPlanPage";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -27,6 +28,12 @@ vi.mock("convex/react", () => ({
     }
     if (queryName === "measurementPlan:computeJourneyDiff") {
       return mockJourneyDiff;
+    }
+    if (queryName === "stages:listByJourney") {
+      return [];
+    }
+    if (queryName === "metrics:list") {
+      return [];
     }
     if (queryName === "skip") {
       return undefined;
@@ -61,6 +68,12 @@ vi.mock("../../convex/_generated/api", () => ({
     setupProgress: {
       foundationStatus: "setupProgress:foundationStatus",
     },
+    stages: {
+      listByJourney: "stages:listByJourney",
+    },
+    metrics: {
+      list: "metrics:list",
+    },
   },
 }));
 
@@ -93,6 +106,22 @@ vi.mock("@/components/measurement/AddEntityDialog", () => ({
 vi.mock("@/components/measurement/RegenerateConfirmDialog", () => ({
   RegenerateConfirmDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="regenerate-confirm-dialog">Regenerate Confirm Dialog</div> : null,
+}));
+
+vi.mock("@/components/measurement/ActivityDetailPanel", () => ({
+  ActivityDetailPanel: ({
+    activity,
+    onClose,
+  }: {
+    activity: unknown;
+    onClose: () => void;
+  }) =>
+    activity ? (
+      <div data-testid="activity-detail-panel">
+        Activity Detail Panel
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
 }));
 
 function setup() {
@@ -283,4 +312,46 @@ test("renders without error when navigated with highlight state", () => {
 
   // Component should render without error - activity count is visible in collapsed state
   expect(screen.getByText("1 activity")).toBeInTheDocument();
+});
+
+test("opens activity detail panel when activity is clicked", async () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          lifecycleSlot: "account_creation",
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  render(
+    <MemoryRouter>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // First expand the entity card
+  await userEvent.click(screen.getByText("Account"));
+
+  // Click the activity to open detail panel
+  await userEvent.click(screen.getByText("Account Created"));
+
+  expect(screen.getByTestId("activity-detail-panel")).toBeInTheDocument();
 });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id, Doc } from "../../convex/_generated/dataModel";
@@ -13,6 +13,7 @@ import { PropertyList } from "@/components/measurement/PropertyList";
 import { AddEntityDialog } from "@/components/measurement/AddEntityDialog";
 import { EntityCard } from "@/components/measurement/EntityCard";
 import { RegenerateConfirmDialog } from "@/components/measurement/RegenerateConfirmDialog";
+import { ActivityDetailPanel } from "@/components/measurement/ActivityDetailPanel";
 
 export default function MeasurementPlanPage() {
   const location = useLocation();
@@ -30,7 +31,13 @@ export default function MeasurementPlanPage() {
     entityName: string;
   } | null>(null);
   const [editActivity, setEditActivity] = useState<Doc<"measurementActivities"> | null>(null);
+  const [selectedActivityForPanel, setSelectedActivityForPanel] = useState<{
+    name: string;
+    entityName: string;
+    lifecycleSlot: string;
+  } | null>(null);
 
+  const navigate = useNavigate();
   const foundationStatus = useQuery(api.setupProgress.foundationStatus);
   const deleteAllMeasurement = useMutation(api.measurementPlan.deleteAll);
   const importFromJourneyMutation = useMutation(api.measurementPlan.importFromJourney);
@@ -47,6 +54,35 @@ export default function MeasurementPlanPage() {
 
   const hasJourney = foundationStatus?.overviewInterview?.journeyId != null;
   const journeyId = foundationStatus?.overviewInterview?.journeyId;
+
+  // Get stages and metrics for derived metrics lookup
+  const stages = useQuery(
+    api.stages.listByJourney,
+    journeyId ? { journeyId } : "skip"
+  );
+  const metrics = useQuery(api.metrics.list, {});
+
+  // Helper: get derived metrics for an activity name
+  const getDerivedMetrics = (activityName: string) => {
+    if (!stages || !metrics) return [];
+
+    // Find stage(s) matching this activity name
+    const matchingStages = stages.filter((s) => s.name === activityName);
+    const stageIds = new Set(matchingStages.map((s) => s._id));
+
+    // Find metrics referencing these stages
+    return metrics
+      .filter((m) => m.relatedActivityId && stageIds.has(m.relatedActivityId))
+      .map((m) => ({
+        id: m._id,
+        name: m.name,
+        category: m.category,
+      }));
+  };
+
+  const handleMetricClick = (metricId: Id<"metrics">) => {
+    navigate(`/setup/metric-catalog?metric=${metricId}`);
+  };
 
   const handleGenerate = async () => {
     if (!journeyId || !journeyDiff) return;
@@ -210,7 +246,13 @@ export default function MeasurementPlanPage() {
                       >
                         <button
                           type="button"
-                          onClick={() => setEditActivity(activity)}
+                          onClick={() =>
+                            setSelectedActivityForPanel({
+                              name: activity.name,
+                              entityName: entity.name,
+                              lifecycleSlot: activity.lifecycleSlot ?? "",
+                            })
+                          }
                           className="flex items-center gap-2 text-left flex-1"
                         >
                           <span className="text-sm font-medium text-gray-900">
@@ -318,6 +360,18 @@ export default function MeasurementPlanPage() {
         isOpen={showAddEntityDialog}
         onClose={() => setShowAddEntityDialog(false)}
       />
+
+      {/* Activity Detail Panel */}
+      {selectedActivityForPanel && (
+        <div className="fixed inset-y-0 right-0 z-40">
+          <ActivityDetailPanel
+            activity={selectedActivityForPanel}
+            derivedMetrics={getDerivedMetrics(selectedActivityForPanel.name)}
+            onClose={() => setSelectedActivityForPanel(null)}
+            onMetricClick={handleMetricClick}
+          />
+        </div>
+      )}
 
       {/* Regenerate Confirm Dialog */}
       <RegenerateConfirmDialog
