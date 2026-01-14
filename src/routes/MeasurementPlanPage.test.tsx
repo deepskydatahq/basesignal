@@ -353,6 +353,51 @@ test("opens activity detail panel when activity is clicked", async () => {
   expect(screen.getByTestId("activity-detail-panel")).toBeInTheDocument();
 });
 
+test("highlights activity when URL has highlight param", async () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  render(
+    <MemoryRouter initialEntries={["/measurement-plan?highlight=Account%20Created"]}>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // First expand the entity card
+  await userEvent.click(screen.getByText("Account"));
+
+  // The activity row should have highlight styling
+  // The structure is: div (activity row) > button > span (contains text)
+  // We need to find the containing div that has the className with ring-2
+  const activityText = screen.getByText("Account Created");
+  // Walk up to find the div with the full className
+  const activityRow = activityText.closest(".ring-2");
+  expect(activityRow).toBeInTheDocument();
+  expect(activityRow).toHaveClass("ring-2", "ring-blue-500", "bg-blue-50");
+});
+
 test("opens edit modal from activity detail panel edit button", async () => {
   mockGetFullPlan = [
     {

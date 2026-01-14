@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id, Doc } from "../../convex/_generated/dataModel";
@@ -17,7 +18,10 @@ import { ActivityDetailPanel } from "@/components/measurement/ActivityDetailPane
 
 export default function MeasurementPlanPage() {
   const location = useLocation();
-  const highlightActivity = (location.state as { highlightActivity?: string } | null)?.highlightActivity;
+  const [searchParams] = useSearchParams();
+  const highlightFromState = (location.state as { highlightActivity?: string } | null)?.highlightActivity;
+  const highlightFromUrl = searchParams.get("highlight");
+  const highlightActivity = highlightFromUrl ?? highlightFromState;
   const activityRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const fullPlan = useQuery(api.measurementPlan.getFullPlan);
@@ -236,7 +240,10 @@ export default function MeasurementPlanPage() {
                         ref={(el) => {
                           if (el) activityRefs.current.set(activity.name, el);
                         }}
-                        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                        className={cn(
+                          "w-full flex items-center justify-between px-3 py-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors",
+                          activity.name === highlightActivity && "ring-2 ring-blue-500 bg-blue-50"
+                        )}
                       >
                         <button
                           type="button"
