@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -274,6 +274,13 @@ export default function MeasurementPlanPage() {
                               {activity.lifecycleSlot.replace(/_/g, " ")}
                             </span>
                           )}
+                          <Link
+                            to={`/metric-catalog?activity=${encodeURIComponent(activity.name)}`}
+                            className="text-xs text-blue-600 hover:text-blue-800"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            View Metrics
+                          </Link>
                           {!activity.isFirstValue && (
                             <Button
                               variant="ghost"

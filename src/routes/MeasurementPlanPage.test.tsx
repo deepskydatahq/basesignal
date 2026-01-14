@@ -432,6 +432,48 @@ test("highlights activity when URL has highlight param", async () => {
   expect(activityRow).toHaveClass("ring-2", "ring-blue-500", "bg-blue-50");
 });
 
+test("activity row has View Metrics link", async () => {
+  const user = userEvent.setup();
+
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  render(
+    <MemoryRouter>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // Expand entity card
+  await user.click(screen.getByText("Account"));
+
+  // Should have View Metrics link
+  const link = screen.getByRole("link", { name: /view metrics/i });
+  expect(link).toHaveAttribute("href", "/metric-catalog?activity=Account%20Created");
+});
+
 test("opens edit modal from activity detail panel edit button", async () => {
   mockGetFullPlan = [
     {
