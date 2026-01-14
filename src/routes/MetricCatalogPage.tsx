@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { MetricCard } from "@/components/metrics/MetricCard";
@@ -9,9 +10,11 @@ import { RefreshCw, Sparkles } from "lucide-react";
 import { RegenerateConfirmDialog } from "@/components/measurement/RegenerateConfirmDialog";
 
 export default function MetricCatalogPage() {
+  const navigate = useNavigate();
   const metrics = useQuery(api.metrics.list, {});
   const [selectedMetricId, setSelectedMetricId] = useState<string | null>(null);
   const foundationStatus = useQuery(api.setupProgress.foundationStatus);
+  const activities = useQuery(api.measurementPlan.listActivities);
   const generateFromOverview = useMutation(api.metricCatalog.generateFromOverview);
   const generateFromFirstValue = useMutation(api.metricCatalog.generateFromFirstValue);
   const deleteAllMetrics = useMutation(api.metricCatalog.deleteAll);
@@ -48,6 +51,19 @@ export default function MetricCatalogPage() {
   };
 
   const selectedMetric = metrics?.find((m) => m._id === selectedMetricId);
+
+  // Lookup source activity name from metric's sourceActivityId
+  function getSourceEventName(sourceActivityId: string | undefined): string | undefined {
+    if (!sourceActivityId || !activities) return undefined;
+    const activity = activities.find((a) => a._id === sourceActivityId);
+    return activity?.name;
+  }
+
+  const handleSourceEventClick = (activityName: string) => {
+    navigate("/measurement-plan", {
+      state: { highlightActivity: activityName },
+    });
+  };
 
   if (metrics === undefined) {
     return (
@@ -123,6 +139,7 @@ export default function MetricCatalogPage() {
                 category={metric.category as MetricCategory}
                 selected={metric._id === selectedMetricId}
                 onClick={() => setSelectedMetricId(metric._id)}
+                sourceEventName={getSourceEventName(metric.sourceActivityId)}
               />
             ))}
           </div>
@@ -141,6 +158,11 @@ export default function MetricCatalogPage() {
                 howToImprove: selectedMetric.howToImprove,
               }}
               onClose={() => setSelectedMetricId(null)}
+              sourceEventName={getSourceEventName(selectedMetric.sourceActivityId)}
+              onSourceEventClick={() => {
+                const name = getSourceEventName(selectedMetric.sourceActivityId);
+                if (name) handleSourceEventClick(name);
+              }}
             />
           </div>
         )}
