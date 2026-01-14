@@ -399,7 +399,7 @@ export default defineSchema({
     // Metadata
     metricType: v.string(),              // "default" | "generated"
     templateKey: v.optional(v.string()), // "activation_rate" - links to template
-    relatedActivityId: v.optional(v.id("stages")),  // Optional journey link
+    sourceActivityId: v.optional(v.id("measurementActivities")),  // Link to source event
     order: v.number(),                   // Display sequence
     createdAt: v.number(),
   })
