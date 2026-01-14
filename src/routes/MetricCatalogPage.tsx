@@ -172,6 +172,7 @@ export default function MetricCatalogPage() {
                 const name = getSourceEventName(selectedMetric.sourceActivityId);
                 if (name) handleSourceEventClick(name);
               }}
+              sourceActivityName={getSourceEventName(selectedMetric.sourceActivityId)}
             />
           </div>
         )}

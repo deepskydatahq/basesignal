@@ -178,3 +178,44 @@ test("auto-selects metric from URL query param", () => {
   const panel = screen.getByRole("complementary");
   expect(within(panel).getByText("New Users")).toBeInTheDocument();
 });
+
+test("shows source activity link in detail panel when metric has sourceActivityId", async () => {
+  const metricsWithActivity = [
+    {
+      _id: "metric1",
+      name: "Activation Rate",
+      definition: "Users who activated",
+      formula: "Activated / Signed up",
+      category: "value_delivery",
+      whyItMatters: "Shows activation health",
+      howToImprove: "Improve onboarding",
+      order: 1,
+      sourceActivityId: "activity1",
+    },
+  ];
+
+  const mockActivities = [
+    {
+      _id: "activity1",
+      name: "Account Created",
+      entityId: "entity1",
+      action: "Created",
+    },
+  ];
+
+  mockUseQuery.mockImplementation((query: string) => {
+    if (query === "metrics:list") return metricsWithActivity;
+    if (query === "setupProgress:foundationStatus") return mockFoundationStatus;
+    if (query === "measurementPlan:listActivities") return mockActivities;
+    return undefined;
+  });
+
+  const { user } = setup();
+
+  await user.click(screen.getByText("Activation Rate"));
+
+  // Source Activity section should show with link
+  expect(screen.getByText("Source Activity")).toBeInTheDocument();
+  const link = screen.getByRole("link", { name: /account created/i });
+  expect(link).toHaveAttribute("href", "/measurement-plan?highlight=Account%20Created");
+});
