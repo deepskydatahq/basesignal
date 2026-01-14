@@ -6,15 +6,15 @@ import { getTemplatesByPhase } from "../src/shared/metricTemplates";
 
 // Helper to generate overview metrics (duplicated to avoid circular deps with internal mutations)
 async function generateOverviewMetrics(ctx: MutationCtx, journeyId: string, userId: string) {
-  // 1. Get stages for this journey
-  const stages = await ctx.db
-    .query("stages")
-    .withIndex("by_journey", (q) => q.eq("journeyId", journeyId as any))
+  // 1. Get measurementActivities for this user
+  const activities = await ctx.db
+    .query("measurementActivities")
+    .withIndex("by_user", (q) => q.eq("userId", userId as any))
     .collect();
 
-  // 2. Find core_usage stage for {{coreAction}} slot (with fallback)
-  const coreUsageStage = stages.find((s) => s.lifecycleSlot === "core_usage");
-  const coreAction = coreUsageStage?.name ?? "Core Action";
+  // 2. Find core_usage activity for {{coreAction}} slot (with fallback)
+  const coreUsageActivity = activities.find((a) => a.lifecycleSlot === "core_usage");
+  const coreAction = coreUsageActivity?.name ?? "Core Action";
 
   // 3. Get existing metrics to check for duplicates
   const existingMetrics = await ctx.db
@@ -54,7 +54,7 @@ async function generateOverviewMetrics(ctx: MutationCtx, journeyId: string, user
       category: template.category,
       metricType: "generated",
       templateKey: template.key,
-      relatedActivityId: coreUsageStage?._id,
+      sourceActivityId: coreUsageActivity?._id,
       order: order++,
       createdAt: now,
     });

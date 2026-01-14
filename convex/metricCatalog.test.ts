@@ -29,26 +29,32 @@ describe("generateFromFirstValue", () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    // Create first_value journey with activation stage
+    // Create measurementActivity with activation lifecycleSlot
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Project",
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Project Created",
+        action: "Created",
+        lifecycleSlot: "activation",
+        isFirstValue: true,
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      // Create journey (for auth)
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
         name: "First Value",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      // Add activation stage
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Project Created",
-        type: "activity",
-        entity: "Project",
-        action: "Created",
-        lifecycleSlot: "activation",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -83,23 +89,29 @@ describe("generateFromFirstValue", () => {
     const { asUser, userId } = await setupUser(t);
 
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Report",
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "First Report Generated",
+        action: "Generated",
+        lifecycleSlot: "activation",
+        isFirstValue: true,
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
         name: "First Value",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "First Report Generated",
-        type: "activity",
-        entity: "Report",
-        action: "Generated",
-        lifecycleSlot: "activation",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -127,23 +139,29 @@ describe("generateFromFirstValue", () => {
     const { asUser, userId } = await setupUser(t);
 
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Project",
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Project Created",
+        action: "Created",
+        lifecycleSlot: "activation",
+        isFirstValue: true,
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
         name: "First Value",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Project Created",
-        type: "activity",
-        entity: "Project",
-        action: "Created",
-        lifecycleSlot: "activation",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -192,23 +210,29 @@ describe("generateFromFirstValue", () => {
     });
 
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Project",
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Project Created",
+        action: "Created",
+        lifecycleSlot: "activation",
+        isFirstValue: true,
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
         name: "First Value",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Project Created",
-        type: "activity",
-        entity: "Project",
-        action: "Created",
-        lifecycleSlot: "activation",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -235,29 +259,38 @@ describe("generateFromFirstValue", () => {
     expect(timeToFirstValue?.order).toBe(8);
   });
 
-  it("links relatedActivityId to the activation stage", async () => {
+  it("links sourceActivityId to the activation measurementActivity", async () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    let stageId: Id<"stages">;
+    let activityId: Id<"measurementActivities">;
     const journeyId = await t.run(async (ctx) => {
+      // Create entity
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Project",
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      // Create activation activity
+      activityId = await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Project Created",
+        action: "Created",
+        lifecycleSlot: "activation",
+        isFirstValue: true,
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      // Create journey (for auth)
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
         name: "First Value",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      stageId = await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Project Created",
-        type: "activity",
-        entity: "Project",
-        action: "Created",
-        lifecycleSlot: "activation",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -274,7 +307,7 @@ describe("generateFromFirstValue", () => {
       (m) => m.templateKey === "activation_rate"
     );
 
-    expect(activationRate?.relatedActivityId).toBe(stageId!);
+    expect(activationRate?.sourceActivityId).toBe(activityId!);
   });
 
   it("throws error when journey not found", async () => {
@@ -302,11 +335,12 @@ describe("generateFromFirstValue", () => {
     ).rejects.toThrow("Journey not found");
   });
 
-  it("throws error when no activation stage found", async () => {
+  it("throws error when no activation activity found", async () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
     const journeyId = await t.run(async (ctx) => {
+      // Create journey but no measurementActivities
       return await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
@@ -315,14 +349,13 @@ describe("generateFromFirstValue", () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      // No stages added
     });
 
     await expect(
       asUser.mutation(api.metricCatalog.generateFromFirstValue, {
         journeyId,
       })
-    ).rejects.toThrow("No activation stage found");
+    ).rejects.toThrow("No activation activity found");
   });
 });
 
@@ -331,26 +364,31 @@ describe("generateFromOverview", () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    // Create overview journey with core_usage stage
+    // Create measurementActivity with core_usage lifecycleSlot
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Report",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Report Generated",
+        action: "Generated",
+        lifecycleSlot: "core_usage",
+        isFirstValue: false,
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "overview",
         name: "Overview",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      // Add core_usage stage
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Report Generated",
-        type: "activity",
-        entity: "Report",
-        action: "Generated",
-        lifecycleSlot: "core_usage",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -385,23 +423,29 @@ describe("generateFromOverview", () => {
     const { asUser, userId } = await setupUser(t);
 
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Report",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Report Generated",
+        action: "Generated",
+        lifecycleSlot: "core_usage",
+        isFirstValue: false,
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "overview",
         name: "Overview",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Report Generated",
-        type: "activity",
-        entity: "Report",
-        action: "Generated",
-        lifecycleSlot: "core_usage",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -433,23 +477,29 @@ describe("generateFromOverview", () => {
     const { asUser, userId } = await setupUser(t);
 
     const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Report",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Report Generated",
+        action: "Generated",
+        lifecycleSlot: "core_usage",
+        isFirstValue: false,
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "overview",
         name: "Overview",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Report Generated",
-        type: "activity",
-        entity: "Report",
-        action: "Generated",
-        lifecycleSlot: "core_usage",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -471,7 +521,7 @@ describe("generateFromOverview", () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    // Create journey without core_usage stage
+    // Create journey without any measurementActivities
     const journeyId = await t.run(async (ctx) => {
       return await ctx.db.insert("journeys", {
         userId,
@@ -481,7 +531,6 @@ describe("generateFromOverview", () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      // No stages added
     });
 
     // Should still generate with fallback
@@ -553,15 +602,35 @@ describe("generateFromOverview", () => {
       })
     ).rejects.toThrow("Not authorized");
   });
-});
 
-describe("interview completion trigger", () => {
-  it("generates overview metrics when overview interview is completed", async () => {
+  it("links sourceActivityId to the core_usage measurementActivity", async () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    // Create overview journey with core_usage stage
+    // Create measurementActivity with core_usage lifecycleSlot
+    let activityId: Id<"measurementActivities">;
     const journeyId = await t.run(async (ctx) => {
+      // Create entity first
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Report",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      // Create activity
+      activityId = await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Report Generated",
+        action: "Generated",
+        lifecycleSlot: "core_usage",
+        isFirstValue: false,
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      // Create journey (still needed for auth check)
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "overview",
@@ -571,14 +640,53 @@ describe("interview completion trigger", () => {
         updatedAt: Date.now(),
       });
 
-      await ctx.db.insert("stages", {
-        journeyId: jId,
+      return jId;
+    });
+
+    await asUser.mutation(api.metricCatalog.generateFromOverview, {
+      journeyId,
+    });
+
+    const metrics = await asUser.query(api.metrics.list, {});
+    const coreActionMetric = metrics.find(
+      (m) => m.templateKey === "core_action_frequency"
+    );
+
+    expect(coreActionMetric).toBeDefined();
+    expect(coreActionMetric?.sourceActivityId).toBe(activityId!);
+  });
+});
+
+describe("interview completion trigger", () => {
+  it("generates overview metrics when overview interview is completed", async () => {
+    const t = convexTest(schema);
+    const { asUser, userId } = await setupUser(t);
+
+    // Create measurementActivity and journey
+    const journeyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Report",
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
         name: "Report Generated",
-        type: "activity",
-        entity: "Report",
         action: "Generated",
         lifecycleSlot: "core_usage",
-        position: { x: 100, y: 100 },
+        isFirstValue: false,
+        suggestedFrom: "overview_interview",
+        createdAt: Date.now(),
+      });
+
+      const jId = await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Overview",
+        isDefault: true,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -619,8 +727,8 @@ describe("interview completion trigger", () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
 
-    // First create an overview journey with an overview session completed (to unlock first_value)
-    const journeyId = await t.run(async (ctx) => {
+    // First create an overview journey with a completed overview session (to unlock first_value)
+    await t.run(async (ctx) => {
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "overview",
@@ -642,25 +750,31 @@ describe("interview completion trigger", () => {
       return jId;
     });
 
-    // Create first_value journey with activation stage
+    // Create first_value journey with activation activity
     const firstValueJourneyId = await t.run(async (ctx) => {
+      const entityId = await ctx.db.insert("measurementEntities", {
+        userId,
+        name: "Project",
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("measurementActivities", {
+        userId,
+        entityId,
+        name: "Project Created",
+        action: "Created",
+        lifecycleSlot: "activation",
+        isFirstValue: true,
+        suggestedFrom: "first_value",
+        createdAt: Date.now(),
+      });
+
       const jId = await ctx.db.insert("journeys", {
         userId,
         type: "first_value",
         name: "First Value",
         isDefault: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-
-      await ctx.db.insert("stages", {
-        journeyId: jId,
-        name: "Project Created",
-        type: "activity",
-        entity: "Project",
-        action: "Created",
-        lifecycleSlot: "activation",
-        position: { x: 100, y: 100 },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });

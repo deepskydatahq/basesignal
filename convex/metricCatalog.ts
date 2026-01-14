@@ -24,20 +24,20 @@ export const generateFromOverview = mutation({
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
 
-    // 2. Get the overview journey
+    // 2. Get the overview journey (for auth check)
     const journey = await ctx.db.get(journeyId);
     if (!journey) throw new Error("Journey not found");
     if (journey.userId !== user._id) throw new Error("Not authorized");
 
-    // 3. Get stages for this journey
-    const stages = await ctx.db
-      .query("stages")
-      .withIndex("by_journey", (q) => q.eq("journeyId", journeyId))
+    // 3. Get measurementActivities for this user
+    const activities = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    // 4. Find core_usage stage for {{coreAction}} slot (with fallback)
-    const coreUsageStage = stages.find((s) => s.lifecycleSlot === "core_usage");
-    const coreAction = coreUsageStage?.name ?? "Core Action";
+    // 4. Find core_usage activity for {{coreAction}} slot (with fallback)
+    const coreUsageActivity = activities.find((a) => a.lifecycleSlot === "core_usage");
+    const coreAction = coreUsageActivity?.name ?? "Core Action";
 
     // 5. Get existing metrics to check for duplicates
     const existingMetrics = await ctx.db
@@ -79,7 +79,7 @@ export const generateFromOverview = mutation({
         category: template.category,
         metricType: "generated",
         templateKey: template.key,
-        relatedActivityId: coreUsageStage?._id,
+        sourceActivityId: coreUsageActivity?._id,
         order: order++,
         createdAt: now,
       });
@@ -98,22 +98,22 @@ export const generateFromFirstValue = mutation({
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
 
-    // 2. Get the first_value journey
+    // 2. Get the first_value journey (for auth check)
     const journey = await ctx.db.get(journeyId);
     if (!journey) throw new Error("Journey not found");
     if (journey.userId !== user._id) throw new Error("Not authorized");
 
-    // 3. Get stages for this journey
-    const stages = await ctx.db
-      .query("stages")
-      .withIndex("by_journey", (q) => q.eq("journeyId", journeyId))
+    // 3. Get measurementActivities for this user
+    const activities = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
       .collect();
 
-    // 4. Find activation stage for {{firstValueActivity}} slot
-    const activationStage = stages.find((s) => s.lifecycleSlot === "activation");
-    if (!activationStage) throw new Error("No activation stage found");
+    // 4. Find activation activity for {{firstValueActivity}} slot
+    const activationActivity = activities.find((a) => a.lifecycleSlot === "activation");
+    if (!activationActivity) throw new Error("No activation activity found");
 
-    const firstValueActivity = activationStage.name;
+    const firstValueActivity = activationActivity.name;
 
     // 5. Get existing metrics to check for duplicates and determine next order
     const existingMetrics = await ctx.db
@@ -156,7 +156,7 @@ export const generateFromFirstValue = mutation({
         category: template.category,
         metricType: "generated",
         templateKey: template.key,
-        relatedActivityId: activationStage._id,
+        sourceActivityId: activationActivity._id,
         order: nextOrder++,
         createdAt: now,
       });
