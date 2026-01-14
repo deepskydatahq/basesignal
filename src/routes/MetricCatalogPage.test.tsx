@@ -228,6 +228,19 @@ test("filters metrics by activity when URL has activity param", () => {
   expect(screen.queryByText("DAU")).not.toBeInTheDocument();
 });
 
+test("shows empty state when activity filter matches no metrics", () => {
+  setupMocks(mockMetrics);
+
+  setup(["/metric-catalog?activity=NonExistent%20Activity"]);
+
+  // Should show filter indicator but no metrics
+  expect(screen.getByText(/filtered by/i)).toBeInTheDocument();
+  expect(screen.getByText("NonExistent Activity")).toBeInTheDocument();
+  // Metrics should not appear (they don't match the filter)
+  expect(screen.queryByText("New Users")).not.toBeInTheDocument();
+  expect(screen.queryByText("DAU")).not.toBeInTheDocument();
+});
+
 test("shows filter indicator and clear button when activity filter is active", () => {
   const metricsWithActivity = [
     {

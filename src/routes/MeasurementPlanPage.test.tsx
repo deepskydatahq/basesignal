@@ -432,6 +432,45 @@ test("highlights activity when URL has highlight param", async () => {
   expect(activityRow).toHaveClass("ring-2", "ring-blue-500", "bg-blue-50");
 });
 
+test("handles non-existent activity in highlight param gracefully", () => {
+  mockGetFullPlan = [
+    {
+      entity: {
+        _id: "e1" as Id<"measurementEntities">,
+        _creationTime: Date.now(),
+        userId: "u1" as Id<"users">,
+        name: "Account",
+        createdAt: Date.now(),
+      },
+      activities: [
+        {
+          _id: "a1" as Id<"measurementActivities">,
+          _creationTime: Date.now(),
+          userId: "u1" as Id<"users">,
+          entityId: "e1" as Id<"measurementEntities">,
+          name: "Account Created",
+          action: "Created",
+          isFirstValue: false,
+          createdAt: Date.now(),
+        },
+      ],
+      properties: [],
+    },
+  ];
+
+  // Should not throw when highlight param doesn't match any activity
+  render(
+    <MemoryRouter initialEntries={["/measurement-plan?highlight=NonExistent%20Activity"]}>
+      <MeasurementPlanPage />
+    </MemoryRouter>
+  );
+
+  // Page should render normally
+  expect(screen.getByRole("heading", { level: 1, name: /measurement plan/i })).toBeInTheDocument();
+  // Entity card should NOT be expanded (no match)
+  expect(screen.queryByText("Account Created")).not.toBeInTheDocument();
+});
+
 test("activity row has View Metrics link", async () => {
   const user = userEvent.setup();
 
