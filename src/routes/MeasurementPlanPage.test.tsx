@@ -29,9 +29,6 @@ vi.mock("convex/react", () => ({
     if (queryName === "measurementPlan:computeJourneyDiff") {
       return mockJourneyDiff;
     }
-    if (queryName === "stages:listByJourney") {
-      return [];
-    }
     if (queryName === "metrics:list") {
       return [];
     }
@@ -67,9 +64,6 @@ vi.mock("../../convex/_generated/api", () => ({
     },
     setupProgress: {
       foundationStatus: "setupProgress:foundationStatus",
-    },
-    stages: {
-      listByJourney: "stages:listByJourney",
     },
     metrics: {
       list: "metrics:list",

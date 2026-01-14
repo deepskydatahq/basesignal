@@ -32,6 +32,7 @@ export default function MeasurementPlanPage() {
   } | null>(null);
   const [editActivity, setEditActivity] = useState<Doc<"measurementActivities"> | null>(null);
   const [selectedActivityForPanel, setSelectedActivityForPanel] = useState<{
+    id: Id<"measurementActivities">;
     name: string;
     entityName: string;
     lifecycleSlot: string;
@@ -56,24 +57,16 @@ export default function MeasurementPlanPage() {
   const hasJourney = foundationStatus?.overviewInterview?.journeyId != null;
   const journeyId = foundationStatus?.overviewInterview?.journeyId;
 
-  // Get stages and metrics for derived metrics lookup
-  const stages = useQuery(
-    api.stages.listByJourney,
-    journeyId ? { journeyId } : "skip"
-  );
+  // Get metrics for derived metrics lookup
   const metrics = useQuery(api.metrics.list, {});
 
-  // Helper: get derived metrics for an activity name
-  const getDerivedMetrics = (activityName: string) => {
-    if (!stages || !metrics) return [];
+  // Helper: get derived metrics for an activity by ID
+  const getDerivedMetrics = (activityId: Id<"measurementActivities">) => {
+    if (!metrics) return [];
 
-    // Find stage(s) matching this activity name
-    const matchingStages = stages.filter((s) => s.name === activityName);
-    const stageIds = new Set(matchingStages.map((s) => s._id));
-
-    // Find metrics referencing these stages
+    // Find metrics referencing this activity
     return metrics
-      .filter((m) => m.relatedActivityId && stageIds.has(m.relatedActivityId))
+      .filter((m) => m.sourceActivityId === activityId)
       .map((m) => ({
         id: m._id,
         name: m.name,
@@ -249,6 +242,7 @@ export default function MeasurementPlanPage() {
                           type="button"
                           onClick={() =>
                             setSelectedActivityForPanel({
+                              id: activity._id,
                               name: activity.name,
                               entityName: entity.name,
                               lifecycleSlot: activity.lifecycleSlot ?? "",
@@ -372,7 +366,7 @@ export default function MeasurementPlanPage() {
               entityName: selectedActivityForPanel.entityName,
               lifecycleSlot: selectedActivityForPanel.lifecycleSlot,
             }}
-            derivedMetrics={getDerivedMetrics(selectedActivityForPanel.name)}
+            derivedMetrics={getDerivedMetrics(selectedActivityForPanel.id)}
             onClose={() => setSelectedActivityForPanel(null)}
             onMetricClick={handleMetricClick}
             onEdit={() => {
