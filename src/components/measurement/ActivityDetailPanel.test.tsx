@@ -2,6 +2,7 @@ import { expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ActivityDetailPanel } from "./ActivityDetailPanel";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 const mockActivity = {
   name: "Account Created",
@@ -50,4 +51,30 @@ test("renders nothing when activity is null", () => {
   );
 
   expect(container).toBeEmptyDOMElement();
+});
+
+test("renders empty state when no derived metrics", () => {
+  setup({ derivedMetrics: [] });
+
+  expect(screen.getByText(/no metrics derived/i)).toBeInTheDocument();
+});
+
+test("renders derived metrics list", () => {
+  const derivedMetrics = [
+    { id: "m1" as Id<"metrics">, name: "Activation Rate", category: "value_delivery" },
+    { id: "m2" as Id<"metrics">, name: "Signup Rate", category: "reach" },
+  ];
+  setup({ derivedMetrics });
+
+  expect(screen.getByText("Activation Rate")).toBeInTheDocument();
+  expect(screen.getByText("Signup Rate")).toBeInTheDocument();
+});
+
+test("renders metric category badges", () => {
+  const derivedMetrics = [
+    { id: "m1" as Id<"metrics">, name: "Activation Rate", category: "value_delivery" },
+  ];
+  setup({ derivedMetrics });
+
+  expect(screen.getByText("Value Delivery")).toBeInTheDocument();
 });

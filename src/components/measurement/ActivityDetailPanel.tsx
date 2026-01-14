@@ -1,5 +1,6 @@
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { CategoryBadge, type MetricCategory } from "../metrics/CategoryBadge";
 
 interface DerivedMetric {
   id: Id<"metrics">;
@@ -20,7 +21,9 @@ interface ActivityDetailPanelProps {
 
 export function ActivityDetailPanel({
   activity,
+  derivedMetrics,
   onClose,
+  onMetricClick,
 }: ActivityDetailPanelProps) {
   if (!activity) return null;
 
@@ -44,9 +47,39 @@ export function ActivityDetailPanel({
         </button>
       </div>
 
-      {/* Content placeholder for now */}
+      {/* Content */}
       <div className="p-4">
-        {/* Derived metrics section added in next task */}
+        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+          Derived Metrics
+        </h3>
+
+        {derivedMetrics.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No metrics derived from this activity yet. Metrics are generated when you complete the journey setup.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {derivedMetrics.map((metric) => (
+              <li key={metric.id}>
+                <button
+                  onClick={() => onMetricClick(metric.id)}
+                  className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                >
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 block">
+                      {metric.name}
+                    </span>
+                    <CategoryBadge
+                      category={metric.category as MetricCategory}
+                      className="mt-1"
+                    />
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </aside>
   );
