@@ -30,10 +30,17 @@ export function ActivityDetailPanel({
   if (!activity) return null;
 
   return (
-    <aside
-      role="complementary"
-      className="w-96 h-full bg-white border-l border-gray-200 shadow-lg overflow-y-auto"
-    >
+    <>
+      {/* Backdrop overlay */}
+      <div
+        data-testid="activity-panel-backdrop"
+        onClick={onClose}
+        className="fixed inset-0 bg-black/20"
+      />
+      <aside
+        role="complementary"
+        className="w-96 h-full bg-white border-l border-gray-200 shadow-lg overflow-y-auto relative z-10"
+      >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex justify-between items-start">
         <div>
@@ -94,6 +101,7 @@ export function ActivityDetailPanel({
           </ul>
         )}
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

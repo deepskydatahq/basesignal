@@ -101,3 +101,18 @@ test("calls onEdit when edit button is clicked", async () => {
 
   expect(onEdit).toHaveBeenCalledOnce();
 });
+
+test("renders backdrop overlay", () => {
+  setup();
+
+  expect(screen.getByTestId("activity-panel-backdrop")).toBeInTheDocument();
+});
+
+test("calls onClose when backdrop is clicked", async () => {
+  const onClose = vi.fn();
+  const { user } = setup({ onClose });
+
+  await user.click(screen.getByTestId("activity-panel-backdrop"));
+
+  expect(onClose).toHaveBeenCalledOnce();
+});
