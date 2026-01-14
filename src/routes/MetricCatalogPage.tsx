@@ -61,8 +61,11 @@ export default function MetricCatalogPage() {
 
   const selectedMetric = metrics?.find((m) => m._id === selectedMetricId);
 
+  // Get activity filter from URL
+  const activityFilter = searchParams.get("activity");
+
   // Lookup source activity name from metric's sourceActivityId
-  function getSourceEventName(sourceActivityId: string | undefined): string | undefined {
+  function getSourceActivityName(sourceActivityId: string | undefined): string | undefined {
     if (!sourceActivityId || !activities) return undefined;
     const activity = activities.find((a) => a._id === sourceActivityId);
     return activity?.name;
@@ -73,6 +76,15 @@ export default function MetricCatalogPage() {
       state: { highlightActivity: activityName },
     });
   };
+
+  // Filter metrics by activity if URL param present
+  const filteredMetrics = activityFilter && metrics
+    ? metrics.filter((m) => {
+        if (!m.sourceActivityId) return false;
+        const activityName = getSourceActivityName(m.sourceActivityId);
+        return activityName === activityFilter;
+      })
+    : metrics;
 
   if (metrics === undefined) {
     return (
@@ -140,7 +152,7 @@ export default function MetricCatalogPage() {
         {/* Metric Grid */}
         <div className="flex-1">
           <div className="grid grid-cols-2 gap-4">
-            {metrics.map((metric) => (
+            {(filteredMetrics ?? []).map((metric) => (
               <MetricCard
                 key={metric._id}
                 name={metric.name}
@@ -148,7 +160,7 @@ export default function MetricCatalogPage() {
                 category={metric.category as MetricCategory}
                 selected={metric._id === selectedMetricId}
                 onClick={() => setSelectedMetricId(metric._id)}
-                sourceEventName={getSourceEventName(metric.sourceActivityId)}
+                sourceEventName={getSourceActivityName(metric.sourceActivityId)}
               />
             ))}
           </div>
@@ -167,12 +179,12 @@ export default function MetricCatalogPage() {
                 howToImprove: selectedMetric.howToImprove,
               }}
               onClose={() => setSelectedMetricId(null)}
-              sourceEventName={getSourceEventName(selectedMetric.sourceActivityId)}
+              sourceEventName={getSourceActivityName(selectedMetric.sourceActivityId)}
               onSourceEventClick={() => {
-                const name = getSourceEventName(selectedMetric.sourceActivityId);
+                const name = getSourceActivityName(selectedMetric.sourceActivityId);
                 if (name) handleSourceEventClick(name);
               }}
-              sourceActivityName={getSourceEventName(selectedMetric.sourceActivityId)}
+              sourceActivityName={getSourceActivityName(selectedMetric.sourceActivityId)}
             />
           </div>
         )}
