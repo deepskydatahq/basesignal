@@ -74,3 +74,28 @@ test("has correct width and positioning classes", () => {
   const panel = screen.getByRole("complementary");
   expect(panel).toHaveClass("w-96");
 });
+
+test("renders Source Event section when sourceEventName is provided", () => {
+  setup({ sourceEventName: "Account Created" });
+
+  expect(screen.getByText("Source Event")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Account Created" })).toBeInTheDocument();
+});
+
+test("calls onSourceEventClick when source event is clicked", async () => {
+  const onSourceEventClick = vi.fn();
+  const { user } = setup({
+    sourceEventName: "Account Created",
+    onSourceEventClick,
+  });
+
+  await user.click(screen.getByRole("button", { name: "Account Created" }));
+
+  expect(onSourceEventClick).toHaveBeenCalledOnce();
+});
+
+test("does not render Source Event section when sourceEventName is not provided", () => {
+  setup();
+
+  expect(screen.queryByText("Source Event")).not.toBeInTheDocument();
+});

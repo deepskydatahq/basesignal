@@ -13,9 +13,16 @@ interface MetricData {
 interface MetricDetailPanelProps {
   metric: MetricData;
   onClose: () => void;
+  sourceEventName?: string;
+  onSourceEventClick?: () => void;
 }
 
-export function MetricDetailPanel({ metric, onClose }: MetricDetailPanelProps) {
+export function MetricDetailPanel({
+  metric,
+  onClose,
+  sourceEventName,
+  onSourceEventClick,
+}: MetricDetailPanelProps) {
   return (
     <aside
       role="complementary"
@@ -63,6 +70,19 @@ export function MetricDetailPanel({ metric, onClose }: MetricDetailPanelProps) {
           <h3 className="text-sm font-medium text-gray-700 mb-1">How to Improve</h3>
           <p className="text-sm text-gray-600">{metric.howToImprove}</p>
         </section>
+
+        {/* Source Event */}
+        {sourceEventName && (
+          <section>
+            <h3 className="text-sm font-medium text-gray-700 mb-1">Source Event</h3>
+            <button
+              onClick={onSourceEventClick}
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {sourceEventName}
+            </button>
+          </section>
+        )}
       </div>
     </aside>
   );
