@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, it } from "vitest";
 import {
   METRIC_CATEGORIES,
   METRIC_TEMPLATES,
@@ -11,6 +11,8 @@ import {
   interpolateTemplate,
   interpolateTemplates,
   type MetricTemplate,
+  METRIC_VARIATIONS,
+  LIFECYCLE_SLOTS,
 } from "./metricTemplates";
 
 describe("METRIC_CATEGORIES", () => {
@@ -294,5 +296,25 @@ describe("template content quality", () => {
       expect(template.formula).not.toMatch(/\bJOIN\b/i);
       expect(template.formula).not.toMatch(/\bGROUP BY\b/i);
     }
+  });
+});
+
+// =============================================================================
+// Metric Variation Templates (new slot-specific template system)
+// =============================================================================
+
+describe("Metric Variations", () => {
+  it("defines four variation types", () => {
+    expect(METRIC_VARIATIONS).toEqual(["rate", "time_to", "frequency", "cohort"]);
+  });
+
+  it("defines five lifecycle slots", () => {
+    expect(LIFECYCLE_SLOTS).toEqual([
+      "account_creation",
+      "activation",
+      "core_usage",
+      "revenue",
+      "churn",
+    ]);
   });
 });

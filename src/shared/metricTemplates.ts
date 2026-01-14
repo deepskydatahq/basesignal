@@ -13,6 +13,20 @@ export const METRIC_CATEGORIES = [
 
 export type MetricCategory = (typeof METRIC_CATEGORIES)[number];
 
+// Metric variation types for slot-specific templates
+export const METRIC_VARIATIONS = ["rate", "time_to", "frequency", "cohort"] as const;
+export type MetricVariation = (typeof METRIC_VARIATIONS)[number];
+
+// Lifecycle slots that activities can belong to
+export const LIFECYCLE_SLOTS = [
+  "account_creation",
+  "activation",
+  "core_usage",
+  "revenue",
+  "churn",
+] as const;
+export type LifecycleSlot = (typeof LIFECYCLE_SLOTS)[number];
+
 export type MetricTemplate = {
   key: string;
   name: string;
