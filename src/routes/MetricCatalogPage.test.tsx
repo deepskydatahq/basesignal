@@ -1,6 +1,7 @@
 import { expect, test, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import MetricCatalogPage from "./MetricCatalogPage";
 
 // Mock Convex
@@ -19,6 +20,9 @@ vi.mock("../../convex/_generated/api", () => ({
     },
     setupProgress: {
       foundationStatus: "setupProgress:foundationStatus",
+    },
+    measurementPlan: {
+      listActivities: "measurementPlan:listActivities",
     },
     metricCatalog: {
       generateFromOverview: "metricCatalog:generateFromOverview",
@@ -72,17 +76,22 @@ const mockMetrics = [
   },
 ];
 
-function setup() {
+function setup(initialEntries: string[] = ["/"]) {
   const user = userEvent.setup();
-  render(<MetricCatalogPage />);
+  render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <MetricCatalogPage />
+    </MemoryRouter>
+  );
   return { user };
 }
 
-// Helper to setup mock for both queries
+// Helper to setup mock for all queries
 function setupMocks(metricsValue: unknown) {
   mockUseQuery.mockImplementation((query: string) => {
     if (query === "metrics:list") return metricsValue;
     if (query === "setupProgress:foundationStatus") return mockFoundationStatus;
+    if (query === "measurementPlan:listActivities") return [];
     return undefined;
   });
 }
@@ -159,4 +168,13 @@ test("switches selected metric when different card is clicked", async () => {
   // Click second metric
   await user.click(screen.getByText("DAU"));
   expect(within(screen.getByRole("complementary")).getByText("DAU")).toBeInTheDocument();
+});
+
+test("auto-selects metric from URL query param", () => {
+  setupMocks(mockMetrics);
+  setup(["/setup/metric-catalog?metric=metric1"]);
+
+  // The MetricDetailPanel should be visible with the selected metric
+  const panel = screen.getByRole("complementary");
+  expect(within(panel).getByText("New Users")).toBeInTheDocument();
 });

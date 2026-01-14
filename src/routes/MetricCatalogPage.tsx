@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { MetricCard } from "@/components/metrics/MetricCard";
@@ -11,8 +11,17 @@ import { RegenerateConfirmDialog } from "@/components/measurement/RegenerateConf
 
 export default function MetricCatalogPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const metrics = useQuery(api.metrics.list, {});
   const [selectedMetricId, setSelectedMetricId] = useState<string | null>(null);
+
+  // Initialize from URL param when metrics load
+  useEffect(() => {
+    const metricParam = searchParams.get("metric");
+    if (metricParam && metrics?.some((m) => m._id === metricParam)) {
+      setSelectedMetricId(metricParam);
+    }
+  }, [searchParams, metrics]);
   const foundationStatus = useQuery(api.setupProgress.foundationStatus);
   const activities = useQuery(api.measurementPlan.listActivities);
   const generateFromOverview = useMutation(api.metricCatalog.generateFromOverview);
