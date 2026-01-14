@@ -7,6 +7,7 @@ interface MetricCardProps {
   category: MetricCategory;
   selected?: boolean;
   onClick?: () => void;
+  sourceEventName?: string;
 }
 
 export function MetricCard({
@@ -15,6 +16,7 @@ export function MetricCard({
   category,
   selected = false,
   onClick,
+  sourceEventName,
 }: MetricCardProps) {
   return (
     <button
@@ -31,6 +33,9 @@ export function MetricCard({
         <CategoryBadge category={category} />
       </div>
       <p className="text-sm text-gray-600 line-clamp-2">{definition}</p>
+      {sourceEventName && (
+        <p className="text-xs text-gray-500 mt-1">Source: {sourceEventName}</p>
+      )}
     </button>
   );
 }

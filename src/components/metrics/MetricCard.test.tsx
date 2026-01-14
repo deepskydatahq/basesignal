@@ -64,3 +64,15 @@ test("does not show ring when not selected", () => {
   const card = screen.getByRole("button");
   expect(card).not.toHaveClass("ring-2");
 });
+
+test("renders source event name when provided", () => {
+  setup({ sourceEventName: "Account Created" });
+
+  expect(screen.getByText("Source: Account Created")).toBeInTheDocument();
+});
+
+test("does not render source when sourceEventName is not provided", () => {
+  setup();
+
+  expect(screen.queryByText(/Source:/)).not.toBeInTheDocument();
+});
