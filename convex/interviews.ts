@@ -5,7 +5,7 @@ import { INTERVIEW_TYPES, type InterviewType, type InterviewStatus, INTERVIEW_TY
 import { getTemplatesByPhase } from "../src/shared/metricTemplates";
 
 // Helper to generate overview metrics (duplicated to avoid circular deps with internal mutations)
-async function generateOverviewMetrics(ctx: MutationCtx, journeyId: string, userId: string) {
+async function generateOverviewMetrics(ctx: MutationCtx, _journeyId: string, userId: string) {
   // 1. Get measurementActivities for this user
   const activities = await ctx.db
     .query("measurementActivities")

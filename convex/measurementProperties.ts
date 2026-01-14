@@ -98,10 +98,11 @@ export const update = mutation({
 
     // Check for duplicate name if name is being changed
     if (args.name && args.name !== property.name) {
+      const newName = args.name;
       const existing = await ctx.db
         .query("measurementProperties")
         .withIndex("by_entity_and_name", (q) =>
-          q.eq("entityId", property.entityId).eq("name", args.name)
+          q.eq("entityId", property.entityId).eq("name", newName)
         )
         .first();
 

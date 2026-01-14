@@ -30,7 +30,7 @@ export default function InterviewHistoryDrawer({
       {selectedSession ? (
         <TranscriptView
           sessionId={selectedSession._id}
-          interviewType={selectedSession.interviewType}
+          interviewType={selectedSession.interviewType ?? "unknown"}
           date={selectedSession.startedAt}
           onBack={() => setSelectedSessionId(null)}
         />
@@ -64,7 +64,10 @@ export default function InterviewHistoryDrawer({
                 {history.map((session) => (
                   <SessionCard
                     key={session._id}
-                    session={session}
+                    session={{
+                      ...session,
+                      interviewType: session.interviewType ?? "unknown",
+                    }}
                     onClick={() => setSelectedSessionId(session._id)}
                   />
                 ))}
