@@ -556,6 +556,33 @@ describe("generateFromOverview", () => {
     expect(result.skipped).toBe(0); // skipped due to duplicates, not missing activity
   });
 
+  it("always generates reach metrics (new_users) regardless of activities", async () => {
+    const t = convexTest(schema);
+    const { asUser, userId } = await setupUser(t);
+
+    // Create journey with no activities at all
+    const journeyId = await t.run(async (ctx) => {
+      return await ctx.db.insert("journeys", {
+        userId,
+        type: "overview",
+        name: "Overview",
+        isDefault: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await asUser.mutation(api.metricCatalog.generateFromOverview, { journeyId });
+
+    const metrics = await asUser.query(api.metrics.list, {});
+    const newUsersMetric = metrics.find((m) => m.templateKey === "new_users");
+
+    expect(newUsersMetric).toBeDefined();
+    expect(newUsersMetric?.category).toBe("reach");
+    // Reach metrics don't need sourceActivityId
+    expect(newUsersMetric?.sourceActivityId).toBeUndefined();
+  });
+
   it("throws error when journey not found", async () => {
     const t = convexTest(schema);
     const { asUser, userId } = await setupUser(t);
