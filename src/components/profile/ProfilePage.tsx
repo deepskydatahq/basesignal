@@ -1,9 +1,16 @@
 import { useQuery } from "convex/react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { api } from "../../../convex/_generated/api";
+import { CoreIdentitySection } from "./CoreIdentitySection";
+import { FirstValueSection } from "./FirstValueSection";
+import { MetricCatalogSection } from "./MetricCatalogSection";
+import { MeasurementPlanSection } from "./MeasurementPlanSection";
+import { ProfileSection } from "./ProfileSection";
 
 export function ProfilePage() {
+  const navigate = useNavigate();
   const profileData = useQuery(api.profile.getProfileData);
+  const measurementPlan = useQuery(api.measurementPlan.getFullPlan);
 
   // Loading state
   if (profileData === undefined) {
@@ -19,6 +26,15 @@ export function ProfilePage() {
     return <Navigate to="/sign-in" />;
   }
 
+  // Flatten metrics from grouped structure
+  const flatMetrics = Object.values(profileData.metricCatalog.metrics)
+    .flat()
+    .map((m) => ({
+      _id: m._id,
+      name: m.name,
+      category: m.category,
+    }));
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       {/* Header with completeness */}
@@ -31,23 +47,40 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* Section placeholders - each will be a separate component in future issues */}
       <div className="space-y-6">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="text-gray-500">Core Identity Section</div>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="text-gray-500">Journey Map Section</div>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="text-gray-500">First Value Section</div>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="text-gray-500">Metric Catalog Section</div>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <div className="text-gray-500">Measurement Plan Section</div>
-        </div>
+        <CoreIdentitySection data={profileData.identity} />
+
+        {/* Journey Map - placeholder until component created */}
+        <ProfileSection
+          title="User Journey Map"
+          status={profileData.journeyMap.stages.length > 0 ? "complete" : "not_started"}
+          statusLabel={`${profileData.journeyMap.stages.length} stages`}
+          actionLabel="View Journey"
+          onAction={() => profileData.journeyMap.journeyId && navigate(`/journeys/${profileData.journeyMap.journeyId}`)}
+        >
+          {profileData.journeyMap.stages.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {profileData.journeyMap.stages.map((stage) => (
+                <span
+                  key={stage._id}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
+                >
+                  {stage.name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">
+              Complete the overview interview to map your user journey.
+            </p>
+          )}
+        </ProfileSection>
+
+        <FirstValueSection />
+
+        <MetricCatalogSection metrics={flatMetrics} />
+
+        <MeasurementPlanSection plan={measurementPlan ?? []} />
       </div>
     </div>
   );

@@ -400,6 +400,7 @@ export default defineSchema({
     metricType: v.string(),              // "default" | "generated"
     templateKey: v.optional(v.string()), // "activation_rate" - links to template
     sourceActivityId: v.optional(v.id("measurementActivities")),  // Link to source event
+    relatedActivityId: v.optional(v.string()),  // DEPRECATED: migration field, remove after data migrated
     order: v.number(),                   // Display sequence
     createdAt: v.number(),
   })
