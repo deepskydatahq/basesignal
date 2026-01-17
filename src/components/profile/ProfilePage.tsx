@@ -1,14 +1,13 @@
 import { useQuery } from "convex/react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { api } from "../../../convex/_generated/api";
 import { CoreIdentitySection } from "./CoreIdentitySection";
 import { FirstValueSection } from "./FirstValueSection";
 import { MetricCatalogSection } from "./MetricCatalogSection";
 import { MeasurementPlanSection } from "./MeasurementPlanSection";
-import { ProfileSection } from "./ProfileSection";
+import { JourneyMapSection } from "./JourneyMapSection";
 
 export function ProfilePage() {
-  const navigate = useNavigate();
   const profileData = useQuery(api.profile.getProfileData);
   const measurementPlan = useQuery(api.measurementPlan.getFullPlan);
 
@@ -50,31 +49,7 @@ export function ProfilePage() {
       <div className="space-y-6">
         <CoreIdentitySection data={profileData.identity} />
 
-        {/* Journey Map - placeholder until component created */}
-        <ProfileSection
-          title="User Journey Map"
-          status={profileData.journeyMap.stages.length > 0 ? "complete" : "not_started"}
-          statusLabel={`${profileData.journeyMap.stages.length} stages`}
-          actionLabel="View Journey"
-          onAction={() => profileData.journeyMap.journeyId && navigate(`/journeys/${profileData.journeyMap.journeyId}`)}
-        >
-          {profileData.journeyMap.stages.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profileData.journeyMap.stages.map((stage) => (
-                <span
-                  key={stage._id}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
-                >
-                  {stage.name}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm">
-              Complete the overview interview to map your user journey.
-            </p>
-          )}
-        </ProfileSection>
+        <JourneyMapSection journeyId={profileData.journeyMap.journeyId} />
 
         <FirstValueSection />
 
