@@ -54,9 +54,6 @@ export function MeasurementPlanSection({
   const navigate = useNavigate();
 
   const entityCount = plan.length;
-  const activityCount = plan.reduce((sum, e) => sum + e.activities.length, 0);
-  const propertyCount = plan.reduce((sum, e) => sum + e.properties.length, 0);
-
   const hasEntities = entityCount > 0;
   const statusLabel = hasEntities
     ? `${entityCount} ${entityCount === 1 ? "entity" : "entities"}`
@@ -71,23 +68,17 @@ export function MeasurementPlanSection({
       onAction={() => navigate("/measurement-plan")}
     >
       {hasEntities ? (
-        <>
-          <p className="text-sm text-gray-600 mb-4">
-            {activityCount} {activityCount === 1 ? "activity" : "activities"} ·{" "}
-            {propertyCount} {propertyCount === 1 ? "property" : "properties"}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plan.map(({ entity, activities, properties }) => (
-              <PlanEntityCard
-                key={entity._id}
-                name={entity.name}
-                activities={activities.map((a) => a.name)}
-                activityCount={activities.length}
-                propertyCount={properties.length}
-              />
-            ))}
-          </div>
-        </>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {plan.map(({ entity, activities, properties }) => (
+            <PlanEntityCard
+              key={entity._id}
+              name={entity.name}
+              activities={activities.map((a) => a.name)}
+              activityCount={activities.length}
+              propertyCount={properties.length}
+            />
+          ))}
+        </div>
       ) : (
         <div>
           <p className="font-medium text-gray-900">The blueprint for understanding user behavior.</p>
