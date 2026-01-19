@@ -139,3 +139,15 @@ test("Cancel button reverts changes and closes edit form", async () => {
   expect(screen.getByText("Acme")).toBeInTheDocument();
   expect(screen.queryByLabelText(/product name/i)).not.toBeInTheDocument();
 });
+
+test("renders revenue models as styled badges", () => {
+  setup({ revenueModels: ["transactions", "tier_subscription"] });
+
+  // Each revenue model should be a separate badge element
+  const transactionsBadge = screen.getByText("Transactions");
+  const tierBadge = screen.getByText("Tier subscription");
+
+  // Badges should have badge styling classes
+  expect(transactionsBadge).toHaveClass("rounded-full");
+  expect(tierBadge).toHaveClass("rounded-full");
+});
