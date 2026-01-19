@@ -27,6 +27,13 @@ const revenueModelDisplayLabels: Record<string, string> = {
   volume_based: "Usage-based",
 };
 
+const revenueModelColors: Record<string, string> = {
+  transactions: "bg-amber-100 text-amber-700",
+  tier_subscription: "bg-indigo-100 text-indigo-700",
+  seat_subscription: "bg-teal-100 text-teal-700",
+  volume_based: "bg-rose-100 text-rose-700",
+};
+
 const multiUserOptions = [
   { label: "No", value: false },
   { label: "Yes", value: true },
