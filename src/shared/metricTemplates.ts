@@ -292,3 +292,11 @@ export const CATEGORY_INFO: Record<
   value_delivery: { label: "Value Delivery", color: "purple" },
   value_capture: { label: "Value Capture", color: "orange" },
 };
+
+// Category colors for visual indicators (Tailwind background classes)
+export const CATEGORY_COLORS: Record<MetricCategory, string> = {
+  reach: "bg-blue-500",
+  engagement: "bg-green-500",
+  value_delivery: "bg-purple-500",
+  value_capture: "bg-orange-500",
+};
