@@ -323,10 +323,21 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
           </div>
         )}
 
-        {revenueLine && (
+        {data.revenueModels && data.revenueModels.length > 0 && (
           <div>
             <span className="text-sm text-gray-500">Revenue Models</span>
-            <p className="text-gray-900">{revenueLine}</p>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {data.revenueModels.map((model) => (
+                <span
+                  key={model}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    revenueModelColors[model] || "bg-gray-100 text-gray-700"
+                  }`}
+                >
+                  {revenueModelDisplayLabels[model] || model}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
