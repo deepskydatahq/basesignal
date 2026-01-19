@@ -145,3 +145,13 @@ test("renders partial status when stage has neither entity nor action", () => {
   // Partial: solid amber border, amber-50 background (stage exists but incomplete)
   expect(box).toHaveClass("border-solid", "border-amber-500", "bg-amber-50");
 });
+
+test("renders empty status for slots with no stage assigned", () => {
+  setup([]); // No stages
+
+  const slot = screen.getByTestId("journey-diagram").querySelector('[data-slot="account_creation"]');
+  const box = slot?.querySelector("div > div");
+
+  // Empty: dashed gray border, gray-50 background
+  expect(box).toHaveClass("border-dashed", "border-gray-300", "bg-gray-50");
+});
