@@ -60,6 +60,34 @@ describe("FirstValueSection", () => {
       expect(screen.getByText(/within 3 days/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
     });
+
+    test("displays activity with 'Activity' label", () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: null,
+        source: "manual_edit",
+      };
+      setup();
+
+      expect(screen.getByText("Activity")).toBeInTheDocument();
+      expect(screen.getByText("Report Created")).toBeInTheDocument();
+    });
+
+    test("displays timeframe with 'Expected' label", () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: null,
+        source: "manual_edit",
+      };
+      setup();
+
+      expect(screen.getByText("Expected")).toBeInTheDocument();
+      expect(screen.getByText("Within 3 days")).toBeInTheDocument();
+    });
   });
 
   describe("confirmed state", () => {
