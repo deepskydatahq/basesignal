@@ -43,7 +43,10 @@ test("renders empty state when no plan provided", () => {
   expect(screen.getByText("Measurement Plan")).toBeInTheDocument();
   expect(screen.getByText("Not started")).toBeInTheDocument();
   expect(
-    screen.getByText(/No measurement plan yet/)
+    screen.getByText("The blueprint for understanding user behavior.")
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText("Entities and activities reveal what users do and how they move through your product.")
   ).toBeInTheDocument();
 });
 

@@ -77,10 +77,12 @@ export function MeasurementPlanSection({
           </div>
         </>
       ) : (
-        <p className="text-sm text-gray-500">
-          No measurement plan yet. Complete the Overview Interview to generate
-          your first entities and activities.
-        </p>
+        <div>
+          <p className="font-medium text-gray-900">The blueprint for understanding user behavior.</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Entities and activities reveal what users do and how they move through your product.
+          </p>
+        </div>
       )}
     </ProfileSection>
   );
