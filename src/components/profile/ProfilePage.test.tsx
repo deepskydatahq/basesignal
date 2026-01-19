@@ -1,12 +1,14 @@
-import { expect, test, vi } from "vitest";
+import { expect, test, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ProfilePage } from "./ProfilePage";
 import { MemoryRouter } from "react-router-dom";
+import { api } from "../../../convex/_generated/api";
 
 const mockUseQuery = vi.fn();
 
 vi.mock("convex/react", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  useMutation: () => vi.fn(),
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -17,8 +19,59 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-function setup(queryResult: unknown) {
-  mockUseQuery.mockReturnValue(queryResult);
+vi.mock("react-router", () => ({
+  useNavigate: () => vi.fn(),
+}));
+
+beforeEach(() => {
+  mockUseQuery.mockReset();
+});
+
+interface ProfileQueryResult {
+  identity: { productName?: string; websiteUrl?: string };
+  journeyMap: { stages: unknown[]; journeyId: string | null };
+  firstValue: unknown;
+  metricCatalog: { metrics: Record<string, unknown[]>; totalCount: number };
+  measurementPlan: { entities: unknown[]; activityCount: number; propertyCount: number };
+  completeness: {
+    sections: Array<{ id: string; name: string; complete: boolean }>;
+    completed: number;
+    total: number;
+    percentage: number;
+  };
+}
+
+// Track which query is being called by position
+let queryCallIndex = 0;
+
+function setup(queryResult: ProfileQueryResult | undefined | null) {
+  queryCallIndex = 0;
+
+  // ProfilePage calls useQuery twice:
+  // 1. api.profile.getProfileData
+  // 2. api.measurementPlan.getFullPlan
+  // Then child components may call more
+  mockUseQuery.mockImplementation(() => {
+    queryCallIndex++;
+
+    // First call: profile.getProfileData
+    if (queryCallIndex === 1) {
+      return queryResult;
+    }
+    // Second call: measurementPlan.getFullPlan
+    if (queryCallIndex === 2) {
+      return [];
+    }
+    // Third call: stages.listByJourney (in JourneyMapSection)
+    if (queryCallIndex === 3) {
+      return [];
+    }
+    // Fourth call: firstValue.getCurrent (in FirstValueSection)
+    if (queryCallIndex === 4) {
+      return null;
+    }
+    return undefined;
+  });
   render(
     <MemoryRouter>
       <ProfilePage />
@@ -57,7 +110,8 @@ test("renders product name from profile data", () => {
     },
   });
 
-  expect(screen.getByText("My Awesome Product")).toBeInTheDocument();
+  // Product name appears in header (h1) and in CoreIdentitySection
+  expect(screen.getByRole("heading", { level: 1, name: "My Awesome Product" })).toBeInTheDocument();
 });
 
 test("shows default product name when not set", () => {
@@ -98,7 +152,7 @@ test("displays completeness indicator", () => {
   expect(screen.getByText("4/11")).toBeInTheDocument();
 });
 
-test("renders section placeholders", () => {
+test("renders all profile sections", () => {
   setup({
     identity: { productName: "Test Product" },
     journeyMap: { stages: [], journeyId: null },
@@ -113,9 +167,86 @@ test("renders section placeholders", () => {
     },
   });
 
-  expect(screen.getByText("Core Identity Section")).toBeInTheDocument();
-  expect(screen.getByText("Journey Map Section")).toBeInTheDocument();
-  expect(screen.getByText("First Value Section")).toBeInTheDocument();
-  expect(screen.getByText("Metric Catalog Section")).toBeInTheDocument();
-  expect(screen.getByText("Measurement Plan Section")).toBeInTheDocument();
+  // Verify all section headings are present
+  expect(screen.getByRole("heading", { name: "Core Identity" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Journey Map" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "First Value Moment" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Metric Catalog" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Measurement Plan" })).toBeInTheDocument();
+});
+
+test("shows journey_map suggestion when core_identity complete but journey_map incomplete", () => {
+  setup({
+    identity: { productName: "My Product" },
+    completeness: {
+      sections: [
+        { id: "core_identity", name: "Core Identity", complete: true },
+        { id: "journey_map", name: "Journey Map", complete: false },
+        { id: "first_value", name: "First Value", complete: false },
+        { id: "metric_catalog", name: "Metric Catalog", complete: false },
+        { id: "measurement_plan", name: "Measurement Plan", complete: false },
+      ],
+      completed: 1,
+      total: 5,
+      percentage: 20,
+    },
+    journeyMap: { stages: [], journeyId: null },
+    firstValue: null,
+    metricCatalog: { metrics: {}, totalCount: 0 },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+  });
+
+  expect(screen.getByText("Now let's map your user journey")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Start Overview Interview" })).toBeInTheDocument();
+});
+
+test("shows metric_catalog suggestion when journey_map complete but metric_catalog incomplete", () => {
+  setup({
+    identity: { productName: "My Product" },
+    completeness: {
+      sections: [
+        { id: "core_identity", name: "Core Identity", complete: true },
+        { id: "journey_map", name: "Journey Map", complete: true },
+        { id: "first_value", name: "First Value", complete: true },
+        { id: "metric_catalog", name: "Metric Catalog", complete: false },
+        { id: "measurement_plan", name: "Measurement Plan", complete: false },
+      ],
+      completed: 3,
+      total: 5,
+      percentage: 60,
+    },
+    journeyMap: { stages: [], journeyId: null },
+    firstValue: null,
+    metricCatalog: { metrics: {}, totalCount: 0 },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+  });
+
+  expect(screen.getByText("Turn your first value moment into metrics")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Generate Metrics" })).toBeInTheDocument();
+});
+
+test("shows no suggestion when all navigable sections complete", () => {
+  setup({
+    identity: { productName: "My Product" },
+    completeness: {
+      sections: [
+        { id: "core_identity", name: "Core Identity", complete: true },
+        { id: "journey_map", name: "Journey Map", complete: true },
+        { id: "first_value", name: "First Value", complete: true },
+        { id: "metric_catalog", name: "Metric Catalog", complete: true },
+        { id: "measurement_plan", name: "Measurement Plan", complete: true },
+      ],
+      completed: 5,
+      total: 5,
+      percentage: 100,
+    },
+    journeyMap: { stages: [], journeyId: null },
+    firstValue: null,
+    metricCatalog: { metrics: {}, totalCount: 0 },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+  });
+
+  expect(screen.queryByText("Map your user journey")).not.toBeInTheDocument();
+  expect(screen.queryByText("Generate your metric catalog")).not.toBeInTheDocument();
+  expect(screen.queryByText("Connect metrics to your data")).not.toBeInTheDocument();
 });
