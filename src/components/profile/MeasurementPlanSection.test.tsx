@@ -107,3 +107,35 @@ test("displays property count in each entity card", () => {
 
   expect(screen.getByText("1 activity · 3 properties")).toBeInTheDocument();
 });
+
+test("does not display aggregate summary at section level", () => {
+  setup([
+    {
+      entity: { _id: "entity1" as Id<"measurementEntities">, name: "User" },
+      activities: [
+        { _id: "act1" as Id<"measurementActivities">, name: "Signed Up" },
+        { _id: "act2" as Id<"measurementActivities">, name: "Logged In" },
+      ],
+      properties: [
+        { _id: "prop1" as Id<"measurementProperties">, name: "Email" },
+      ],
+    },
+    {
+      entity: { _id: "entity2" as Id<"measurementEntities">, name: "Account" },
+      activities: [
+        { _id: "act3" as Id<"measurementActivities">, name: "Created" },
+      ],
+      properties: [
+        { _id: "prop2" as Id<"measurementProperties">, name: "Plan" },
+        { _id: "prop3" as Id<"measurementProperties">, name: "Status" },
+      ],
+    },
+  ]);
+
+  // Per-entity counts should exist
+  expect(screen.getByText("2 activities · 1 property")).toBeInTheDocument();
+  expect(screen.getByText("1 activity · 2 properties")).toBeInTheDocument();
+
+  // Aggregate count should NOT exist as a standalone element
+  expect(screen.queryByText("3 activities · 3 properties")).not.toBeInTheDocument();
+});
