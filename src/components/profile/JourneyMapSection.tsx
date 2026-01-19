@@ -59,9 +59,12 @@ export function JourneyMapSection({ journeyId }: JourneyMapSectionProps) {
           }))}
         />
       ) : (
-        <p className="text-sm text-gray-500">
-          Complete the overview interview to map your user journey.
-        </p>
+        <div>
+          <p className="font-medium text-gray-900">See where users thrive—and where they vanish.</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Mapping your journey reveals the critical transitions where growth happens or stalls.
+          </p>
+        </div>
       )}
     </ProfileSection>
   );
