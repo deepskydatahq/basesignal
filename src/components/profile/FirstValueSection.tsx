@@ -189,8 +189,12 @@ export function FirstValueSection() {
           <p className="text-gray-900">{definition.expectedTimeframe}</p>
         </div>
         {definition.confirmedAt && (
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span>Confirmed: {formatDate(definition.confirmedAt)}</span>
+          <div>
+            <span className="text-sm text-gray-500">Status</span>
+            <p className="text-green-600 flex items-center gap-1">
+              <Check className="w-4 h-4" />
+              Confirmed {formatDate(definition.confirmedAt)}
+            </p>
           </div>
         )}
       </div>
