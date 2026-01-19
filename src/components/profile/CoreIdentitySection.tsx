@@ -76,13 +76,6 @@ function formatBusinessLine(
   return null;
 }
 
-function formatRevenueModels(revenueModels?: string[]): string | null {
-  if (!revenueModels || revenueModels.length === 0) return null;
-  return revenueModels
-    .map((model) => revenueModelDisplayLabels[model] || model)
-    .join(", ");
-}
-
 export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
   const updateOnboarding = useMutation(api.users.updateOnboarding);
   const [isEditing, setIsEditing] = useState(false);
@@ -144,7 +137,6 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
     data.hasMultiUserAccounts,
     data.businessType
   );
-  const revenueLine = formatRevenueModels(data.revenueModels);
 
   if (isEditing) {
     return (
@@ -344,7 +336,7 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
         {!data.productName &&
           !data.websiteUrl &&
           !businessLine &&
-          !revenueLine && (
+          (!data.revenueModels || data.revenueModels.length === 0) && (
             <div>
               <p className="font-medium text-gray-900">Your product's P&L starts here.</p>
               <p className="text-gray-600 text-sm mt-1">
