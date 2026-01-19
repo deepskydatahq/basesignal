@@ -8,6 +8,7 @@ export const INTERVIEW_TYPES = {
     dependencies: [] as string[],
     outputs: { stages: true, rules: [] },
     isSetupInterview: true, // Flag to distinguish from detailed interviews
+    estimatedMinutes: 15,
   },
   first_value: {
     id: "first_value",
@@ -15,6 +16,7 @@ export const INTERVIEW_TYPES = {
     description: "Identify the activation moment - when users first experience value",
     dependencies: [] as string[],
     outputs: { stages: true, rules: ["activation"] },
+    estimatedMinutes: 7,
   },
   retention: {
     id: "retention",
@@ -22,6 +24,7 @@ export const INTERVIEW_TYPES = {
     description: "Define what 'coming back' looks like for your product",
     dependencies: ["first_value"],
     outputs: { stages: false, rules: ["active"] },
+    estimatedMinutes: 5,
   },
   value_outcomes: {
     id: "value_outcomes",
@@ -29,6 +32,7 @@ export const INTERVIEW_TYPES = {
     description: "Map the behaviors that create value",
     dependencies: ["first_value"],
     outputs: { stages: true, rules: ["value"] },
+    estimatedMinutes: 7,
   },
   value_capture: {
     id: "value_capture",
@@ -36,6 +40,7 @@ export const INTERVIEW_TYPES = {
     description: "Link behaviors to revenue and business metrics",
     dependencies: ["value_outcomes"],
     outputs: { stages: false, rules: ["revenue"] },
+    estimatedMinutes: 5,
   },
   churn: {
     id: "churn",
@@ -43,6 +48,7 @@ export const INTERVIEW_TYPES = {
     description: "Define inactivity and cancellation signals",
     dependencies: ["first_value", "value_outcomes"],
     outputs: { stages: true, rules: ["at_risk", "churn"] },
+    estimatedMinutes: 5,
   },
 } as const;
 
