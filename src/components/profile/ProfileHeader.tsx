@@ -1,3 +1,5 @@
+import { getProductInitial, getProductColor } from "../../lib/productColor";
+
 const REVENUE_MODEL_LABELS: Record<string, string> = {
   transactions: "Transactions",
   tier_subscription: "Tier Subscription",
@@ -34,15 +36,31 @@ export function ProfileHeader({
     (completeness.completed / completeness.total) * 100
   );
 
+  const initial = getProductInitial(identity.productName);
+  const backgroundColor = getProductColor(identity.productName);
+
   return (
     <header className="mb-8">
-      <h1 className="text-2xl font-bold text-gray-900">
-        {identity.productName || "Your Product"}
-      </h1>
+      <div className="flex items-start gap-4">
+        {/* Logo avatar */}
+        <div
+          aria-label="Product avatar"
+          className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-semibold"
+          style={{ backgroundColor }}
+        >
+          {initial}
+        </div>
 
-      {identity.productDescription && (
-        <p className="mt-1 text-gray-600">{identity.productDescription}</p>
-      )}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {identity.productName || "Your Product"}
+          </h1>
+
+          {identity.productDescription && (
+            <p className="mt-1 text-gray-600">{identity.productDescription}</p>
+          )}
+        </div>
+      </div>
 
       <div className="mt-3 flex items-center justify-between">
         {/* Business model badges */}

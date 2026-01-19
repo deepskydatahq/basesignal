@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ProfileHeader } from "./ProfileHeader";
+import { getProductColor } from "../../lib/productColor";
 
 function setup(props: Partial<Parameters<typeof ProfileHeader>[0]> = {}) {
   const defaultProps = {
@@ -171,4 +172,26 @@ test("handles 100% completeness", () => {
   expect(screen.getByText("11 of 11")).toBeInTheDocument();
   const progressBar = screen.getByTestId("progress-bar-fill");
   expect(progressBar).toHaveStyle({ width: "100%" });
+});
+
+test("renders logo avatar with product initial", () => {
+  setup({ identity: { productName: "Basesignal" } });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  expect(avatar).toHaveTextContent("B");
+});
+
+test("renders logo avatar with ? for missing product name", () => {
+  setup({ identity: {} });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  expect(avatar).toHaveTextContent("?");
+});
+
+test("applies deterministic background color to avatar", () => {
+  setup({ identity: { productName: "Basesignal" } });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  const expectedColor = getProductColor("Basesignal");
+  expect(avatar).toHaveStyle({ backgroundColor: expectedColor });
 });
