@@ -118,3 +118,21 @@ test("navigates to /metric-catalog when View Full Catalog is clicked", async () 
 
   expect(mockNavigate).toHaveBeenCalledWith("/metric-catalog");
 });
+
+test("renders distribution bar with category segments", () => {
+  setup([
+    { _id: "1", name: "New Users", category: "reach" },
+    { _id: "2", name: "Trial Starts", category: "reach" },
+    { _id: "3", name: "Daily Active Users", category: "engagement" },
+    { _id: "4", name: "Activation Rate", category: "value_delivery" },
+  ]);
+
+  // Distribution bar should exist
+  const distributionBar = screen.getByTestId("metric-distribution-bar");
+  expect(distributionBar).toBeInTheDocument();
+
+  // Should have segments for each populated category
+  expect(screen.getByTestId("segment-reach")).toBeInTheDocument();
+  expect(screen.getByTestId("segment-engagement")).toBeInTheDocument();
+  expect(screen.getByTestId("segment-value_delivery")).toBeInTheDocument();
+});
