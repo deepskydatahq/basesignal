@@ -195,3 +195,35 @@ test("applies deterministic background color to avatar", () => {
   const expectedColor = getProductColor("Basesignal");
   expect(avatar).toHaveStyle({ backgroundColor: expectedColor });
 });
+
+test("progress bar has accessible progressbar role", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 5, total: 10 },
+  });
+
+  const progressBar = screen.getByRole("progressbar");
+  expect(progressBar).toBeInTheDocument();
+});
+
+test("progress bar has correct ARIA value attributes", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 7, total: 10 },
+  });
+
+  const progressBar = screen.getByRole("progressbar");
+  expect(progressBar).toHaveAttribute("aria-valuenow", "70");
+  expect(progressBar).toHaveAttribute("aria-valuemin", "0");
+  expect(progressBar).toHaveAttribute("aria-valuemax", "100");
+});
+
+test("progress bar fill has explicit width transition class", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 5, total: 10 },
+  });
+
+  const progressBarFill = screen.getByTestId("progress-bar-fill");
+  expect(progressBarFill).toHaveClass("transition-[width]", "duration-300");
+});

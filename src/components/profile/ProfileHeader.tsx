@@ -80,10 +80,16 @@ export function ProfileHeader({
 
         {/* Collapsed completeness indicator */}
         <div className="flex items-center gap-2">
-          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={percentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden"
+          >
             <div
               data-testid="progress-bar-fill"
-              className="h-full bg-black rounded-full transition-all"
+              className="h-full bg-black rounded-full transition-[width] duration-300"
               style={{ width: `${percentage}%` }}
             />
           </div>
