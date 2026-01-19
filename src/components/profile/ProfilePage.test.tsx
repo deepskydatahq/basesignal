@@ -149,7 +149,7 @@ test("displays completeness indicator", () => {
     },
   });
 
-  expect(screen.getByText("4/11")).toBeInTheDocument();
+  expect(screen.getByText("4 of 11")).toBeInTheDocument();
 });
 
 test("renders all profile sections", () => {
@@ -249,4 +249,23 @@ test("shows no suggestion when all navigable sections complete", () => {
   expect(screen.queryByText("Map your user journey")).not.toBeInTheDocument();
   expect(screen.queryByText("Generate your metric catalog")).not.toBeInTheDocument();
   expect(screen.queryByText("Connect metrics to your data")).not.toBeInTheDocument();
+});
+
+test("renders logo avatar with product initial", () => {
+  setup({
+    identity: { productName: "Test Product" },
+    journeyMap: { stages: [], journeyId: null },
+    firstValue: null,
+    metricCatalog: { metrics: {}, totalCount: 0 },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+    completeness: {
+      sections: [],
+      completed: 0,
+      total: 11,
+      percentage: 0,
+    },
+  });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  expect(avatar).toHaveTextContent("T");
 });

@@ -7,6 +7,7 @@ import { MetricCatalogSection } from "./MetricCatalogSection";
 import { MeasurementPlanSection } from "./MeasurementPlanSection";
 import { JourneyMapSection } from "./JourneyMapSection";
 import { SuggestedNextAction } from "./SuggestedNextAction";
+import { ProfileHeader } from "./ProfileHeader";
 
 export function ProfilePage() {
   const profileData = useQuery(api.profile.getProfileData);
@@ -50,15 +51,10 @@ export function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      {/* Header with completeness */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          {profileData.identity.productName || "Your Product"}
-        </h1>
-        <div className="mt-2 text-sm text-gray-500">
-          {profileData.completeness.completed}/{profileData.completeness.total}
-        </div>
-      </div>
+      <ProfileHeader
+        identity={profileData.identity}
+        completeness={profileData.completeness}
+      />
 
       <div className="space-y-6">
         <CoreIdentitySection data={profileData.identity} />
