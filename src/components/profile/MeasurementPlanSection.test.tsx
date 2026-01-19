@@ -89,3 +89,21 @@ test("displays activity count in each entity card", () => {
 
   expect(screen.getByText("2 activities · 0 properties")).toBeInTheDocument();
 });
+
+test("displays property count in each entity card", () => {
+  setup([
+    {
+      entity: { _id: "entity1" as Id<"measurementEntities">, name: "User" },
+      activities: [
+        { _id: "act1" as Id<"measurementActivities">, name: "Signed Up" },
+      ],
+      properties: [
+        { _id: "prop1" as Id<"measurementProperties">, name: "Email" },
+        { _id: "prop2" as Id<"measurementProperties">, name: "Plan" },
+        { _id: "prop3" as Id<"measurementProperties">, name: "Country" },
+      ],
+    },
+  ]);
+
+  expect(screen.getByText("1 activity · 3 properties")).toBeInTheDocument();
+});
