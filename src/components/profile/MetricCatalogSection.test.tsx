@@ -136,3 +136,17 @@ test("renders distribution bar with category segments", () => {
   expect(screen.getByTestId("segment-engagement")).toBeInTheDocument();
   expect(screen.getByTestId("segment-value_delivery")).toBeInTheDocument();
 });
+
+test("renders legend with category counts", () => {
+  setup([
+    { _id: "1", name: "New Users", category: "reach" },
+    { _id: "2", name: "Trial Starts", category: "reach" },
+    { _id: "3", name: "Daily Active Users", category: "engagement" },
+    { _id: "4", name: "Activation Rate", category: "value_delivery" },
+  ]);
+
+  // Legend should show category names with counts
+  expect(screen.getByText("Reach: 2")).toBeInTheDocument();
+  expect(screen.getByText("Engagement: 1")).toBeInTheDocument();
+  expect(screen.getByText("Value Delivery: 1")).toBeInTheDocument();
+});
