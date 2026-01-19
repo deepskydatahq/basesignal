@@ -327,7 +327,12 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
           !data.websiteUrl &&
           !businessLine &&
           !revenueLine && (
-            <p className="text-gray-400 italic">No profile information yet</p>
+            <div>
+              <p className="font-medium text-gray-900">Your product's P&L starts here.</p>
+              <p className="text-gray-600 text-sm mt-1">
+                How you monetize and who you serve determines which metrics matter most.
+              </p>
+            </div>
           )}
       </div>
     </ProfileSection>

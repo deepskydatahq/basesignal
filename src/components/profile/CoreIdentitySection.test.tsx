@@ -65,7 +65,10 @@ test("renders revenue models as comma-separated list", () => {
 test("renders empty state when no data provided", () => {
   setup({});
 
-  expect(screen.getByText("No profile information yet")).toBeInTheDocument();
+  expect(screen.getByText("Your product's P&L starts here.")).toBeInTheDocument();
+  expect(
+    screen.getByText("How you monetize and who you serve determines which metrics matter most.")
+  ).toBeInTheDocument();
 });
 
 test("shows Complete status when productName is set", () => {
