@@ -15,10 +15,17 @@ interface MeasurementPlanSectionProps {
 function PlanEntityCard({
   name,
   activities,
+  activityCount,
+  propertyCount,
 }: {
   name: string;
   activities: string[];
+  activityCount: number;
+  propertyCount: number;
 }) {
+  const activityText = activityCount === 1 ? "activity" : "activities";
+  const propertyText = propertyCount === 1 ? "property" : "properties";
+
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
       <h4 className="font-medium text-gray-900 mb-2">{name}</h4>
@@ -34,6 +41,9 @@ function PlanEntityCard({
       ) : (
         <p className="text-sm text-gray-400 italic">No activities</p>
       )}
+      <p className="text-sm text-slate-500 mt-3">
+        {activityCount} {activityText} · {propertyCount} {propertyText}
+      </p>
     </div>
   );
 }
@@ -67,11 +77,13 @@ export function MeasurementPlanSection({
             {propertyCount} {propertyCount === 1 ? "property" : "properties"}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plan.map(({ entity, activities }) => (
+            {plan.map(({ entity, activities, properties }) => (
               <PlanEntityCard
                 key={entity._id}
                 name={entity.name}
                 activities={activities.map((a) => a.name)}
+                activityCount={activities.length}
+                propertyCount={properties.length}
               />
             ))}
           </div>
