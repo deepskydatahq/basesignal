@@ -1,5 +1,9 @@
 import { getProductInitial, getProductColor } from "../../lib/productColor";
 
+function pluralize(count: number, singular: string, plural: string): string {
+  return count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
+}
+
 const REVENUE_MODEL_LABELS: Record<string, string> = {
   transactions: "Transactions",
   tier_subscription: "Tier Subscription",
@@ -101,7 +105,7 @@ export function ProfileHeader({
           </div>
           {stats ? (
             <span className="text-sm text-gray-600">
-              {stats.metricsCount} Metrics · {stats.entitiesCount} Entities · {stats.activitiesCount} Activities
+              {pluralize(stats.metricsCount, "Metric", "Metrics")} · {pluralize(stats.entitiesCount, "Entity", "Entities")} · {pluralize(stats.activitiesCount, "Activity", "Activities")}
             </span>
           ) : (
             <span className="text-sm text-gray-600">

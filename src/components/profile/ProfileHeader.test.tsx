@@ -243,3 +243,35 @@ test("renders stats bar with metrics, entities, and activities counts", () => {
   expect(screen.getByText(/3 Entities/)).toBeInTheDocument();
   expect(screen.getByText(/12 Activities/)).toBeInTheDocument();
 });
+
+test("renders singular form for count of 1", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 1, total: 11 },
+    stats: {
+      metricsCount: 1,
+      entitiesCount: 1,
+      activitiesCount: 1,
+    },
+  });
+
+  expect(screen.getByText(/1 Metric/)).toBeInTheDocument();
+  expect(screen.getByText(/1 Entity/)).toBeInTheDocument();
+  expect(screen.getByText(/1 Activity/)).toBeInTheDocument();
+});
+
+test("renders zero counts correctly", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 0, total: 11 },
+    stats: {
+      metricsCount: 0,
+      entitiesCount: 0,
+      activitiesCount: 0,
+    },
+  });
+
+  expect(screen.getByText(/0 Metrics/)).toBeInTheDocument();
+  expect(screen.getByText(/0 Entities/)).toBeInTheDocument();
+  expect(screen.getByText(/0 Activities/)).toBeInTheDocument();
+});
