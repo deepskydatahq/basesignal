@@ -8,6 +8,7 @@ function setup(
     description: string;
     prerequisite: string;
     isReady: boolean;
+    timeEstimate: string;
   }> = {}
 ) {
   const defaultProps = {
@@ -66,4 +67,19 @@ test("renders custom title, description, and prerequisite", () => {
   expect(
     screen.getByText("Requires: First Value definition")
   ).toBeInTheDocument();
+});
+
+test("shows time estimate in button when isReady is true", () => {
+  setup({ isReady: true, timeEstimate: "~7 min" });
+
+  // Button should show time estimate
+  expect(screen.getByRole("button", { name: /Start Interview.*~7 min/ })).toBeInTheDocument();
+});
+
+test("does not show time estimate in button when isReady is false", () => {
+  setup({ isReady: false, timeEstimate: "~7 min" });
+
+  // Button should just say "Start Interview" without time estimate
+  expect(screen.getByRole("button", { name: "Start Interview" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /~7 min/ })).not.toBeInTheDocument();
 });

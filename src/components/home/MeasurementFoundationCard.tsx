@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Layers } from "lucide-react";
 import { StageCard, type StageStatus } from "./StageCard";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { INTERVIEW_TYPES } from "../../shared/interviewTypes";
 
 interface FoundationStatus {
   overviewInterview: {
@@ -86,6 +87,7 @@ export function MeasurementFoundationCard({ status }: MeasurementFoundationCardP
               ? `${status.overviewInterview.slotsCompleted} of ${status.overviewInterview.slotsTotal} lifecycle slots`
               : undefined
           }
+          timeEstimate={`~${INTERVIEW_TYPES.overview.estimatedMinutes} min`}
           onClick={handleOverviewClick}
         />
 
@@ -94,6 +96,7 @@ export function MeasurementFoundationCard({ status }: MeasurementFoundationCardP
           description="Define when users find value"
           icon="Target"
           status={firstValueStageStatus}
+          timeEstimate={`~${INTERVIEW_TYPES.first_value.estimatedMinutes} min`}
           onClick={handleFirstValueClick}
         />
 

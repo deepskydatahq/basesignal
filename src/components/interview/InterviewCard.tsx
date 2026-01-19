@@ -58,7 +58,10 @@ export default function InterviewCard({
           ) : status === "complete" ? (
             <p className="text-xs text-green-600 mt-0.5">Completed</p>
           ) : (
-            <p className="text-xs text-gray-500 mt-0.5">{config.description}</p>
+            <div className="flex items-center justify-between mt-0.5">
+              <p className="text-xs text-gray-500">{config.description}</p>
+              <span className="text-xs text-gray-400 ml-2">~{config.estimatedMinutes} min</span>
+            </div>
           )}
         </div>
       </div>
