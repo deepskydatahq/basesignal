@@ -275,3 +275,14 @@ test("renders zero counts correctly", () => {
   expect(screen.getByText(/0 Entities/)).toBeInTheDocument();
   expect(screen.getByText(/0 Activities/)).toBeInTheDocument();
 });
+
+test("falls back to completeness display when stats not provided", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 4, total: 11 },
+    // No stats prop
+  });
+
+  expect(screen.getByText("4 of 11")).toBeInTheDocument();
+  expect(screen.queryByText(/Metrics/)).not.toBeInTheDocument();
+});
