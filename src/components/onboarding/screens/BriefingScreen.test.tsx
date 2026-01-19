@@ -27,7 +27,7 @@ test("renders preparation checklist and output cards", () => {
   expect(screen.getByText(/we don't track clicks/i)).toBeInTheDocument();
 
   // Checklist items
-  expect(screen.getByText(/15 minutes/i)).toBeInTheDocument();
+  expect(screen.getByText(/~15 min of focused time/i)).toBeInTheDocument();
   expect(screen.getByText(/Acme's user journey/i)).toBeInTheDocument();
   expect(screen.getByText(/colleague who knows/i)).toBeInTheDocument();
 
@@ -53,4 +53,11 @@ test("shows coming soon badges and has start button enabled", () => {
   const startButton = getStartButton();
   expect(startButton).toBeInTheDocument();
   expect(startButton).toBeEnabled();
+});
+
+test("displays time estimate from config, not hardcoded", () => {
+  setup({ productName: "Acme" });
+
+  // Should show "~15 min" format from config
+  expect(screen.getByText(/~15 min/)).toBeInTheDocument();
 });

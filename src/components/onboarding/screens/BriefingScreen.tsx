@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Check, Map, BarChart3, List } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { Button } from "../../ui/button";
+import { INTERVIEW_TYPES } from "../../../shared/interviewTypes";
 
 interface Props {
   productName: string;
@@ -32,7 +33,7 @@ export function BriefingScreen({ productName }: Props) {
             <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
               <Check className="w-3 h-3 text-gray-600" />
             </div>
-            <span className="text-sm text-gray-600">15 minutes of focused time</span>
+            <span className="text-sm text-gray-600">~{INTERVIEW_TYPES.overview.estimatedMinutes} min of focused time</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
@@ -55,7 +56,7 @@ export function BriefingScreen({ productName }: Props) {
 
       {/* What you'll walk away with - 3 output cards */}
       <div className="space-y-3">
-        <h2 className="text-sm font-medium text-gray-700">What you'll walk away with after 15m</h2>
+        <h2 className="text-sm font-medium text-gray-700">What you'll walk away with after ~{INTERVIEW_TYPES.overview.estimatedMinutes}m</h2>
         <div className="grid grid-cols-3 gap-3">
           {/* User Journey Map */}
           <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-3">
