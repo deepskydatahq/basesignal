@@ -227,3 +227,19 @@ test("progress bar fill has explicit width transition class", () => {
   const progressBarFill = screen.getByTestId("progress-bar-fill");
   expect(progressBarFill).toHaveClass("transition-[width]", "duration-300");
 });
+
+test("renders stats bar with metrics, entities, and activities counts", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 4, total: 11 },
+    stats: {
+      metricsCount: 5,
+      entitiesCount: 3,
+      activitiesCount: 12,
+    },
+  });
+
+  expect(screen.getByText(/5 Metrics/)).toBeInTheDocument();
+  expect(screen.getByText(/3 Entities/)).toBeInTheDocument();
+  expect(screen.getByText(/12 Activities/)).toBeInTheDocument();
+});

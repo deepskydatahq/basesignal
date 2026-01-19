@@ -19,11 +19,17 @@ interface ProfileHeaderProps {
     completed: number;
     total: number;
   };
+  stats?: {
+    metricsCount: number;
+    entitiesCount: number;
+    activitiesCount: number;
+  };
 }
 
 export function ProfileHeader({
   identity,
   completeness,
+  stats,
 }: ProfileHeaderProps) {
   // Derive business type badge - B2B if multi-user OR explicit b2b
   const businessTypeBadge = identity.hasMultiUserAccounts
@@ -93,9 +99,15 @@ export function ProfileHeader({
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <span className="text-sm text-gray-600">
-            {completeness.completed} of {completeness.total}
-          </span>
+          {stats ? (
+            <span className="text-sm text-gray-600">
+              {stats.metricsCount} Metrics · {stats.entitiesCount} Entities · {stats.activitiesCount} Activities
+            </span>
+          ) : (
+            <span className="text-sm text-gray-600">
+              {completeness.completed} of {completeness.total}
+            </span>
+          )}
         </div>
       </div>
     </header>
