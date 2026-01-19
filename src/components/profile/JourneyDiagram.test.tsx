@@ -95,3 +95,53 @@ test("renders complete status when stage has both entity and action", () => {
   // Complete: solid blue border, blue-50 background
   expect(box).toHaveClass("border-solid", "border-blue-500", "bg-blue-50");
 });
+
+test("renders partial status when stage has entity but no action", () => {
+  setup([
+    {
+      _id: "s1",
+      name: "Account Created",
+      lifecycleSlot: "account_creation",
+      entity: "Account",
+    },
+  ]);
+
+  const slot = screen.getByTestId("journey-diagram").querySelector('[data-slot="account_creation"]');
+  const box = slot?.querySelector("div > div");
+
+  // Partial: solid amber border, amber-50 background
+  expect(box).toHaveClass("border-solid", "border-amber-500", "bg-amber-50");
+});
+
+test("renders partial status when stage has action but no entity", () => {
+  setup([
+    {
+      _id: "s1",
+      name: "Account Created",
+      lifecycleSlot: "account_creation",
+      action: "Created",
+    },
+  ]);
+
+  const slot = screen.getByTestId("journey-diagram").querySelector('[data-slot="account_creation"]');
+  const box = slot?.querySelector("div > div");
+
+  // Partial: solid amber border, amber-50 background
+  expect(box).toHaveClass("border-solid", "border-amber-500", "bg-amber-50");
+});
+
+test("renders partial status when stage has neither entity nor action", () => {
+  setup([
+    {
+      _id: "s1",
+      name: "Account Created",
+      lifecycleSlot: "account_creation",
+    },
+  ]);
+
+  const slot = screen.getByTestId("journey-diagram").querySelector('[data-slot="account_creation"]');
+  const box = slot?.querySelector("div > div");
+
+  // Partial: solid amber border, amber-50 background (stage exists but incomplete)
+  expect(box).toHaveClass("border-solid", "border-amber-500", "bg-amber-50");
+});
