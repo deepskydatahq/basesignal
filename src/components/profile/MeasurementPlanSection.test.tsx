@@ -74,3 +74,18 @@ test("renders entity count in status label when plan has entities", () => {
   expect(screen.getByText("Measurement Plan")).toBeInTheDocument();
   expect(screen.getByText("3 entities")).toBeInTheDocument();
 });
+
+test("displays activity count in each entity card", () => {
+  setup([
+    {
+      entity: { _id: "entity1" as Id<"measurementEntities">, name: "User" },
+      activities: [
+        { _id: "act1" as Id<"measurementActivities">, name: "Signed Up" },
+        { _id: "act2" as Id<"measurementActivities">, name: "Logged In" },
+      ],
+      properties: [],
+    },
+  ]);
+
+  expect(screen.getByText("2 activities · 0 properties")).toBeInTheDocument();
+});
