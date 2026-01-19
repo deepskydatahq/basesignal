@@ -70,10 +70,12 @@ export function MetricCatalogSection({ metrics }: MetricCatalogSectionProps) {
           })}
         </div>
       ) : (
-        <p className="text-sm text-gray-500">
-          No metrics in your catalog yet. Complete the Overview Interview to
-          generate your first metrics.
-        </p>
+        <div>
+          <p className="font-medium text-gray-900">Your product's vital signs, waiting to be measured.</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Discover which numbers actually matter for your business.
+          </p>
+        </div>
       )}
     </ProfileSection>
   );

@@ -40,7 +40,10 @@ test("renders empty state when no metrics provided", () => {
   expect(screen.getByText("Metric Catalog")).toBeInTheDocument();
   expect(screen.getByText("0 metrics")).toBeInTheDocument();
   expect(
-    screen.getByText(/No metrics in your catalog yet/)
+    screen.getByText("Your product's vital signs, waiting to be measured.")
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText("Discover which numbers actually matter for your business.")
   ).toBeInTheDocument();
 });
 
