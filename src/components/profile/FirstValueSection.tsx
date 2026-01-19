@@ -179,14 +179,20 @@ export function FirstValueSection() {
       actionLabel={actionLabel}
       onAction={handleEditClick}
     >
-      <div className="space-y-2">
-        <p className="text-gray-900 font-medium">{definition.activityName}</p>
-        <div className="flex items-center gap-4 text-sm text-gray-500">
-          <span>Expected: {definition.expectedTimeframe}</span>
-          {definition.confirmedAt && (
-            <span>Confirmed: {formatDate(definition.confirmedAt)}</span>
-          )}
+      <div className="space-y-3">
+        <div>
+          <span className="text-sm text-gray-500">Activity</span>
+          <p className="text-gray-900 font-medium">{definition.activityName}</p>
         </div>
+        <div>
+          <span className="text-sm text-gray-500">Expected</span>
+          <p className="text-gray-900">{definition.expectedTimeframe}</p>
+        </div>
+        {definition.confirmedAt && (
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            <span>Confirmed: {formatDate(definition.confirmedAt)}</span>
+          </div>
+        )}
       </div>
     </ProfileSection>
   );
