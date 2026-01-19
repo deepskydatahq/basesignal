@@ -161,9 +161,12 @@ export function FirstValueSection() {
         actionLabel={actionLabel}
         onAction={handleEditClick}
       >
-        <p className="text-gray-500 italic">
-          Define the moment when users first experience value from your product.
-        </p>
+        <div>
+          <p className="font-medium text-gray-900">What moment turns a visitor into a believer?</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Finding your first value reveals whether you're activating users fast enough.
+          </p>
+        </div>
       </ProfileSection>
     );
   }

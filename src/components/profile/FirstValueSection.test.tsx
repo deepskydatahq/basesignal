@@ -35,6 +35,12 @@ describe("FirstValueSection", () => {
       expect(
         screen.getByRole("button", { name: /define/i })
       ).toBeInTheDocument();
+      expect(
+        screen.getByText("What moment turns a visitor into a believer?")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Finding your first value reveals whether you're activating users fast enough.")
+      ).toBeInTheDocument();
     });
   });
 
