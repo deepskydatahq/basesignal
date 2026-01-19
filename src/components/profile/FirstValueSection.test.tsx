@@ -106,6 +106,20 @@ describe("FirstValueSection", () => {
       expect(screen.getByText(/jan 11, 2025/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
     });
+
+    test("shows Status label with check icon and confirmed date", () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: 1736553600000, // Jan 11, 2025
+        source: "interview",
+      };
+      setup();
+
+      expect(screen.getByText("Status")).toBeInTheDocument();
+      expect(screen.getByText(/confirmed jan 11, 2025/i)).toBeInTheDocument();
+    });
   });
 
   describe("edit form toggle", () => {
