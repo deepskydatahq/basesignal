@@ -37,7 +37,6 @@ export function JourneyDiagram({ stages }: JourneyDiagramProps) {
         const isLast = index === LIFECYCLE_SLOTS.length - 1;
 
         // Compute status: empty, partial, complete
-        const isEmpty = !stage;
         const isComplete = stage?.entity && stage?.action;
         const isPartial = stage && !isComplete;
 

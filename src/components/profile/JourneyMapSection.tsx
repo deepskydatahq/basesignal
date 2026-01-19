@@ -56,6 +56,8 @@ export function JourneyMapSection({ journeyId }: JourneyMapSectionProps) {
             _id: s._id,
             name: s.name,
             lifecycleSlot: s.lifecycleSlot as LifecycleSlot,
+            entity: s.entity,
+            action: s.action,
           }))}
         />
       ) : (
