@@ -56,10 +56,12 @@ test("renders business model for single-user B2B", () => {
   expect(screen.getByText("B2B · Single-user accounts")).toBeInTheDocument();
 });
 
-test("renders revenue models as comma-separated list", () => {
+test("renders multiple revenue models as separate badges", () => {
   setup({ revenueModels: ["seat_subscription", "volume_based"] });
 
-  expect(screen.getByText("Seat-based, Usage-based")).toBeInTheDocument();
+  // Each model renders as a separate badge, not comma-separated
+  expect(screen.getByText("Seat-based")).toBeInTheDocument();
+  expect(screen.getByText("Usage-based")).toBeInTheDocument();
 });
 
 test("renders empty state when no data provided", () => {
