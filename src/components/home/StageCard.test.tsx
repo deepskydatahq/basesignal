@@ -114,3 +114,21 @@ test("renders badge text for complete status", () => {
 
   expect(screen.getByText("8 metrics")).toBeInTheDocument();
 });
+
+test("shows time estimate when provided and status is not_started", () => {
+  setup({ status: "not_started", timeEstimate: "~15 min" });
+
+  expect(screen.getByText("~15 min")).toBeInTheDocument();
+});
+
+test("does not show time estimate when status is complete", () => {
+  setup({ status: "complete", timeEstimate: "~15 min" });
+
+  expect(screen.queryByText("~15 min")).not.toBeInTheDocument();
+});
+
+test("does not show time estimate when status is locked", () => {
+  setup({ status: "locked", timeEstimate: "~15 min" });
+
+  expect(screen.queryByText("~15 min")).not.toBeInTheDocument();
+});

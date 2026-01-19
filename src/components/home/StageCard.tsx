@@ -20,6 +20,7 @@ interface StageCardProps {
   status: StageStatus;
   progressText?: string;
   badgeText?: string;
+  timeEstimate?: string;
   onClick?: () => void;
 }
 
@@ -77,6 +78,7 @@ export function StageCard({
   status,
   progressText,
   badgeText,
+  timeEstimate,
   onClick,
 }: StageCardProps) {
   const Icon = ICONS[icon];
@@ -117,14 +119,19 @@ export function StageCard({
       {isLocked ? (
         <span className="text-xs text-gray-400">Coming soon</span>
       ) : (
-        <Button
-          size="sm"
-          variant={config.buttonVariant}
-          onClick={onClick}
-          className="w-full"
-        >
-          {config.buttonLabel}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant={config.buttonVariant}
+            onClick={onClick}
+            className="flex-1"
+          >
+            {config.buttonLabel}
+          </Button>
+          {timeEstimate && (status === "not_started" || status === "not_defined") && (
+            <span className="text-xs text-gray-400">{timeEstimate}</span>
+          )}
+        </div>
       )}
     </div>
   );
