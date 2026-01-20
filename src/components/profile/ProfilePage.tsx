@@ -52,7 +52,10 @@ export function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <ProfileHeader
-        identity={profileData.identity}
+        identity={{
+          ...profileData.identity,
+          businessType: profileData.identity.businessType as "b2b" | "b2c" | undefined,
+        }}
         completeness={profileData.completeness}
       />
 
