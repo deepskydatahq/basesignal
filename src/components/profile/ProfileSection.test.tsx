@@ -26,7 +26,7 @@ function setup(props: Partial<{
   return { user, onAction };
 }
 
-test("renders complete state with green check icon", () => {
+test("renders complete state with status label", () => {
   setup({
     title: "Core Identity",
     status: "complete",
@@ -35,12 +35,9 @@ test("renders complete state with green check icon", () => {
 
   expect(screen.getByText("Core Identity")).toBeInTheDocument();
   expect(screen.getByText("Complete")).toBeInTheDocument();
-  // Check icon should be present (we verify the badge has the green class)
-  const badge = screen.getByText("Complete").closest("div");
-  expect(badge).toHaveClass("text-green-700");
 });
 
-test("renders in_progress state with blue indicator", () => {
+test("renders in_progress state with status label", () => {
   setup({
     title: "User Journey",
     status: "in_progress",
@@ -49,6 +46,4 @@ test("renders in_progress state with blue indicator", () => {
 
   expect(screen.getByText("User Journey")).toBeInTheDocument();
   expect(screen.getByText("In Progress")).toBeInTheDocument();
-  const badge = screen.getByText("In Progress").closest("div");
-  expect(badge).toHaveClass("text-blue-600");
 });

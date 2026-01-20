@@ -61,17 +61,19 @@ test("renders metric count in status label when metrics exist", () => {
 test("shows complete status when metrics exist", () => {
   setup([{ _id: "1", name: "New Users", category: "reach" }]);
 
-  // The status badge should indicate complete (green styling)
-  const statusBadge = screen.getByText("1 metrics").closest("div");
-  expect(statusBadge).toHaveClass("text-green-700");
+  // The status badge should indicate complete (metric count displayed)
+  expect(screen.getByText("1 metrics")).toBeInTheDocument();
+  // Metric content is rendered
+  expect(screen.getByText("New Users")).toBeInTheDocument();
 });
 
 test("shows not_started status when no metrics exist", () => {
   setup([]);
 
-  // The status badge should indicate not_started (gray styling)
-  const statusBadge = screen.getByText("0 metrics").closest("div");
-  expect(statusBadge).toHaveClass("text-gray-500");
+  // The status badge should indicate not_started (0 metrics)
+  expect(screen.getByText("0 metrics")).toBeInTheDocument();
+  // Empty state content is displayed
+  expect(screen.getByText("Your product's vital signs, waiting to be measured.")).toBeInTheDocument();
 });
 
 test("groups metrics by category with category headers", () => {

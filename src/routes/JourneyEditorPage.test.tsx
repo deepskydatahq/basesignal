@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { InterviewHistoryButton, InterviewHistoryDrawer } from "../components/interview";
+import type { Id } from "../../convex/_generated/dataModel";
 
 // Mock Convex hooks
 vi.mock("convex/react", async () => {
@@ -18,7 +19,7 @@ describe("JourneyEditorPage History Integration", () => {
   it("InterviewHistoryButton displays History label and count badge", () => {
     render(
       <InterviewHistoryButton
-        journeyId={"journey1" as any}
+        journeyId={"journey1" as unknown as Id<"journeys">}
         onClick={() => {}}
       />
     );
@@ -30,7 +31,7 @@ describe("JourneyEditorPage History Integration", () => {
   it("InterviewHistoryDrawer opens with header", () => {
     render(
       <InterviewHistoryDrawer
-        journeyId={"journey1" as any}
+        journeyId={"journey1" as unknown as Id<"journeys">}
         isOpen={true}
         onClose={() => {}}
       />
@@ -42,7 +43,7 @@ describe("JourneyEditorPage History Integration", () => {
   it("InterviewHistoryDrawer is hidden when closed", () => {
     render(
       <InterviewHistoryDrawer
-        journeyId={"journey1" as any}
+        journeyId={"journey1" as unknown as Id<"journeys">}
         isOpen={false}
         onClose={() => {}}
       />
@@ -55,7 +56,7 @@ describe("JourneyEditorPage History Integration", () => {
     const onClick = vi.fn();
     render(
       <InterviewHistoryButton
-        journeyId={"journey1" as any}
+        journeyId={"journey1" as unknown as Id<"journeys">}
         onClick={onClick}
       />
     );

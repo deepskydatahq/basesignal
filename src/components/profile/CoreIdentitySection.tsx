@@ -117,6 +117,7 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
 
   // Sync editValues when data prop changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditValues({
       productName: data.productName ?? "",
       websiteUrl: data.websiteUrl ?? "",

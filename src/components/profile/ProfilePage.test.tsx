@@ -2,7 +2,6 @@ import { expect, test, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ProfilePage } from "./ProfilePage";
 import { MemoryRouter } from "react-router-dom";
-import { api } from "../../../convex/_generated/api";
 
 const mockUseQuery = vi.fn();
 

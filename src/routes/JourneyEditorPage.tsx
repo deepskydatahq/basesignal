@@ -45,11 +45,13 @@ export default function JourneyEditorPage() {
   const activitiesInRules = new Set<string>();
 
   // Get value rule name for a stage (TODO: re-implement with better design)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getValueRuleName = (_stageName: string): string | undefined => undefined;
 
   // Auto-open interview panel for empty journeys
   useEffect(() => {
     if (stages && stages.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInterviewOpen(true);
     }
   }, [stages]);

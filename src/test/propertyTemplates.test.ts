@@ -64,7 +64,6 @@ describe("propertyTemplates", () => {
 
     it("sorts required properties first", () => {
       const templates = getPropertyTemplates("Account");
-      const firstRequired = templates.findIndex((t) => t.isRequired);
       const lastRequired = templates.findLastIndex((t) => t.isRequired);
       const firstOptional = templates.findIndex((t) => !t.isRequired);
 

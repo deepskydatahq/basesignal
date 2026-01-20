@@ -29,7 +29,7 @@ describe("InterviewHistoryButton", () => {
   function setup() {
     const onClick = vi.fn();
     const user = userEvent.setup();
-    render(<InterviewHistoryButton journeyId={"journey1" as any} onClick={onClick} />);
+    render(<InterviewHistoryButton journeyId={"journey1" as unknown as import("../../../convex/_generated/dataModel").Id<"journeys">} onClick={onClick} />);
     return { user, onClick };
   }
 
@@ -51,7 +51,7 @@ describe("InterviewHistoryButton", () => {
 
   it("hides badge when no sessions", () => {
     mockSessionCount = 0;
-    render(<InterviewHistoryButton journeyId={"journey1" as any} onClick={vi.fn()} />);
+    render(<InterviewHistoryButton journeyId={"journey1" as unknown as import("../../../convex/_generated/dataModel").Id<"journeys">} onClick={vi.fn()} />);
     expect(screen.queryByText("0")).not.toBeInTheDocument();
   });
 });

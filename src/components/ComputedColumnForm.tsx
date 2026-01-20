@@ -10,7 +10,7 @@ import { Code } from './ui/code';
 interface ComputedColumn {
   name: string;
   primitiveName: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   sql: string;
 }
 
@@ -23,7 +23,7 @@ export function ComputedColumnForm({ fields, onAdd }: ComputedColumnFormProps) {
   const [open, setOpen] = useState(false);
   const [columnName, setColumnName] = useState('');
   const [primitiveName, setPrimitiveName] = useState('');
-  const [params, setParams] = useState<Record<string, any>>({});
+  const [params, setParams] = useState<Record<string, unknown>>({});
 
   const selectedPrimitive = getPrimitiveByName(primitiveName);
   const generatedSQL = selectedPrimitive ? selectedPrimitive.generateSQL(params) : '';
@@ -45,7 +45,7 @@ export function ComputedColumnForm({ fields, onAdd }: ComputedColumnFormProps) {
     setParams({});
   };
 
-  const handleParamChange = (paramName: string, value: any) => {
+  const handleParamChange = (paramName: string, value: unknown) => {
     setParams({ ...params, [paramName]: value });
   };
 

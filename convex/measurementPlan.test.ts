@@ -651,7 +651,7 @@ describe("setFirstValue", () => {
   it("marks an activity as First Value", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) => {
+    await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         clerkId: "set-fv-user",
         email: "set-fv@example.com",
@@ -690,7 +690,7 @@ describe("setFirstValue", () => {
   it("clears previous First Value when setting new one", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) => {
+    await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         clerkId: "clear-fv-user",
         email: "clear-fv@example.com",

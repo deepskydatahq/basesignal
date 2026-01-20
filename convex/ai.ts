@@ -229,7 +229,7 @@ function serializeGraph(
     result += "- none\n";
   } else {
     // Build lookup for stage names by ID
-    const idToName = new Map(stages.map((s: any) => [s._id, s.name]));
+    const idToName = new Map(stages.map((s) => [s._id, s.name]));
     for (const t of transitions) {
       const from = idToName.get(t.fromStageId) || "?";
       const to = idToName.get(t.toStageId) || "?";
@@ -469,14 +469,21 @@ function formatHistory(
   return formatted;
 }
 
+// Types for Convex action context
+import type { GenericActionCtx } from "convex/server";
+import type { DataModel } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
+
+type ActionCtx = GenericActionCtx<DataModel>;
+
 // Execute a single tool call
 async function executeToolCall(
-  ctx: any,
-  journeyId: any,
+  ctx: ActionCtx,
+  journeyId: Id<"journeys">,
   stages: Array<{ _id: string; name: string; entity?: string; action?: string }>,
   toolName: string,
   args: Record<string, unknown>,
-  sessionId?: any
+  sessionId?: Id<"interviewSessions">
 ): Promise<string> {
   switch (toolName) {
     case "propose_first_value_candidate": {
@@ -586,7 +593,7 @@ async function executeToolCall(
 
       // If updating entity/action, validate the new values
       if (entity || action) {
-        const currentStage = stages.find(s => s._id === stage._id) as any;
+        const currentStage = stages.find(s => s._id === stage._id);
         const newEntity = entity || currentStage?.entity || '';
         const newAction = action || currentStage?.action || '';
 
@@ -609,9 +616,9 @@ async function executeToolCall(
       if (action) updates.action = action;
       if (entity || action) {
         // Construct name from existing or new values
-        const currentStage = stages.find(s => s._id === stage._id) as any;
-        const newEntity = entity || currentStage?.entity || '';
-        const newAction = action || currentStage?.action || '';
+        const currentStageForName = stages.find(s => s._id === stage._id);
+        const newEntity = entity || currentStageForName?.entity || '';
+        const newAction = action || currentStageForName?.action || '';
         if (newEntity && newAction) {
           updates.name = `${newEntity} ${newAction}`;
         }
@@ -633,8 +640,8 @@ async function executeToolCall(
 
 // Execute Overview Interview tool calls
 async function executeOverviewToolCall(
-  ctx: any,
-  journeyId: any,
+  ctx: ActionCtx,
+  journeyId: Id<"journeys">,
   toolName: string,
   args: Record<string, unknown>
 ): Promise<string> {

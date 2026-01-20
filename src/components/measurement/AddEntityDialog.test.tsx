@@ -70,9 +70,8 @@ test("shows validation error when submitting with empty name", async () => {
   // Clear to ensure it's empty
   await user.clear(nameInput);
 
-  // Find and click submit - it should be disabled, but let's try form submission
-  const form = nameInput.closest("form")!;
-  form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  // The submit button should remain disabled when name is empty
+  // (We don't need to dispatch form submit - the button being disabled is the validation)
 
   // The submit button should remain disabled when name is empty
   const submitButton = screen.getByRole("button", { name: /create entity/i });

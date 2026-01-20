@@ -30,7 +30,7 @@ describe("InterviewHistoryDrawer", () => {
     const user = userEvent.setup();
     render(
       <InterviewHistoryDrawer
-        journeyId={"journey1" as any}
+        journeyId={"journey1" as unknown as import("../../../convex/_generated/dataModel").Id<"journeys">}
         isOpen={isOpen}
         onClose={onClose}
       />

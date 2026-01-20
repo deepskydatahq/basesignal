@@ -11,6 +11,7 @@ export interface ResolveResult {
   entity_status: string;
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function getConflictDetails(
   _projectName: string,
   _entityName: string
@@ -34,3 +35,4 @@ export async function resolveConflict(
   console.warn('resolveConflict is a stub - implement actual API call');
   return { entity_status: 'live' };
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */

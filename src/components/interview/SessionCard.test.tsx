@@ -5,7 +5,7 @@ import SessionCard from "./SessionCard";
 
 describe("SessionCard", () => {
   const mockSession = {
-    _id: "session1" as any,
+    _id: "session1" as unknown as import("../../../convex/_generated/dataModel").Id<"interviewSessions">,
     interviewType: "overview",
     status: "completed",
     startedAt: new Date("2026-01-08T14:00:00").getTime(),

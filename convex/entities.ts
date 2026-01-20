@@ -1,5 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 export const list = query({
   args: { orgId: v.id("orgs") },
@@ -58,6 +59,7 @@ export const update = mutation({
     commitMessage: v.string(),
   },
   handler: async (ctx, args) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { entityId, commitMessage, ...updates } = args;
 
     const entity = await ctx.db.get(entityId);
@@ -66,7 +68,7 @@ export const update = mutation({
     }
 
     // NEW: Set draft_base_sha if not already set
-    const patchUpdates: any = {
+    const patchUpdates: Record<string, unknown> = {
       ...updates,
       lastModified: Date.now(),
     };
@@ -128,7 +130,7 @@ export const updateWithConflict = mutation({
         status: "live",
         git_commit_sha: args.git_commit_sha,
         lastModified: Date.now(),
-        orgId: "default_org" as any, // TODO: Use actual org ID
+        orgId: "default_org" as Id<"orgs">, // TODO: Use actual org ID
         sourceType: "git", // Synced from Git
         fields: [],
         computedColumns: [],
@@ -311,7 +313,7 @@ export const syncFromPython = mutation({
     const existing = await ctx.db
       .query("entities")
       .withIndex("by_org_and_name", (q) =>
-        q.eq("orgId", TIMO_ORG_ID as any).eq("name", args.name)
+        q.eq("orgId", TIMO_ORG_ID as Id<"orgs">).eq("name", args.name)
       )
       .first();
 
@@ -335,7 +337,7 @@ export const syncFromPython = mutation({
       // Create new entity
       await ctx.db.insert("entities", {
         ...entityData,
-        orgId: TIMO_ORG_ID as any,
+        orgId: TIMO_ORG_ID as Id<"orgs">,
       });
     }
 

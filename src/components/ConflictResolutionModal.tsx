@@ -30,8 +30,8 @@ function DiffView({
   liveChanges
 }: {
   conflictingFields: string[]
-  draftChanges: Record<string, any>
-  liveChanges: Record<string, any>
+  draftChanges: Record<string, unknown>
+  liveChanges: Record<string, unknown>
 }) {
   return (
     <div className="space-y-4">

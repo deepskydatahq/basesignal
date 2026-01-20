@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { INTERVIEW_TYPES, type InterviewType, type InterviewStatus, INTERVIEW_TYPE_ORDER } from "./interviewTypes";
 import { getTemplatesByPhase } from "../src/shared/metricTemplates";
 
@@ -9,7 +10,7 @@ async function generateOverviewMetrics(ctx: MutationCtx, _journeyId: string, use
   // 1. Get measurementActivities for this user
   const activities = await ctx.db
     .query("measurementActivities")
-    .withIndex("by_user", (q) => q.eq("userId", userId as any))
+    .withIndex("by_user", (q) => q.eq("userId", userId as Id<"users">))
     .collect();
 
   // 2. Find core_usage activity for {{coreAction}} slot (with fallback)
@@ -19,7 +20,7 @@ async function generateOverviewMetrics(ctx: MutationCtx, _journeyId: string, use
   // 3. Get existing metrics to check for duplicates
   const existingMetrics = await ctx.db
     .query("metrics")
-    .withIndex("by_user", (q) => q.eq("userId", userId as any))
+    .withIndex("by_user", (q) => q.eq("userId", userId as Id<"users">))
     .collect();
 
   const existingTemplateKeys = new Set(
@@ -45,7 +46,7 @@ async function generateOverviewMetrics(ctx: MutationCtx, _journeyId: string, use
       text.replace(/\{\{coreAction\}\}/g, coreAction);
 
     await ctx.db.insert("metrics", {
-      userId: userId as any,
+      userId: userId as Id<"users">,
       name: template.name,
       definition: interpolate(template.definition),
       formula: interpolate(template.formula),

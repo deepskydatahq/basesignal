@@ -16,13 +16,14 @@ async function main() {
   try {
     // Test: List entities
     console.log("\n📋 Listing entities...");
-    const orgId = "j57d7wvz5t6xsny5d8fm0g8wyh6zxr5d" as any; // Replace with actual org ID
-    const entities = await client.query("entities:list" as any, { orgId });
+    const orgId = "j57d7wvz5t6xsny5d8fm0g8wyh6zxr5d";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const entities = await client.query("entities:list" as unknown as any, { orgId }) as Array<{ name: string; status?: string; sourceType: string }> | null;
     console.log("✅ Found", entities?.length || 0, "entities");
 
     if (entities && entities.length > 0) {
       console.log("\nEntities:");
-      entities.forEach((e: any) => {
+      entities.forEach((e) => {
         console.log(`  - ${e.name} (${e.status || 'no status'}) [${e.sourceType}]`);
       });
     }
@@ -31,10 +32,11 @@ async function main() {
     if (entities && entities.length > 0) {
       const firstEntity = entities[0];
       console.log(`\n🔎 Getting entity details for: ${firstEntity.name}`);
-      const entity = await client.query("entities:getByName" as any, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const entity = await client.query("entities:getByName" as unknown as any, {
         orgId,
         name: firstEntity.name,
-      });
+      }) as { status?: string; fields?: unknown[]; computedColumns?: unknown[] } | null;
       console.log("✅ Entity details retrieved");
       console.log("   Status:", entity?.status || "no status");
       console.log("   Fields:", entity?.fields?.length || 0);

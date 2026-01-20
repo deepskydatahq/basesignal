@@ -21,7 +21,7 @@ describe("TranscriptView", () => {
     const user = userEvent.setup();
     render(
       <TranscriptView
-        sessionId={"session1" as any}
+        sessionId={"session1" as unknown as import("../../../convex/_generated/dataModel").Id<"interviewSessions">}
         interviewType="overview"
         date={new Date("2026-01-08").getTime()}
         onBack={onBack}
