@@ -102,13 +102,34 @@ test("hides categories that have no metrics", () => {
     { _id: "2", name: "Activation Rate", category: "value_delivery" },
   ]);
 
-  // Only populated categories should appear
+  // Only populated categories should appear as headers
   expect(screen.getByText("Reach")).toBeInTheDocument();
   expect(screen.getByText("Value Delivery")).toBeInTheDocument();
+});
 
-  // Empty categories should not appear
-  expect(screen.queryByText("Engagement")).not.toBeInTheDocument();
-  expect(screen.queryByText("Value Capture")).not.toBeInTheDocument();
+test("shows missing categories line when some categories have no metrics", () => {
+  setup([
+    { _id: "1", name: "New Users", category: "reach" },
+    { _id: "2", name: "Activation Rate", category: "value_delivery" },
+  ]);
+
+  // Missing line should show categories with 0 metrics
+  const missingText = screen.getByText(/^Missing:/);
+  expect(missingText).toBeInTheDocument();
+  expect(missingText).toHaveTextContent("Engagement (0)");
+  expect(missingText).toHaveTextContent("Value Capture (0)");
+});
+
+test("does not show missing line when all categories have metrics", () => {
+  setup([
+    { _id: "1", name: "New Users", category: "reach" },
+    { _id: "2", name: "Daily Active Users", category: "engagement" },
+    { _id: "3", name: "Activation Rate", category: "value_delivery" },
+    { _id: "4", name: "Conversion Rate", category: "value_capture" },
+  ]);
+
+  // Missing line should not appear
+  expect(screen.queryByText(/^Missing:/)).not.toBeInTheDocument();
 });
 
 test("navigates to /metric-catalog when View Full Catalog is clicked", async () => {

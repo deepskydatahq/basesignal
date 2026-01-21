@@ -33,6 +33,11 @@ export function MetricCatalogSection({ metrics }: MetricCatalogSectionProps) {
     (cat) => grouped[cat].length > 0
   );
 
+  // Find categories with no metrics
+  const missingCategories = METRIC_CATEGORIES.filter(
+    (cat) => grouped[cat].length === 0
+  );
+
   const hasMetrics = metrics.length > 0;
   const statusLabel = hasMetrics ? `${metrics.length} metrics` : "0 metrics";
 
@@ -68,6 +73,14 @@ export function MetricCatalogSection({ metrics }: MetricCatalogSectionProps) {
               </div>
             );
           })}
+          {missingCategories.length > 0 && (
+            <p className="text-sm text-gray-400 italic border-t border-dashed border-gray-200 pt-3">
+              Missing:{" "}
+              {missingCategories
+                .map((cat) => `${CATEGORY_INFO[cat].label} (0)`)
+                .join(", ")}
+            </p>
+          )}
         </div>
       ) : (
         <div>
