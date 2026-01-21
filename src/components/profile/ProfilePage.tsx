@@ -57,6 +57,11 @@ export function ProfilePage() {
           businessType: profileData.identity.businessType as "b2b" | "b2c" | undefined,
         }}
         completeness={profileData.completeness}
+        stats={{
+          metricsCount: profileData.metricCatalog.totalCount,
+          entitiesCount: profileData.measurementPlan.entities.length,
+          activitiesCount: profileData.measurementPlan.activityCount,
+        }}
       />
 
       <div className="space-y-6">

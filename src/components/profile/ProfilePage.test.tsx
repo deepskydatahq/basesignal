@@ -133,13 +133,13 @@ test("shows default product name when not set", () => {
   expect(screen.getByText("Your Product")).toBeInTheDocument();
 });
 
-test("displays completeness indicator", () => {
+test("displays stats bar with metrics, entities, and activities counts", () => {
   setup({
     identity: { productName: "Test Product" },
     journeyMap: { stages: [], journeyId: null },
     firstValue: null,
-    metricCatalog: { metrics: {}, totalCount: 0 },
-    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+    metricCatalog: { metrics: {}, totalCount: 5 },
+    measurementPlan: { entities: [{}, {}, {}], activityCount: 12, propertyCount: 0 },
     completeness: {
       sections: [],
       completed: 4,
@@ -148,7 +148,7 @@ test("displays completeness indicator", () => {
     },
   });
 
-  expect(screen.getByText("4 of 11")).toBeInTheDocument();
+  expect(screen.getByText("5 Metrics · 3 Entities · 12 Activities")).toBeInTheDocument();
 });
 
 test("renders all profile sections", () => {
