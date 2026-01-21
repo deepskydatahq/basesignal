@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
 import Anthropic from "@anthropic-ai/sdk";
 import { INTERVIEW_TYPES, type InterviewType } from "./interviewTypes";
 import { validateActivityFormat, findDuplicate } from "../src/shared/validation";
@@ -481,7 +480,7 @@ type ActionCtx = GenericActionCtx<DataModel>;
 async function executeToolCall(
   ctx: ActionCtx,
   journeyId: Id<"journeys">,
-  stages: Array<{ _id: string; name: string; entity?: string; action?: string }>,
+  stages: Array<{ _id: Id<"stages">; name: string; entity?: string; action?: string }>,
   toolName: string,
   args: Record<string, unknown>,
   sessionId?: Id<"interviewSessions">
