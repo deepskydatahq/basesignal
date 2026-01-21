@@ -14,8 +14,6 @@ dist-ssr
 
 # Convex
 .convex
-convex/_generated
-convex/*.js
 convex/*.js.map
 
 # Editor directories and files
