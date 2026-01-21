@@ -96,7 +96,7 @@ export function ComputedColumnForm({ fields, onAdd }: ComputedColumnFormProps) {
                   </Label>
                   {param.type === 'column_select' ? (
                     <Select
-                      value={params[param.name] || ''}
+                      value={String(params[param.name] ?? '')}
                       onValueChange={(v) => handleParamChange(param.name, v)}
                     >
                       <SelectTrigger>
@@ -113,7 +113,7 @@ export function ComputedColumnForm({ fields, onAdd }: ComputedColumnFormProps) {
                   ) : (
                     <Input
                       id={param.name}
-                      value={params[param.name] || ''}
+                      value={String(params[param.name] ?? '')}
                       onChange={(e) => handleParamChange(param.name, e.target.value)}
                       placeholder={param.description || param.name}
                       required={param.required}

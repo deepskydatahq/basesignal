@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import Anthropic from "@anthropic-ai/sdk";
 import { INTERVIEW_TYPES, type InterviewType } from "./interviewTypes";
 import { validateActivityFormat, findDuplicate } from "../src/shared/validation";
@@ -434,8 +435,8 @@ RULES:
 // Fuzzy match stage name
 function resolveStage(
   reference: string,
-  stages: Array<{ _id: string; name: string }>
-): { _id: string; name: string } | null {
+  stages: Array<{ _id: Id<"stages">; name: string }>
+): { _id: Id<"stages">; name: string } | null {
   const ref = reference.toLowerCase().trim();
 
   // Exact match
