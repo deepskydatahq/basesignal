@@ -20,6 +20,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Convex types
+        run: npx convex codegen
+
       - name: Lint
         run: npm run lint
 
