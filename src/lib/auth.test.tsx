@@ -1,9 +1,11 @@
 import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-// Set env vars before importing auth module
-vi.stubEnv("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_123");
-vi.stubEnv("VITE_CONVEX_URL", "https://test.convex.cloud");
+// Set env vars before any imports using vi.hoisted
+vi.hoisted(() => {
+  vi.stubEnv("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_123");
+  vi.stubEnv("VITE_CONVEX_URL", "https://test.convex.cloud");
+});
 
 // Mock Clerk and Convex
 vi.mock("@clerk/clerk-react", () => ({
@@ -25,11 +27,9 @@ vi.mock("convex/react", () => ({
   ConvexReactClient: vi.fn(),
 }));
 
-// Import after mocks and env vars are set
 import { AuthProvider } from "./auth";
 
 describe("AuthProvider", () => {
-
   test("renders children within providers", () => {
     render(
       <AuthProvider>
