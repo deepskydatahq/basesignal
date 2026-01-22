@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ProfileSection, type ProfileSectionStatus } from "./ProfileSection";
+import { INTERVIEW_TYPES } from "@/shared/interviewTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -160,6 +161,7 @@ export function FirstValueSection() {
         statusLabel={statusLabel}
         actionLabel={actionLabel}
         onAction={handleEditClick}
+        timeEstimate={`~${INTERVIEW_TYPES.first_value.estimatedMinutes} min`}
       >
         <div>
           <p className="font-medium text-gray-900">What moment turns a visitor into a believer?</p>

@@ -42,6 +42,13 @@ describe("FirstValueSection", () => {
         screen.getByText("Finding your first value reveals whether you're activating users fast enough.")
       ).toBeInTheDocument();
     });
+
+    test("shows time estimate in not_started state", () => {
+      mockDefinition = null;
+      setup();
+
+      expect(screen.getByText("~7 min")).toBeInTheDocument();
+    });
   });
 
   describe("defined state (pending confirmation)", () => {
@@ -59,6 +66,19 @@ describe("FirstValueSection", () => {
       expect(screen.getByText("Report Created")).toBeInTheDocument();
       expect(screen.getByText(/within 3 days/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
+    });
+
+    test("does not show time estimate when definition exists", () => {
+      mockDefinition = {
+        activityName: "Report Created",
+        reasoning: "When users create their first report",
+        expectedTimeframe: "Within 3 days",
+        confirmedAt: null,
+        source: "manual_edit",
+      };
+      setup();
+
+      expect(screen.queryByText("~7 min")).not.toBeInTheDocument();
     });
 
     test("displays activity with 'Activity' label", () => {
