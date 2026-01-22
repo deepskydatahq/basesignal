@@ -140,6 +140,7 @@ export const getProfileData = query({
         businessType: user.businessType,
         revenueModels: user.revenueModels,
       },
+      primaryEntityId: user.primaryEntityId,
       journeyMap: {
         stages,
         journeyId: overviewJourney?._id ?? null,
