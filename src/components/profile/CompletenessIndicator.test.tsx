@@ -105,9 +105,14 @@ test("shows check icon for complete sections and circle for incomplete", async (
 
   await user.click(screen.getByRole("button"));
 
-  // Check for data-complete attribute on the list items
-  const coreIdentityItem = screen.getByText("Core Identity").closest("li");
-  const journeyMapItem = screen.getByText("User Journey Map").closest("li");
+  // Check for data-complete attribute on the list items by querying list
+  const listItems = screen.getAllByRole("listitem");
+  const coreIdentityItem = listItems.find((item) =>
+    item.textContent?.includes("Core Identity")
+  );
+  const journeyMapItem = listItems.find((item) =>
+    item.textContent?.includes("User Journey Map")
+  );
 
   expect(coreIdentityItem).toHaveAttribute("data-complete", "true");
   expect(journeyMapItem).toHaveAttribute("data-complete", "false");
