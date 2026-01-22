@@ -1,4 +1,5 @@
 import { getProductInitial, getProductColor } from "../../lib/productColor";
+import { CompletenessIndicator } from "./CompletenessIndicator";
 
 function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
@@ -11,6 +12,12 @@ const REVENUE_MODEL_LABELS: Record<string, string> = {
   volume_based: "Volume Based",
 };
 
+interface Section {
+  id: string;
+  label: string;
+  isComplete: boolean;
+}
+
 interface ProfileHeaderProps {
   identity: {
     productName?: string;
@@ -22,6 +29,7 @@ interface ProfileHeaderProps {
   completeness: {
     completed: number;
     total: number;
+    sections?: Section[];
   };
   stats?: {
     metricsCount: number;
@@ -88,29 +96,35 @@ export function ProfileHeader({
           ))}
         </div>
 
-        {/* Collapsed completeness indicator */}
+        {/* Completeness indicator */}
         <div className="flex items-center gap-2">
-          <div
-            role="progressbar"
-            aria-valuenow={percentage}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden"
-          >
-            <div
-              data-testid="progress-bar-fill"
-              className="h-full bg-black rounded-full transition-[width] duration-300"
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-          {stats ? (
-            <span className="text-sm text-gray-600">
-              {pluralize(stats.metricsCount, "Metric", "Metrics")} · {pluralize(stats.entitiesCount, "Entity", "Entities")} · {pluralize(stats.activitiesCount, "Activity", "Activities")}
-            </span>
+          {completeness.sections ? (
+            <CompletenessIndicator sections={completeness.sections} />
           ) : (
-            <span className="text-sm text-gray-600">
-              {completeness.completed} of {completeness.total}
-            </span>
+            <>
+              <div
+                role="progressbar"
+                aria-valuenow={percentage}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden"
+              >
+                <div
+                  data-testid="progress-bar-fill"
+                  className="h-full bg-black rounded-full transition-[width] duration-300"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+              {stats ? (
+                <span className="text-sm text-gray-600">
+                  {pluralize(stats.metricsCount, "Metric", "Metrics")} · {pluralize(stats.entitiesCount, "Entity", "Entities")} · {pluralize(stats.activitiesCount, "Activity", "Activities")}
+                </span>
+              ) : (
+                <span className="text-sm text-gray-600">
+                  {completeness.completed} of {completeness.total}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
