@@ -111,7 +111,10 @@ export function ProfilePage() {
         )}
 
         <div id="section-measurement_plan">
-          <MeasurementPlanSection plan={measurementPlan ?? []} />
+          <MeasurementPlanSection
+            plan={measurementPlan ?? []}
+            primaryEntityId={profileData.primaryEntityId}
+          />
         </div>
       </div>
     </div>
