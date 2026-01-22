@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useAuthGuard } from './hooks/useAuthGuard'
 import AuthPage from './routes/AuthPage'
 import OnboardingPage from './routes/OnboardingPage'
@@ -25,6 +25,12 @@ import { SetupResumeScreen } from './components/setup/SetupResumeScreen'
 import { useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { useEffect } from 'react'
+
+function SharedProfileRoute() {
+  const { shareToken } = useParams<{ shareToken: string }>();
+  if (!shareToken) return <Navigate to="/" replace />;
+  return <ProfilePage readOnly shareToken={shareToken} />;
+}
 
 function AppRoutes() {
   const {
@@ -145,11 +151,25 @@ function AppRoutes() {
 }
 
 function App() {
+  const pathname = window.location.pathname;
+
+  // Public share route - bypass auth entirely
+  if (pathname.startsWith('/p/')) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/p/:shareToken" element={<SharedProfileRoute />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
   return (
     <BrowserRouter>
       <AppRoutes />
     </BrowserRouter>
-  )
+  );
 }
 
 export default App
