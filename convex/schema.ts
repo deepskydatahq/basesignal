@@ -46,6 +46,9 @@ export default defineSchema({
     communityJoinedAt: v.optional(v.number()),
     communityJoinMethod: v.optional(v.string()), // "honor" | "magic_code" | "email_fallback"
 
+    // Primary entity designation
+    primaryEntityId: v.optional(v.id("measurementEntities")),
+
     createdAt: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"])
