@@ -14,47 +14,6 @@ interface MeasurementPlanSectionProps {
   primaryEntityId?: Id<"measurementEntities">;
 }
 
-function PlanEntityCard({
-  name,
-  activities,
-  activityCount,
-  propertyCount,
-  isPrimary,
-}: {
-  name: string;
-  activities: string[];
-  activityCount: number;
-  propertyCount: number;
-  isPrimary?: boolean;
-}) {
-  const activityText = activityCount === 1 ? "activity" : "activities";
-  const propertyText = propertyCount === 1 ? "property" : "properties";
-
-  return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <h4 className="font-medium text-gray-900">{name}</h4>
-        {isPrimary && <Badge variant="secondary">Primary</Badge>}
-      </div>
-      {activities.length > 0 ? (
-        <ul className="space-y-1">
-          {activities.map((activity, i) => (
-            <li key={i} className="text-sm text-gray-600 flex items-start">
-              <span className="mr-2">•</span>
-              <span>{activity}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-gray-400 italic">No activities</p>
-      )}
-      <p className="text-sm text-slate-500 mt-3">
-        {activityCount} {activityText} · {propertyCount} {propertyText}
-      </p>
-    </div>
-  );
-}
-
 export function MeasurementPlanSection({
   plan,
   primaryEntityId,
@@ -76,17 +35,50 @@ export function MeasurementPlanSection({
       onAction={() => navigate("/measurement-plan")}
     >
       {hasEntities ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plan.map(({ entity, activities, properties }) => (
-            <PlanEntityCard
-              key={entity._id}
-              name={entity.name}
-              activities={activities.map((a) => a.name)}
-              activityCount={activities.length}
-              propertyCount={properties.length}
-              isPrimary={entity._id === primaryEntityId}
-            />
-          ))}
+        <div
+          data-testid="entity-diagram"
+          className="flex items-center gap-2 overflow-x-auto py-2"
+        >
+          {plan.map(({ entity, activities }, index) => {
+            const isLast = index === plan.length - 1;
+            const isPrimary = entity._id === primaryEntityId;
+            const activityText =
+              activities.length === 1 ? "activity" : "activities";
+
+            return (
+              <div key={entity._id} className="flex items-center">
+                {/* Entity node */}
+                <div className="flex flex-col items-center justify-center w-28 h-16 rounded-lg border-2 border-gray-300 bg-gray-50 px-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium text-gray-900 text-center truncate max-w-20">
+                      {entity.name}
+                    </span>
+                    {isPrimary && (
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                        Primary
+                      </Badge>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {activities.length} {activityText}
+                  </span>
+                </div>
+
+                {/* Connector line */}
+                {!isLast && (
+                  <svg
+                    className="w-6 h-4 text-gray-300 mx-1"
+                    viewBox="0 0 24 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <line x1="0" y1="8" x2="24" y2="8" />
+                  </svg>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div>
