@@ -26,6 +26,8 @@ export default function MeasurementPlanPage() {
 
   const fullPlan = useQuery(api.measurementPlan.getFullPlan);
   const entities = useQuery(api.measurementPlan.listEntities);
+  const user = useQuery(api.users.current);
+  const setPrimaryEntity = useMutation(api.users.setPrimaryEntity);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showAddEntityDialog, setShowAddEntityDialog] = useState(false);
@@ -213,6 +215,8 @@ export default function MeasurementPlanPage() {
               activityCount={activities.length}
               propertyCount={properties.length}
               defaultExpanded={activities.some((a) => a.name === highlightActivity)}
+              isPrimary={user?.primaryEntityId === entity._id}
+              onSetPrimary={() => setPrimaryEntity({ entityId: entity._id })}
             >
               {/* Activities section */}
               <div className="space-y-2">
