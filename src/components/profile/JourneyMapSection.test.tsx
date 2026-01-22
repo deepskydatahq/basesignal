@@ -53,10 +53,50 @@ test("renders with not_started status when no journeyId", () => {
 
   expect(screen.getByText("Journey Map")).toBeInTheDocument();
   expect(screen.getByText("Not Started")).toBeInTheDocument();
-  // No Edit Journey button when no journey exists
+  // Now shows Start Interview instead of Edit Journey
   expect(
     screen.queryByRole("button", { name: /edit journey/i })
   ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: /start interview/i })
+  ).toBeInTheDocument();
+});
+
+test("shows time estimate in not_started empty state", () => {
+  setup({ journeyId: null });
+
+  expect(screen.getByText("~15 min")).toBeInTheDocument();
+});
+
+test("shows Start Interview button when no journeyId and no stages", () => {
+  setup({ journeyId: null });
+
+  expect(
+    screen.getByRole("button", { name: /start interview/i })
+  ).toBeInTheDocument();
+});
+
+test("navigates to interview when Start Interview clicked", async () => {
+  const { user } = setup({ journeyId: null });
+
+  await user.click(screen.getByRole("button", { name: /start interview/i }));
+
+  expect(mockNavigate).toHaveBeenCalledWith("/setup/interview");
+});
+
+test("does not show time estimate when stages exist", () => {
+  setup({
+    journeyId: "j1" as Id<"journeys">,
+    stages: [
+      {
+        _id: "s1" as Id<"stages">,
+        name: "Account Created",
+        lifecycleSlot: "account_creation",
+      },
+    ],
+  });
+
+  expect(screen.queryByText("~15 min")).not.toBeInTheDocument();
 });
 
 test("renders with not_started status when journeyId exists but no stages", () => {
@@ -64,8 +104,9 @@ test("renders with not_started status when journeyId exists but no stages", () =
 
   expect(screen.getByText("Journey Map")).toBeInTheDocument();
   expect(screen.getByText("Not Started")).toBeInTheDocument();
+  // Shows Start Interview (not Edit Journey) when no stages exist
   expect(
-    screen.getByRole("button", { name: /edit journey/i })
+    screen.getByRole("button", { name: /start interview/i })
   ).toBeInTheDocument();
 });
 
@@ -130,7 +171,13 @@ test("renders with complete status when all required slots filled", () => {
 test("navigates to journey editor when Edit Journey clicked", async () => {
   const { user } = setup({
     journeyId: "test-journey-id" as Id<"journeys">,
-    stages: [],
+    stages: [
+      {
+        _id: "s1" as Id<"stages">,
+        name: "Account Created",
+        lifecycleSlot: "account_creation",
+      },
+    ],
   });
 
   await user.click(screen.getByRole("button", { name: /edit journey/i }));

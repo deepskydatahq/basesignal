@@ -7,6 +7,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { ProfileSection, type ProfileSectionStatus } from "./ProfileSection";
 import { JourneyDiagram } from "./JourneyDiagram";
 import { REQUIRED_SLOTS, type LifecycleSlot } from "../../shared/lifecycleSlots";
+import { INTERVIEW_TYPES } from "@/shared/interviewTypes";
 
 interface JourneyMapSectionProps {
   journeyId: Id<"journeys"> | null;
@@ -42,13 +43,30 @@ export function JourneyMapSection({ journeyId }: JourneyMapSectionProps) {
     }
   }
 
+  // Determine actionLabel, onAction, and timeEstimate based on state
+  let actionLabel: string | undefined;
+  let actionHandler: (() => void) | undefined;
+  let timeEstimate: string | undefined;
+
+  if (!hasStages) {
+    // Not started - show Start Interview with time estimate
+    actionLabel = "Start Interview";
+    actionHandler = () => navigate("/setup/interview");
+    timeEstimate = `~${INTERVIEW_TYPES.overview.estimatedMinutes} min`;
+  } else if (journeyId) {
+    // Has stages - show Edit Journey
+    actionLabel = "Edit Journey";
+    actionHandler = () => navigate(`/journeys/${journeyId}`);
+  }
+
   return (
     <ProfileSection
       title="Journey Map"
       status={status}
       statusLabel={statusLabel}
-      actionLabel={journeyId ? "Edit Journey" : undefined}
-      onAction={journeyId ? () => navigate(`/journeys/${journeyId}`) : undefined}
+      actionLabel={actionLabel}
+      onAction={actionHandler}
+      timeEstimate={timeEstimate}
     >
       {hasStages ? (
         <JourneyDiagram
