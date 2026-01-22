@@ -9,6 +9,14 @@ export const LIFECYCLE_SLOTS = [
 
 export type LifecycleSlot = (typeof LIFECYCLE_SLOTS)[number];
 
+// Main lifecycle slots (excludes churn - used for primary flow)
+export const MAIN_LIFECYCLE_SLOTS = [
+  "account_creation",
+  "activation",
+  "core_usage",
+  "revenue",
+] as const;
+
 // Slots required for completion
 export const REQUIRED_SLOTS: LifecycleSlot[] = [
   "account_creation",

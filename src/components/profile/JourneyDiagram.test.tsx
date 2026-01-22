@@ -151,3 +151,43 @@ test("renders empty status for slots with no stage assigned", () => {
   // Empty slots have gray text styling
   expect(slotLabel).toHaveClass("text-gray-400");
 });
+
+test("renders churn in separate row below main stages", () => {
+  setup([]);
+
+  const mainRow = screen.getByTestId("main-stages-row");
+  const churnRow = screen.getByTestId("churn-row");
+
+  // Both rows should exist
+  expect(mainRow).toBeInTheDocument();
+  expect(churnRow).toBeInTheDocument();
+
+  // Churn should be in the churn row, not main row
+  const churnSlot = screen.getByText("Churn").closest("[data-slot]");
+  expect(churnSlot).toHaveAttribute("data-slot", "churn");
+  expect(churnRow).toContainElement(churnSlot);
+});
+
+test("renders churn slot with red-tinted styling when complete", () => {
+  setup([
+    {
+      _id: "s1",
+      name: "User Churned",
+      lifecycleSlot: "churn",
+      entity: "User",
+      action: "Churned",
+    },
+  ]);
+
+  const churnLabel = screen.getByText("Churn");
+  // Churn uses red styling instead of blue for complete status
+  expect(churnLabel).toHaveClass("text-red-600");
+});
+
+test("renders empty churn slot with red-tinted dashed styling", () => {
+  setup([]); // No stages
+
+  const churnLabel = screen.getByText("Churn");
+  // Empty churn uses red styling instead of gray
+  expect(churnLabel).toHaveClass("text-red-400");
+});
