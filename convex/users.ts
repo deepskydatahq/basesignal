@@ -200,6 +200,31 @@ export const resetSetup = mutation({
   },
 });
 
+// Set primary entity for user
+export const setPrimaryEntity = mutation({
+  args: {
+    entityId: v.id("measurementEntities"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) throw new Error("User not found");
+
+    // Verify entity belongs to user
+    const entity = await ctx.db.get(args.entityId);
+    if (!entity) throw new Error("Entity not found");
+    if (entity.userId !== user._id) throw new Error("Entity does not belong to user");
+
+    await ctx.db.patch(user._id, { primaryEntityId: args.entityId });
+  },
+});
+
 // Legacy: Reset onboarding (deprecated, use resetSetup instead)
 export const resetOnboarding = mutation({
   args: {

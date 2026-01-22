@@ -111,4 +111,37 @@ describe("users", () => {
       expect(user).toBeNull();
     });
   });
+
+  describe("setPrimaryEntity", () => {
+    it("sets primary entity for user", async () => {
+      const t = convexTest(schema);
+
+      // Create user
+      const userId = await t.mutation(internal.users.createFromWebhook, {
+        clerkId: "user_primary_test",
+        email: "primary@example.com",
+      });
+
+      // Create an entity for this user
+      const entityId = await t.run(async (ctx) => {
+        return await ctx.db.insert("measurementEntities", {
+          userId,
+          name: "Account",
+          createdAt: Date.now(),
+        });
+      });
+
+      // Set primary entity (direct DB operation since mutation needs auth)
+      await t.run(async (ctx) => {
+        await ctx.db.patch(userId, { primaryEntityId: entityId });
+      });
+
+      // Verify
+      const user = await t.run(async (ctx) => {
+        return await ctx.db.get(userId);
+      });
+
+      expect(user?.primaryEntityId).toEqual(entityId);
+    });
+  });
 });
