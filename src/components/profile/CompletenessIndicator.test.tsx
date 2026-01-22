@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CompletenessIndicator } from "./CompletenessIndicator";
@@ -139,4 +139,38 @@ test("hides CTA when all sections are complete", async () => {
   const buttons = screen.getAllByRole("button");
   const ctaButton = buttons.find((btn) => btn.textContent?.includes("Complete "));
   expect(ctaButton).toBeUndefined();
+});
+
+test("CTA scrolls to first incomplete section and closes popover", async () => {
+  const sections = [
+    { id: "core_identity", label: "Core Identity", isComplete: true },
+    { id: "journey_map", label: "User Journey Map", isComplete: false },
+  ];
+
+  // Create a mock element for the scroll target
+  const mockElement = document.createElement("div");
+  mockElement.id = "section-journey_map";
+  mockElement.scrollIntoView = vi.fn();
+  document.body.appendChild(mockElement);
+
+  const { user } = setup(sections);
+
+  // Open popover
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("User Journey Map")).toBeInTheDocument();
+
+  // Click CTA
+  await user.click(screen.getByRole("button", { name: /Complete User Journey Map/i }));
+
+  // Verify scroll was called
+  expect(mockElement.scrollIntoView).toHaveBeenCalledWith({
+    behavior: "smooth",
+    block: "start",
+  });
+
+  // Verify popover closes (checklist no longer visible)
+  expect(screen.queryByText("Getting Started")).not.toBeInTheDocument();
+
+  // Cleanup
+  document.body.removeChild(mockElement);
 });
