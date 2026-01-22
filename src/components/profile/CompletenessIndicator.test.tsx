@@ -112,3 +112,31 @@ test("shows check icon for complete sections and circle for incomplete", async (
   expect(coreIdentityItem).toHaveAttribute("data-complete", "true");
   expect(journeyMapItem).toHaveAttribute("data-complete", "false");
 });
+
+test("shows CTA button with first incomplete section name", async () => {
+  const sections = [
+    { id: "core_identity", label: "Core Identity", isComplete: true },
+    { id: "journey_map", label: "User Journey Map", isComplete: true },
+    { id: "first_value", label: "First Value Moment", isComplete: false },
+    { id: "metric_catalog", label: "Metric Catalog", isComplete: false },
+  ];
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+
+  expect(
+    screen.getByRole("button", { name: /Complete First Value Moment/i })
+  ).toBeInTheDocument();
+});
+
+test("hides CTA when all sections are complete", async () => {
+  const sections = ALL_SECTIONS.map((s) => ({ ...s, isComplete: true }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+
+  // The trigger button should still exist, but no CTA button inside popover
+  const buttons = screen.getAllByRole("button");
+  const ctaButton = buttons.find((btn) => btn.textContent?.includes("Complete "));
+  expect(ctaButton).toBeUndefined();
+});

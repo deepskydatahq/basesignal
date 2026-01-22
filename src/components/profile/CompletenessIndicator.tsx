@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { CheckCircle2, Circle, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
@@ -27,13 +28,25 @@ function getStatusLabel(completed: number): { label: string; className: string }
 }
 
 export function CompletenessIndicator({ sections }: CompletenessIndicatorProps) {
+  const [open, setOpen] = useState(false);
   const completed = sections.filter((s) => s.isComplete).length;
   const total = sections.length;
   const percentage = Math.round((completed / total) * 100);
   const status = getStatusLabel(completed);
+  const firstIncomplete = sections.find((s) => !s.isComplete);
+
+  const handleCTAClick = () => {
+    if (firstIncomplete) {
+      const element = document.getElementById(`section-${firstIncomplete.id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      setOpen(false);
+    }
+  };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-2 h-auto py-1 px-2">
           <div
@@ -76,6 +89,12 @@ export function CompletenessIndicator({ sections }: CompletenessIndicatorProps) 
               </li>
             ))}
           </ul>
+
+          {firstIncomplete && (
+            <Button onClick={handleCTAClick} className="w-full">
+              Complete {firstIncomplete.label}
+            </Button>
+          )}
         </div>
       </PopoverContent>
     </Popover>
