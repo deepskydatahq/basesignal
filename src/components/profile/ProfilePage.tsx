@@ -78,6 +78,9 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
       category: m.category,
     }));
 
+  // Extract stage names for profile card
+  const stageNames = profileData.journeyMap.stages?.map((s) => s.name) || [];
+
   // Compute next section to suggest (only for owner view)
   const sections = profileData.completeness.sections.slice(0, 5);
   const completedIds = sections.filter((s) => s.complete).map((s) => s.id);
@@ -122,6 +125,7 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
           entitiesCount: profileData.measurementPlan.entities.length,
           activitiesCount: profileData.measurementPlan.activityCount,
         }}
+        stages={stageNames}
         profileData={{
           identity: profileData.identity,
           journeyMap: { stages: profileData.journeyMap.stages },
