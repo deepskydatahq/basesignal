@@ -11,9 +11,10 @@ import { INTERVIEW_TYPES } from "@/shared/interviewTypes";
 
 interface JourneyMapSectionProps {
   journeyId: Id<"journeys"> | null;
+  readOnly?: boolean;
 }
 
-export function JourneyMapSection({ journeyId }: JourneyMapSectionProps) {
+export function JourneyMapSection({ journeyId, readOnly = false }: JourneyMapSectionProps) {
   const navigate = useNavigate();
   const stages = useQuery(
     api.stages.listByJourney,
@@ -48,15 +49,17 @@ export function JourneyMapSection({ journeyId }: JourneyMapSectionProps) {
   let actionHandler: (() => void) | undefined;
   let timeEstimate: string | undefined;
 
-  if (!hasStages) {
-    // Not started - show Start Interview with time estimate
-    actionLabel = "Start Interview";
-    actionHandler = () => navigate("/setup/interview");
-    timeEstimate = `~${INTERVIEW_TYPES.overview.estimatedMinutes} min`;
-  } else if (journeyId) {
-    // Has stages - show Edit Journey
-    actionLabel = "Edit Journey";
-    actionHandler = () => navigate(`/journeys/${journeyId}`);
+  if (!readOnly) {
+    if (!hasStages) {
+      // Not started - show Start Interview with time estimate
+      actionLabel = "Start Interview";
+      actionHandler = () => navigate("/setup/interview");
+      timeEstimate = `~${INTERVIEW_TYPES.overview.estimatedMinutes} min`;
+    } else if (journeyId) {
+      // Has stages - show Edit Journey
+      actionLabel = "Edit Journey";
+      actionHandler = () => navigate(`/journeys/${journeyId}`);
+    }
   }
 
   return (
