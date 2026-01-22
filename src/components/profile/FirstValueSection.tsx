@@ -31,7 +31,11 @@ function formatDate(timestamp: number): string {
   }).format(new Date(timestamp));
 }
 
-export function FirstValueSection() {
+interface FirstValueSectionProps {
+  readOnly?: boolean;
+}
+
+export function FirstValueSection({ readOnly = false }: FirstValueSectionProps) {
   const definition = useQuery(api.firstValue.getDefinition);
   const updateDefinition = useMutation(api.firstValue.updateDefinition);
   const [isEditing, setIsEditing] = useState(false);
@@ -159,9 +163,9 @@ export function FirstValueSection() {
         title="First Value Moment"
         status={status}
         statusLabel={statusLabel}
-        actionLabel={actionLabel}
-        onAction={handleEditClick}
-        timeEstimate={`~${INTERVIEW_TYPES.first_value.estimatedMinutes} min`}
+        actionLabel={readOnly ? undefined : actionLabel}
+        onAction={readOnly ? undefined : handleEditClick}
+        timeEstimate={readOnly ? undefined : `~${INTERVIEW_TYPES.first_value.estimatedMinutes} min`}
       >
         <div>
           <p className="font-medium text-gray-900">What moment turns a visitor into a believer?</p>
@@ -195,8 +199,8 @@ export function FirstValueSection() {
       title="First Value Moment"
       status={status}
       statusLabel={statusLabel}
-      actionLabel={actionLabel}
-      onAction={handleEditClick}
+      actionLabel={readOnly ? undefined : actionLabel}
+      onAction={readOnly ? undefined : handleEditClick}
     >
       <div className="space-y-3">
         <div>
