@@ -12,11 +12,13 @@ interface MeasurementPlanSectionProps {
     properties: Array<{ _id: Id<"measurementProperties">; name: string }>;
   }>;
   primaryEntityId?: Id<"measurementEntities">;
+  readOnly?: boolean;
 }
 
 export function MeasurementPlanSection({
   plan,
   primaryEntityId,
+  readOnly = false,
 }: MeasurementPlanSectionProps) {
   const navigate = useNavigate();
 
@@ -31,8 +33,8 @@ export function MeasurementPlanSection({
       title="Measurement Plan"
       status={hasEntities ? "complete" : "not_started"}
       statusLabel={statusLabel}
-      actionLabel="View Full Plan"
-      onAction={() => navigate("/measurement-plan")}
+      actionLabel={readOnly ? undefined : "View Full Plan"}
+      onAction={readOnly ? undefined : () => navigate("/measurement-plan")}
     >
       {hasEntities ? (
         <div
