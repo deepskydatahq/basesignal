@@ -7,13 +7,12 @@ import {
 import {
   LIFECYCLE_SLOTS,
   SLOT_INFO,
-  type LifecycleSlot,
 } from "../../shared/lifecycleSlots";
 
 interface Stage {
   _id: string;
   name: string;
-  lifecycleSlot: LifecycleSlot;
+  lifecycleSlot?: string;
   entity?: string;
   action?: string;
 }
@@ -68,7 +67,7 @@ function buildHtml(data: ProfilePdfData): string {
       : "B2C";
 
   // Build journey table rows
-  const stageBySlot = new Map<LifecycleSlot, Stage>();
+  const stageBySlot = new Map<string, Stage>();
   data.journeyMap.stages.forEach((stage) => {
     if (stage.lifecycleSlot && !stageBySlot.has(stage.lifecycleSlot)) {
       stageBySlot.set(stage.lifecycleSlot, stage);
@@ -195,9 +194,9 @@ export async function generateProfilePdf(data: ProfilePdfData): Promise<void> {
   const html = buildHtml(data);
 
   const options = {
-    margin: [10, 10, 10, 10],
+    margin: [10, 10, 10, 10] as [number, number, number, number],
     filename,
-    image: { type: "jpeg", quality: 0.98 },
+    image: { type: "jpeg" as const, quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
   };
