@@ -98,7 +98,7 @@ export function ProfileHeader({
 
         {/* Completeness indicator */}
         <div className="flex items-center gap-2">
-          {completeness.sections ? (
+          {completeness.sections && completeness.sections.length > 0 ? (
             <CompletenessIndicator sections={completeness.sections} />
           ) : (
             <>

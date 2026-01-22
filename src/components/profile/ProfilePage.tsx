@@ -56,7 +56,15 @@ export function ProfilePage() {
           ...profileData.identity,
           businessType: profileData.identity.businessType as "b2b" | "b2c" | undefined,
         }}
-        completeness={profileData.completeness}
+        completeness={{
+          completed: profileData.completeness.completed,
+          total: profileData.completeness.total,
+          sections: profileData.completeness.sections.map((s) => ({
+            id: s.id,
+            label: s.name,
+            isComplete: s.complete,
+          })),
+        }}
         stats={{
           metricsCount: profileData.metricCatalog.totalCount,
           entitiesCount: profileData.measurementPlan.entities.length,
