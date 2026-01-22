@@ -1,8 +1,20 @@
-import { query } from "./_generated/server";
-import type { QueryCtx } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 
 async function getCurrentUser(ctx: QueryCtx) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+    .first();
+
+  return user;
+}
+
+async function getCurrentUserMut(ctx: MutationCtx) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
 
@@ -157,5 +169,21 @@ export const getProfileData = query({
       },
       completeness,
     };
+  },
+});
+
+export const getOrCreateShareToken = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUserMut(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    if (user.shareToken) {
+      return user.shareToken;
+    }
+
+    const shareToken = crypto.randomUUID().slice(0, 12);
+    await ctx.db.patch(user._id, { shareToken });
+    return shareToken;
   },
 });

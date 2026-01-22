@@ -196,3 +196,64 @@ describe("profile.getProfileData", () => {
     expect(result?.completeness.percentage).toBe(18); // 2/11 = 18%
   });
 });
+
+// Helper to create authenticated user
+async function setupUser(t: ReturnType<typeof convexTest>) {
+  const userId = await t.run(async (ctx) => {
+    return await ctx.db.insert("users", {
+      clerkId: "test-user",
+      email: "test@example.com",
+      productName: "Test Product",
+      createdAt: Date.now(),
+    });
+  });
+
+  const asUser = t.withIdentity({
+    subject: "test-user",
+    issuer: "https://clerk.test",
+    tokenIdentifier: "https://clerk.test|test-user",
+  });
+
+  return { userId, asUser };
+}
+
+describe("profile.getOrCreateShareToken", () => {
+  it("creates a new share token for user without one", async () => {
+    const t = convexTest(schema);
+    const { asUser, userId } = await setupUser(t);
+
+    const token = await asUser.mutation(api.profile.getOrCreateShareToken, {});
+
+    expect(token).toBeDefined();
+    expect(typeof token).toBe("string");
+    expect(token.length).toBe(12);
+
+    // Verify token is saved to user
+    const user = await t.run(async (ctx) => {
+      return await ctx.db.get(userId);
+    });
+    expect(user?.shareToken).toBe(token);
+  });
+
+  it("returns existing share token without creating new one", async () => {
+    const t = convexTest(schema);
+    const { asUser, userId } = await setupUser(t);
+
+    // Set existing token
+    await t.run(async (ctx) => {
+      await ctx.db.patch(userId, { shareToken: "existingtoken" });
+    });
+
+    const token = await asUser.mutation(api.profile.getOrCreateShareToken, {});
+
+    expect(token).toBe("existingtoken");
+  });
+
+  it("throws error for unauthenticated user", async () => {
+    const t = convexTest(schema);
+
+    await expect(
+      t.mutation(api.profile.getOrCreateShareToken, {})
+    ).rejects.toThrow("Not authenticated");
+  });
+});
