@@ -32,6 +32,9 @@ vi.mock("convex/react", () => ({
     if (queryName === "metrics:list") {
       return [];
     }
+    if (queryName === "users:current") {
+      return { primaryEntityId: null };
+    }
     if (queryName === "skip") {
       return undefined;
     }
@@ -57,6 +60,7 @@ vi.mock("../../convex/_generated/api", () => ({
       importFromJourneyIncremental: "measurementPlan:importFromJourneyIncremental",
       importFromJourney: "measurementPlan:importFromJourney",
       deleteAll: "measurementPlan:deleteAll",
+      setFirstValue: "measurementPlan:setFirstValue",
     },
     journeys: {
       listByUser: "journeys:listByUser",
@@ -67,6 +71,10 @@ vi.mock("../../convex/_generated/api", () => ({
     },
     metrics: {
       list: "metrics:list",
+    },
+    users: {
+      current: "users:current",
+      setPrimaryEntity: "users:setPrimaryEntity",
     },
   },
 }));
