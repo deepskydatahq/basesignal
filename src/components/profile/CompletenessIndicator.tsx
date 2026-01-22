@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { CheckCircle2, Circle, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -57,7 +57,25 @@ export function CompletenessIndicator({ sections }: CompletenessIndicatorProps) 
       <PopoverContent align="end" className="w-80">
         <div className="space-y-4">
           <Badge className={status.className}>{status.label}</Badge>
-          {/* Checklist will be added next */}
+
+          <ul className="space-y-2">
+            {sections.map((section) => (
+              <li
+                key={section.id}
+                data-complete={section.isComplete}
+                className="flex items-center gap-2 text-sm"
+              >
+                {section.isComplete ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Circle className="w-4 h-4 text-gray-300" />
+                )}
+                <span className={section.isComplete ? "text-gray-900" : "text-gray-500"}>
+                  {section.label}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </PopoverContent>
     </Popover>

@@ -77,3 +77,38 @@ test('shows "Complete" status for 10-11 sections', async () => {
   await user.click(screen.getByRole("button"));
   expect(screen.getByText("Complete")).toBeInTheDocument();
 });
+
+test("renders all 11 sections in checklist when expanded", async () => {
+  const { user } = setup();
+
+  await user.click(screen.getByRole("button"));
+
+  expect(screen.getByText("Core Identity")).toBeInTheDocument();
+  expect(screen.getByText("User Journey Map")).toBeInTheDocument();
+  expect(screen.getByText("First Value Moment")).toBeInTheDocument();
+  expect(screen.getByText("Metric Catalog")).toBeInTheDocument();
+  expect(screen.getByText("Measurement Plan")).toBeInTheDocument();
+  expect(screen.getByText("Heartbeat Event")).toBeInTheDocument();
+  expect(screen.getByText("Activation Definition")).toBeInTheDocument();
+  expect(screen.getByText("Active Definition")).toBeInTheDocument();
+  expect(screen.getByText("At-Risk Signals")).toBeInTheDocument();
+  expect(screen.getByText("Churn Definition")).toBeInTheDocument();
+  expect(screen.getByText("Expansion Triggers")).toBeInTheDocument();
+});
+
+test("shows check icon for complete sections and circle for incomplete", async () => {
+  const sections = [
+    { id: "core_identity", label: "Core Identity", isComplete: true },
+    { id: "journey_map", label: "User Journey Map", isComplete: false },
+  ];
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+
+  // Check for data-complete attribute on the list items
+  const coreIdentityItem = screen.getByText("Core Identity").closest("li");
+  const journeyMapItem = screen.getByText("User Journey Map").closest("li");
+
+  expect(coreIdentityItem).toHaveAttribute("data-complete", "true");
+  expect(journeyMapItem).toHaveAttribute("data-complete", "false");
+});
