@@ -33,3 +33,47 @@ test("renders collapsed state with progress bar and count", () => {
   expect(screen.getByRole("progressbar")).toBeInTheDocument();
   expect(screen.getByText("4 of 11")).toBeInTheDocument();
 });
+
+test('shows "Getting Started" status for 0-3 sections', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 3, // 3 complete
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Getting Started")).toBeInTheDocument();
+});
+
+test('shows "Taking Shape" status for 4-6 sections', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 5, // 5 complete
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Taking Shape")).toBeInTheDocument();
+});
+
+test('shows "Well Defined" status for 7-9 sections', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 8, // 8 complete
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Well Defined")).toBeInTheDocument();
+});
+
+test('shows "Complete" status for 10-11 sections', async () => {
+  const sections = ALL_SECTIONS.map((s) => ({
+    ...s,
+    isComplete: true, // 11 complete
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Complete")).toBeInTheDocument();
+});

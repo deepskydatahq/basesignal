@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
 interface Section {
   id: string;
@@ -12,10 +13,24 @@ interface CompletenessIndicatorProps {
   sections: Section[];
 }
 
+function getStatusLabel(completed: number): { label: string; className: string } {
+  if (completed >= 10) {
+    return { label: "Complete", className: "bg-green-100 text-green-800" };
+  }
+  if (completed >= 7) {
+    return { label: "Well Defined", className: "bg-amber-100 text-amber-800" };
+  }
+  if (completed >= 4) {
+    return { label: "Taking Shape", className: "bg-blue-100 text-blue-800" };
+  }
+  return { label: "Getting Started", className: "bg-gray-100 text-gray-800" };
+}
+
 export function CompletenessIndicator({ sections }: CompletenessIndicatorProps) {
   const completed = sections.filter((s) => s.isComplete).length;
   const total = sections.length;
   const percentage = Math.round((completed / total) * 100);
+  const status = getStatusLabel(completed);
 
   return (
     <Popover>
@@ -39,8 +54,11 @@ export function CompletenessIndicator({ sections }: CompletenessIndicatorProps) 
           <ChevronDown className="w-4 h-4 text-gray-400" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent>
-        {/* Placeholder - will implement expanded state */}
+      <PopoverContent align="end" className="w-80">
+        <div className="space-y-4">
+          <Badge className={status.className}>{status.label}</Badge>
+          {/* Checklist will be added next */}
+        </div>
       </PopoverContent>
     </Popover>
   );
