@@ -14,9 +14,10 @@ interface Metric {
 
 interface MetricCatalogSectionProps {
   metrics: Metric[];
+  readOnly?: boolean;
 }
 
-export function MetricCatalogSection({ metrics }: MetricCatalogSectionProps) {
+export function MetricCatalogSection({ metrics, readOnly = false }: MetricCatalogSectionProps) {
   const navigate = useNavigate();
 
   // Group metrics by category
@@ -46,8 +47,8 @@ export function MetricCatalogSection({ metrics }: MetricCatalogSectionProps) {
       title="Metric Catalog"
       status={hasMetrics ? "complete" : "not_started"}
       statusLabel={statusLabel}
-      actionLabel="View Full Catalog"
-      onAction={() => navigate("/metric-catalog")}
+      actionLabel={readOnly ? undefined : "View Full Catalog"}
+      onAction={readOnly ? undefined : () => navigate("/metric-catalog")}
     >
       {hasMetrics ? (
         <div className="space-y-4">
