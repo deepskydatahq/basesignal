@@ -10,6 +10,7 @@ import { MeasurementPlanSection } from "./MeasurementPlanSection";
 import { JourneyMapSection } from "./JourneyMapSection";
 import { SuggestedNextAction } from "./SuggestedNextAction";
 import { ProfileHeader } from "./ProfileHeader";
+import { ActivityTimeline } from "./ActivityTimeline";
 import { Button } from "@/components/ui/button";
 
 interface ProfilePageProps {
@@ -202,6 +203,8 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
             readOnly={readOnly}
           />
         </div>
+
+        {!readOnly && <ActivityTimeline />}
       </div>
     </div>
   );
