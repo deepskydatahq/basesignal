@@ -286,3 +286,35 @@ test("falls back to completeness display when stats not provided", () => {
   expect(screen.getByText("4 of 11")).toBeInTheDocument();
   expect(screen.queryByText(/Metrics/)).not.toBeInTheDocument();
 });
+
+test("renders CompletenessIndicator when sections provided", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: {
+      completed: 3,
+      total: 4,
+      sections: [
+        { id: "core_identity", label: "Core Identity", isComplete: true },
+        { id: "journey_map", label: "User Journey Map", isComplete: true },
+        { id: "first_value", label: "First Value Moment", isComplete: true },
+        { id: "metric_catalog", label: "Metric Catalog", isComplete: false },
+      ],
+    },
+  });
+
+  // Should show the count in the trigger button
+  expect(screen.getByText("3 of 4")).toBeInTheDocument();
+  // Should have a button that can be clicked to expand
+  expect(screen.getByRole("button")).toBeInTheDocument();
+});
+
+test("falls back to simple progress bar when sections is empty array", () => {
+  setup({
+    identity: { productName: "My App" },
+    completeness: { completed: 5, total: 11, sections: [] },
+  });
+
+  // Should show the simple text, not a button
+  expect(screen.getByText("5 of 11")).toBeInTheDocument();
+  expect(screen.getByRole("progressbar")).toBeInTheDocument();
+});
