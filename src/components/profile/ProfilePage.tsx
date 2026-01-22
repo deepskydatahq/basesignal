@@ -65,7 +65,9 @@ export function ProfilePage() {
       />
 
       <div className="space-y-6">
-        <CoreIdentitySection data={profileData.identity} />
+        <div id="section-core_identity">
+          <CoreIdentitySection data={profileData.identity} />
+        </div>
 
         {nextSection === "journey_map" && (
           <SuggestedNextAction
@@ -74,7 +76,9 @@ export function ProfilePage() {
           />
         )}
 
-        <JourneyMapSection journeyId={profileData.journeyMap.journeyId} />
+        <div id="section-journey_map">
+          <JourneyMapSection journeyId={profileData.journeyMap.journeyId} />
+        </div>
 
         {nextSection === "metric_catalog" && (
           <SuggestedNextAction
@@ -83,9 +87,13 @@ export function ProfilePage() {
           />
         )}
 
-        <FirstValueSection />
+        <div id="section-first_value">
+          <FirstValueSection />
+        </div>
 
-        <MetricCatalogSection metrics={flatMetrics} />
+        <div id="section-metric_catalog">
+          <MetricCatalogSection metrics={flatMetrics} />
+        </div>
 
         {nextSection === "measurement_plan" && (
           <SuggestedNextAction
@@ -94,7 +102,9 @@ export function ProfilePage() {
           />
         )}
 
-        <MeasurementPlanSection plan={measurementPlan ?? []} />
+        <div id="section-measurement_plan">
+          <MeasurementPlanSection plan={measurementPlan ?? []} />
+        </div>
       </div>
     </div>
   );
