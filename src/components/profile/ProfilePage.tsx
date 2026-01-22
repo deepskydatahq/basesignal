@@ -1,5 +1,7 @@
-import { useQuery } from "convex/react";
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { Navigate } from "react-router-dom";
+import { Share2, Check } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { CoreIdentitySection } from "./CoreIdentitySection";
 import { FirstValueSection } from "./FirstValueSection";
@@ -8,10 +10,40 @@ import { MeasurementPlanSection } from "./MeasurementPlanSection";
 import { JourneyMapSection } from "./JourneyMapSection";
 import { SuggestedNextAction } from "./SuggestedNextAction";
 import { ProfileHeader } from "./ProfileHeader";
+import { Button } from "@/components/ui/button";
 
-export function ProfilePage() {
-  const profileData = useQuery(api.profile.getProfileData);
-  const measurementPlan = useQuery(api.measurementPlan.getFullPlan);
+interface ProfilePageProps {
+  readOnly?: boolean;
+  shareToken?: string;
+}
+
+export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) {
+  const [copied, setCopied] = useState(false);
+
+  // Use appropriate query based on mode
+  const authProfileData = useQuery(
+    api.profile.getProfileData,
+    readOnly ? "skip" : {}
+  );
+  const sharedProfileData = useQuery(
+    api.profile.getProfileByShareToken,
+    readOnly && shareToken ? { shareToken } : "skip"
+  );
+  const profileData = readOnly ? sharedProfileData : authProfileData;
+
+  const measurementPlan = useQuery(
+    api.measurementPlan.getFullPlan,
+    readOnly ? "skip" : {}
+  );
+  const getOrCreateToken = useMutation(api.profile.getOrCreateShareToken);
+
+  const handleShare = async () => {
+    const token = await getOrCreateToken();
+    const url = `${window.location.origin}/p/${token}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Loading state
   if (profileData === undefined) {
@@ -22,8 +54,18 @@ export function ProfilePage() {
     );
   }
 
-  // Not authenticated
+  // Not found (invalid share token) or not authenticated
   if (profileData === null) {
+    if (readOnly) {
+      return (
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-gray-900">Profile not found</h2>
+            <p className="text-gray-600 mt-2">This shared profile link may be invalid or expired.</p>
+          </div>
+        </div>
+      );
+    }
     return <Navigate to="/sign-in" />;
   }
 
@@ -36,7 +78,7 @@ export function ProfilePage() {
       category: m.category,
     }));
 
-  // Compute next section to suggest
+  // Compute next section to suggest (only for owner view)
   const sections = profileData.completeness.sections.slice(0, 5);
   const completedIds = sections.filter((s) => s.complete).map((s) => s.id);
   const navigableSections = [
@@ -44,13 +86,23 @@ export function ProfilePage() {
     "metric_catalog",
     "measurement_plan",
   ] as const;
-  const nextSection =
-    navigableSections.find((id) => !completedIds.includes(id)) ?? null;
+  const nextSection = readOnly
+    ? null
+    : navigableSections.find((id) => !completedIds.includes(id)) ?? null;
   const lastCompleted =
     completedIds.length > 0 ? completedIds[completedIds.length - 1] : null;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
+      {/* Read-only banner */}
+      {readOnly && (
+        <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          <p className="text-sm text-gray-600">
+            Viewing shared profile for <span className="font-medium text-gray-900">{profileData.identity.productName || "this product"}</span>
+          </p>
+        </div>
+      )}
+
       <ProfileHeader
         identity={{
           ...profileData.identity,
@@ -72,9 +124,33 @@ export function ProfilePage() {
         }}
       />
 
-      <div className="space-y-6">
+      {/* Share button - owner only */}
+      {!readOnly && (
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShare}
+            className="text-gray-600"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 mr-1.5" />
+                Link copied!
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4 mr-1.5" />
+                Share profile
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      <div className="space-y-6 mt-6">
         <div id="section-core_identity">
-          <CoreIdentitySection data={profileData.identity} />
+          <CoreIdentitySection data={profileData.identity} readOnly={readOnly} />
         </div>
 
         {nextSection === "journey_map" && (
@@ -85,7 +161,7 @@ export function ProfilePage() {
         )}
 
         <div id="section-journey_map">
-          <JourneyMapSection journeyId={profileData.journeyMap.journeyId} />
+          <JourneyMapSection journeyId={profileData.journeyMap.journeyId} readOnly={readOnly} />
         </div>
 
         {nextSection === "metric_catalog" && (
@@ -96,11 +172,11 @@ export function ProfilePage() {
         )}
 
         <div id="section-first_value">
-          <FirstValueSection />
+          <FirstValueSection readOnly={readOnly} />
         </div>
 
         <div id="section-metric_catalog">
-          <MetricCatalogSection metrics={flatMetrics} />
+          <MetricCatalogSection metrics={flatMetrics} readOnly={readOnly} />
         </div>
 
         {nextSection === "measurement_plan" && (
@@ -113,7 +189,7 @@ export function ProfilePage() {
         <div id="section-measurement_plan">
           <MeasurementPlanSection
             plan={measurementPlan ?? []}
-            primaryEntityId={profileData.primaryEntityId}
+            readOnly={readOnly}
           />
         </div>
       </div>
