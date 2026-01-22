@@ -18,6 +18,7 @@ export interface CoreIdentityData {
 
 interface CoreIdentitySectionProps {
   data: CoreIdentityData;
+  readOnly?: boolean;
 }
 
 const revenueModelDisplayLabels: Record<string, string> = {
@@ -76,7 +77,7 @@ function formatBusinessLine(
   return null;
 }
 
-export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
+export function CoreIdentitySection({ data, readOnly = false }: CoreIdentitySectionProps) {
   const updateOnboarding = useMutation(api.users.updateOnboarding);
   const [isEditing, setIsEditing] = useState(false);
   const [editValues, setEditValues] = useState({
@@ -281,8 +282,8 @@ export function CoreIdentitySection({ data }: CoreIdentitySectionProps) {
       title="Core Identity"
       status={isComplete ? "complete" : "not_started"}
       statusLabel={isComplete ? "Complete" : "Not Started"}
-      actionLabel="Edit"
-      onAction={() => setIsEditing(true)}
+      actionLabel={readOnly ? undefined : "Edit"}
+      onAction={readOnly ? undefined : () => setIsEditing(true)}
     >
       <div className="space-y-3">
         {data.productName && (
