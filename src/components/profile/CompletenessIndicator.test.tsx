@@ -174,3 +174,78 @@ test("CTA scrolls to first incomplete section and closes popover", async () => {
   // Cleanup
   document.body.removeChild(mockElement);
 });
+
+// Boundary threshold tests
+test('boundary: 3 sections shows "Getting Started"', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 3,
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Getting Started")).toBeInTheDocument();
+});
+
+test('boundary: 4 sections shows "Taking Shape"', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 4,
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Taking Shape")).toBeInTheDocument();
+});
+
+test('boundary: 6 sections shows "Taking Shape"', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 6,
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Taking Shape")).toBeInTheDocument();
+});
+
+test('boundary: 7 sections shows "Well Defined"', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 7,
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Well Defined")).toBeInTheDocument();
+});
+
+test('boundary: 9 sections shows "Well Defined"', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 9,
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Well Defined")).toBeInTheDocument();
+});
+
+test('boundary: 10 sections shows "Complete"', async () => {
+  const sections = ALL_SECTIONS.map((s, i) => ({
+    ...s,
+    isComplete: i < 10,
+  }));
+  const { user } = setup(sections);
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Complete")).toBeInTheDocument();
+});
+
+test("handles 0 sections complete", async () => {
+  const { user } = setup(); // All false by default
+
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByText("Getting Started")).toBeInTheDocument();
+  expect(screen.getByText("0 of 11")).toBeInTheDocument();
+});
