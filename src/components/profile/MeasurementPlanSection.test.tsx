@@ -23,11 +23,11 @@ type PlanItem = {
   properties: Array<{ _id: Id<"measurementProperties">; name: string }>;
 };
 
-function setup(plan: PlanItem[] = []) {
+function setup(plan: PlanItem[] = [], primaryEntityId?: Id<"measurementEntities">) {
   const user = userEvent.setup();
   render(
     <MemoryRouter>
-      <MeasurementPlanSection plan={plan} />
+      <MeasurementPlanSection plan={plan} primaryEntityId={primaryEntityId} />
     </MemoryRouter>
   );
   return { user };
@@ -138,4 +138,40 @@ test("does not display aggregate summary at section level", () => {
 
   // Aggregate count should NOT exist as a standalone element
   expect(screen.queryByText("3 activities · 3 properties")).not.toBeInTheDocument();
+});
+
+test("displays Primary badge for the primary entity", () => {
+  const primaryEntityId = "entity1" as Id<"measurementEntities">;
+
+  setup(
+    [
+      {
+        entity: { _id: primaryEntityId, name: "Account" },
+        activities: [],
+        properties: [],
+      },
+      {
+        entity: { _id: "entity2" as Id<"measurementEntities">, name: "User" },
+        activities: [],
+        properties: [],
+      },
+    ],
+    primaryEntityId
+  );
+
+  expect(screen.getByText("Primary")).toBeInTheDocument();
+  // Should only appear once
+  expect(screen.getAllByText("Primary")).toHaveLength(1);
+});
+
+test("does not display Primary badge when no primary entity set", () => {
+  setup([
+    {
+      entity: { _id: "entity1" as Id<"measurementEntities">, name: "Account" },
+      activities: [],
+      properties: [],
+    },
+  ]);
+
+  expect(screen.queryByText("Primary")).not.toBeInTheDocument();
 });

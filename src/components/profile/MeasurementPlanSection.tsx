@@ -2,6 +2,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { ProfileSection } from "./ProfileSection";
+import { Badge } from "../ui/badge";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 interface MeasurementPlanSectionProps {
@@ -10,6 +11,7 @@ interface MeasurementPlanSectionProps {
     activities: Array<{ _id: Id<"measurementActivities">; name: string }>;
     properties: Array<{ _id: Id<"measurementProperties">; name: string }>;
   }>;
+  primaryEntityId?: Id<"measurementEntities">;
 }
 
 function PlanEntityCard({
@@ -17,18 +19,23 @@ function PlanEntityCard({
   activities,
   activityCount,
   propertyCount,
+  isPrimary,
 }: {
   name: string;
   activities: string[];
   activityCount: number;
   propertyCount: number;
+  isPrimary?: boolean;
 }) {
   const activityText = activityCount === 1 ? "activity" : "activities";
   const propertyText = propertyCount === 1 ? "property" : "properties";
 
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-      <h4 className="font-medium text-gray-900 mb-2">{name}</h4>
+      <div className="flex items-center gap-2 mb-2">
+        <h4 className="font-medium text-gray-900">{name}</h4>
+        {isPrimary && <Badge variant="secondary">Primary</Badge>}
+      </div>
       {activities.length > 0 ? (
         <ul className="space-y-1">
           {activities.map((activity, i) => (
@@ -50,6 +57,7 @@ function PlanEntityCard({
 
 export function MeasurementPlanSection({
   plan,
+  primaryEntityId,
 }: MeasurementPlanSectionProps) {
   const navigate = useNavigate();
 
@@ -76,6 +84,7 @@ export function MeasurementPlanSection({
               activities={activities.map((a) => a.name)}
               activityCount={activities.length}
               propertyCount={properties.length}
+              isPrimary={entity._id === primaryEntityId}
             />
           ))}
         </div>
