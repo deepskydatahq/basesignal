@@ -49,10 +49,14 @@ export default defineSchema({
     // Primary entity designation
     primaryEntityId: v.optional(v.id("measurementEntities")),
 
+    // Share profile
+    shareToken: v.optional(v.string()),
+
     createdAt: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"])
-    .index("email", ["email"]),
+    .index("email", ["email"])
+    .index("by_share_token", ["shareToken"]),
 
   setupProgress: defineTable({
     userId: v.id("users"),
