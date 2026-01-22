@@ -257,3 +257,50 @@ describe("profile.getOrCreateShareToken", () => {
     ).rejects.toThrow("Not authenticated");
   });
 });
+
+describe("profile.getProfileByShareToken", () => {
+  it("returns profile data for valid share token", async () => {
+    const t = convexTest(schema);
+    const { userId } = await setupUser(t);
+
+    // Set share token
+    await t.run(async (ctx) => {
+      await ctx.db.patch(userId, { shareToken: "validtoken12" });
+    });
+
+    // Query without auth (public)
+    const profile = await t.query(api.profile.getProfileByShareToken, {
+      shareToken: "validtoken12",
+    });
+
+    expect(profile).not.toBeNull();
+    expect(profile?.identity.productName).toBe("Test Product");
+  });
+
+  it("returns null for invalid share token", async () => {
+    const t = convexTest(schema);
+
+    const profile = await t.query(api.profile.getProfileByShareToken, {
+      shareToken: "nonexistent",
+    });
+
+    expect(profile).toBeNull();
+  });
+
+  it("includes completeness data", async () => {
+    const t = convexTest(schema);
+    const { userId } = await setupUser(t);
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(userId, { shareToken: "tokentest12" });
+    });
+
+    const profile = await t.query(api.profile.getProfileByShareToken, {
+      shareToken: "tokentest12",
+    });
+
+    expect(profile?.completeness).toBeDefined();
+    expect(profile?.completeness.sections).toBeDefined();
+    expect(profile?.completeness.percentage).toBeGreaterThanOrEqual(0);
+  });
+});

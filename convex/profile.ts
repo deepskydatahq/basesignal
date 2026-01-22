@@ -1,3 +1,4 @@
+import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
@@ -185,5 +186,97 @@ export const getOrCreateShareToken = mutation({
     const shareToken = crypto.randomUUID().slice(0, 12);
     await ctx.db.patch(user._id, { shareToken });
     return shareToken;
+  },
+});
+
+export const getProfileByShareToken = query({
+  args: { shareToken: v.string() },
+  handler: async (ctx, { shareToken }) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_share_token", (q) => q.eq("shareToken", shareToken))
+      .first();
+
+    if (!user) return null;
+
+    // Get overview journey
+    const overviewJourney = await ctx.db
+      .query("journeys")
+      .withIndex("by_user_and_type", (q) =>
+        q.eq("userId", user._id).eq("type", "overview")
+      )
+      .first();
+
+    // Get stages from overview journey
+    const stages = overviewJourney
+      ? await ctx.db
+          .query("stages")
+          .withIndex("by_journey", (q) => q.eq("journeyId", overviewJourney._id))
+          .collect()
+      : [];
+
+    // Get first value definition
+    const firstValue = await ctx.db
+      .query("firstValueDefinitions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    // Get metrics
+    const metrics = await ctx.db
+      .query("metrics")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Get measurement entities
+    const entities = await ctx.db
+      .query("measurementEntities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Get activity count
+    const activities = await ctx.db
+      .query("measurementActivities")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Get property count
+    const properties = await ctx.db
+      .query("measurementProperties")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    // Calculate completeness
+    const completeness = calculateCompleteness({
+      identity: user,
+      stages,
+      firstValue,
+      metrics,
+      entities,
+    });
+
+    return {
+      identity: {
+        productName: user.productName,
+        websiteUrl: user.websiteUrl,
+        hasMultiUserAccounts: user.hasMultiUserAccounts,
+        businessType: user.businessType,
+        revenueModels: user.revenueModels,
+      },
+      journeyMap: {
+        stages,
+        journeyId: overviewJourney?._id ?? null,
+      },
+      firstValue,
+      metricCatalog: {
+        metrics: groupBy(metrics, "category"),
+        totalCount: metrics.length,
+      },
+      measurementPlan: {
+        entities,
+        activityCount: activities.length,
+        propertyCount: properties.length,
+      },
+      completeness,
+    };
   },
 });
