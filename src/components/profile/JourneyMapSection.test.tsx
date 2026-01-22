@@ -203,3 +203,12 @@ test("renders JourneyDiagram with stages", () => {
   expect(screen.getByText("Account Creation")).toBeInTheDocument();
   expect(screen.getByText("Activation")).toBeInTheDocument();
 });
+
+test("shows 'What you'll define' preview list in empty state", () => {
+  setup({ journeyId: "j1" as Id<"journeys">, stages: [] });
+
+  expect(screen.getByText("What you'll define:")).toBeInTheDocument();
+  expect(screen.getByText(/How users discover your product/)).toBeInTheDocument();
+  expect(screen.getByText(/Key actions in the trial experience/)).toBeInTheDocument();
+  expect(screen.getByText(/Conversion and retention milestones/)).toBeInTheDocument();
+});

@@ -168,6 +168,23 @@ export function FirstValueSection() {
           <p className="text-gray-600 text-sm mt-1">
             Finding your first value reveals whether you're activating users fast enough.
           </p>
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700">What you'll define:</p>
+            <ul className="mt-2 space-y-1">
+              <li className="flex items-start gap-2 text-sm text-gray-600">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>Your product's key entities (users, accounts, workspaces)</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-gray-600">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>The moment a user becomes "activated"</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-gray-600">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>What makes a user "active" in your product</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </ProfileSection>
     );

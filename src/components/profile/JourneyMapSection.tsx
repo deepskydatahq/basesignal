@@ -84,6 +84,23 @@ export function JourneyMapSection({ journeyId }: JourneyMapSectionProps) {
           <p className="text-gray-600 text-sm mt-1">
             Mapping your journey reveals the critical transitions where growth happens or stalls.
           </p>
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700">What you'll define:</p>
+            <ul className="mt-2 space-y-1">
+              <li className="flex items-start gap-2 text-sm text-gray-600">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>How users discover your product</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-gray-600">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>Key actions in the trial experience</span>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-gray-600">
+                <span className="text-primary mt-0.5">✦</span>
+                <span>Conversion and retention milestones</span>
+              </li>
+            </ul>
+          </div>
         </div>
       )}
     </ProfileSection>

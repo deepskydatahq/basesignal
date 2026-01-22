@@ -49,6 +49,16 @@ describe("FirstValueSection", () => {
 
       expect(screen.getByText("~7 min")).toBeInTheDocument();
     });
+
+    test("shows 'What you'll define' preview list in empty state", () => {
+      mockDefinition = null;
+      setup();
+
+      expect(screen.getByText("What you'll define:")).toBeInTheDocument();
+      expect(screen.getByText(/Your product's key entities/)).toBeInTheDocument();
+      expect(screen.getByText(/The moment a user becomes "activated"/)).toBeInTheDocument();
+      expect(screen.getByText(/What makes a user "active"/)).toBeInTheDocument();
+    });
   });
 
   describe("defined state (pending confirmation)", () => {
