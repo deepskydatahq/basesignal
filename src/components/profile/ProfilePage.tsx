@@ -122,6 +122,12 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
           entitiesCount: profileData.measurementPlan.entities.length,
           activitiesCount: profileData.measurementPlan.activityCount,
         }}
+        profileData={{
+          identity: profileData.identity,
+          journeyMap: { stages: profileData.journeyMap.stages },
+          metricCatalog: profileData.metricCatalog,
+          measurementPlan: profileData.measurementPlan,
+        }}
       />
 
       {/* Share button - owner only */}

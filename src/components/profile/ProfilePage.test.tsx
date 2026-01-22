@@ -5,6 +5,11 @@ import { MemoryRouter } from "react-router-dom";
 
 const mockUseQuery = vi.fn();
 
+// Mock the generateProfilePdf function
+vi.mock("../../lib/pdf/generateProfilePdf", () => ({
+  generateProfilePdf: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("convex/react", () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
   useMutation: () => vi.fn(),
@@ -267,4 +272,25 @@ test("renders logo avatar with product initial", () => {
 
   const avatar = screen.getByLabelText("Product avatar");
   expect(avatar).toHaveTextContent("T");
+});
+
+test("renders Export PDF button when profile data is loaded", () => {
+  setup({
+    identity: { productName: "Test Product" },
+    journeyMap: { stages: [], journeyId: null },
+    firstValue: null,
+    metricCatalog: {
+      metrics: { reach: [], engagement: [], value_delivery: [], value_capture: [] },
+      totalCount: 0,
+    },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+    completeness: {
+      sections: [],
+      completed: 0,
+      total: 11,
+      percentage: 0,
+    },
+  });
+
+  expect(screen.getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
 });
