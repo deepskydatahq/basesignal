@@ -9,6 +9,7 @@
  */
 
 import type * as accountMappings from "../accountMappings.js";
+import type * as activity from "../activity.js";
 import type * as activityDefinitions from "../activityDefinitions.js";
 import type * as ai from "../ai.js";
 import type * as amplitude from "../amplitude.js";
@@ -43,6 +44,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   accountMappings: typeof accountMappings;
+  activity: typeof activity;
   activityDefinitions: typeof activityDefinitions;
   ai: typeof ai;
   amplitude: typeof amplitude;

@@ -104,7 +104,7 @@ export function FirstValueSection({ readOnly = false }: FirstValueSectionProps) 
   if (isEditing) {
     return (
       <ProfileSection
-        title="First Value Moment"
+        title="First Value Moment / Activation"
         status={status}
         statusLabel={statusLabel}
       >
@@ -160,7 +160,7 @@ export function FirstValueSection({ readOnly = false }: FirstValueSectionProps) 
   if (!definition) {
     return (
       <ProfileSection
-        title="First Value Moment"
+        title="First Value Moment / Activation"
         status={status}
         statusLabel={statusLabel}
         actionLabel={readOnly ? undefined : actionLabel}

@@ -11,6 +11,8 @@ import { JourneyMapSection } from "./JourneyMapSection";
 import { SuggestedNextAction } from "./SuggestedNextAction";
 import { ProfileHeader } from "./ProfileHeader";
 import { ActivityTimeline } from "./ActivityTimeline";
+import { FutureSectionCard } from "./FutureSectionCard";
+import { INTERVIEW_TYPES } from "@/shared/interviewTypes";
 import { Button } from "@/components/ui/button";
 
 interface ProfilePageProps {
@@ -34,6 +36,10 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
 
   const measurementPlan = useQuery(
     api.measurementPlan.getFullPlan,
+    readOnly ? "skip" : {}
+  );
+  const firstValueDefinition = useQuery(
+    api.firstValue.getDefinition,
     readOnly ? "skip" : {}
   );
   const getOrCreateToken = useMutation(api.profile.getOrCreateShareToken);
@@ -185,6 +191,51 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
         <div id="section-first_value">
           <FirstValueSection readOnly={readOnly} />
         </div>
+
+        {/* Journey type cards - only show for owners */}
+        {!readOnly && (
+          <>
+            <div id="section-retention">
+              <FutureSectionCard
+                title={INTERVIEW_TYPES.retention.name}
+                description={INTERVIEW_TYPES.retention.description}
+                prerequisite="Complete First Value Moment first"
+                isReady={!!firstValueDefinition}
+                timeEstimate={`~${INTERVIEW_TYPES.retention.estimatedMinutes} min`}
+              />
+            </div>
+
+            <div id="section-value_outcomes">
+              <FutureSectionCard
+                title={INTERVIEW_TYPES.value_outcomes.name}
+                description={INTERVIEW_TYPES.value_outcomes.description}
+                prerequisite="Complete First Value Moment first"
+                isReady={!!firstValueDefinition}
+                timeEstimate={`~${INTERVIEW_TYPES.value_outcomes.estimatedMinutes} min`}
+              />
+            </div>
+
+            <div id="section-value_capture">
+              <FutureSectionCard
+                title={INTERVIEW_TYPES.value_capture.name}
+                description={INTERVIEW_TYPES.value_capture.description}
+                prerequisite="Complete Value Outcomes first"
+                isReady={false}
+                timeEstimate={`~${INTERVIEW_TYPES.value_capture.estimatedMinutes} min`}
+              />
+            </div>
+
+            <div id="section-churn">
+              <FutureSectionCard
+                title={INTERVIEW_TYPES.churn.name}
+                description={INTERVIEW_TYPES.churn.description}
+                prerequisite="Complete First Value Moment and Value Outcomes first"
+                isReady={false}
+                timeEstimate={`~${INTERVIEW_TYPES.churn.estimatedMinutes} min`}
+              />
+            </div>
+          </>
+        )}
 
         <div id="section-metric_catalog">
           <MetricCatalogSection metrics={flatMetrics} readOnly={readOnly} />

@@ -174,8 +174,8 @@ test("renders all profile sections", () => {
 
   // Verify all section headings are present
   expect(screen.getByRole("heading", { name: "Core Identity" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Journey Map" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "First Value Moment" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "High-level User Journey" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "First Value Moment / Activation" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Metric Catalog" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Measurement Plan" })).toBeInTheDocument();
 });

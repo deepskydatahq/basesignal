@@ -30,7 +30,7 @@ describe("FirstValueSection", () => {
       mockDefinition = null;
       setup();
 
-      expect(screen.getByText("First Value Moment")).toBeInTheDocument();
+      expect(screen.getByText("First Value Moment / Activation")).toBeInTheDocument();
       expect(screen.getByText("Not Started")).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /define/i })

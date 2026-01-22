@@ -51,7 +51,7 @@ function setup(options: SetupOptions = {}) {
 test("renders with not_started status when no journeyId", () => {
   setup({ journeyId: null });
 
-  expect(screen.getByText("Journey Map")).toBeInTheDocument();
+  expect(screen.getByText("High-level User Journey")).toBeInTheDocument();
   expect(screen.getByText("Not Started")).toBeInTheDocument();
   // Now shows Start Interview instead of Edit Journey
   expect(
@@ -102,7 +102,7 @@ test("does not show time estimate when stages exist", () => {
 test("renders with not_started status when journeyId exists but no stages", () => {
   setup({ journeyId: "j1" as Id<"journeys">, stages: [] });
 
-  expect(screen.getByText("Journey Map")).toBeInTheDocument();
+  expect(screen.getByText("High-level User Journey")).toBeInTheDocument();
   expect(screen.getByText("Not Started")).toBeInTheDocument();
   // Shows Start Interview (not Edit Journey) when no stages exist
   expect(
@@ -138,7 +138,7 @@ test("renders with in_progress status when some required slots filled", () => {
     ],
   });
 
-  expect(screen.getByText("Journey Map")).toBeInTheDocument();
+  expect(screen.getByText("High-level User Journey")).toBeInTheDocument();
   expect(screen.getByText("In Progress")).toBeInTheDocument();
 });
 
@@ -164,7 +164,7 @@ test("renders with complete status when all required slots filled", () => {
     ],
   });
 
-  expect(screen.getByText("Journey Map")).toBeInTheDocument();
+  expect(screen.getByText("High-level User Journey")).toBeInTheDocument();
   expect(screen.getByText("Complete")).toBeInTheDocument();
 });
 

@@ -64,7 +64,7 @@ export function JourneyMapSection({ journeyId, readOnly = false }: JourneyMapSec
 
   return (
     <ProfileSection
-      title="Journey Map"
+      title="High-level User Journey"
       status={status}
       statusLabel={statusLabel}
       actionLabel={actionLabel}
