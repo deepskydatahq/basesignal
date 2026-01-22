@@ -16,6 +16,7 @@ interface ProfileSectionProps {
   actionLabel?: string;
   onAction?: () => void;
   prerequisiteText?: string;
+  timeEstimate?: string;
 }
 
 const STATUS_CONFIG: Record<
@@ -51,6 +52,7 @@ export function ProfileSection({
   actionLabel,
   onAction,
   prerequisiteText,
+  timeEstimate,
 }: ProfileSectionProps) {
   const config = STATUS_CONFIG[status];
   const isLocked = status === "locked";
@@ -88,6 +90,9 @@ export function ProfileSection({
         <div className="flex justify-end items-center gap-2">
           {isLocked && prerequisiteText && (
             <span className="text-xs text-gray-400">{prerequisiteText}</span>
+          )}
+          {!isLocked && timeEstimate && (
+            <span className="text-xs text-gray-400">{timeEstimate}</span>
           )}
           <Button
             variant={isLocked ? "outline" : "secondary"}

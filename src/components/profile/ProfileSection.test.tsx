@@ -11,6 +11,7 @@ function setup(props: Partial<{
   actionLabel?: string;
   onAction?: () => void;
   prerequisiteText?: string;
+  timeEstimate?: string;
 }> = {}) {
   const user = userEvent.setup();
   const onAction = props.onAction ?? vi.fn();
@@ -46,4 +47,27 @@ test("renders in_progress state with status label", () => {
 
   expect(screen.getByText("User Journey")).toBeInTheDocument();
   expect(screen.getByText("In Progress")).toBeInTheDocument();
+});
+
+test("renders time estimate when provided", () => {
+  setup({
+    title: "Test Section",
+    status: "not_started",
+    statusLabel: "Not Started",
+    actionLabel: "Start",
+    timeEstimate: "~5 min",
+  });
+
+  expect(screen.getByText("~5 min")).toBeInTheDocument();
+});
+
+test("does not render time estimate when not provided", () => {
+  setup({
+    title: "Test Section",
+    status: "not_started",
+    statusLabel: "Not Started",
+    actionLabel: "Start",
+  });
+
+  expect(screen.queryByText(/min/)).not.toBeInTheDocument();
 });
