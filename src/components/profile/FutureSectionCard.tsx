@@ -6,6 +6,7 @@ interface FutureSectionCardProps {
   prerequisite: string;
   isReady: boolean;
   timeEstimate?: string;
+  onAction?: () => void;
 }
 
 export function FutureSectionCard({
@@ -14,6 +15,7 @@ export function FutureSectionCard({
   prerequisite,
   isReady,
   timeEstimate,
+  onAction,
 }: FutureSectionCardProps) {
   const actionLabel = isReady && timeEstimate
     ? `Start Interview  ${timeEstimate}`
@@ -25,7 +27,9 @@ export function FutureSectionCard({
       status={isReady ? "not_started" : "locked"}
       statusLabel="Not Defined"
       actionLabel={actionLabel}
+      onAction={isReady ? onAction : undefined}
       prerequisiteText={!isReady ? prerequisite : undefined}
+      timeEstimate={isReady ? timeEstimate : undefined}
     >
       <p className="text-sm text-gray-500">{description}</p>
     </ProfileSection>

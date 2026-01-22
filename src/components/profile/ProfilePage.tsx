@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Share2, Check } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { CoreIdentitySection } from "./CoreIdentitySection";
@@ -22,6 +23,7 @@ interface ProfilePageProps {
 
 export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) {
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
 
   // Use appropriate query based on mode
   const authProfileData = useQuery(
@@ -202,6 +204,7 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
                 prerequisite="Complete First Value Moment first"
                 isReady={!!firstValueDefinition}
                 timeEstimate={`~${INTERVIEW_TYPES.retention.estimatedMinutes} min`}
+                onAction={() => navigate("/interviews/retention")}
               />
             </div>
 
@@ -212,6 +215,7 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
                 prerequisite="Complete First Value Moment first"
                 isReady={!!firstValueDefinition}
                 timeEstimate={`~${INTERVIEW_TYPES.value_outcomes.estimatedMinutes} min`}
+                onAction={() => navigate("/interviews/value_outcomes")}
               />
             </div>
 
@@ -222,6 +226,7 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
                 prerequisite="Complete Value Outcomes first"
                 isReady={false}
                 timeEstimate={`~${INTERVIEW_TYPES.value_capture.estimatedMinutes} min`}
+                onAction={() => navigate("/interviews/value_capture")}
               />
             </div>
 
@@ -232,6 +237,7 @@ export function ProfilePage({ readOnly = false, shareToken }: ProfilePageProps) 
                 prerequisite="Complete First Value Moment and Value Outcomes first"
                 isReady={false}
                 timeEstimate={`~${INTERVIEW_TYPES.churn.estimatedMinutes} min`}
+                onAction={() => navigate("/interviews/churn")}
               />
             </div>
           </>
