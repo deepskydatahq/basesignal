@@ -135,7 +135,8 @@ test("shows default product name when not set", () => {
     },
   });
 
-  expect(screen.getByText("Your Product")).toBeInTheDocument();
+  // Use heading selector to get the main product name, not the hidden card template
+  expect(screen.getByRole("heading", { level: 1, name: "Your Product" })).toBeInTheDocument();
 });
 
 test("displays stats bar with metrics, entities, and activities counts", () => {
