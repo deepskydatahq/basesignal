@@ -12,6 +12,7 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Star,
 } from "lucide-react";
 
 interface EntityCardProps {
@@ -23,6 +24,8 @@ interface EntityCardProps {
   propertyCount: number;
   children?: React.ReactNode;
   defaultExpanded?: boolean;
+  isPrimary?: boolean;
+  onSetPrimary?: () => void;
 }
 
 export function EntityCard({
@@ -34,6 +37,8 @@ export function EntityCard({
   propertyCount,
   children,
   defaultExpanded = false,
+  isPrimary,
+  onSetPrimary,
 }: EntityCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isEditing, setIsEditing] = useState(false);
@@ -179,6 +184,9 @@ export function EntityCard({
                 from {formatSuggestedFrom(suggestedFrom)}
               </Badge>
             )}
+            {isPrimary && (
+              <Badge variant="secondary">Primary</Badge>
+            )}
           </div>
         </button>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -207,6 +215,20 @@ export function EntityCard({
           >
             <Trash2 className={`h-4 w-4 ${isDeleting ? "animate-pulse" : ""}`} />
           </Button>
+          {!isPrimary && onSetPrimary && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetPrimary();
+              }}
+              aria-label="Set as primary"
+            >
+              <Star className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 

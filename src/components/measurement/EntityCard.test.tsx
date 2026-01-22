@@ -362,3 +362,41 @@ test("resets edit form values on cancel", async () => {
 
   expect(screen.getByPlaceholderText("Entity name")).toHaveValue("Project");
 });
+
+test("shows Primary badge when isPrimary is true", () => {
+  setup({ isPrimary: true });
+
+  expect(screen.getByText("Primary")).toBeInTheDocument();
+});
+
+test("does not show Primary badge when isPrimary is false", () => {
+  setup({ isPrimary: false });
+
+  expect(screen.queryByText("Primary")).not.toBeInTheDocument();
+});
+
+test("calls onSetPrimary when Set as primary button clicked", async () => {
+  const onSetPrimary = vi.fn();
+  const { user } = setup({ onSetPrimary });
+
+  // Hover to show actions (find the header button area)
+  const headerButton = screen.getByRole("button", { name: /account/i });
+  await user.hover(headerButton);
+
+  // Click set as primary
+  const setPrimaryButton = screen.getByRole("button", { name: /set as primary/i });
+  await user.click(setPrimaryButton);
+
+  expect(onSetPrimary).toHaveBeenCalled();
+});
+
+test("does not show Set as primary button when already primary", async () => {
+  const onSetPrimary = vi.fn();
+  const { user } = setup({ isPrimary: true, onSetPrimary });
+
+  // Hover to show actions
+  const headerButton = screen.getByRole("button", { name: /account/i });
+  await user.hover(headerButton);
+
+  expect(screen.queryByRole("button", { name: /set as primary/i })).not.toBeInTheDocument();
+});
