@@ -1,5 +1,7 @@
 import { getProductInitial, getProductColor } from "../../lib/productColor";
 import { CompletenessIndicator } from "./CompletenessIndicator";
+import { ExportPdfButton } from "./ExportPdfButton";
+import type { ProfilePdfData } from "../../lib/pdf/generateProfilePdf";
 
 function pluralize(count: number, singular: string, plural: string): string {
   return count === 1 ? `${count} ${singular}` : `${count} ${plural}`;
@@ -46,12 +48,14 @@ interface ProfileHeaderProps {
     entitiesCount: number;
     activitiesCount: number;
   };
+  profileData?: ProfilePdfData;
 }
 
 export function ProfileHeader({
   identity,
   completeness,
   stats,
+  profileData,
 }: ProfileHeaderProps) {
   // Derive business type badge - B2B if multi-user OR explicit b2b
   const businessTypeBadge = identity.hasMultiUserAccounts
@@ -124,8 +128,9 @@ export function ProfileHeader({
           ))}
         </div>
 
-        {/* Completeness indicator */}
+        {/* Completeness indicator and actions */}
         <div className="flex items-center gap-2">
+          {profileData && <ExportPdfButton profileData={profileData} />}
           {completeness.sections && completeness.sections.length > 0 ? (
             <CompletenessIndicator sections={completeness.sections} />
           ) : (

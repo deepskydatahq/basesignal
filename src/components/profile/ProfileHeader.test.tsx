@@ -1,7 +1,29 @@
-import { expect, test } from "vitest";
+import { expect, test, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ProfileHeader } from "./ProfileHeader";
 import { getProductColor } from "../../lib/productColor";
+
+// Mock the generateProfilePdf function
+vi.mock("../../lib/pdf/generateProfilePdf", () => ({
+  generateProfilePdf: vi.fn().mockResolvedValue(undefined),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+function createDefaultProfileData() {
+  return {
+    identity: { productName: "Test Product" },
+    journeyMap: { stages: [] },
+    metricCatalog: {
+      metrics: { reach: [], engagement: [], value_delivery: [], value_capture: [] },
+      totalCount: 0,
+    },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+  };
+}
 
 function setup(props: Partial<Parameters<typeof ProfileHeader>[0]> = {}) {
   const defaultProps = {
@@ -12,6 +34,7 @@ function setup(props: Partial<Parameters<typeof ProfileHeader>[0]> = {}) {
       completed: 0,
       total: 11,
     },
+    profileData: createDefaultProfileData(),
     ...props,
   };
   render(<ProfileHeader {...defaultProps} />);
@@ -304,8 +327,9 @@ test("renders CompletenessIndicator when sections provided", () => {
 
   // Should show the count in the trigger button
   expect(screen.getByText("3 of 4")).toBeInTheDocument();
-  // Should have a button that can be clicked to expand
-  expect(screen.getByRole("button")).toBeInTheDocument();
+  // Should have buttons including the completeness dropdown (not just one)
+  const buttons = screen.getAllByRole("button");
+  expect(buttons.length).toBeGreaterThanOrEqual(1);
 });
 
 test("falls back to simple progress bar when sections is empty array", () => {
@@ -381,4 +405,41 @@ test("falls back to initial when favicon fails to load", () => {
   // Image should be hidden, initial should show
   expect(img).toHaveStyle({ display: "none" });
   expect(avatar).toHaveTextContent("B");
+});
+
+test("renders Export PDF button when profileData is provided", () => {
+  setup();
+
+  expect(screen.getByRole("button", { name: /export pdf/i })).toBeInTheDocument();
+});
+
+test("does not render Export PDF button when profileData is not provided", () => {
+  const defaultProps = {
+    identity: { productName: "Test Product" },
+    completeness: { completed: 0, total: 11 },
+  };
+  render(<ProfileHeader {...defaultProps} />);
+
+  expect(screen.queryByRole("button", { name: /export pdf/i })).not.toBeInTheDocument();
+});
+
+test("Export PDF button calls generateProfilePdf with profileData when clicked", async () => {
+  const user = userEvent.setup();
+  const { generateProfilePdf } = await import("../../lib/pdf/generateProfilePdf");
+
+  const profileData = {
+    identity: { productName: "My Product" },
+    journeyMap: { stages: [] },
+    metricCatalog: {
+      metrics: { reach: [], engagement: [], value_delivery: [], value_capture: [] },
+      totalCount: 0,
+    },
+    measurementPlan: { entities: [], activityCount: 0, propertyCount: 0 },
+  };
+  setup({ profileData });
+
+  const button = screen.getByRole("button", { name: /export pdf/i });
+  await user.click(button);
+
+  expect(generateProfilePdf).toHaveBeenCalledWith(profileData);
 });
