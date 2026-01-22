@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { ProfileHeader } from "./ProfileHeader";
 import { getProductColor } from "../../lib/productColor";
 
@@ -317,4 +317,68 @@ test("falls back to simple progress bar when sections is empty array", () => {
   // Should show the simple text, not a button
   expect(screen.getByText("5 of 11")).toBeInTheDocument();
   expect(screen.getByRole("progressbar")).toBeInTheDocument();
+});
+
+test("renders favicon image when websiteUrl is provided", () => {
+  setup({
+    identity: {
+      productName: "Basesignal",
+      websiteUrl: "https://basesignal.net",
+    },
+  });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  const img = avatar.querySelector("img");
+  expect(img).toBeInTheDocument();
+  expect(img).toHaveAttribute(
+    "src",
+    "https://www.google.com/s2/favicons?domain=basesignal.net&sz=128"
+  );
+  expect(img).toHaveAttribute("alt", "Basesignal favicon");
+});
+
+test("renders initial avatar when websiteUrl is not provided", () => {
+  setup({
+    identity: {
+      productName: "Basesignal",
+      // No websiteUrl
+    },
+  });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  expect(avatar).toHaveTextContent("B");
+  expect(avatar.querySelector("img")).not.toBeInTheDocument();
+});
+
+test("renders initial avatar when websiteUrl is invalid", () => {
+  setup({
+    identity: {
+      productName: "Basesignal",
+      websiteUrl: "not-a-valid-url",
+    },
+  });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  expect(avatar).toHaveTextContent("B");
+  expect(avatar.querySelector("img")).not.toBeInTheDocument();
+});
+
+test("falls back to initial when favicon fails to load", () => {
+  setup({
+    identity: {
+      productName: "Basesignal",
+      websiteUrl: "https://nonexistent-domain-12345.com",
+    },
+  });
+
+  const avatar = screen.getByLabelText("Product avatar");
+  const img = avatar.querySelector("img");
+  expect(img).toBeInTheDocument();
+
+  // Simulate image load error
+  fireEvent.error(img!);
+
+  // Image should be hidden, initial should show
+  expect(img).toHaveStyle({ display: "none" });
+  expect(avatar).toHaveTextContent("B");
 });

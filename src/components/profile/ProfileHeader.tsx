@@ -18,10 +18,20 @@ interface Section {
   isComplete: boolean;
 }
 
+function extractDomain(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
 interface ProfileHeaderProps {
   identity: {
     productName?: string;
     productDescription?: string;
+    websiteUrl?: string;
     hasMultiUserAccounts?: boolean;
     businessType?: "b2b" | "b2c";
     revenueModels?: string[];
@@ -63,10 +73,28 @@ export function ProfileHeader({
         {/* Logo avatar */}
         <div
           aria-label="Product avatar"
-          className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-semibold"
+          className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-semibold overflow-hidden"
           style={{ backgroundColor }}
         >
-          {initial}
+          {(() => {
+            const domain = extractDomain(identity.websiteUrl);
+            if (domain) {
+              return (
+                <img
+                  src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
+                  alt={`${identity.productName || "Product"} favicon`}
+                  className="w-8 h-8"
+                  onError={(e) => {
+                    // Replace img with initial on error
+                    const target = e.currentTarget;
+                    target.style.display = "none";
+                    target.parentElement!.textContent = initial;
+                  }}
+                />
+              );
+            }
+            return initial;
+          })()}
         </div>
 
         <div className="flex-1 min-w-0">
