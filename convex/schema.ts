@@ -427,4 +427,24 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_entity", ["entityId"])
     .index("by_entity_and_name", ["entityId", "name"]),
+
+  productScans: defineTable({
+    userId: v.id("users"),
+    url: v.string(),
+    status: v.string(), // "pending" | "in_progress" | "completed" | "error"
+    errorMessage: v.optional(v.string()),
+    scannedPages: v.number(),
+    rawHtmlPages: v.array(v.object({
+      url: v.string(),
+      html: v.string(),
+      title: v.optional(v.string()),
+      description: v.optional(v.string()),
+      depth: v.number(),
+      fetchedAt: v.number(),
+    })),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
 });
