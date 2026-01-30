@@ -1,28 +1,28 @@
 #!/bin/bash
-# Brainstorm issues in headless Claude Code
-# Usage: ./brainstorm-issues.sh [ISSUE_NUMBER] [--random] [--loop] [--max N] [--continue-on-error]
+# Brainstorm tasks in headless Claude Code
+# Usage: ./brainstorm-issues.sh [TASK_ID] [--random] [--loop] [--max N] [--continue-on-error]
 #
 # Arguments:
-#   ISSUE_NUMBER        Specific issue to brainstorm (skips claiming)
+#   TASK_ID             Specific task to brainstorm (skips claiming)
 #
 # Options:
-#   --random            Pick issues randomly instead of in order
-#   --loop              Process multiple issues sequentially
-#   --max N             Maximum number of issues to process (default: all)
-#   --continue-on-error Continue to next issue if one fails
+#   --random            Pick tasks randomly instead of in order
+#   --loop              Process multiple tasks sequentially
+#   --max N             Maximum number of tasks to process (default: all)
+#   --continue-on-error Continue to next task if one fails
 
 set -e
 
 # Parse args
-SPECIFIC_ISSUE=""
+SPECIFIC_TASK=""
 PICK_RANDOM=false
 LOOP_MODE=false
-MAX_ISSUES=0
+MAX_TASKS=0
 CONTINUE_ON_ERROR=false
 
-# Check if first argument is a number (specific issue)
-if [[ $# -gt 0 && "$1" =~ ^[0-9]+$ ]]; then
-    SPECIFIC_ISSUE="$1"
+# Check if first argument is a task ID (not a flag)
+if [[ $# -gt 0 && "$1" != --* ]]; then
+    SPECIFIC_TASK="$1"
     shift
 fi
 
@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --max)
-            MAX_ISSUES="$2"
+            MAX_TASKS="$2"
             shift 2
             ;;
         --continue-on-error)
@@ -46,48 +46,46 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: ./brainstorm-issues.sh [ISSUE_NUMBER] [--random] [--loop] [--max N] [--continue-on-error]"
+            echo "Usage: ./brainstorm-issues.sh [TASK_ID] [--random] [--loop] [--max N] [--continue-on-error]"
             exit 1
             ;;
     esac
 done
 
-# Function to fetch brainstorm issues (sorted by number ascending for dependency order)
-fetch_brainstorm_issues() {
-    gh issue list --state open --label "stage:brainstorm" --json number,title,labels --jq '
-        [.[] | select(.labels | map(.name) | index("in-progress") | not)] | sort_by(.number)
-    '
+# Function to fetch brainstorm tasks
+fetch_brainstorm_tasks() {
+    hte tasks list --status brainstorm --json
 }
 
-# Function to fetch specific issue
-fetch_specific_issue() {
-    local ISSUE_NUMBER="$1"
-    gh issue view "$ISSUE_NUMBER" --json number,title
+# Function to fetch specific task
+fetch_specific_task() {
+    local TASK_ID="$1"
+    hte tasks get "$TASK_ID" --json
 }
 
-# Function to process a single issue
-process_issue() {
-    local ISSUE_NUMBER="$1"
-    local ISSUE_TITLE="$2"
+# Function to process a single task
+process_task() {
+    local TASK_ID="$1"
+    local TASK_TITLE="$2"
     local SKIP_CLAIM="$3"
 
-    echo "Selected: #$ISSUE_NUMBER - $ISSUE_TITLE"
+    echo "Selected: $TASK_ID - $TASK_TITLE"
 
-    # Claim the issue (unless skipping)
+    # Claim the task (unless skipping)
     if [[ "$SKIP_CLAIM" != "true" ]]; then
-        echo "Claiming issue (adding in-progress label)..."
-        gh issue edit "$ISSUE_NUMBER" --add-label in-progress
+        echo "Claiming task (setting in_progress status)..."
+        hte tasks update "$TASK_ID" --status in_progress
     else
-        echo "Skipping claim (specific issue mode)"
+        echo "Skipping claim (specific task mode)"
     fi
 
     # Build the prompt - delegate to /brainstorm-auto
-    PROMPT="Run /brainstorm-auto $ISSUE_NUMBER"
+    PROMPT="Run /brainstorm-auto $TASK_ID"
 
     # Run Claude Code in headless mode
     echo ""
     echo "=========================================="
-    echo "Starting Claude Code for issue #$ISSUE_NUMBER"
+    echo "Starting Claude Code for task $TASK_ID"
     echo "=========================================="
     echo ""
 
@@ -98,88 +96,88 @@ process_issue() {
 PROCESSED=0
 FAILED=0
 
-# Specific issue mode
-if [[ -n "$SPECIFIC_ISSUE" ]]; then
-    echo "Fetching issue #$SPECIFIC_ISSUE..."
-    ISSUE_DATA=$(fetch_specific_issue "$SPECIFIC_ISSUE")
+# Specific task mode
+if [[ -n "$SPECIFIC_TASK" ]]; then
+    echo "Fetching task $SPECIFIC_TASK..."
+    TASK_DATA=$(fetch_specific_task "$SPECIFIC_TASK")
 
-    if [[ -z "$ISSUE_DATA" ]]; then
-        echo "Error: Issue #$SPECIFIC_ISSUE not found"
+    if [[ -z "$TASK_DATA" ]]; then
+        echo "Error: Task $SPECIFIC_TASK not found"
         exit 1
     fi
 
-    ISSUE_NUMBER=$(echo "$ISSUE_DATA" | jq -r '.number')
-    ISSUE_TITLE=$(echo "$ISSUE_DATA" | jq -r '.title')
+    TASK_ID=$(echo "$TASK_DATA" | jq -r '.id')
+    TASK_TITLE=$(echo "$TASK_DATA" | jq -r '.title')
 
-    process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE" "true"
+    process_task "$TASK_ID" "$TASK_TITLE" "true"
     exit 0
 fi
 
 # Queue mode - main loop
 while true; do
-    # Fetch issues fresh each iteration (to see newly completed ones)
-    echo "Fetching stage:brainstorm issues..."
-    ISSUES=$(fetch_brainstorm_issues)
+    # Fetch tasks fresh each iteration (to see newly completed ones)
+    echo "Fetching brainstorm tasks..."
+    TASKS=$(fetch_brainstorm_tasks)
 
-    # Check if any issues available
-    COUNT=$(echo "$ISSUES" | jq 'length')
+    # Check if any tasks available
+    COUNT=$(echo "$TASKS" | jq 'length')
     if [[ "$COUNT" -eq 0 ]]; then
         if [[ "$PROCESSED" -gt 0 ]]; then
             echo ""
             echo "=========================================="
-            echo "All issues brainstormed!"
+            echo "All tasks brainstormed!"
             echo "  Completed: $PROCESSED"
             echo "  Failed: $FAILED"
             echo "=========================================="
         else
-            echo "No issues with stage:brainstorm available (all may be in-progress)."
-            echo "Run /new-feature to create issues, or /brainstorm-epics to generate epics."
+            echo "No tasks with brainstorm status available (all may be in_progress)."
+            echo "Run /new-feature to create tasks, or /brainstorm-epics to generate epics."
         fi
         exit 0
     fi
 
-    echo "Found $COUNT issue(s) needing brainstorming"
+    echo "Found $COUNT task(s) needing brainstorming"
 
     # Check if we've hit max
-    if [[ "$MAX_ISSUES" -gt 0 && "$PROCESSED" -ge "$MAX_ISSUES" ]]; then
+    if [[ "$MAX_TASKS" -gt 0 && "$PROCESSED" -ge "$MAX_TASKS" ]]; then
         echo ""
         echo "=========================================="
-        echo "Reached maximum issues ($MAX_ISSUES)"
+        echo "Reached maximum tasks ($MAX_TASKS)"
         echo "  Completed: $PROCESSED"
         echo "  Failed: $FAILED"
         echo "=========================================="
         exit 0
     fi
 
-    # Pick an issue
+    # Pick a task
     if [[ "$PICK_RANDOM" == true ]]; then
         INDEX=$((RANDOM % COUNT))
-        echo "Picking random issue (index $INDEX)..."
+        echo "Picking random task (index $INDEX)..."
     else
         INDEX=0
-        echo "Picking first issue..."
+        echo "Picking first task..."
     fi
 
-    ISSUE_NUMBER=$(echo "$ISSUES" | jq -r ".[$INDEX].number")
-    ISSUE_TITLE=$(echo "$ISSUES" | jq -r ".[$INDEX].title")
+    TASK_ID=$(echo "$TASKS" | jq -r ".[$INDEX].id")
+    TASK_TITLE=$(echo "$TASKS" | jq -r ".[$INDEX].title")
 
-    # Process the issue
+    # Process the task
     if [[ "$CONTINUE_ON_ERROR" == true ]]; then
         set +e
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE" "false"
+        process_task "$TASK_ID" "$TASK_TITLE" "false"
         EXIT_CODE=$?
         set -e
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
-            echo "Issue #$ISSUE_NUMBER failed with exit code $EXIT_CODE"
+            echo "Task $TASK_ID failed with exit code $EXIT_CODE"
             FAILED=$((FAILED + 1))
-            # Remove in-progress label on failure so it can be retried
-            gh issue edit "$ISSUE_NUMBER" --remove-label in-progress 2>/dev/null || true
+            # Reset status on failure so it can be retried
+            hte tasks update "$TASK_ID" --status brainstorm 2>/dev/null || true
         else
             PROCESSED=$((PROCESSED + 1))
         fi
     else
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE" "false"
+        process_task "$TASK_ID" "$TASK_TITLE" "false"
         PROCESSED=$((PROCESSED + 1))
     fi
 
@@ -190,14 +188,14 @@ while true; do
 
     echo ""
     echo "=========================================="
-    echo "Issue #$ISSUE_NUMBER brainstormed. Moving to next..."
+    echo "Task $TASK_ID brainstormed. Moving to next..."
     echo "  Progress: $PROCESSED brainstormed, $FAILED failed"
     echo "=========================================="
     echo ""
 
-    # Small delay between issues to prevent rate limiting
+    # Small delay between tasks to prevent rate limiting
     sleep 2
 done
 
-# Note: If claude exits, the in-progress label remains
+# Note: If claude exits, the in_progress status remains
 # This is intentional - manual cleanup needed if abandoned

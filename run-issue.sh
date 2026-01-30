@@ -1,33 +1,42 @@
 #!/bin/bash
-# Run/implement issues in headless Claude Code
-# Usage: ./run-issue.sh [--random] [--loop] [--max N] [--continue-on-error]
+# Run ready tasks in headless Claude Code with worktree isolation
+# Usage: ./run-issue.sh [TASK_ID] [--loop] [--max N] [--continue-on-error]
+#
+# Arguments:
+#   TASK_ID             Run a specific task by ID (skips queue, ignores status)
 #
 # Options:
-#   --random            Pick issues randomly instead of in order
-#   --loop              Process multiple issues sequentially
-#   --max N             Maximum number of issues to process (default: all)
-#   --continue-on-error Continue to next issue if one fails
+#   --loop              Process multiple tasks sequentially
+#   --max N             Maximum number of tasks to process (default: all)
+#   --continue-on-error Continue to next task if one fails
+#
+# Workflow:
+#   1. Select task from ready queue (or use specified ID)
+#   2. Create feature branch and worktree in ../worktrees/<branch>
+#   3. Run claude in the worktree directory
+#   4. Claude implements, creates PR, marks task done
+#   5. Optionally cleanup worktree
 
 set -e
 
+# Get the repo root for worktree calculations
+REPO_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE_BASE=$(dirname "$REPO_ROOT")/worktrees
+
 # Parse args
-PICK_RANDOM=false
+SPECIFIC_TASK=""
 LOOP_MODE=false
-MAX_ISSUES=0
+MAX_TASKS=0
 CONTINUE_ON_ERROR=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --random)
-            PICK_RANDOM=true
-            shift
-            ;;
         --loop)
             LOOP_MODE=true
             shift
             ;;
         --max)
-            MAX_ISSUES="$2"
+            MAX_TASKS="$2"
             shift 2
             ;;
         --continue-on-error)
@@ -35,118 +44,224 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Usage: ./run-issue.sh [--random] [--loop] [--max N] [--continue-on-error]"
-            exit 1
+            # Assume it's a task ID if not a flag
+            if [[ "$1" != --* ]]; then
+                SPECIFIC_TASK="$1"
+            else
+                echo "Unknown option: $1"
+                echo "Usage: ./run-issue.sh [TASK_ID] [--loop] [--max N] [--continue-on-error]"
+                exit 1
+            fi
+            shift
             ;;
     esac
 done
 
-# Function to fetch ready issues (sorted by number ascending for dependency order)
-fetch_ready_issues() {
-    gh issue list --state open --label "stage:ready" --json number,title,labels --jq '
-        [.[] | select(.labels | map(.name) | index("in-progress") | not)] | sort_by(.number)
-    '
+# Function to fetch ready tasks with full details for AI selection
+fetch_ready_tasks_detailed() {
+    hte tasks list --status ready --json
 }
 
-# Function to process a single issue
-process_issue() {
-    local ISSUE_NUMBER="$1"
-    local ISSUE_TITLE="$2"
+# Function to format tasks for the prompt
+format_tasks_for_prompt() {
+    local tasks="$1"
+    echo "$tasks" | jq -r '.[] | "### Task \(.id): \(.title)\n**Status:** \(.status)\n**Description preview:** \(.body | split("\n")[0:5] | join("\n"))\n"'
+}
 
-    echo "Selected: #$ISSUE_NUMBER - $ISSUE_TITLE"
+# Function to create a slug from task title
+create_slug() {
+    local title="$1"
+    echo "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//' | cut -c1-50
+}
 
-    # Claim the issue
-    echo "Claiming issue (adding in-progress label)..."
-    gh issue edit "$ISSUE_NUMBER" --add-label in-progress
+# Function to process a single task with worktree
+process_task_with_worktree() {
+    local TASK_ID="$1"
+    local TASK_TITLE="$2"
 
-    # Get full issue content
-    echo "Fetching issue details..."
-    ISSUE_BODY=$(gh issue view "$ISSUE_NUMBER" --json body,title,comments --jq '
-        "# Issue: \(.title)\n\n## Description\n\(.body)\n\n## Comments\n" +
-        (.comments | map("---\n\(.body)") | join("\n\n"))
-    ')
+    echo "Processing task: $TASK_ID - $TASK_TITLE"
+
+    # Create branch name from task title
+    local SLUG=$(create_slug "$TASK_TITLE")
+    local BRANCH="feat/$SLUG"
+    local WORKTREE_PATH="$WORKTREE_BASE/$BRANCH"
+
+    echo "Branch: $BRANCH"
+    echo "Worktree: $WORKTREE_PATH"
+
+    # Claim the task
+    echo "Claiming task..."
+    hte tasks update "$TASK_ID" --status in_progress
+
+    # Create worktree directory
+    mkdir -p "$WORKTREE_BASE"
+
+    # Check if worktree already exists
+    if [ -d "$WORKTREE_PATH" ]; then
+        echo "Worktree already exists, using it..."
+    else
+        echo "Creating worktree..."
+        git worktree add "$WORKTREE_PATH" -b "$BRANCH" 2>/dev/null || \
+            git worktree add "$WORKTREE_PATH" "$BRANCH"
+    fi
+
+    # Get task body for the prompt
+    local TASK_DATA=$(hte tasks get "$TASK_ID" --json)
+    local TASK_BODY=$(echo "$TASK_DATA" | jq -r '.body')
 
     # Build the prompt
-    PROMPT="Implement GitHub issue #$ISSUE_NUMBER: $ISSUE_TITLE
+    local PROMPT="# Implement HTE Task
 
-$ISSUE_BODY
+**Task ID:** $TASK_ID
+**Title:** $TASK_TITLE
+**Branch:** $BRANCH
+**Worktree:** $WORKTREE_PATH
+
+## Task Description
+
+$TASK_BODY
 
 ---
+
+## CRITICAL: Headless Mode - NO QUESTIONS
+
+**This is a HEADLESS session. You CANNOT ask questions or request feedback.**
+
+- Do NOT ask \"Should I proceed?\" or \"Ready for feedback?\"
+- Do NOT wait for user confirmation
+- Make autonomous decisions based on the plan
+- If unsure, choose the simpler/safer option and proceed
+
+## CRITICAL: Complete ALL Steps
+
+**You MUST complete EVERY step in the implementation plan.**
+
+Partial implementation is NOT acceptable. If the plan has 7 steps, you must complete all 7.
 
 ## Instructions
 
-You are implementing this issue. The issue should have a detailed implementation plan in the comments.
+### Step 1: Load Project Context
 
-### 1. Review the Plan
+Read these files to understand the project (if they exist):
+- **README.md** - Project setup, tech stack, and conventions
+- **PROGRESS.md** - Recent learnings and patterns to follow
 
-Read through the implementation plan carefully. If no plan exists:
-- Remove in-progress and route back to planning:
-  \`gh issue edit $ISSUE_NUMBER --remove-label \"in-progress\" --remove-label \"stage:ready\" --add-label \"stage:plan\"\`
-- Report that the issue lacks a plan and stop.
+### Step 2: Extract ALL Steps from the Plan
 
-### 2. Implement
+Read the implementation plan and extract EVERY step into TodoWrite.
 
-Follow the implementation plan step by step:
-- Work through each task in order
-- Write tests as specified in the plan
-- Run tests to verify your changes work
-- Commit changes with clear messages
+### Step 3: Implement Each Step
 
-### 3. Verify
+For each step:
+1. Mark it as in_progress
+2. Implement fully
+3. Run relevant tests
+4. Commit with descriptive message
+5. Mark as completed
+6. Move to next step
 
-Before completing, run verification:
-- Run the project's test suite if one exists
-- Ensure the build succeeds if applicable
-- Check that your implementation matches the requirements
+### Step 4: Verify
 
-### 4. Complete
+Before creating PR:
+- [ ] All steps completed
+- [ ] All tests pass
+- [ ] All commits made
 
-After implementation is done and verified:
+### Step 5: Update PROGRESS.md
+
+Add a session entry to PROGRESS.md with:
+- Files changed
+- Learnings
+- Patterns discovered
+- Gotchas
+
+### Step 6: Create Pull Request
 
 \`\`\`bash
-# Get the commit SHA
-COMMIT_SHA=\$(git rev-parse --short HEAD)
+git push -u origin HEAD
+gh pr create --title \"<type>: <description>\" --body \"\$(cat <<'EOF'
+## Summary
+<what this PR does>
 
-# Close the issue
-gh issue edit $ISSUE_NUMBER --remove-label \"in-progress\"
-gh issue close $ISSUE_NUMBER --comment \"\$(cat <<'EOF'
-Implemented in commit \$COMMIT_SHA.
-
-## Changes
-- <summary of changes made>
-
-## Verification
-- [x] Implementation complete
-- [x] Tests passing (if applicable)
-
----
-*Closed via headless session*
+HTE Task: $TASK_ID
 EOF
 )\"
 \`\`\`
 
-## Output Format
+Use conventional commit types: feat, fix, refactor, docs, test, chore
 
-When complete, report:
-- Issue number and title
-- Summary of changes made
-- Commit SHA
-- Verification status
+**Report the PR URL in your output.**
+
+### Step 7: Mark Task Done
+
+\`\`\`bash
+hte tasks update $TASK_ID --status done
+\`\`\`
 
 ## Start
 
-Begin implementation now."
+You are already in the worktree at: $WORKTREE_PATH
+Branch: $BRANCH
 
-    # Run Claude Code in headless mode
+Begin by reading the project context, then extract all steps and implement them."
+
+    # Run Claude Code in the worktree directory
     echo ""
     echo "=========================================="
-    echo "Starting Claude Code for issue #$ISSUE_NUMBER"
+    echo "Starting Claude Code in worktree"
+    echo "Worktree: $WORKTREE_PATH"
     echo "=========================================="
     echo ""
 
-    claude --dangerously-skip-permissions -p "$PROMPT"
+    # Change to worktree and run claude
+    (cd "$WORKTREE_PATH" && claude --dangerously-skip-permissions -p "$PROMPT")
 }
+
+# Function to process tasks (either specific or AI-selected)
+process_tasks() {
+    local SPECIFIC="$1"
+
+    if [[ -n "$SPECIFIC" ]]; then
+        # Specific task mode - fetch just that task
+        echo "Fetching task $SPECIFIC..."
+        TASK_DATA=$(hte tasks get "$SPECIFIC" --json 2>/dev/null)
+
+        if [[ -z "$TASK_DATA" ]]; then
+            echo "Error: Task $SPECIFIC not found"
+            return 1
+        fi
+
+        TASK_ID=$(echo "$TASK_DATA" | jq -r '.id')
+        TASK_TITLE=$(echo "$TASK_DATA" | jq -r '.title')
+
+        process_task_with_worktree "$TASK_ID" "$TASK_TITLE"
+    else
+        # AI selection mode - pick first available task
+        echo "Fetching all ready tasks..."
+        TASKS=$(fetch_ready_tasks_detailed)
+
+        COUNT=$(echo "$TASKS" | jq 'length')
+        if [[ "$COUNT" -eq 0 ]]; then
+            echo "No tasks with ready status available."
+            echo "Run /plan-issue to process the planning queue, or /brainstorm for brainstorming queue."
+            return 1
+        fi
+
+        echo "Found $COUNT ready task(s)"
+
+        # Pick the first task (could add smarter selection later)
+        TASK_ID=$(echo "$TASKS" | jq -r '.[0].id')
+        TASK_TITLE=$(echo "$TASKS" | jq -r '.[0].title')
+
+        process_task_with_worktree "$TASK_ID" "$TASK_TITLE"
+    fi
+}
+
+# Handle specific task mode
+if [[ -n "$SPECIFIC_TASK" ]]; then
+    process_tasks "$SPECIFIC_TASK"
+    exit 0
+fi
 
 # Track stats for loop mode
 PROCESSED=0
@@ -154,69 +269,32 @@ FAILED=0
 
 # Main loop
 while true; do
-    # Fetch issues fresh each iteration (to see newly completed ones)
-    echo "Fetching stage:ready issues..."
-    ISSUES=$(fetch_ready_issues)
-
-    # Check if any issues available
-    COUNT=$(echo "$ISSUES" | jq 'length')
-    if [[ "$COUNT" -eq 0 ]]; then
-        if [[ "$PROCESSED" -gt 0 ]]; then
-            echo ""
-            echo "=========================================="
-            echo "All issues implemented!"
-            echo "  Completed: $PROCESSED"
-            echo "  Failed: $FAILED"
-            echo "=========================================="
-        else
-            echo "No issues with stage:ready available (all may be in-progress)."
-            echo "Run /plan-issue to process the planning queue, or /brainstorm to create issues."
-        fi
-        exit 0
-    fi
-
-    echo "Found $COUNT issue(s) ready for implementation"
-
     # Check if we've hit max
-    if [[ "$MAX_ISSUES" -gt 0 && "$PROCESSED" -ge "$MAX_ISSUES" ]]; then
+    if [[ "$MAX_TASKS" -gt 0 && "$PROCESSED" -ge "$MAX_TASKS" ]]; then
         echo ""
         echo "=========================================="
-        echo "Reached maximum issues ($MAX_ISSUES)"
+        echo "Reached maximum tasks ($MAX_TASKS)"
         echo "  Completed: $PROCESSED"
         echo "  Failed: $FAILED"
         echo "=========================================="
         exit 0
     fi
 
-    # Pick an issue
-    if [[ "$PICK_RANDOM" == true ]]; then
-        INDEX=$((RANDOM % COUNT))
-        echo "Picking random issue (index $INDEX)..."
-    else
-        INDEX=0
-        echo "Picking first issue..."
-    fi
+    # Process tasks
+    set +e
+    process_tasks ""
+    EXIT_CODE=$?
+    set -e
 
-    ISSUE_NUMBER=$(echo "$ISSUES" | jq -r ".[$INDEX].number")
-    ISSUE_TITLE=$(echo "$ISSUES" | jq -r ".[$INDEX].title")
-
-    # Process the issue
-    if [[ "$CONTINUE_ON_ERROR" == true ]]; then
-        set +e
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
-        EXIT_CODE=$?
-        set -e
-
-        if [[ "$EXIT_CODE" -ne 0 ]]; then
-            echo "Issue #$ISSUE_NUMBER failed with exit code $EXIT_CODE"
+    if [[ "$EXIT_CODE" -ne 0 ]]; then
+        echo "Session exited with code $EXIT_CODE"
+        if [[ "$CONTINUE_ON_ERROR" == true ]]; then
             FAILED=$((FAILED + 1))
-            # Remove in-progress label on failure so it can be retried
-            gh issue edit "$ISSUE_NUMBER" --remove-label in-progress 2>/dev/null || true
         else
-            PROCESSED=$((PROCESSED + 1))
+            echo "Stopping loop (use --continue-on-error to keep going)"
+            exit "$EXIT_CODE"
         fi
     else
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
         PROCESSED=$((PROCESSED + 1))
     fi
 
@@ -227,14 +305,14 @@ while true; do
 
     echo ""
     echo "=========================================="
-    echo "Issue #$ISSUE_NUMBER implemented. Moving to next..."
-    echo "  Progress: $PROCESSED implemented, $FAILED failed"
+    echo "Session complete. Moving to next..."
+    echo "  Progress: $PROCESSED processed, $FAILED failed"
     echo "=========================================="
     echo ""
 
-    # Small delay between issues to prevent rate limiting
+    # Small delay between tasks to prevent rate limiting
     sleep 2
 done
 
-# Note: If claude exits, the in-progress label remains
-# This is intentional - manual cleanup needed if abandoned
+# Note: Worktrees are left in place for potential follow-up work
+# Clean up with: git worktree remove ../worktrees/feat/<slug>

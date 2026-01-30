@@ -1,20 +1,20 @@
 ---
-description: Auto-brainstorm an issue using expert personas (Butterfield + Abramov + Jobs)
-allowed-tools: Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh issue edit:*), Bash(gh issue comment:*), Bash(gh issue close:*), Bash(gh issue create:*), Task, Read, Write, Glob, Grep
+description: Auto-brainstorm a task using expert personas (Butterfield + Abramov + Jobs)
+allowed-tools: Bash(hte tasks:*), Task, Read, Write, Glob, Grep
 ---
 
 # Brainstorm Auto
 
-Pick an issue from `stage:brainstorm` and run an autonomous brainstorming session. Routes questions to expert personas during design, then runs a final simplification review.
+Pick a task from `brainstorm` status and run an autonomous brainstorming session. Routes questions to expert personas during design, then runs a final simplification review.
 
 ## Arguments
 
 - No argument: Pick from queue
-- Issue number (e.g., `/brainstorm-auto 15`): Brainstorm specific issue
+- Task ID (e.g., `/brainstorm-auto 01KFJ4YM...`): Brainstorm specific task
 
-## Current Issues Needing Brainstorming
+## Current Tasks Needing Brainstorming
 
-!`gh issue list --state open --label "stage:brainstorm" --json number,title,labels,createdAt --limit 20`
+!`hte tasks list --status brainstorm --json`
 
 ## Expert Personas
 
@@ -69,23 +69,22 @@ Pick an issue from `stage:brainstorm` and run an autonomous brainstorming sessio
 
 ## Instructions
 
-### 1. Select Issue
+### 1. Select Task
 
 **If argument provided:**
-- Use that issue number directly
-- Fetch details: `gh issue view <number>`
+- Use that task ID directly
+- Fetch details: `hte tasks get <id>`
 
 **If no argument:**
-- If no issues with `stage:brainstorm`: Report "No issues need brainstorming. Run `/new-feature` to create some." and stop.
-- Pick the best issue:
-  - Skip issues with `in-progress` label
-  - Priority: `critical` > `bug` > `enhancement`
-  - Age: older issues first
+- If no tasks with `brainstorm` status: Report "No tasks need brainstorming. Run `/new-feature` to create some." and stop.
+- Pick the best task:
+  - Skip tasks with `in_progress` status
+  - Age: older tasks first
 
-### 2. Claim the Issue
+### 2. Claim the Task
 
 ```bash
-gh issue edit <number> --add-label in-progress
+hte tasks update <id> --status in_progress
 ```
 
 ### 3. Launch Brainstormer Agent
@@ -134,7 +133,7 @@ When the Brainstormer outputs a question, parse the type and route:
 
 **Before accepting the design, verify:**
 
-1. Extract all "Done When" items from the issue
+1. Extract all "Done When" items from the task
 2. Check that the design addresses each item
 3. Check that the design doesn't introduce scope creep (custom solutions when simple ones exist)
 
@@ -180,33 +179,33 @@ Launch the Design Reviewer agent (use haiku model) with the complete design.
 After brainstorming and review complete, determine:
 
 **Single coherent piece of work:**
-- Update the original issue with design decisions
-- Assess next stage (see criteria below)
-- Move to that stage
+- Update the original task with design decisions
+- Assess next status (see criteria below)
+- Move to that status
 
 **Multiple independent pieces:**
-- Create child issues for each piece
-- Each child gets its own stage assessment
-- Close original with links to children
+- Create child tasks for each piece
+- Each child gets its own status assessment
+- Mark original as done with links to children
 
-### 8. Stage Assessment Criteria
+### 8. Status Assessment Criteria
 
 ```
-stage:brainstorm if ANY of:
+brainstorm if ANY of:
   - Still has unresolved design questions
   - Needs further user input on approach
   - Affects architecture and needs more thought
 
-stage:plan if:
+plan if:
   - Design decisions are made
   - Solution is known but involves multiple files/steps
   - Ready for detailed implementation planning
 
-stage:ready if ALL of:
+ready if ALL of:
   - Trivial, mechanical change
   - Specific file and location known
   - No risk of unintended consequences
-  (This should be RARE - prefer stage:plan)
+  (This should be RARE - prefer plan)
 ```
 
 ### 9. Save Design Document
@@ -246,12 +245,15 @@ Save to: `docs/plans/YYYY-MM-DD-<feature-slug>-design.md`
 <How do we know it works?>
 ```
 
-### 10. Update Issue
+### 10. Update Task
 
 ```bash
-gh issue edit <number> --remove-label "stage:brainstorm" --remove-label "in-progress" --add-label "stage:<next-stage>"
+hte tasks update <id> --status <next-status>
+```
 
-gh issue comment <number> --body "## Auto-Brainstorming Complete
+Update the task body with brainstorming results:
+```
+## Auto-Brainstorming Complete
 
 ### Product Perspective
 - <key insight 1>
@@ -271,7 +273,7 @@ gh issue comment <number> --body "## Auto-Brainstorming Complete
 <what the implementation plan should cover>
 
 ---
-*Updated via /brainstorm-auto*"
+*Updated via /brainstorm-auto*
 ```
 
 ---
@@ -281,10 +283,10 @@ gh issue comment <number> --body "## Auto-Brainstorming Complete
 ### Brainstormer Agent Prompt
 
 ```
-You are a brainstorming agent designing a solution for a GitHub issue.
+You are a brainstorming agent designing a solution for an HTE task.
 
-## Issue Context
-<issue title and body>
+## Task Context
+<task title and body>
 
 ## Your Task
 1. Explore the relevant codebase to understand context
@@ -307,7 +309,7 @@ You will receive the answer before you can ask another question.
 
 ### Requirements Checkpoint
 Before outputting <design-complete>, you MUST verify:
-1. List each "Done When" item from the issue
+1. List each "Done When" item from the task
 2. Confirm your design addresses each one
 3. Flag any divergences from stated requirements
 
@@ -360,7 +362,7 @@ Answer this product design question using the principles below.
 </question>
 
 ## Context
-{issue context and any prior discussion}
+{task context and any prior discussion}
 
 ## Principles (Butterfield-style product thinking)
 - "We don't sell saddles here" - focus on transformation, not features
@@ -386,7 +388,7 @@ Answer this technical design question using the principles below.
 </question>
 
 ## Context
-{issue context and any prior discussion}
+{task context and any prior discussion}
 
 ## Principles (Abramov-style technical thinking)
 - Start with why - what problem are we actually solving?
@@ -411,8 +413,8 @@ Review this design for ruthless simplification using the principles below.
 ## Design to Review
 {complete design from brainstormer}
 
-## Issue Context
-{original issue title and requirements}
+## Task Context
+{original task title and requirements}
 
 ## Principles (Jobs-style design review)
 - "Simple can be harder than complex" - true simplicity requires deep understanding
@@ -454,9 +456,9 @@ Review this design for ruthless simplification using the principles below.
 ## Output Format
 
 ```
-Selected: #<number> - <title>
+Selected: <id> - <title>
 
-Claimed issue with in-progress label.
+Claimed task with in_progress status.
 
 [Brainstorming session with expert Q&A...]
 
@@ -469,13 +471,13 @@ Verdict: <APPROVED | SIMPLIFY>
 Outcome: <Single piece | Broken into N pieces>
 
 <If single:>
-Moving to: stage:<next-stage>
+Moving to: <next-status>
 Design saved to: docs/plans/YYYY-MM-DD-<slug>-design.md
-Issue updated with expert insights.
+Task updated with expert insights.
 
 <If broken down:>
 Created:
-- #<child1> - <title> (stage:<stage>)
-- #<child2> - <title> (stage:<stage>)
-Original #<number> closed.
+- <child1-id> - <title> (status: <status>)
+- <child2-id> - <title> (status: <status>)
+Original task <id> marked done.
 ```

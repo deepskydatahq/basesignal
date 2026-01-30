@@ -1,145 +1,190 @@
 ---
-description: Pick an issue needing planning and write an implementation plan
-allowed-tools: Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh issue edit:*), Bash(gh issue comment:*), Skill, Read, Write, Glob, Grep
+description: Pick a task needing planning and write an implementation plan
+allowed-tools: Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Plan Issue
 
-Pick an issue from the `stage:plan` queue and write a detailed implementation plan.
+Pick a task from the `plan` queue and write a detailed implementation plan.
 
 ## Arguments
 
 - No argument: Pick from queue
-- Issue number (e.g., `/plan-issue 15`): Plan specific issue regardless of label
+- Task ID (e.g., `/plan-issue 01KFJ4YM...`): Plan specific task regardless of status
 
-## Current Issues Needing Planning
+## Current Tasks Needing Planning
 
-!`gh issue list --state open --label "stage:plan" --json number,title,labels,createdAt --limit 20`
+!`hte tasks list --status plan --json`
 
 ## Instructions
 
-### 1. Select Issue
+### 1. Select Task
 
 **If argument provided:**
-- Use that issue number directly
-- Fetch details: `gh issue view <number>`
+- Use that task ID directly
+- Fetch details: `hte tasks get <id>`
 
 **If no argument:**
-- If no issues with `stage:plan`: Report "No issues need planning. Run `/brainstorm` to process brainstorming queue, or `/new-feature` to create issues." and stop.
-- Otherwise, pick the best issue based on:
-  - Skip issues with `in-progress` label
-  - Priority: `critical` > `bug` > `enhancement`
-  - Age: older issues first
+- If no tasks with `plan` status: Report "No tasks need planning. Run `/brainstorm` to process brainstorming queue, or `/new-feature` to create tasks." and stop.
+- Otherwise, pick the best task based on:
+  - Skip tasks with `in_progress` status
+  - Age: older tasks first
 
-### 2. Claim the Issue
+### 2. Claim the Task
 
 ```bash
-gh issue edit <number> --add-label in-progress
+hte tasks update <id> --status in_progress
 ```
 
 ### 3. Fetch Full Context
 
 ```bash
-gh issue view <number>
+hte tasks get <id>
 ```
 
+Read these files to understand the project (if they exist):
+- README.md - Project overview and setup
+- VISION.md - Product direction and goals
+
 Review:
-- Issue description and requirements
+- Task description and requirements
 - Any design decisions from brainstorming
 - Linked design documents in `docs/plans/`
 - Scope and constraints
 
-### 3a. Validate Brainstorm Complete
-
-Before writing an implementation plan, verify the issue has been through brainstorming:
-
-1. **Check for brainstorm output** in issue body/comments:
-   - Look for "Brainstorming Complete" or "Auto-Brainstorming Complete" marker
-   - OR design document referenced in `docs/plans/YYYY-MM-DD-*-design.md`
-
-2. **If validation fails:**
-   - Report: "Cannot plan #<number>: no brainstorm output found. Run `/brainstorm <number>` first."
-   - Remove `in-progress` label: `gh issue edit <number> --remove-label "in-progress"`
-   - Stop (do not proceed with planning)
-
-3. **If validation passes:** Continue to write implementation plan
-
 ### 4. Write Implementation Plan
 
-Invoke the `superpowers:writing-plans` skill to create a detailed plan:
+You are planning implementation for this task. Create a plan with:
 
-- Explore the codebase to understand current state
+**1. Summary** - What this issue accomplishes (2-3 sentences)
+
+**2. Acceptance Criteria** - Agent-verifiable conditions for completion
+
+**Write acceptance criteria that are verifiable:**
+
+❌ Bad: "All tests pass"
+✅ Good: "`npm test` exits with code 0 and outputs 'X passing'"
+
+❌ Bad: "Config file is updated"
+✅ Good: "`src/config/settings.json` contains `{maxConnections: 20}`"
+
+❌ Bad: "Error handling works correctly"
+✅ Good: "Clicking 'Submit' with empty form shows 'Email required' error message"
+
+**3. Implementation Tasks** - Ordered steps to complete the work
 - Identify all files that need changes
 - Break work into specific, ordered steps
-- Consider edge cases and error handling
-- Include test strategy
+- Include file paths and what changes in each
 
-### 5. Add Plan to Issue
+**4. Test Plan** - How to verify each AC
+- What tests to write or run
+- What commands to execute
+- Expected outcomes
 
-```bash
-gh issue comment <number> --body "$(cat <<'EOF'
+### 5. Add Plan to Task
+
+Update the task body to include the implementation plan:
+
+```
 ## Implementation Plan
 
-### Overview
-<1-2 sentence summary of approach>
+### Summary
+<2-3 sentence summary of what this accomplishes>
 
-### Steps
+### Acceptance Criteria
+- [ ] <AC 1 - testable/file checkpoint/command output/behavioral spec>
+- [ ] <AC 2>
+- [ ] <AC 3>
+
+### Implementation Tasks
 
 1. **<Step title>**
    - File: `<path/to/file>`
    - Change: <what to do>
-   - Details: <specifics if needed>
 
 2. **<Step title>**
    - File: `<path/to/file>`
    - Change: <what to do>
 
-... (all steps)
-
-### Testing
-- [ ] Unit tests for new functionality
-- [ ] Integration tests if applicable
-- [ ] Run test suite to verify
-
-### Risks & Mitigations
-- <risk>: <mitigation>
+### Test Plan
+- [ ] <How to verify AC 1>
+- [ ] <How to verify AC 2>
+- [ ] <How to verify AC 3>
 
 ---
 *Plan created via /plan-issue*
-EOF
-)"
 ```
 
-### 5a. Validate Plan Complete
+### 5.5 Validate Plan
 
-Before moving to stage:ready, verify the implementation plan was added:
+**Before advancing to `ready` status, validate the plan quality.**
 
-1. **Check for plan output** in issue comments:
-   - Look for "Implementation Plan" marker in comments
-   - OR plan document saved to `docs/plans/YYYY-MM-DD-*-plan.md`
+**Validation Rules:**
 
-2. **If validation fails:**
-   - Report: "Cannot advance #<number> to stage:ready: no implementation plan documented."
-   - Do NOT proceed with stage transition
+1. **Required Sections** - Plan must include all of:
+   - Summary (2-3 sentences)
+   - Acceptance Criteria (at least 1 AC)
+   - Implementation Tasks (at least 1 task)
+   - Test Plan (at least 1 test)
 
-3. **If validation passes:** Continue with transition
+2. **AC Quality** - Each acceptance criterion must contain at least one of:
+   - File path (e.g., `src/config/settings.json`)
+   - Command with expected output (e.g., "`npm test` exits with code 0")
+   - Specific behavioral description (e.g., "clicking X shows Y")
+
+3. **Task Specificity** - Each implementation task must reference:
+   - A file path (e.g., `File: src/utils/helper.ts`)
+
+**Run Validation:**
+
+Check your plan against these rules. For each rule, verify compliance.
+
+**If Validation Fails:**
+
+Update the task body with the validation failure details:
+
+```
+## Plan Validation Failed
+
+The plan did not meet quality requirements:
+
+- [ ] Required sections: <PASS/FAIL - list missing sections>
+- [ ] AC quality: <PASS/FAIL - list ACs missing specificity>
+- [ ] Task specificity: <PASS/FAIL - list tasks missing file paths>
+
+Please update the plan to address these issues before moving to `ready` status.
+
+---
+*Validation performed via /plan-issue*
+```
+
+Move back to plan status:
+```bash
+hte tasks update <id> --status plan
+```
+
+Report: "Plan validation failed for task <id>. See task details." and stop.
+
+**If Validation Passes:**
+
+Proceed to Section 6 to move the task to `ready` status.
 
 ### 6. Move to Ready
 
 ```bash
-gh issue edit <number> --remove-label "stage:plan" --remove-label "in-progress" --add-label "stage:ready"
+hte tasks update <id> --status ready
 ```
 
 ## Output Format
 
 ```
-Selected: #<number> - <title>
+Selected: <id> - <title>
 
 [Planning session...]
 
-Plan added to issue with N steps.
-Moved to: stage:ready
+Plan added to task with N steps.
+Moved to: ready
 
-Issue #<number> is now ready for implementation.
+Task <id> is now ready for implementation.
 Run /pick-issue to start working on it.
 ```

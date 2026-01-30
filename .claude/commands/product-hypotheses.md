@@ -1,6 +1,6 @@
 ---
 description: Manage the hypotheses catalog - testable beliefs about what will work
-allowed-tools: Bash(git:*), Bash(gh issue create:*), Bash(gh label list:*), Skill, Read, Write, Glob, Grep
+allowed-tools: Bash(git:*), Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Product Hypotheses
@@ -84,31 +84,15 @@ When to use: When deciding what to build next.
    - High impact + high confidence = just build it
    - Low impact = park it
 
-4. **Create GitHub Issue:**
+4. **Create HTE Task:**
 
-   After selecting a hypothesis, create an issue:
+   After selecting a hypothesis, create a task:
 
    ```bash
-   gh issue create --title "Test [H#]: [Hypothesis Name]" --label "hypothesis,stage:brainstorm" --body "$(cat <<'EOF'
-   ## Hypothesis Test
-
-   **From:** HYPOTHESES.md - [H#]
-
-   **Belief:** We believe that [X] will [Y]
-
-   **Because:** [reasoning]
-
-   **Test:** We'll know this works when [signal]
-
-   **Investment Area:** [from roadmap]
-
-   ---
-   *Created via /product-hypotheses*
-   EOF
-   )"
+   hte tasks create --title "Test [H#]: [Hypothesis Name]" --status brainstorm --data '{"body":"## Hypothesis Test\n\n**From:** HYPOTHESES.md - [H#]\n\n**Belief:** We believe that [X] will [Y]\n\n**Because:** [reasoning]\n\n**Test:** We'"'"'ll know this works when [signal]\n\n**Investment Area:** [from roadmap]\n\n---\n*Created via /product-hypotheses*"}'
    ```
 
-   If this is a large hypothesis, also add the `epic` label.
+   If this is a large hypothesis requiring multiple child tasks, use `/product-epic` after creating the task.
 
 5. Update HYPOTHESES.md status to "🔵 Testing"
 

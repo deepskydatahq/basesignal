@@ -62,66 +62,68 @@ npm run lint
 
 ## Development Workflow
 
-This project uses a three-stage issue pipeline with Claude Code commands.
+This project uses a three-stage task pipeline with Claude Code commands and HTE (Headless Task Engine).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
 │   /new-feature ──┐                                                      │
-│   /retro ────────┼──► stage:brainstorm ──► stage:plan ──► stage:ready   │
-│                  │         │                   │              │         │
-│                  │    /brainstorm          /plan-issue    /pick-issue   │
-│                  │    /brainstorm-auto    plan-issues.sh  run-issue.sh  │
-│                  │   brainstorm-issues.sh                     │         │
-│                  │                                            │         │
-│                  └────────────────────────────────────────────┘         │
-│                              (retro discovers more issues)              │
+│   /retro ────────┼──► brainstorm ──► plan ──► ready                     │
+│                  │       │             │         │                      │
+│                  │  /brainstorm    /plan-issue  /pick-issue             │
+│                  │  /brainstorm-auto           run-issue.sh             │
+│                  │  brainstorm-issues.sh  plan-issues.sh               │
+│                  │                                                      │
+│                  └──────────────────────────────────────────┘           │
+│                              (retro discovers more tasks)               │
 │                                                                         │
-│   /brainstorm-epics ──► product-epic ──► stage:brainstorm (children)    │
+│   /brainstorm-epics ──► product-epic ──► brainstorm (children)          │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Issue Stages
+### Task Statuses
 
-| Stage | Label | Description |
-|-------|-------|-------------|
-| **Brainstorm** | `stage:brainstorm` | Needs design exploration |
-| **Plan** | `stage:plan` | Needs implementation plan |
-| **Ready** | `stage:ready` | Has plan, ready to code |
+| Status | Description |
+|--------|-------------|
+| `brainstorm` | Needs design exploration |
+| `plan` | Needs implementation plan |
+| `ready` | Has plan, ready to code |
+| `in_progress` | Currently being worked on |
+| `done` | Completed |
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `/new-feature` | Brainstorm idea → design doc → GitHub issue |
+| `/new-feature` | Brainstorm idea → design doc → HTE task |
 | `/brainstorm-epics` | Generate epic candidates from vision + roadmap |
-| `/brainstorm` | Interactive brainstorm for `stage:brainstorm` queue |
+| `/brainstorm` | Interactive brainstorm for `brainstorm` queue |
 | `/brainstorm-auto` | Autonomous brainstorm with expert personas (Butterfield + Abramov + Jobs) |
-| `/plan-issue` | Process `stage:plan` queue |
-| `/pick-issue` | Process `stage:ready` queue |
+| `/plan-issue` | Process `plan` queue |
+| `/pick-issue` | Process `ready` queue |
 | `/retro` | Post-implementation analysis |
 
 ### Headless Automation
 
 ```bash
-# Brainstorm issues (stage:brainstorm → stage:plan)
-./brainstorm-issues.sh              # Single issue
-./brainstorm-issues.sh --loop       # Process all brainstorm issues
-./brainstorm-issues.sh 15           # Brainstorm specific issue #15
+# Brainstorm tasks (brainstorm → plan)
+./brainstorm-issues.sh              # Single task
+./brainstorm-issues.sh --loop       # Process all brainstorm tasks
+./brainstorm-issues.sh 01KFJ4YM... # Brainstorm specific task
 
-# Plan issues (stage:plan → stage:ready)
-./plan-issues.sh                    # Single issue
-./plan-issues.sh --loop             # Process all plan issues
-./plan-issues.sh --max 5            # Limit to 5 issues
+# Plan tasks (plan → ready)
+./plan-issues.sh                    # Single task
+./plan-issues.sh --loop             # Process all plan tasks
+./plan-issues.sh --max 5            # Limit to 5 tasks
 
-# Implement issues (stage:ready → done)
-./run-issue.sh                      # Single issue
-./run-issue.sh --loop               # Process all ready issues
-./run-issue.sh --random --max 5     # Random 5 issues
+# Implement tasks (ready → done)
+./run-issue.sh                      # Single task
+./run-issue.sh --loop               # Process all ready tasks
+./run-issue.sh --max 5              # Limit to 5 tasks
 ```
 
-All scripts support `--random`, `--loop`, `--max N`, and `--continue-on-error` flags.
+All scripts support `--loop`, `--max N`, and `--continue-on-error` flags.
 
 ---
 
@@ -138,7 +140,7 @@ HYPOTHESES.md      ← "What bets?" (living)
     ↓
 product epic       ← "What tasks test this?" (per hypothesis)
     ↓
-Epic + Issues → Issue Pipeline → /retro
+Epic + Tasks → Task Pipeline → /retro
     ↓
 product iteration  ← "What did we learn?"
 ```
@@ -150,21 +152,21 @@ product iteration  ← "What did we learn?"
 | `product vision` | VISION.md | Rarely (pivots only) |
 | `product roadmap` | ROADMAP.md | Periodic (monthly/quarterly) |
 | `product hypotheses` | HYPOTHESES.md | Constantly (living) |
-| `product epic` | Creates GitHub epic + issues | Per hypothesis |
+| `product epic` | Creates HTE epic + tasks | Per hypothesis |
 | `product iteration` | Updates HYPOTHESES.md | After features |
 
 ### The Flow
 
 1. **Starting:** `product vision` → `product roadmap` → `product hypotheses`
-2. **Day-to-day:** `product epic` → creates epic + `stage:brainstorm` child issues
+2. **Day-to-day:** `product epic` → creates epic + `brainstorm` child tasks
 3. **After feature:** `product iteration` → update learnings → next hypothesis
 
-### Special Labels
+### Task Metadata
 
-| Label | Purpose |
-|-------|---------|
-| `hypothesis` | Issue tests a product hypothesis |
-| `epic` | Large issue that breaks into children |
+| Key | Purpose |
+|-----|---------|
+| `hypothesis` | Task tests a product hypothesis |
+| `epic` | Large task that breaks into children |
 
 ---
 

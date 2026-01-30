@@ -1,40 +1,39 @@
 ---
-description: Pick an issue needing brainstorming and run a design session
-allowed-tools: Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh issue edit:*), Bash(gh issue create:*), Bash(gh issue close:*), Skill, Read, Write, Glob, Grep
+description: Pick a task needing brainstorming and run a design session
+allowed-tools: Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Brainstorm
 
-Pick an issue from the `stage:brainstorm` queue and run a brainstorming session.
+Pick a task from the `brainstorm` queue and run a brainstorming session.
 
 ## Arguments
 
 - No argument: Pick from queue
-- Issue number (e.g., `/brainstorm 15`): Brainstorm specific issue regardless of label
+- Task ID (e.g., `/brainstorm 01KFJ4YM...`): Brainstorm specific task regardless of status
 
-## Current Issues Needing Brainstorming
+## Current Tasks Needing Brainstorming
 
-!`gh issue list --state open --label "stage:brainstorm" --json number,title,labels,createdAt --limit 20`
+!`hte tasks list --status brainstorm --json`
 
 ## Instructions
 
-### 1. Select Issue
+### 1. Select Task
 
 **If argument provided:**
-- Use that issue number directly
-- Fetch details: `gh issue view <number>`
+- Use that task ID directly
+- Fetch details: `hte tasks get <id>`
 
 **If no argument:**
-- If no issues with `stage:brainstorm`: Report "No issues need brainstorming. Run `/new-feature` to create some." and stop.
-- Otherwise, pick the best issue based on:
-  - Skip issues with `in-progress` label
-  - Priority: `critical` > `bug` > `enhancement`
-  - Age: older issues first
+- If no tasks with `brainstorm` status: Report "No tasks need brainstorming. Run `/new-feature` to create some." and stop.
+- Otherwise, pick the best task based on:
+  - Skip tasks with `in_progress` status
+  - Age: older tasks first
 
-### 2. Claim the Issue
+### 2. Claim the Task
 
 ```bash
-gh issue edit <number> --add-label in-progress
+hte tasks update <id> --status in_progress
 ```
 
 ### 3. Run Brainstorming Session
@@ -52,35 +51,35 @@ Invoke the `superpowers:brainstorming` skill with the issue context:
 After brainstorming completes, determine:
 
 **Single coherent piece of work:**
-- Update the original issue with design decisions
-- Assess next stage (see criteria below)
-- Move to that stage
+- Update the original task with design decisions
+- Assess next status (see criteria below)
+- Move to that status
 
 **Multiple independent pieces:**
-- Create child issues for each piece
-- Each child gets its own stage assessment
-- Close original with links to children
+- Create child tasks for each piece
+- Each child gets its own status assessment
+- Mark original as done with links to children
 
-### 5. Stage Assessment Criteria
+### 5. Status Assessment Criteria
 
 For each piece of work (original or child), assess:
 
 ```
-stage:brainstorm if ANY of:
+brainstorm if ANY of:
   - Still has unresolved design questions
   - Needs further user input on approach
   - Affects architecture and needs more thought
 
-stage:plan if:
+plan if:
   - Design decisions are made
   - Solution is known but involves multiple files/steps
   - Ready for detailed implementation planning
 
-stage:ready if ALL of:
+ready if ALL of:
   - Trivial, mechanical change
   - Specific file and location known
   - No risk of unintended consequences
-  (This should be RARE - prefer stage:plan)
+  (This should be RARE - prefer plan)
 ```
 
 ### 6. Save Design Document (if substantial)
@@ -113,62 +112,54 @@ Document structure:
 <How do we know it works?>
 ```
 
-### 6a. Validate Before Stage Advancement
+### 6a. Validate Before Status Advancement
 
-Before advancing to any stage beyond brainstorm, verify brainstorming work is documented:
+Before advancing to any status beyond brainstorm, verify brainstorming work is documented:
 
-1. **Check for brainstorm output** in issue comments:
+1. **Check for brainstorm output** in task body:
    - Look for "Brainstorming Complete" or "Auto-Brainstorming Complete" marker
    - OR design document saved to `docs/plans/YYYY-MM-DD-*-design.md`
 
 2. **If validation fails:**
-   - Report: "Cannot advance #<number>: no brainstorm output documented. Complete the brainstorming session first."
-   - Remove `in-progress` label and stop
-   - Do NOT proceed with stage transition
+   - Report: "Cannot advance task <id>: no brainstorm output documented. Complete the brainstorming session first."
+   - Move back to brainstorm status and stop
+   - Do NOT proceed with status transition
 
 3. **If validation passes:** Continue to next section
 
-### 7. Create Child Issues (if breaking down)
+### 7. Create Child Tasks (if breaking down)
 
-For each child issue:
+For each child task:
 
 ```bash
-gh issue create --title "<Child title>" --label "<category>,stage:<stage>" --body "$(cat <<'EOF'
-## Summary
-<what this piece does>
-
-## Context
-Broken out from #<parent> during brainstorming.
-
-## Design Decisions
-- <relevant decisions from brainstorm session>
-
-## Scope
-- <specific files/components involved>
-
----
-*Created via /brainstorm from #<parent>*
-EOF
-)"
+hte tasks create --title "<Child title>" --status <status> --data '{"body":"## Summary\n<what this piece does>\n\n## Context\nBroken out from task <parent-id> during brainstorming.\n\n## Design Decisions\n- <relevant decisions from brainstorm session>\n\n## Scope\n- <specific files/components involved>\n\n---\n*Created via /brainstorm from task <parent-id>*"}'
 ```
 
-### 8. Close Original (if broken down)
+### 8. Mark Original Done (if broken down)
 
 ```bash
-gh issue close <number> --comment "Broken down into:
-- #<child1> - <title> (stage:<stage>)
-- #<child2> - <title> (stage:<stage>)
-- #<child3> - <title> (stage:<stage>)
+hte tasks update <id> --status done
+```
 
-Design exploration complete."
+Update the task body to document the breakdown:
+```
+Broken down into:
+- <child1-id> - <title> (status: <status>)
+- <child2-id> - <title> (status: <status>)
+- <child3-id> - <title> (status: <status>)
+
+Design exploration complete.
 ```
 
 ### 9. Update Original (if not broken down)
 
 ```bash
-gh issue edit <number> --remove-label "stage:brainstorm" --remove-label "in-progress" --add-label "stage:<next-stage>"
+hte tasks update <id> --status <next-status>
+```
 
-gh issue comment <number> --body "## Brainstorming Complete
+Update the task body with brainstorming results:
+```
+## Brainstorming Complete
 
 ### Design Decisions
 - <key decision 1>
@@ -181,25 +172,25 @@ gh issue comment <number> --body "## Brainstorming Complete
 <what the implementation plan should cover>
 
 ---
-*Updated via /brainstorm*"
+*Updated via /brainstorm*
 ```
 
 ## Output Format
 
 ```
-Selected: #<number> - <title>
+Selected: <id> - <title>
 
 [Brainstorming session...]
 
 Outcome: <Single piece | Broken into N pieces>
 
 <If single:>
-Moving to: stage:<next-stage>
-Issue updated with design decisions.
+Moving to: <next-status>
+Task updated with design decisions.
 
 <If broken down:>
 Created:
-- #<child1> - <title> (stage:<stage>)
-- #<child2> - <title> (stage:<stage>)
-Original #<number> closed.
+- <child1-id> - <title> (status: <status>)
+- <child2-id> - <title> (status: <status>)
+Original task <id> marked done.
 ```

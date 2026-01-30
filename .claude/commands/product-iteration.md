@@ -1,6 +1,6 @@
 ---
 description: Product retrospective after completing features - learn and plan next steps
-allowed-tools: Bash(git:*), Bash(gh issue create:*), Skill, Read, Write, Glob, Grep
+allowed-tools: Bash(git:*), Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Product Iteration
@@ -71,34 +71,16 @@ Rank by utility curve logic:
 2. Pre-threshold features needing investment to become useful
 3. Post-threshold polish (only if others are addressed)
 
-### 6. Offer Issue Creation
+### 6. Offer Task Creation
 
 After presenting recommendations, ask:
 
-"Create issues for these recommendations? (y/n)"
+"Create tasks for these recommendations? (y/n)"
 
 If yes, for each recommendation:
 
 ```bash
-gh issue create --title "[Iteration Name]" --label "hypothesis,stage:brainstorm" --body "$(cat <<'EOF'
-## Recommended Iteration
-
-**From:** Product iteration retrospective
-
-**What:** [Description]
-
-**Why:** [Product lens rationale]
-
-**Impact:** [Expected transformation improvement]
-
-**Generated Hypothesis:**
-- Belief: [What we believe]
-- Test: [How we'll know]
-
----
-*Created via /product-iteration*
-EOF
-)"
+hte tasks create --title "[Iteration Name]" --status brainstorm --data '{"body":"## Recommended Iteration\n\n**From:** Product iteration retrospective\n\n**What:** [Description]\n\n**Why:** [Product lens rationale]\n\n**Impact:** [Expected transformation improvement]\n\n**Generated Hypothesis:**\n- Belief: [What we believe]\n- Test: [How we'"'"'ll know]\n\n---\n*Created via /product-iteration*"}'
 ```
 
 ## Output Format
@@ -143,16 +125,16 @@ Present findings as:
 
 1. HYPOTHESES.md should be updated with learnings
 2. If major insight, consider running `/product-roadmap` to review investment areas
-3. Created issues enter the dev workflow: `/brainstorm` → `/plan-issue` → `/pick-issue`
+3. Created tasks enter the dev workflow: `/brainstorm` → `/plan-issue` → `/pick-issue`
 
 ## Connection to Dev Workflow
 
 ```
 /pick-issue completes
     ↓
-/retro → technical follow-ups → stage:* issues
+/retro → technical follow-ups → HTE tasks
     ↓
-/product-iteration → product insights → HYPOTHESES.md + optional issues
+/product-iteration → product insights → HYPOTHESES.md + optional tasks
     ↓
-/product-hypotheses select → next bet → stage:brainstorm issue
+/product-hypotheses select → next bet → brainstorm task
 ```

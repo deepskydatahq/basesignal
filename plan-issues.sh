@@ -1,19 +1,19 @@
 #!/bin/bash
-# Plan issues in headless Claude Code
+# Plan tasks in headless Claude Code
 # Usage: ./plan-issues.sh [--random] [--loop] [--max N] [--continue-on-error]
 #
 # Options:
-#   --random            Pick issues randomly instead of in order
-#   --loop              Process multiple issues sequentially
-#   --max N             Maximum number of issues to process (default: all)
-#   --continue-on-error Continue to next issue if one fails
+#   --random            Pick tasks randomly instead of in order
+#   --loop              Process multiple tasks sequentially
+#   --max N             Maximum number of tasks to process (default: all)
+#   --continue-on-error Continue to next task if one fails
 
 set -e
 
 # Parse args
 PICK_RANDOM=false
 LOOP_MODE=false
-MAX_ISSUES=0
+MAX_TASKS=0
 CONTINUE_ON_ERROR=false
 
 while [[ $# -gt 0 ]]; do
@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --max)
-            MAX_ISSUES="$2"
+            MAX_TASKS="$2"
             shift 2
             ;;
         --continue-on-error)
@@ -42,47 +42,43 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Function to fetch plan issues (sorted by number ascending for dependency order)
-fetch_plan_issues() {
-    gh issue list --state open --label "stage:plan" --json number,title,labels --jq '
-        [.[] | select(.labels | map(.name) | index("in-progress") | not)] | sort_by(.number)
-    '
+# Function to fetch plan tasks
+fetch_plan_tasks() {
+    hte tasks list --status plan --json
 }
 
-# Function to process a single issue
-process_issue() {
-    local ISSUE_NUMBER="$1"
-    local ISSUE_TITLE="$2"
+# Function to process a single task
+process_task() {
+    local TASK_ID="$1"
+    local TASK_TITLE="$2"
 
-    echo "Selected: #$ISSUE_NUMBER - $ISSUE_TITLE"
+    echo "Selected: $TASK_ID - $TASK_TITLE"
 
-    # Claim the issue
-    echo "Claiming issue (adding in-progress label)..."
-    gh issue edit "$ISSUE_NUMBER" --add-label in-progress
+    # Claim the task
+    echo "Claiming task (setting in_progress status)..."
+    hte tasks update "$TASK_ID" --status in_progress
 
-    # Get full issue content
-    echo "Fetching issue details..."
-    ISSUE_BODY=$(gh issue view "$ISSUE_NUMBER" --json body,title,comments --jq '
-        "# Issue: \(.title)\n\n## Description\n\(.body)\n\n## Comments\n" +
-        (.comments | map("---\n\(.body)") | join("\n\n"))
-    ')
+    # Get full task content
+    echo "Fetching task details..."
+    TASK_DATA=$(hte tasks get "$TASK_ID" --json)
+    TASK_BODY=$(echo "$TASK_DATA" | jq -r '"# Task: \(.title)\n\n## Description\n\(.body)"')
 
     # Build the prompt
-    PROMPT="Plan GitHub issue #$ISSUE_NUMBER: $ISSUE_TITLE
+    PROMPT="Plan HTE task $TASK_ID: $TASK_TITLE
 
-$ISSUE_BODY
+$TASK_BODY
 
 ---
 
 ## Instructions
 
-You are creating an implementation plan for this issue. Follow these steps:
+You are creating an implementation plan for this task. Follow these steps:
 
 ### 1. Invoke the Writing Plans Skill
 
 Use the \`superpowers:writing-plans\` skill with this argument:
 \`\`\`
-Issue #$ISSUE_NUMBER: $ISSUE_TITLE
+Task $TASK_ID: $TASK_TITLE
 \`\`\`
 
 The skill will guide you through:
@@ -102,12 +98,11 @@ Include appropriate testing in the plan:
 
 Save the detailed plan to: \`docs/plans/$(date +%Y-%m-%d)-<feature-name>.md\`
 
-### 4. Add Plan Summary to Issue
+### 4. Update Task with Plan Summary
 
-After creating the full plan document, add a summary comment to the issue:
+After creating the full plan document, update the task body with:
 
-\`\`\`bash
-gh issue comment $ISSUE_NUMBER --body \"\$(cat <<'EOF'
+\`\`\`
 ## Implementation Plan
 
 **Plan document:** \`docs/plans/<filename>.md\`
@@ -124,14 +119,12 @@ gh issue comment $ISSUE_NUMBER --body \"\$(cat <<'EOF'
 
 ---
 *Plan created via headless session*
-EOF
-)\"
 \`\`\`
 
 ### 5. Move to Ready
 
 \`\`\`bash
-gh issue edit $ISSUE_NUMBER --remove-label \"stage:plan\" --remove-label \"in-progress\" --add-label \"stage:ready\"
+hte tasks update $TASK_ID --status ready
 \`\`\`
 
 ## Output Format
@@ -139,7 +132,7 @@ gh issue edit $ISSUE_NUMBER --remove-label \"stage:plan\" --remove-label \"in-pr
 When complete, report:
 - Plan document location
 - Number of tasks
-- Issue moved to stage:ready
+- Task moved to ready status
 
 ## Start
 
@@ -148,7 +141,7 @@ Begin planning now."
     # Run Claude Code in headless mode
     echo ""
     echo "=========================================="
-    echo "Starting Claude Code for issue #$ISSUE_NUMBER"
+    echo "Starting Claude Code for task $TASK_ID"
     echo "=========================================="
     echo ""
 
@@ -161,69 +154,69 @@ FAILED=0
 
 # Main loop
 while true; do
-    # Fetch issues fresh each iteration (to see newly completed ones)
-    echo "Fetching stage:plan issues..."
-    ISSUES=$(fetch_plan_issues)
+    # Fetch tasks fresh each iteration (to see newly completed ones)
+    echo "Fetching plan tasks..."
+    TASKS=$(fetch_plan_tasks)
 
-    # Check if any issues available
-    COUNT=$(echo "$ISSUES" | jq 'length')
+    # Check if any tasks available
+    COUNT=$(echo "$TASKS" | jq 'length')
     if [[ "$COUNT" -eq 0 ]]; then
         if [[ "$PROCESSED" -gt 0 ]]; then
             echo ""
             echo "=========================================="
-            echo "All issues planned!"
+            echo "All tasks planned!"
             echo "  Completed: $PROCESSED"
             echo "  Failed: $FAILED"
             echo "=========================================="
         else
-            echo "No issues with stage:plan available (all may be in-progress)."
-            echo "Run /brainstorm to process the brainstorming queue, or /new-feature to create issues."
+            echo "No tasks with plan status available (all may be in_progress)."
+            echo "Run /brainstorm to process the brainstorming queue, or /new-feature to create tasks."
         fi
         exit 0
     fi
 
-    echo "Found $COUNT issue(s) needing planning"
+    echo "Found $COUNT task(s) needing planning"
 
     # Check if we've hit max
-    if [[ "$MAX_ISSUES" -gt 0 && "$PROCESSED" -ge "$MAX_ISSUES" ]]; then
+    if [[ "$MAX_TASKS" -gt 0 && "$PROCESSED" -ge "$MAX_TASKS" ]]; then
         echo ""
         echo "=========================================="
-        echo "Reached maximum issues ($MAX_ISSUES)"
+        echo "Reached maximum tasks ($MAX_TASKS)"
         echo "  Completed: $PROCESSED"
         echo "  Failed: $FAILED"
         echo "=========================================="
         exit 0
     fi
 
-    # Pick an issue
+    # Pick a task
     if [[ "$PICK_RANDOM" == true ]]; then
         INDEX=$((RANDOM % COUNT))
-        echo "Picking random issue (index $INDEX)..."
+        echo "Picking random task (index $INDEX)..."
     else
         INDEX=0
-        echo "Picking first issue..."
+        echo "Picking first task..."
     fi
 
-    ISSUE_NUMBER=$(echo "$ISSUES" | jq -r ".[$INDEX].number")
-    ISSUE_TITLE=$(echo "$ISSUES" | jq -r ".[$INDEX].title")
+    TASK_ID=$(echo "$TASKS" | jq -r ".[$INDEX].id")
+    TASK_TITLE=$(echo "$TASKS" | jq -r ".[$INDEX].title")
 
-    # Process the issue
+    # Process the task
     if [[ "$CONTINUE_ON_ERROR" == true ]]; then
         set +e
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
+        process_task "$TASK_ID" "$TASK_TITLE"
         EXIT_CODE=$?
         set -e
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
-            echo "Issue #$ISSUE_NUMBER failed with exit code $EXIT_CODE"
+            echo "Task $TASK_ID failed with exit code $EXIT_CODE"
             FAILED=$((FAILED + 1))
-            # Remove in-progress label on failure so it can be retried
-            gh issue edit "$ISSUE_NUMBER" --remove-label in-progress 2>/dev/null || true
+            # Reset status on failure so it can be retried
+            hte tasks update "$TASK_ID" --status plan 2>/dev/null || true
         else
             PROCESSED=$((PROCESSED + 1))
         fi
     else
-        process_issue "$ISSUE_NUMBER" "$ISSUE_TITLE"
+        process_task "$TASK_ID" "$TASK_TITLE"
         PROCESSED=$((PROCESSED + 1))
     fi
 
@@ -234,14 +227,14 @@ while true; do
 
     echo ""
     echo "=========================================="
-    echo "Issue #$ISSUE_NUMBER planned. Moving to next..."
+    echo "Task $TASK_ID planned. Moving to next..."
     echo "  Progress: $PROCESSED planned, $FAILED failed"
     echo "=========================================="
     echo ""
 
-    # Small delay between issues to prevent rate limiting
+    # Small delay between tasks to prevent rate limiting
     sleep 2
 done
 
-# Note: If claude exits, the in-progress label remains
+# Note: If claude exits, the in_progress status remains
 # This is intentional - manual cleanup needed if abandoned

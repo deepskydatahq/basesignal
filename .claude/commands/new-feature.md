@@ -1,11 +1,11 @@
 ---
-description: Brainstorm a new feature, create design doc, and add to GitHub issues
-allowed-tools: Bash(git:*), Bash(gh issue create:*), Read, Write, Glob, Grep, Skill
+description: Brainstorm a new feature, create design doc, and add to HTE tasks
+allowed-tools: Bash(git:*), Bash(hte tasks:*), Read, Write, Glob, Grep, Skill
 ---
 
 # New Feature
 
-Guide a new feature from idea to design document and GitHub issue.
+Guide a new feature from idea to design document and HTE task.
 
 ## Instructions
 
@@ -64,48 +64,28 @@ Guide a new feature from idea to design document and GitHub issue.
    git commit -m "docs: add <feature> design"
    ```
 
-4. **Assess stage for the issue:**
+4. **Assess status for the task:**
 
-   After brainstorming, determine the appropriate stage:
+   After brainstorming, determine the appropriate status:
 
-   | Condition | Stage |
-   |-----------|-------|
-   | Open questions remain, needs more design exploration | `stage:brainstorm` |
-   | Design is complete, ready for implementation planning (DEFAULT) | `stage:plan` |
-   | Trivial to implement, no planning needed | `stage:ready` (RARE) |
+   | Condition | Status |
+   |-----------|--------|
+   | Open questions remain, needs more design exploration | `brainstorm` |
+   | Design is complete, ready for implementation planning (DEFAULT) | `plan` |
+   | Trivial to implement, no planning needed | `ready` (RARE) |
 
-   **Default to `stage:plan`** - the brainstorming session just completed, so the design should be ready for planning.
+   **Default to `plan`** - the brainstorming session just completed, so the design should be ready for planning.
 
-5. **Create GitHub issue:**
+5. **Create HTE task:**
 
    ```bash
-   gh issue create --title "<Feature Name>" --label "enhancement,stage:<stage>" --body "$(cat <<'EOF'
-   ## Summary
-   <2-3 sentences from design overview>
-
-   ## Design Document
-   See: [docs/plans/YYYY-MM-DD-<feature>-design.md](docs/plans/YYYY-MM-DD-<feature>-design.md)
-
-   ## Key Decisions
-   - <Main architectural choice>
-   - <Key trade-off made>
-   - <Important constraint>
-
-   ## Next Steps
-   - [ ] Review design
-   - [ ] Create implementation plan
-   - [ ] Implement
-
-   ---
-   *Created via /new-feature command*
-   EOF
-   )"
+   hte tasks create --title "<Feature Name>" --status <status> --data '{"body":"## Summary\n<2-3 sentences from design overview>\n\n## Design Document\nSee: docs/plans/YYYY-MM-DD-<feature>-design.md\n\n## Key Decisions\n- <Main architectural choice>\n- <Key trade-off made>\n- <Important constraint>\n\n## Next Steps\n- [ ] Review design\n- [ ] Create implementation plan\n- [ ] Implement\n\n---\n*Created via /new-feature command*"}'
    ```
 
 6. **Offer continuation:**
 
    ```
-   Feature documented and issue #XX created (stage:<stage>).
+   Feature documented and task <id> created (status: <status>).
 
    Ready to create implementation plan now? (y/n)
    ```
@@ -113,7 +93,7 @@ Guide a new feature from idea to design document and GitHub issue.
    If yes:
    - Invoke `superpowers:writing-plans` skill
    - Pass the design document as context
-   - After plan is written, move issue to `stage:ready`
+   - After plan is written, move task to `ready` status
 
    If no:
    - Report: "Design saved. Run `/plan-issue` when ready to create implementation plan."
