@@ -1,7 +1,7 @@
 # BASESIGNAL
-## Product Vision Document
+## Product Vision Document v2
 
-*Outcome-Driven Product Analytics*
+*The Product Knowledge Layer*
 
 **January 2026 | DeepSky Data ApS**
 
@@ -9,12 +9,26 @@
 
 ## Vision Statement
 
-> *Every SaaS product leaks revenue.*
-> *Basesignal shows you where.*
+> *Every product has a story of how it converts users into revenue.*
+> *Basesignal learns that story—from anywhere you work.*
 
-Basesignal transforms how B2B SaaS companies measure product performance. We help teams shift from interaction-driven tracking (what users click) to outcome-driven measurement (whether users succeed). By defining user stages and measuring conversion between them, companies finally see where their product fails to convert users into revenue.
+Basesignal is the **product knowledge layer**—an intelligence system that crawls, analyzes, and structures everything about how a B2B SaaS product converts users into revenue. Users interact through their preferred AI assistant (Claude, ChatGPT, Cursor), and all knowledge persists in Basesignal's structured data model.
 
-In 15 minutes instead of a week, teams get a journey map, measurement plan, and metric catalog that reveals exactly how much revenue potential their product is losing—and where.
+In 60 seconds instead of two weeks, teams get a comprehensive draft of their product's growth model—activation definitions, journey maps, metric catalogs, and measurement plans—generated from public sources and refined through conversation.
+
+---
+
+## The Paradigm Shift
+
+### Old Model: Build an App, Hope Users Come
+
+Traditional SaaS: You build the UI. Users learn your interface. They come to your app to do their work. You compete for screen time.
+
+### New Model: Build the Intelligence, Meet Users Where They Are
+
+Basesignal doesn't compete for screen time. It becomes a **capability** within tools users already live in. When a PM asks Claude "help me define activation for my product," Basesignal provides the structure, the knowledge, and the persistence.
+
+The interface is whatever AI assistant the user prefers. The value is the structured product knowledge that accumulates over time.
 
 ---
 
@@ -22,26 +36,33 @@ In 15 minutes instead of a week, teams get a journey map, measurement plan, and 
 
 ### The Surface Problem
 
-Product teams have tracking but cannot answer the fundamental question: **Is the product working?**
+Product teams can't answer the fundamental question: **Is our product converting users into revenue?**
 
 ### The Deeper Problem
 
-Measurement was never designed around outcomes. Teams track what is easy to instrument (clicks, pageviews, button taps) rather than what matters to the business (activation, retention, revenue conversion). The result is a big black box between new accounts and revenue, with no visibility into where the product fails.
+They don't have a structured model of how their product creates value. Ask five team members to define "activation" and you'll get five different answers. Ask for the user journey and you'll get a whiteboard sketch from 18 months ago.
 
-### The Consequences
+### Why This Persists
 
-- Events are inconsistent and undocumented
-- Dashboards exist but nobody trusts them
-- When leadership asks "how is the product doing?" there is a scramble
-- Data teams spend weeks building tracking plans that still miss the point
-- No shared language between product, data, and business
+Building this model is hard work. It requires:
+- Gathering information from multiple sources
+- Making dozens of interconnected decisions
+- Getting alignment across teams
+- Keeping it updated as the product evolves
 
-### Who Feels This Pain
+Most teams start this work, get 30% done, and abandon it. The document sits in a forgotten Notion page.
 
-- Product managers who can't prove impact
-- Data analysts asked to "just add tracking" without strategy
-- Founders who know they should be data-driven but don't know where to start
-- Growth teams optimizing metrics that don't ladder to business outcomes
+### What Changes Everything
+
+**What if the model built itself?**
+
+What if you could point at your product's website and get a structured draft of your entire growth model—activation definition, journey stages, metric catalog, entity model—in 60 seconds?
+
+What if refining that model was as easy as having a conversation?
+
+What if that model lived in a system that any AI assistant could access, making every conversation about your product smarter?
+
+That's Basesignal.
 
 ---
 
@@ -49,83 +70,208 @@ Measurement was never designed around outcomes. Teams track what is easy to inst
 
 ### The Keystone Belief
 
-> **"I need to understand how much revenue potential our product is losing."**
+> **"I need a structured model of how my product converts users to revenue—but I don't have time to build one from scratch."**
 
 This belief is central because:
 
-1. **It reframes the problem.** Most people think they have a tracking problem or a data quality problem. The real problem is they can't see where their product is failing to convert users into revenue.
+1. **It acknowledges the need.** Teams know they should have clear definitions, journey maps, and metrics. They just never get around to building them.
 
-2. **It's specific to SaaS.** In SaaS, marketing creates trials—the product creates revenue over time. Every user who signs up represents future revenue potential that can be realized or lost. Most companies have no visibility into this.
+2. **It acknowledges the constraint.** Time is the enemy. Two-week discovery projects don't happen. Elaborate tracking plans gather dust.
 
-3. **It creates urgency.** "Revenue we're losing" is more urgent than "revenue we could gain." Loss aversion drives action.
-
-4. **It qualifies prospects.** People who hold this belief (or can be led to it) are good fits. People who just want "better dashboards" or "more events tracked" are not.
+3. **It creates the opening.** If the model could be generated—not created from scratch—suddenly it's achievable.
 
 ### The Belief Chain
 
-Customers don't start with the keystone belief. They arrive at it through a sequence of smaller, logical steps:
-
 | # | Belief | Type |
 |---|--------|------|
-| 1 | In SaaS, marketing gets people to try us—the product has to deliver revenue over time | 95% starting point |
-| 2 | Every user who signs up represents future revenue potential | Logical extension |
-| 3 | But not every user converts to paying, and not every paying user stays | Observable reality |
-| 4 | The gap between "users acquired" and "revenue realized" is revenue the product failed to capture | The reframe |
-| **5** | **I need to understand how much revenue potential our product is losing** | **KEYSTONE** |
-| 6 | My current tracking doesn't tell me this—it just tracks interactions | Problem recognition |
-| 7 | I need to measure outcomes (user success), not just interactions (clicks) | Solution direction |
-| 8 | User stages show me WHERE the product is losing revenue potential | Mechanism |
-| 9 | Basesignal helps me define outcomes and measure stage conversion | Product fit |
+| 1 | Our product converts some users into revenue, but not all | Observable reality |
+| 2 | The gap between "users acquired" and "revenue realized" is value we're losing | The reframe |
+| 3 | To close that gap, we need to understand where users drop off | Logical extension |
+| 4 | That requires clear definitions: activation, retention, churn, etc. | Mechanism |
+| 5 | We've tried to define these, but never finished / they're outdated | Pain recognition |
+| **6** | **I need a structured model, but I don't have time to build one from scratch** | **KEYSTONE** |
+| 7 | If the model could be generated from existing information... | Solution direction |
+| 8 | ...and refined through conversation rather than workshops... | Solution refinement |
+| 9 | ...then I could finally have what I need | Product fit |
 
 ---
 
-## The Core Reframe
+## How Basesignal Works
 
-### Interaction-Driven vs. Outcome-Driven Tracking
+### Step 1: Scan
 
-This distinction is the philosophical foundation of Basesignal.
+User provides a URL. Basesignal crawls the marketing site, pricing page, documentation, and optionally YouTube channel and review sites.
 
-| Interaction-Driven (Status Quo) | Outcome-Driven (What We Enable) |
-|---------------------------------|---------------------------------|
-| Tracks what users did | Measures whether users succeeded |
-| Events: clicks, pageviews, button taps | Outcomes: onboarded, got value, retained |
-| Answers: "What happened?" | Answers: "Is the product working?" |
-| More events = more noise | Defined outcomes = clarity |
+```
+User: "Scan my product at acme.io"
 
-**Product implication:** Every feature we build should help users move from interaction-driven thinking to outcome-driven thinking.
+Basesignal: Analyzing... found 34 pages, pricing tier structure,
+            documentation at docs.acme.io, 12 YouTube demos.
 
-### User States as a Growth Model
+            Building your product profile...
+```
 
-Instead of measuring interactions, Basesignal measures which states users are in and how they move between states. A state can be: New, Activated, Active, At Risk, or Dormant.
+**Time: 30-90 seconds**
 
-This gives teams not a linear funnel but a loop that shows where they should invest resources.
+### Step 2: Generate
 
-When users define stages (Signed Up → Onboarded → Active → Paying → Retained), they get:
+Basesignal's analysis engine extracts structured information into the data model:
 
-- **A growth model** — For the first time, they can see how users flow through stages
-- **Visibility into loss** — They can see WHERE users drop off (where revenue potential is lost)
-- **Decision-making framework** — They know where to focus product improvements
+- **Core Identity:** What the product is, who it's for
+- **Revenue Architecture:** How money flows, pricing model, expansion paths
+- **Entity Model:** The "things" in the product (users, workspaces, projects, etc.)
+- **User Journey:** Stages from signup to retained revenue
+- **Definitions (draft):** Activation, First Value, Active, Churn
+- **Outcomes:** What users are trying to achieve
+- **Metric Catalog:** Relevant metrics with formulas
 
-### The Three-Layer Framework
+Each element has a confidence score and links to the evidence that informed it.
 
-Basesignal uses a structured, outcome-oriented tracking approach that scales:
+**Output: 70% complete product profile**
 
-| Layer | Question It Answers |
-|-------|---------------------|
-| **Entities** | What are the "things" in your product? |
-| **Activities** | What happens to those things? |
-| **Properties** | What attributes matter about those things? |
+### Step 3: Refine
 
-This creates structured, outcome-oriented tracking that scales.
+User reviews the draft and refines through conversation:
 
-### Value Generation → Value Capture
+```
+User: "The activation definition isn't quite right. We care about
+       whether they connect a data source, not team invites."
 
-This framing helps with product people who resist "revenue" language:
+Basesignal: Updated. New activation definition:
+            "User creates a project AND connects at least one data source"
 
-- **Value generation:** The product helps users achieve their goals
-- **Value capture:** The business captures value (revenue) from users who received value
+            Should I also update the related metrics?
+            Activation Rate formula would change from...
+```
 
-These are connected: if you measure value generation well (outcomes), value capture follows. Product people can focus on user success while still contributing to revenue.
+Refinement happens naturally in conversation. Every update persists. The model gets more accurate over time.
+
+### Step 4: Use Everywhere
+
+The product knowledge is now accessible from any AI assistant:
+
+- Ask Claude to help write a PRD → It knows your activation definition
+- Ask ChatGPT to analyze a feature idea → It knows your user journey
+- Ask Cursor to instrument tracking → It knows your entity model
+
+The knowledge compounds. Every conversation makes the model richer.
+
+---
+
+## The Data Model: Our Moat
+
+### Why the Model Matters
+
+Anyone can crawl a website. Anyone can call an LLM.
+
+**The moat is the structure we impose on the chaos.**
+
+```
+Raw crawled data  →  Basesignal Data Model  →  Actionable knowledge
+(commodity)          (the moat)               (what users get)
+```
+
+### What the Data Model Encodes
+
+| Layer | What It Captures |
+|-------|------------------|
+| **Ontology** | What concepts exist (Activation, First Value, Stage, Outcome, Entity) |
+| **Relationships** | How concepts connect (Activation → belongs to → Journey Stage) |
+| **Inference Rules** | How to derive one thing from another |
+| **Validation Logic** | What makes a definition complete vs. incomplete |
+| **Patterns** | What "good" looks like across product types |
+
+### Concrete Example
+
+Raw extraction: *"Free tier available, $29/seat/month"*
+
+Without model: Just text.
+
+With Basesignal model:
+```yaml
+revenue_architecture:
+  model: seat_based
+  has_free_tier: true
+  entry_price: 29
+  billing_unit: seat
+
+  # Inferred from model rules:
+  likely_expansion_path: add_seats
+  churn_risk_factor: seat_reduction
+  activation_pressure: high  # Free tier = must prove value fast
+
+  # Connected to other concepts:
+  links_to:
+    - journey_stage: "Trial → Paid"
+    - metric: "Free to Paid Conversion Rate"
+    - outcome: "Team Adoption"
+```
+
+The structure is the value. The relationships. The inferences. The connections.
+
+### The Model Gets Smarter
+
+Every product analyzed teaches the model:
+- More inference rules (if X then likely Y)
+- More patterns (DevTools products typically have Z% activation)
+- More benchmarks (data points by vertical, stage, model type)
+- Better validation (this combination usually means incomplete)
+
+**Compounding IP.** The more products use Basesignal, the smarter it gets.
+
+---
+
+## Architecture: MCP-First
+
+### What is MCP?
+
+Model Context Protocol (MCP) is an open standard that lets AI assistants connect to external tools and data sources. When Claude or ChatGPT connects to an MCP server, they gain new capabilities.
+
+### Basesignal as MCP Server
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER'S WORLD                            │
+│                                                                 │
+│    ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
+│    │  Claude  │    │ ChatGPT  │    │  Cursor  │                 │
+│    └────┬─────┘    └────┬─────┘    └────┬─────┘                 │
+│         │               │               │                       │
+│         └───────────────┼───────────────┘                       │
+│                         │ MCP Protocol                          │
+└─────────────────────────┼───────────────────────────────────────┘
+                          │
+┌─────────────────────────┼───────────────────────────────────────┐
+│              BASESIGNAL MCP SERVER                              │
+│                                                                 │
+│  Tools:                                                         │
+│  ├─ scan_product(url)          # Crawl and analyze              │
+│  ├─ get_profile()              # Retrieve full profile          │
+│  ├─ get_definition(type)       # Get activation, churn, etc.    │
+│  ├─ update_definition(...)     # Refine through conversation    │
+│  ├─ get_metrics()              # Metric catalog                 │
+│  ├─ export_profile(format)     # MD, JSON, PDF                  │
+│  └─ ask_about_product(q)       # Query the knowledge            │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                   DATA MODEL + STORAGE                   │   │
+│  │  Product profiles, knowledge graph, inference rules      │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Why MCP-First?
+
+| Advantage | Impact |
+|-----------|--------|
+| **Zero UI barrier** | Users don't learn a new app |
+| **Fits existing workflows** | PMs already use Claude daily |
+| **Compound knowledge** | Every conversation adds to the model |
+| **Solo founder leverage** | AI companies build the UI |
+| **Future-proof** | Works with whatever AI wins |
+
+The web interface is optional—for sharing, visualization, and team collaboration. But the primary interaction is through AI assistants.
 
 ---
 
@@ -133,159 +279,264 @@ These are connected: if you measure value generation well (outcomes), value capt
 
 ### Primary Audience
 
-**Product managers and data analysts at B2B SaaS companies (Seed to Series B)**
+**Product managers and founders at B2B SaaS companies who use AI assistants daily.**
+
+They already ask Claude and ChatGPT for help with product work. Basesignal makes those conversations smarter by grounding them in structured product knowledge.
 
 ### Characteristics
 
-- Know they need better measurement but don't know where to start
-- Have some tracking in place but it's messy/incomplete
-- Want to be data-driven but lack the foundation
-- Don't have a dedicated data team or the data team is overwhelmed
+- Use AI assistants multiple times per day
+- Know they need better product definitions but haven't built them
+- Have tried and abandoned tracking plans, metric definitions, journey maps
+- Want data-driven decisions but lack the foundation
 
-### Entry Points (What They Say)
+### Entry Points
 
-- *"Our tracking is a mess"*
-- *"I don't know what metrics matter"*
-- *"Leadership wants dashboards but I don't trust the data"*
-- *"We're about to rebuild tracking—where do we start?"*
+- *"I need to define activation but don't know where to start"*
+- *"Our team argues about metrics because nothing is defined"*
+- *"I want to instrument tracking but don't have a plan"*
+- *"Help me think through our user journey"*
 
-### Audience-Specific Messaging
+These are things users already ask AI assistants. With Basesignal connected, the answers are grounded in their specific product.
 
-| Audience | Their Rabbit Hole | What They Want |
-|----------|-------------------|----------------|
-| **Analysts** | "I need to fix tracking / choose the right tool / track more events" | To provide insights that actually matter to stakeholders |
-| **Product People** | "I care about user value, not revenue metrics" | To prove that what they build creates real value |
-| **Business Leaders** | "Is the product actually driving revenue?" | Confidence that product investments pay off |
+### Expansion Audiences
 
----
-
-## Product Roadmap: Three Phases
-
-### Phase 1: The Generator (Current Focus)
-
-**Timeline:** February-March 2026 (Onboarding first accounts)
-
-**Belief Addressed:** *"I need to measure outcomes, not just interactions"*
-
-**Value Proposition:** "Know what to track and why—in 15 minutes instead of a week."
-
-**What It Does:**
-
-- Interview-driven journey mapping (AI conducts smooth, non-exhausting interviews)
-- First Value identification
-- Measurement plan generation using the three-layer framework
-- Metric catalog with definitions and formulas
-- Ability to connect to Amplitude/Mixpanel/PostHog to check tracking gaps
-
-**Outputs:**
-
-| Output | What It Is | Why It Matters |
-|--------|------------|----------------|
-| User Journey Map | Visual map from signup → value → revenue → churn | Shared understanding of how users succeed |
-| Measurement Plan | Entities, activities, properties—what to track | Engineering knows exactly what to instrument |
-| Metric Catalog | 6-8 core metrics with definitions and formulas | Everyone agrees on what metrics mean |
-
-**Pricing:** Free with credit usage model (guard rails for AI usage)
+| Audience | Use Case |
+|----------|----------|
+| **Data/Analytics teams** | Structured measurement plans, metric catalogs |
+| **Growth teams** | Journey optimization, conversion definitions |
+| **Engineering teams** | Tracking instrumentation from entity model |
+| **Founders/Executives** | Product health overview, board-ready exports |
 
 ---
 
-### Phase 2: Product Performance Metrics
+## Product Roadmap
 
-**Timeline:** After Summer 2026
+### Phase 1: The Scanner (MVP)
 
-**Belief Addressed:** *"I need to see where revenue potential is being lost"*
-
-**Value Proposition:** "See if your product is actually working—connected to your real data."
+**Goal:** Prove the magic works—URL in, useful profile out.
 
 **What It Does:**
+- MCP server with core tools
+- Website crawling and content extraction
+- LLM analysis into data model
+- Profile generation with confidence scores
+- Basic refinement through conversation
+- Markdown and JSON export
 
-- Connect to reality: integrate with Amplitude, Mixpanel, Segment, data warehouses
-- Gap analysis: "You're tracking 60% of your ideal plan"
-- Product P&L: 10-12 metrics showing how product performance develops
-- Show conversion between stages and where users drop off
-- Quantify revenue potential lost at each stage
+**User Experience:**
+```
+Day 1: User connects Basesignal to Claude
+       "Scan my product at acme.io"
+       → Gets draft profile in 60 seconds
+       → Refines activation definition in conversation
+       → Exports to Notion
 
-**User Value:** Visibility into product performance
+Day 7: Returns to refine more
+       "What's my current activation definition?"
+       → Basesignal remembers everything
+       → Continues refinement
+```
+
+**Success Metrics:**
+- Scanned profiles rated "useful" by >70% of users
+- >50% of users refine at least one definition
+- >30% of users return within 7 days
 
 ---
 
-### Phase 3: Growth Intelligence
+### Phase 2: Extended Intelligence
 
-**Timeline:** End of 2026
-
-**Belief Addressed:** *"I need to know what drives revenue potential"*
+**Goal:** Richer sources, smarter analysis.
 
 **What It Does:**
+- YouTube channel analysis (demos, tutorials)
+- Documentation site parsing
+- G2/Capterra review mining
+- Benchmark comparisons
+- Inference rules engine
+- Product type patterns
 
-- Bring revenue data in (customer lifetime value, plans, etc.)
-- Connect outcomes to features: identify which features drive the most value
-- Micro-segment analysis: compare 100-200 segments by product performance
-- Identify accounts that can be expanded and accounts at risk of churn
-- Actionable intelligence for prioritization
+**User Experience:**
+```
+"Also analyze my YouTube channel and G2 reviews"
+→ First Value moment identified from review sentiment
+→ Onboarding flow extracted from demo videos
+→ Activation compared to B2B SaaS benchmarks
+```
 
-**User Value:** Actionable intelligence for prioritization
+---
+
+### Phase 3: Connected Intelligence
+
+**Goal:** Connect to real data, show actual performance.
+
+**What It Does:**
+- Connect to Amplitude, Mixpanel, Segment
+- Gap analysis: ideal plan vs. actual tracking
+- Live metrics: actual activation rate, retention, etc.
+- Track definition accuracy over time
+
+**User Experience:**
+```
+"Connect my Amplitude account"
+→ "You're tracking 60% of your ideal measurement plan"
+→ "Your activation rate is 34%, below the 42% benchmark"
+→ "These 5 events are missing from your tracking"
+```
+
+---
+
+### Phase 4: Growth Intelligence
+
+**Goal:** Actionable insights for prioritization.
+
+**What It Does:**
+- Feature → outcome correlation
+- Segment analysis (which user types convert best)
+- Expansion opportunity identification
+- Churn risk prediction
+- Prioritization recommendations
+
+**User Experience:**
+```
+"Which features drive activation?"
+→ "Users who use Feature X activate at 2.3x the rate"
+→ "Segment Y has 45% higher LTV but only 12% of signups"
+→ "Prioritize: improving Feature X for Segment Y"
+```
 
 ---
 
 ## Competitive Positioning
 
-Basesignal fills a gap that exists **before** you instrument tracking and **before** you set up dashboards: knowing *what* to track and *why*.
+### The Gap We Fill
+
+Basesignal fills a gap that exists **before** analytics tools and **above** raw data:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  "What should we measure and why?"        ← BASESIGNAL          │
+├─────────────────────────────────────────────────────────────────┤
+│  "Measure these events"                   ← Tracking Plans      │
+├─────────────────────────────────────────────────────────────────┤
+│  "Here's your data"                       ← Analytics Tools     │
+├─────────────────────────────────────────────────────────────────┤
+│  "Here's your raw events"                 ← Data Infrastructure │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Competitive Landscape
 
 | Category | Examples | How We're Different |
 |----------|----------|---------------------|
-| Tracking Plan Templates | Spreadsheets, Notion templates | We generate, not template. Interactive, not static. |
-| Analytics Tools | Amplitude, Mixpanel, Heap | They measure what you track. We tell you what to track. |
-| Data Modeling | dbt, Census | Infrastructure layer. We're strategy layer. |
-| Consulting | Analytics consultants | We productize the discovery process. 15 min vs. 2 weeks. |
+| **Analytics Tools** | Amplitude, Mixpanel | They measure what you track. We tell you what to track and why. |
+| **Tracking Plans** | Avo, Iteratively | They validate events. We define the strategy that informs events. |
+| **Data Modeling** | dbt, Census | Infrastructure layer. We're the strategy layer. |
+| **AI Assistants** | Claude, ChatGPT | General purpose. We add structured product knowledge. |
+| **Consulting** | Analytics consultants | We productize the discovery. 60 seconds vs. 2 weeks. |
 
-### Why Analytics Platforms Won't Build This
+### Why Incumbents Won't Build This
 
-Product analytics platforms are not built for outcome-driven measurement. They are built for interactions. This is mostly for historical reasons—tracking interactions was the first thing people thought to measure.
+1. **Analytics tools** are built for interactions, not outcomes. Rebuilding around outcome-driven measurement would cannibalize their core product.
 
-Calculating an activation rate is possible in these tools, but putting it on a time series segmented by marketing channel will not work out of the box.
+2. **AI assistants** don't persist knowledge. Every conversation starts fresh. They can't accumulate product understanding over time.
 
-Basesignal sits **on top** of these tools, not replacing them, but adding what they will most likely never build.
+3. **Neither** has the specialized data model. They don't encode the relationships between activation, journey stages, metrics, and revenue.
+
+Basesignal sits **on top** of AI assistants (via MCP) and **before** analytics tools (defining what to measure). It's a new layer, not a replacement.
+
+---
+
+## Business Model
+
+### MCP-Native Pricing
+
+The MCP model enables clean usage-based pricing:
+
+| Tier | What's Included | Price |
+|------|-----------------|-------|
+| **Free** | 1 product, basic scan, 10 refinements/month | $0 |
+| **Pro** | 3 products, extended sources, unlimited refinements, export | $29/month |
+| **Team** | Unlimited products, collaboration, benchmarks, API access | $99/month |
+
+Alternative: Pure usage-based
+- $1 per scan
+- $0.10 per refinement
+- $2 per export
+
+### Revenue Potential
+
+| Metric | Conservative | Optimistic |
+|--------|--------------|------------|
+| Users Year 1 | 500 | 2,000 |
+| Paid Conversion | 10% | 20% |
+| ARPU | $30/month | $50/month |
+| ARR Year 1 | $18,000 | $240,000 |
+
+The real upside is in Phase 3-4: connected data and intelligence. That's where enterprise value emerges.
 
 ---
 
 ## Key Product Decisions
 
-1. **Setup Mode is the product (for now):** Users must complete a guided setup to get value. This isn't onboarding—it's the core experience. 15 minutes of input → week's worth of output.
+### 1. MCP-First, Web-Optional
 
-2. **Interview-driven, not form-driven:** We ask questions conversationally. This surfaces better information than forms and educates users along the way.
+The primary interface is AI assistants via MCP. Web UI exists for sharing, visualization, and edge cases—not as the main product.
 
-3. **Opinionated defaults:** We generate a standard metric set (activation rate, retention, MRR, churn, etc.) plus product-specific metrics. Users can customize, but the defaults should be right for 80% of cases.
+**Rationale:** Meet users where they are. Don't compete for screen time. Leverage AI companies' UI investment.
 
-4. **Education is embedded:** Many users won't know concepts like "First Value" or metric trees. The product teaches as it guides.
+### 2. Crawl-Then-Refine, Not Interview-First
 
-5. **Community as support (for now):** Discord community is mandatory at launch. Direct feedback loop while we're small. Inspired by Superhuman's setup calls, adapted for solo founder bandwidth.
+We generate draft profiles from public sources, then refine through conversation. Users correct rather than create.
 
-6. **Solo founder experiment:** No investment, no additional team members. This is an experiment to see how far one person can push things with the tools available in 2026.
+**Rationale:** Correction is easier than creation. Instant value creates engagement. "How did it know that?" is a hook.
+
+### 3. Data Model Is the Product
+
+The structured ontology—concepts, relationships, inference rules—is the core IP. Everything else is interface.
+
+**Rationale:** Crawling is commodity. LLMs are commodity. Structure is defensible.
+
+### 4. Confidence Over Completeness
+
+Every generated element has a confidence score. We'd rather be transparent about uncertainty than pretend false precision.
+
+**Rationale:** Trust requires honesty. Users can prioritize refinement based on confidence.
+
+### 5. Solo Founder, AI-Leveraged
+
+One person, maximum AI leverage, minimal infrastructure. This is an experiment in what's possible in 2026.
+
+**Rationale:** Stay lean, move fast, validate before scaling.
 
 ---
 
-## What Success Looks Like
+## Success Metrics
 
 ### For Users
 
-- *"I finally have a tracking plan I can hand to engineering"*
-- *"Our team agrees on what metrics mean"*
-- *"I can see the gap between what we track and what we should track"*
-- *"This would have taken us weeks"*
+- *"It figured out more about my product in 60 seconds than I could explain in an hour"*
+- *"My team finally agrees on what activation means"*
+- *"Every conversation with Claude about my product is smarter now"*
+- *"I actually have a measurement plan I can hand to engineering"*
 
 ### For Basesignal (Phase 1)
 
-- Users complete Setup Mode and get all three outputs
-- Outputs are good enough to use immediately (not just demos)
-- Users return to reference/refine their measurement foundation
-- Word of mouth: "You need to try this"
+| Metric | Target |
+|--------|--------|
+| Scanned profiles | 500 |
+| "Useful" rating | >70% |
+| Return rate (7-day) | >30% |
+| Paid conversion | >10% |
 
 ### For Basesignal (Phase 2+)
 
-- Users connect their actual tracking
-- Gap analysis drives instrumentation work
-- Metrics update with real data
-- Basesignal becomes the source of truth for "Is the product working?"
+| Metric | Target |
+|--------|--------|
+| Connected data sources | >100 |
+| Monthly active products | >1,000 |
+| ARR | >$100,000 |
 
 ---
 
@@ -293,40 +544,51 @@ Basesignal sits **on top** of these tools, not replacing them, but adding what t
 
 ### Headline
 
-> **100 events. Zero answers.**
+> **Your product's growth model—generated in 60 seconds.**
 
 ### Core Message
 
-*Your tracking measures clicks. It should measure success.*
+Every product has a story of how it converts users into revenue. But most teams have never written that story down. Definitions are vague. Journey maps are outdated. Metrics are undefined.
 
-Most product analytics setups track interactions—what users did. But interactions don't tell you if users are succeeding.
+Basesignal changes that. Point us at your website, and we'll draft your complete growth model—activation definitions, user journey, metric catalog, measurement plan. Then refine it through conversation with your AI assistant.
 
-Basesignal helps you define outcomes, measure what matters, and finally see how well your product converts users into value.
+Finally, a structured understanding of how your product works—without the two-week discovery project.
 
 ### Tagline Options
 
-- Outcome-driven product analytics
-- Track outcomes, not just events
-- See where your product loses revenue
-- From interactions to outcomes
+- The product knowledge layer
+- Your growth model, generated
+- Product intelligence for AI assistants
+- From URL to understanding in 60 seconds
+
+### Positioning Statement
+
+**For** product teams at B2B SaaS companies
+**Who** need structured definitions of how their product converts users to revenue
+**Basesignal is** a product knowledge layer
+**That** generates comprehensive growth models from public sources and refines them through conversation
+**Unlike** traditional analytics tools or manual discovery processes
+**We** deliver a complete, structured product model in 60 seconds instead of 2 weeks.
 
 ---
 
-## Guiding Principles for Product Development
+## The Founder's Bet
 
-These principles should inform every product decision:
+This product is a bet on three trends:
 
-### Feature Prioritization
-*Ask: "Does this feature help users move from interaction-driven to outcome-driven thinking?"*
+### 1. AI Assistants Become Primary Interface
 
-### UX/Copy Decisions
-*Ask: "Does this reinforce the belief that outcomes > interactions?"*
+More and more work happens through conversation with AI. Tools that integrate with this paradigm will win over tools that fight it.
 
-### Success Metrics
-*Ask: "Are we measuring whether users achieve clarity on product performance—not just whether they use features?"*
+### 2. Structure Becomes Valuable Again
 
-### Onboarding
-*Ask: "Does our onboarding guide users through the belief chain—starting with outcomes, not with connecting data sources?"*
+In a world of infinite generated content, structured knowledge becomes scarce and valuable. The data model is the moat.
+
+### 3. Product-Led Growth Demands Clarity
+
+As PLG matures, "just ship and see" isn't enough. Teams need rigorous understanding of their growth models. But they don't have time to build it manually.
+
+Basesignal sits at the intersection: **structured product knowledge, accessible through AI assistants, generated automatically.**
 
 ---
 
@@ -334,15 +596,64 @@ These principles should inform every product decision:
 
 | Element | Description |
 |---------|-------------|
-| **The Problem** | SaaS companies track lots of events but can't answer "Is our product converting users into revenue?" |
-| **Why It Exists** | Their tracking is interaction-driven (clicks) instead of outcome-driven (user success) |
-| **The Keystone Belief** | "I need to understand how much revenue potential our product is losing." |
-| **The Mechanism** | User stages as a growth model—define stages, measure conversion, see where revenue is lost |
-| **The Reframe** | Outcome-driven tracking starts with defining what success looks like, then identifies what to measure |
-| **Phase 1** | Help users define outcomes and create an outcome-driven tracking plan |
-| **Phase 2** | Show product performance metrics and where revenue potential is lost |
-| **Phase 3** | Connect outcomes to features and segments for prioritization intelligence |
+| **The Problem** | Teams can't answer "how does our product convert users to revenue?" because they lack structured definitions |
+| **Why It Persists** | Building the model is hard work that never gets finished |
+| **The Insight** | What if the model generated itself from existing information? |
+| **The Mechanism** | Crawl public sources → Generate structured profile → Refine through conversation |
+| **The Moat** | The data model: ontology, relationships, inference rules, patterns |
+| **The Interface** | MCP server accessible from any AI assistant |
+| **Phase 1** | Scanner: URL → draft profile → conversational refinement |
+| **Phase 2** | Extended sources: YouTube, docs, reviews, benchmarks |
+| **Phase 3** | Connected data: actual metrics from analytics tools |
+| **Phase 4** | Growth intelligence: prioritization and prediction |
 
 ---
 
-> **Basesignal helps B2B SaaS teams build measurement foundations in 15 minutes instead of a week.**
+> **Basesignal: The product knowledge layer—accessible from any AI, generated in 60 seconds, refined through conversation.**
+
+---
+
+*Version 2.0*
+*January 2026*
+*DeepSky Data ApS*
+
+---
+---
+
+## Version History
+
+### v1: Outcome-Driven Product Analytics (January 2026)
+
+The original vision positioned Basesignal as a **web application** for outcome-driven product analytics. Key differences from v2:
+
+| Aspect | v1 | v2 |
+|--------|----|----|
+| **Tagline** | "Outcome-Driven Product Analytics" | "The Product Knowledge Layer" |
+| **Primary interface** | Web app with guided setup | MCP server via AI assistants |
+| **Core mechanism** | AI-conducted interview (15 min) | URL scan + crawl (60 seconds) |
+| **User interaction** | Come to our app, complete setup | Stay in your AI assistant, we come to you |
+| **Value creation** | User answers questions → outputs generated | Public sources crawled → draft generated → user refines |
+| **Moat** | Opinionated framework + education | Structured data model + compounding inference rules |
+| **Keystone belief** | "I need to understand how much revenue potential our product is losing" | "I need a structured model, but I don't have time to build one from scratch" |
+| **Time to value** | 15 minutes | 60 seconds |
+| **Phase 1** | "The Generator" — interview-driven journey mapping | "The Scanner" — URL → draft profile |
+
+#### What Carried Forward
+
+These v1 ideas remain core to v2:
+- **The problem space**: Teams can't answer "Is our product converting users into revenue?"
+- **Outcome-driven thinking**: Measuring success, not just interactions
+- **The three-layer framework**: Entities, Activities, Properties
+- **Competitive positioning**: Sits above analytics tools, before tracking plans
+- **Solo founder experiment**: Maximum AI leverage, minimal infrastructure
+- **Later phases**: Connected data (Amplitude/Mixpanel) and growth intelligence
+
+#### What Changed and Why
+
+1. **Interface shift (app → MCP)**: Instead of building a UI and competing for screen time, become a capability within tools users already use daily. This is the biggest strategic shift—from "build an app" to "build intelligence."
+
+2. **Input shift (interview → crawl)**: Instead of asking users to spend 15 minutes answering questions, generate a 70% complete draft from public sources in 60 seconds. Correction is easier than creation.
+
+3. **Moat shift (framework → data model)**: The defensibility moved from "an opinionated measurement framework" to "a structured ontology with compounding inference rules." Every product analyzed makes the model smarter.
+
+4. **Belief shift**: v1 emphasized loss aversion ("revenue you're losing"). v2 emphasizes the time constraint ("I don't have time to build one from scratch") and the magic of instant generation.
