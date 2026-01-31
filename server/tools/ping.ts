@@ -8,7 +8,7 @@ export function registerPingTool(server: McpServer) {
       description:
         "Check that the Basesignal MCP server is running and authenticated. Returns server status and your user ID.",
     },
-    async (_args, extra) => {
+    async (extra) => {
       const authInfo = extra.authInfo as { userId?: string } | undefined;
       const userId = authInfo?.userId ?? null;
 
