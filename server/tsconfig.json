@@ -3,14 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "outDir": "../dist/server",
-    "rootDir": ".",
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "sourceMap": true
+    "resolveJsonModule": true
   },
   "include": ["./**/*.ts"],
   "exclude": ["node_modules", "**/*.test.ts"]

@@ -10,8 +10,9 @@ function getClerkId(authInfo?: AuthInfo): string | null {
   return extra?.userId ?? null;
 }
 
-/** MCP tool call result type */
+/** MCP tool call result type (index signature required by MCP SDK) */
 interface ToolResult {
+  [key: string]: unknown;
   content: Array<{ type: "text"; text: string }>;
   isError?: boolean;
 }
