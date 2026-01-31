@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { withUser } from "../lib/withUser.js";
 
 export function registerPingTool(server: McpServer) {
   server.registerTool(
@@ -6,12 +7,9 @@ export function registerPingTool(server: McpServer) {
     {
       title: "Ping Basesignal",
       description:
-        "Check that the Basesignal MCP server is running and authenticated. Returns server status and your user ID.",
+        "Check that the Basesignal MCP server is running and authenticated. Returns server status and your user identity.",
     },
-    async (extra) => {
-      const authInfo = extra.authInfo as { userId?: string } | undefined;
-      const userId = authInfo?.userId ?? null;
-
+    withUser(async (user) => {
       return {
         content: [
           {
@@ -20,13 +18,16 @@ export function registerPingTool(server: McpServer) {
               status: "ok",
               server: "basesignal",
               version: "0.1.0",
-              authenticated: !!userId,
-              userId,
+              authenticated: true,
+              userId: user._id,
+              clerkId: user.clerkId,
+              email: user.email,
+              name: user.name,
               timestamp: new Date().toISOString(),
             }),
           },
         ],
       };
-    }
+    })
   );
 }
