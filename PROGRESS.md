@@ -37,3 +37,28 @@
 **Gotchas:**
 - Worktree npm install needed — `node_modules` isn't shared between worktrees
 - Pre-existing test failures (9 timeout tests in v1 UI components) shouldn't block new work
+
+### 2026-01-31 - Story 2.1: Basic Page Crawler
+
+**Files Changed:**
+- `convex/lib/urlUtils.ts` - URL validation (SSRF prevention), page classification, filtering
+- `convex/lib/urlUtils.test.ts` - 31 tests for URL utilities
+- `convex/scanning.ts` - Firecrawl-powered scan pipeline as internalAction
+- `convex/scans.ts` - User-facing startProductScan mutation + getLatestScan query
+- `convex/scans.test.ts` - 10 tests for scan mutations and queries
+- `convex/scanJobs.ts` - Added createInternal mutation for action pipeline
+- `package.json` - Added @mendable/firecrawl-js dependency
+
+**Learnings:**
+- Firecrawl batch scrape is async — returns a job ID, needs polling
+- Convex actions can call `ctx.runMutation` with internal mutations for DB writes
+- `ctx.scheduler.runAfter` is the right pattern for kicking off long-running actions from mutations
+- `convex-test` doesn't handle scheduled functions cleanly — causes "Write outside of transaction" errors that are harmless
+
+**Patterns Discovered:**
+- Async scan pattern: user mutation validates + schedules → internal action runs pipeline → internal mutations update state
+- URL filtering pattern: map → classify → prioritize → limit to prevent over-crawling
+
+**Gotchas:**
+- `convex-test` with `ctx.scheduler.runAfter` produces unhandled rejection errors — all test assertions still pass, but the exit code is 1 due to the noise
+- Skip patterns need exact matching: `/legal/` won't match `/legal` — use `/legal` without trailing slash
