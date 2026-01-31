@@ -16,6 +16,9 @@ export default defineSchema({
     image: v.optional(v.string()),
     name: v.optional(v.string()),
 
+    // MCP authentication (password-based)
+    hashedPassword: v.optional(v.string()), // Bcrypt hash of password for MCP auth
+
     // Onboarding
     onboardingComplete: v.optional(v.boolean()),
     onboardingStep: v.optional(v.string()),
@@ -60,7 +63,7 @@ export default defineSchema({
 
   authTokens: defineTable({
     userId: v.id("users"),
-    token: v.string(),                    // Hashed token for security
+    token: v.string(),                    // JWT token
     name: v.string(),                     // Human-readable name (e.g., "MCP Client", "API Integration")
     status: v.string(),                   // "active" | "revoked" | "expired"
     expiresAt: v.number(),                // Unix timestamp
