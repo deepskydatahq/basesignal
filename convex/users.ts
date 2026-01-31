@@ -225,6 +225,52 @@ export const setPrimaryEntity = mutation({
   },
 });
 
+// Get or create user by Clerk ID (called from MCP server via ConvexHttpClient).
+// Unlike createOrGetUser which uses ctx.auth, this accepts clerkId directly
+// because the MCP server validates JWTs via @clerk/mcp-tools, not Convex auth.
+export const getOrCreateByClerkId = mutation({
+  args: {
+    clerkId: v.string(),
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+  },
+  handler: async (ctx, { clerkId, email, name, image }) => {
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .first();
+
+    if (existingUser) {
+      return {
+        _id: existingUser._id,
+        clerkId: existingUser.clerkId!,
+        email: existingUser.email ?? null,
+        name: existingUser.name ?? null,
+        image: existingUser.image ?? null,
+      };
+    }
+
+    const userId = await ctx.db.insert("users", {
+      clerkId,
+      email,
+      name,
+      image,
+      onboardingComplete: false,
+      setupStatus: "not_started",
+      createdAt: Date.now(),
+    });
+
+    return {
+      _id: userId,
+      clerkId,
+      email: email ?? null,
+      name: name ?? null,
+      image: image ?? null,
+    };
+  },
+});
+
 // Legacy: Reset onboarding (deprecated, use resetSetup instead)
 export const resetOnboarding = mutation({
   args: {
