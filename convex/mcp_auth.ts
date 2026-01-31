@@ -218,11 +218,6 @@ export const validateToken = query({
       };
     }
 
-    // Update lastUsedAt
-    await ctx.db.patch(authToken._id, {
-      lastUsedAt: Date.now(),
-    });
-
     return {
       isValid: true,
       userId: tokenData.userId,
@@ -266,11 +261,6 @@ export const getCurrentUser = query({
     if (authToken.expiresAt < Date.now()) {
       return null;
     }
-
-    // Update lastUsedAt
-    await ctx.db.patch(authToken._id, {
-      lastUsedAt: Date.now(),
-    });
 
     // Get user info
     const user = await ctx.db.get(tokenData.userId);
