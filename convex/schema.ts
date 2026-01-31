@@ -427,4 +427,199 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_entity", ["entityId"])
     .index("by_entity_and_name", ["entityId", "name"]),
+
+  // === MCP v2 Tables ===
+
+  products: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    url: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"]),
+
+  productProfiles: defineTable({
+    productId: v.id("products"),
+
+    // === Core Identity ===
+    identity: v.optional(v.object({
+      productName: v.string(),
+      description: v.string(),
+      targetCustomer: v.string(),
+      businessModel: v.string(),
+      industry: v.optional(v.string()),
+      companyStage: v.optional(v.string()),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+
+    // === Revenue Architecture ===
+    revenue: v.optional(v.object({
+      model: v.string(),
+      billingUnit: v.optional(v.string()),
+      hasFreeTier: v.boolean(),
+      tiers: v.array(v.object({
+        name: v.string(),
+        price: v.string(),
+        features: v.array(v.string()),
+      })),
+      expansionPaths: v.array(v.string()),
+      contractionRisks: v.array(v.string()),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+
+    // === Entity Model ===
+    entities: v.optional(v.object({
+      items: v.array(v.object({
+        name: v.string(),
+        type: v.string(),
+        properties: v.array(v.string()),
+      })),
+      relationships: v.array(v.object({
+        from: v.string(),
+        to: v.string(),
+        type: v.string(),
+      })),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+
+    // === Journey Stages ===
+    journey: v.optional(v.object({
+      stages: v.array(v.object({
+        name: v.string(),
+        description: v.string(),
+        order: v.number(),
+      })),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+
+    // === Definitions (per-field confidence + source tracking) ===
+    definitions: v.optional(v.object({
+      activation: v.optional(v.object({
+        criteria: v.array(v.string()),
+        timeWindow: v.optional(v.string()),
+        reasoning: v.string(),
+        confidence: v.number(),
+        source: v.string(),
+        evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+      })),
+      firstValue: v.optional(v.object({
+        description: v.string(),
+        criteria: v.array(v.string()),
+        reasoning: v.string(),
+        confidence: v.number(),
+        source: v.string(),
+        evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+      })),
+      active: v.optional(v.object({
+        criteria: v.array(v.string()),
+        timeWindow: v.optional(v.string()),
+        reasoning: v.string(),
+        confidence: v.number(),
+        source: v.string(),
+        evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+      })),
+      atRisk: v.optional(v.object({
+        criteria: v.array(v.string()),
+        timeWindow: v.optional(v.string()),
+        reasoning: v.string(),
+        confidence: v.number(),
+        source: v.string(),
+        evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+      })),
+      churn: v.optional(v.object({
+        criteria: v.array(v.string()),
+        timeWindow: v.optional(v.string()),
+        reasoning: v.string(),
+        confidence: v.number(),
+        source: v.string(),
+        evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+      })),
+    })),
+
+    // === Outcomes ===
+    outcomes: v.optional(v.object({
+      items: v.array(v.object({
+        description: v.string(),
+        type: v.string(),
+        linkedFeatures: v.array(v.string()),
+      })),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+
+    // === Metrics ===
+    metrics: v.optional(v.object({
+      items: v.array(v.object({
+        name: v.string(),
+        category: v.string(),
+        formula: v.optional(v.string()),
+        linkedTo: v.array(v.string()),
+      })),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+
+    // === Computed Meta ===
+    completeness: v.number(),
+    overallConfidence: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_product", ["productId"]),
+
+  scanJobs: defineTable({
+    productId: v.id("products"),
+    userId: v.id("users"),
+    status: v.string(),
+    url: v.string(),
+
+    // Progress tracking
+    pagesCrawled: v.number(),
+    pagesTotal: v.optional(v.number()),
+    currentPhase: v.string(),
+
+    // Results
+    crawledPages: v.optional(v.array(v.object({
+      url: v.string(),
+      pageType: v.optional(v.string()),
+      title: v.optional(v.string()),
+    }))),
+
+    // Discovered resources
+    discoveredDocs: v.optional(v.string()),
+    discoveredPricing: v.optional(v.string()),
+
+    // Error tracking
+    error: v.optional(v.string()),
+
+    // Timing
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_product", ["productId"])
+    .index("by_user", ["userId"]),
+
+  crawledPages: defineTable({
+    productId: v.id("products"),
+    scanJobId: v.id("scanJobs"),
+    url: v.string(),
+    pageType: v.string(),
+    title: v.optional(v.string()),
+    content: v.string(),
+    contentLength: v.number(),
+    metadata: v.optional(v.object({
+      description: v.optional(v.string()),
+      ogImage: v.optional(v.string()),
+      structuredData: v.optional(v.string()),
+    })),
+    crawledAt: v.number(),
+  })
+    .index("by_product", ["productId"])
+    .index("by_scan_job", ["scanJobId"])
+    .index("by_product_type", ["productId", "pageType"]),
 });
