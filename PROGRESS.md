@@ -12,6 +12,35 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-01-31 - Story 1.2: User Authentication
+
+**Files Changed:**
+- `convex/users.ts` - Added `getOrCreateByClerkId` public mutation for MCP server user resolution
+- `convex/users.test.ts` - Added 3 tests for getOrCreateByClerkId (creation, idempotency, null fields)
+- `server/lib/auth.ts` - New: `resolveUser()` helper calling Convex via ConvexHttpClient with in-memory cache
+- `server/lib/auth.test.ts` - New: 4 tests for resolveUser (Convex calls, caching, cache clearing)
+- `server/lib/withUser.ts` - New: `withUser()` and `withUserArgs()` wrappers for authenticated tool handlers
+- `server/lib/withUser.test.ts` - New: 5 tests for withUser/withUserArgs (auth extraction, error handling)
+- `server/tools/ping.ts` - Updated to use `withUser()`, returns Convex user identity
+- `server/tools/ping.test.ts` - Updated description assertion
+- `server/tsconfig.json` - Simplified to avoid pulling in unrelated convex files
+
+**Learnings:**
+- `@clerk/mcp-tools` stores the Clerk userId in `authInfo.extra.userId` (not directly on authInfo)
+- MCP SDK's `AuthInfo` type is at `@modelcontextprotocol/sdk/server/auth/types.js`
+- MCP tool handler return types require `[x: string]: unknown` index signature
+- ConvexHttpClient calls public mutations/queries — can't use `ctx.auth.getUserIdentity()` from there
+- Server tsconfig with `rootDir: "."` fails when imports reach into `convex/` — removed rootDir and outDir, use noEmit
+
+**Patterns Discovered:**
+- `withUser(handler)` pattern: wraps tool handler to auto-resolve Clerk → Convex user, returns error if unauthenticated
+- `withUserArgs(handler)` variant for tools with input schemas
+- In-memory user cache in resolveUser avoids repeated Convex calls per session
+
+**Gotchas:**
+- `convex/seed.ts` has a pre-existing TS2742 error that surfaces when included transitively via `_generated/api.d.ts`
+- Pre-existing frontend test timeouts (8 tests) still present on main — unrelated to auth changes
+
 ### 2026-01-31 - Story 1.1: MCP Server Skeleton
 
 **Files Changed:**
