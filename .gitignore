@@ -31,5 +31,8 @@ convex/*.js.map
 playwright-report/
 test-results/
 
+# MCP server
+mcp-sessions.db
+
 # Git worktrees
 .worktrees/
