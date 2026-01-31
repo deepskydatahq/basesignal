@@ -52,6 +52,26 @@ export const get = query({
   },
 });
 
+// Internal version for use by Convex actions (no auth check)
+export const createInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+    userId: v.id("users"),
+    url: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("scanJobs", {
+      productId: args.productId,
+      userId: args.userId,
+      status: "mapping",
+      url: args.url,
+      pagesCrawled: 0,
+      currentPhase: "Discovering pages",
+      startedAt: Date.now(),
+    });
+  },
+});
+
 export const updateProgress = internalMutation({
   args: {
     jobId: v.id("scanJobs"),
