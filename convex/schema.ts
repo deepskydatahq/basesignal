@@ -58,6 +58,19 @@ export default defineSchema({
     .index("email", ["email"])
     .index("by_share_token", ["shareToken"]),
 
+  authTokens: defineTable({
+    userId: v.id("users"),
+    token: v.string(),                    // Hashed token for security
+    name: v.string(),                     // Human-readable name (e.g., "MCP Client", "API Integration")
+    status: v.string(),                   // "active" | "revoked" | "expired"
+    expiresAt: v.number(),                // Unix timestamp
+    lastUsedAt: v.optional(v.number()),   // Track usage for security audit
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_token", ["token"])
+    .index("by_user_and_status", ["userId", "status"]),
+
   setupProgress: defineTable({
     userId: v.id("users"),
 
