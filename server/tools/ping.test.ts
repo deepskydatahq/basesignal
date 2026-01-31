@@ -19,7 +19,7 @@ describe("ping tool", () => {
     const ping = tools["ping"];
     expect(ping).toBeDefined();
     expect(ping.description).toBe(
-      "Check that the Basesignal MCP server is running and authenticated. Returns server status and your user ID."
+      "Check that the Basesignal MCP server is running and authenticated. Returns server status and your user identity."
     );
   });
 });
