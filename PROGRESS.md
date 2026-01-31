@@ -12,6 +12,57 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-01-31 - Story 1.4: Basic Data Persistence
+
+**Files Changed:**
+- `convex/schema.ts` - Added 4 new tables: products, productProfiles, scanJobs, crawledPages
+- `convex/products.ts` - CRUD functions with ownership checks
+- `convex/products.test.ts` - 8 tests for products CRUD and ownership
+- `convex/productProfiles.ts` - Profile management with section updates and completeness calculation
+- `convex/productProfiles.test.ts` - 10 tests for profiles including completeness math
+- `convex/scanJobs.ts` - Scan pipeline state tracking with internal mutations
+- `convex/scanJobs.test.ts` - 7 tests for scan job lifecycle
+- `convex/crawledPages.ts` - Crawled content storage with 100KB truncation
+- `convex/crawledPages.test.ts` - 7 tests for page storage and retrieval
+
+**Learnings:**
+- The `convex-test` `withIdentity` pattern works well for testing ownership checks
+- Internal mutations (`internalMutation`) are the right pattern for pipeline operations that shouldn't be called directly by users
+- Completeness calculation across nested sections (definitions sub-keys) needs careful counting
+
+**Patterns Discovered:**
+- Ownership check helper pattern: look up user by Clerk ID, then verify product ownership before any operation
+- Setup helper pattern in tests: `setupUserAndProduct()` returns `{ userId, productId, asUser }` for clean test setup
+
+**Gotchas:**
+- Worktree npm install needed — `node_modules` isn't shared between worktrees
+- Pre-existing test failures (9 timeout tests in v1 UI components) shouldn't block new work
+
+### 2026-01-31 - Story 2.1: Basic Page Crawler
+
+**Files Changed:**
+- `convex/lib/urlUtils.ts` - URL validation (SSRF prevention), page classification, filtering
+- `convex/lib/urlUtils.test.ts` - 31 tests for URL utilities
+- `convex/scanning.ts` - Firecrawl-powered scan pipeline as internalAction
+- `convex/scans.ts` - User-facing startProductScan mutation + getLatestScan query
+- `convex/scans.test.ts` - 10 tests for scan mutations and queries
+- `convex/scanJobs.ts` - Added createInternal mutation for action pipeline
+- `package.json` - Added @mendable/firecrawl-js dependency
+
+**Learnings:**
+- Firecrawl batch scrape is async — returns a job ID, needs polling
+- Convex actions can call `ctx.runMutation` with internal mutations for DB writes
+- `ctx.scheduler.runAfter` is the right pattern for kicking off long-running actions from mutations
+- `convex-test` doesn't handle scheduled functions cleanly — causes "Write outside of transaction" errors that are harmless
+
+**Patterns Discovered:**
+- Async scan pattern: user mutation validates + schedules → internal action runs pipeline → internal mutations update state
+- URL filtering pattern: map → classify → prioritize → limit to prevent over-crawling
+
+**Gotchas:**
+- `convex-test` with `ctx.scheduler.runAfter` produces unhandled rejection errors — all test assertions still pass, but the exit code is 1 due to the noise
+- Skip patterns need exact matching: `/legal/` won't match `/legal` — use `/legal` without trailing slash
+
 ### 2026-01-31 - Story 1.2: User Authentication
 
 **Files Changed:**
