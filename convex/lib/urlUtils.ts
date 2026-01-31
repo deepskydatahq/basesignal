@@ -97,15 +97,41 @@ export function shouldCrawl(url: string): boolean {
   return !SKIP_PATTERNS.some((p) => path.includes(p));
 }
 
+const DOCS_PATH_PREFIXES = [
+  "/docs",
+  "/help",
+  "/support",
+  "/knowledge-base",
+  "/developer",
+  "/api-docs",
+  "/reference",
+  "/guides",
+  "/learn",
+  "/wiki",
+];
+
+const DOCS_HOSTNAME_PREFIXES = [
+  "docs.",
+  "help.",
+  "support.",
+  "developer.",
+  "learn.",
+  "wiki.",
+];
+
 /**
  * Check if a URL is likely a documentation site.
+ * Detects docs subdomains (docs.*, help.*, etc.) and docs paths (/docs, /help, etc.).
  */
 export function isDocsSite(url: string): boolean {
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.toLowerCase();
     const path = parsed.pathname.toLowerCase();
-    return hostname.startsWith("docs.") || path.startsWith("/docs");
+    return (
+      DOCS_HOSTNAME_PREFIXES.some((prefix) => hostname.startsWith(prefix)) ||
+      DOCS_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
+    );
   } catch {
     return false;
   }

@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const create = mutation({
@@ -110,6 +110,19 @@ export const update = mutation({
     await ctx.db.patch(args.id, {
       ...(args.name !== undefined && { name: args.name }),
       ...(args.url !== undefined && { url: args.url }),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const updateDocsUrlInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+    docsUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.productId, {
+      docsUrl: args.docsUrl,
       updatedAt: Date.now(),
     });
   },

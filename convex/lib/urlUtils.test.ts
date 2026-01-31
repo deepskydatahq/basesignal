@@ -134,14 +134,82 @@ describe("isDocsSite", () => {
     expect(isDocsSite("https://docs.acme.io/api")).toBe(true);
   });
 
+  it("detects help subdomains", () => {
+    expect(isDocsSite("https://help.acme.io")).toBe(true);
+    expect(isDocsSite("https://help.acme.io/articles/setup")).toBe(true);
+  });
+
+  it("detects support subdomains", () => {
+    expect(isDocsSite("https://support.acme.io")).toBe(true);
+  });
+
+  it("detects developer subdomains", () => {
+    expect(isDocsSite("https://developer.acme.io")).toBe(true);
+    expect(isDocsSite("https://developer.acme.io/reference")).toBe(true);
+  });
+
+  it("detects learn subdomains", () => {
+    expect(isDocsSite("https://learn.acme.io")).toBe(true);
+  });
+
+  it("detects wiki subdomains", () => {
+    expect(isDocsSite("https://wiki.acme.io")).toBe(true);
+  });
+
   it("detects /docs paths", () => {
     expect(isDocsSite("https://acme.io/docs")).toBe(true);
     expect(isDocsSite("https://acme.io/docs/api")).toBe(true);
   });
 
+  it("detects /help paths", () => {
+    expect(isDocsSite("https://acme.io/help")).toBe(true);
+    expect(isDocsSite("https://acme.io/help/getting-started")).toBe(true);
+  });
+
+  it("detects /support paths", () => {
+    expect(isDocsSite("https://acme.io/support")).toBe(true);
+  });
+
+  it("detects /knowledge-base paths", () => {
+    expect(isDocsSite("https://acme.io/knowledge-base")).toBe(true);
+    expect(isDocsSite("https://acme.io/knowledge-base/article/123")).toBe(true);
+  });
+
+  it("detects /developer paths", () => {
+    expect(isDocsSite("https://acme.io/developer")).toBe(true);
+  });
+
+  it("detects /api-docs paths", () => {
+    expect(isDocsSite("https://acme.io/api-docs")).toBe(true);
+    expect(isDocsSite("https://acme.io/api-docs/v2/endpoints")).toBe(true);
+  });
+
+  it("detects /reference paths", () => {
+    expect(isDocsSite("https://acme.io/reference")).toBe(true);
+  });
+
+  it("detects /guides paths", () => {
+    expect(isDocsSite("https://acme.io/guides")).toBe(true);
+    expect(isDocsSite("https://acme.io/guides/quickstart")).toBe(true);
+  });
+
+  it("detects /learn paths", () => {
+    expect(isDocsSite("https://acme.io/learn")).toBe(true);
+  });
+
+  it("detects /wiki paths", () => {
+    expect(isDocsSite("https://acme.io/wiki")).toBe(true);
+  });
+
   it("does not flag non-docs URLs", () => {
     expect(isDocsSite("https://acme.io/pricing")).toBe(false);
     expect(isDocsSite("https://acme.io/features")).toBe(false);
+    expect(isDocsSite("https://acme.io/blog")).toBe(false);
+    expect(isDocsSite("https://acme.io/about")).toBe(false);
+  });
+
+  it("returns false for invalid URLs", () => {
+    expect(isDocsSite("not-a-url")).toBe(false);
   });
 });
 
