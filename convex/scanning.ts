@@ -162,6 +162,14 @@ export const startScan = internalAction({
       });
       await ctx.runMutation(internal.scanJobs.complete, { jobId });
 
+      // Persist discovered docs URL on the product
+      if (docsUrl) {
+        await ctx.runMutation(internal.products.updateDocsUrlInternal, {
+          productId: args.productId,
+          docsUrl,
+        });
+      }
+
       return {
         jobId,
         pagesDiscovered: discoveredUrls.length,

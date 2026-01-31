@@ -434,6 +434,7 @@ export default defineSchema({
     userId: v.id("users"),
     name: v.string(),
     url: v.string(),
+    docsUrl: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
