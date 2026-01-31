@@ -16,8 +16,9 @@ export default defineSchema({
     image: v.optional(v.string()),
     name: v.optional(v.string()),
 
-    // MCP authentication (password-based)
-    hashedPassword: v.optional(v.string()), // Bcrypt hash of password for MCP auth
+    // MCP Authentication (token-based auth for API/CLI access)
+    hashedPassword: v.optional(v.string()), // bcrypt hashed password for non-Clerk users
+    passwordCreatedAt: v.optional(v.number()), // Timestamp for password creation
 
     // Onboarding
     onboardingComplete: v.optional(v.boolean()),
@@ -63,16 +64,15 @@ export default defineSchema({
 
   authTokens: defineTable({
     userId: v.id("users"),
-    token: v.string(),                    // JWT token
-    name: v.string(),                     // Human-readable name (e.g., "MCP Client", "API Integration")
-    status: v.string(),                   // "active" | "revoked" | "expired"
-    expiresAt: v.number(),                // Unix timestamp
-    lastUsedAt: v.optional(v.number()),   // Track usage for security audit
-    createdAt: v.number(),
+    token: v.string(),                // JWT token
+    expiresAt: v.number(),            // Expiration timestamp
+    createdAt: v.number(),            // Creation timestamp
+    lastUsedAt: v.optional(v.number()), // For tracking active sessions
+    revokedAt: v.optional(v.number()), // For logout/revocation
   })
     .index("by_user", ["userId"])
     .index("by_token", ["token"])
-    .index("by_user_and_status", ["userId", "status"]),
+    .index("by_expiration", ["expiresAt"]),
 
   setupProgress: defineTable({
     userId: v.id("users"),
