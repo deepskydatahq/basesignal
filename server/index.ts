@@ -40,7 +40,7 @@ app.use(
 // Serve at both the base path and path-specific URLs (e.g. /mcp)
 const prmHandler = protectedResourceHandlerClerk();
 app.get("/.well-known/oauth-protected-resource", prmHandler);
-app.get("/.well-known/oauth-protected-resource/*", prmHandler);
+app.get("/.well-known/oauth-protected-resource/:path+", prmHandler);
 
 // Authorization Server Metadata (RFC 8414)
 app.get(
