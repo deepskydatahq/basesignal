@@ -37,10 +37,10 @@ app.use(
 );
 
 // OAuth Protected Resource Metadata (RFC 9728)
-app.get(
-  "/.well-known/oauth-protected-resource",
-  protectedResourceHandlerClerk()
-);
+// Serve at both the base path and path-specific URLs (e.g. /mcp)
+const prmHandler = protectedResourceHandlerClerk();
+app.get("/.well-known/oauth-protected-resource", prmHandler);
+app.get("/.well-known/oauth-protected-resource/*", prmHandler);
 
 // Authorization Server Metadata (RFC 8414)
 app.get(
