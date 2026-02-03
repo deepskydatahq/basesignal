@@ -80,7 +80,8 @@ const DEFINITION_KEYS = ["activation", "firstValue", "active", "atRisk", "churn"
 // Actually per design doc: identity, revenue, entities, journey, definitions.activation, definitions.firstValue, definitions.active, definitions.churn, outcomes, metrics = 10
 const TOTAL_SECTIONS = 10;
 
-async function getAuthenticatedUser(ctx: { auth: { getUserIdentity: () => Promise<{ subject: string } | null> }; db: { query: (table: string) => { withIndex: (...args: unknown[]) => { first: () => Promise<{ _id: string } | null> } } } }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getAuthenticatedUser(ctx: any) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
 

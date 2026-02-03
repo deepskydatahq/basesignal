@@ -1,6 +1,7 @@
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { validateUrl, classifyPageType, filterHighValuePages } from "./lib/urlUtils";
 
 /**
@@ -32,7 +33,7 @@ export const startScan = internalAction({
     }
 
     // Create the scan job
-    const jobId = await ctx.runMutation(internal.scanJobs.createInternal, {
+    const jobId: Id<"scanJobs"> = await ctx.runMutation(internal.scanJobs.createInternal, {
       productId: args.productId,
       userId: args.userId,
       url: normalizedUrl,
