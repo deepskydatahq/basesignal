@@ -90,7 +90,8 @@ export function classifyPageType(url: string, rootHostname?: string): string {
   // Matches /pricing, /pricing/, /pricing/enterprise, etc.
   if (path.match(/^\/(pricing|plans)(\/|$)/)) return "pricing";
   if (path.match(/^\/(features?|product)(\/|$)/)) return "features";
-  if (path.match(/^\/(about|company)(\/|$)/)) return "about";
+  // Exclude careers/jobs subpaths from about classification
+  if (path.match(/^\/(about|company)(\/|$)/) && !path.includes("career") && !path.includes("jobs")) return "about";
   if (path.match(/^\/(customers?|case-studies?|stories)(\/|$)/)) return "customers";
   if (path.match(/^\/(enterprise)(\/|$)/)) return "enterprise";
   if (path.match(/^\/(integrations?)(\/|$)/)) return "integrations";
@@ -117,6 +118,8 @@ const SKIP_PATTERNS = [
   ".zip", ".tar", ".gz",
   "/templates/", // Skip template pages (high volume, low value for profiling)
   "sitemap.xml", // Skip sitemaps
+  "/demo/", // Skip demo/sandbox pages (e.g., linear.app/demo/*)
+  "/changelog/", // Skip changelog pages
 ];
 
 // Localized path prefixes to skip (we only want English versions)
