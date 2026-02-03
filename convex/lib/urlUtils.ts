@@ -54,23 +54,58 @@ export function validateUrl(url: string): { valid: boolean; error?: string } {
 
 /**
  * Classify a URL by its likely page type based on URL path patterns.
+ * Uses strict matching for high-value pages to avoid false positives.
+ *
+ * @param url - The URL to classify
+ * @param rootHostname - Optional root hostname for subdomain detection.
+ *   When provided, subdomains are classified separately (status, developers, etc.)
+ *   When not provided, root paths are treated as homepage regardless of subdomain.
  */
-export function classifyPageType(url: string): string {
-  let path: string;
+export function classifyPageType(url: string, rootHostname?: string): string {
+  let parsed: URL;
   try {
-    path = new URL(url).pathname.toLowerCase();
+    parsed = new URL(url);
   } catch {
     return "other";
   }
 
-  if (path === "/" || path === "") return "homepage";
-  if (path.includes("pricing") || path.includes("plans")) return "pricing";
-  if (path.includes("feature") || path.includes("product")) return "features";
-  if (path.includes("about") || path.includes("company")) return "about";
-  if (path.includes("customer") || path.includes("case-stud")) return "customers";
-  if (path.includes("integrat")) return "integrations";
-  if (path.includes("security") || path.includes("compliance")) return "security";
-  if (path.includes("solution") || path.includes("use-case")) return "solutions";
+  const hostname = parsed.hostname.toLowerCase();
+  const path = parsed.pathname.toLowerCase();
+
+  // When rootHostname is provided, check if this is the main domain or a subdomain
+  // Subdomains get their own classification (not "homepage")
+  const isMainDomain = rootHostname
+    ? hostname === rootHostname ||
+      hostname === `www.${rootHostname}` ||
+      `www.${hostname}` === rootHostname
+    : true; // When no rootHostname provided, treat all root paths as homepage
+
+  // Homepage: only root path on main domain
+  if ((path === "/" || path === "") && isMainDomain) return "homepage";
+
+  // Skip templates - they're not product pages
+  if (path.includes("/templates/") || path.startsWith("/templates")) return "template";
+
+  // Strict matching for key pages (path starts with these segments)
+  // Matches /pricing, /pricing/, /pricing/enterprise, etc.
+  if (path.match(/^\/(pricing|plans)(\/|$)/)) return "pricing";
+  if (path.match(/^\/(features?|product)(\/|$)/)) return "features";
+  if (path.match(/^\/(about|company)(\/|$)/)) return "about";
+  if (path.match(/^\/(customers?|case-studies?|stories)(\/|$)/)) return "customers";
+  if (path.match(/^\/(enterprise)(\/|$)/)) return "enterprise";
+  if (path.match(/^\/(integrations?)(\/|$)/)) return "integrations";
+  if (path.match(/^\/(security|compliance|trust)(\/|$)/)) return "security";
+  if (path.match(/^\/(solutions?|use-cases?)(\/|$)/)) return "solutions";
+  if (path.match(/^\/(whiteboard|canvas)(\/|$)/)) return "whiteboard";
+
+  // Subdomain-specific classifications (only when rootHostname provided)
+  if (rootHostname) {
+    if (hostname.startsWith("status.")) return "status";
+    if (hostname.startsWith("developers.") || hostname.startsWith("api.")) return "developers";
+    if (hostname.startsWith("trust.")) return "trust";
+    if (hostname.startsWith("community.")) return "community";
+  }
+
   return "other";
 }
 
@@ -80,17 +115,38 @@ const SKIP_PATTERNS = [
   "/login", "/signup", "/register", "/auth/",
   ".pdf", ".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp",
   ".zip", ".tar", ".gz",
+  "/templates/", // Skip template pages (high volume, low value for profiling)
+  "sitemap.xml", // Skip sitemaps
+];
+
+// Localized path prefixes to skip (we only want English versions)
+const LOCALIZED_PREFIXES = [
+  "/es/", "/de/", "/fr/", "/it/", "/pt/", "/nl/", "/pl/", "/ru/",
+  "/ja/", "/ko/", "/zh/", "/fi/", "/sv/", "/da/", "/no/", "/cs/",
 ];
 
 /**
  * Determine if a URL should be crawled based on path patterns.
- * Skips blog, legal, auth, and asset URLs.
+ * Skips blog, legal, auth, asset, template, and localized URLs.
  */
 export function shouldCrawl(url: string): boolean {
-  let path: string;
+  let parsed: URL;
   try {
-    path = new URL(url).pathname.toLowerCase();
+    parsed = new URL(url);
   } catch {
+    return false;
+  }
+
+  const path = parsed.pathname.toLowerCase();
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Skip help/docs subdomains (they're flagged separately, not crawled for classification)
+  if (hostname.startsWith("help.") || hostname.startsWith("support.")) {
+    return false;
+  }
+
+  // Skip localized versions
+  if (LOCALIZED_PREFIXES.some((p) => path.startsWith(p))) {
     return false;
   }
 
@@ -139,6 +195,11 @@ export function isDocsSite(url: string): boolean {
 
 const MAX_PAGES = 30;
 
+// Page types by priority tier
+const MUST_CRAWL_TYPES = ["homepage", "pricing", "features", "about", "enterprise"];
+const SHOULD_CRAWL_TYPES = ["customers", "integrations", "security", "solutions", "whiteboard"];
+const SKIP_TYPES = ["template", "status", "community"]; // Classified but not crawled
+
 /**
  * Filter a list of discovered URLs to high-value pages.
  * Returns URLs sorted by priority (must-crawl first), limited to MAX_PAGES.
@@ -149,7 +210,7 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
 } {
   let rootHostname: string;
   try {
-    rootHostname = new URL(rootUrl).hostname.toLowerCase();
+    rootHostname = new URL(rootUrl).hostname.toLowerCase().replace(/^www\./, "");
   } catch {
     return { targetUrls: [], docsUrl: undefined };
   }
@@ -160,10 +221,12 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
   const filtered = urls.filter((url) => {
     try {
       const parsed = new URL(url);
-      // Must be same base domain (allow subdomains like www.)
-      if (!parsed.hostname.toLowerCase().endsWith(rootHostname.replace(/^www\./, "")) &&
-          !rootHostname.replace(/^www\./, "").endsWith(parsed.hostname.toLowerCase().replace(/^www\./, ""))) {
-        // Check for docs subdomain
+      const hostname = parsed.hostname.toLowerCase();
+      const baseDomain = hostname.replace(/^www\./, "");
+
+      // Must be same base domain (allow subdomains)
+      if (!hostname.endsWith(rootHostname) && !rootHostname.endsWith(baseDomain)) {
+        // Check for docs subdomain on different domain
         if (isDocsSite(url)) {
           docsUrl = url;
         }
@@ -175,30 +238,54 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
     }
   });
 
-  // Also check filtered URLs for docs sites
+  // Check filtered URLs for docs sites
   for (const url of filtered) {
     if (isDocsSite(url) && !docsUrl) {
       docsUrl = url;
     }
   }
 
-  // Prioritize: homepage and known high-value pages first
-  const mustCrawl: string[] = [];
-  const shouldCrawlUrls: string[] = [];
-  const otherUrls: string[] = [];
+  // Classify and prioritize
+  const mustCrawl: Array<{ url: string; type: string }> = [];
+  const shouldCrawlUrls: Array<{ url: string; type: string }> = [];
+  const otherUrls: Array<{ url: string; type: string }> = [];
 
   for (const url of filtered) {
-    const pageType = classifyPageType(url);
-    if (pageType === "homepage" || pageType === "pricing" || pageType === "features" || pageType === "about") {
-      mustCrawl.push(url);
-    } else if (pageType === "customers" || pageType === "integrations" || pageType === "security" || pageType === "solutions") {
-      shouldCrawlUrls.push(url);
+    const pageType = classifyPageType(url, rootHostname);
+
+    // Skip types we don't want to crawl
+    if (SKIP_TYPES.includes(pageType)) continue;
+
+    if (MUST_CRAWL_TYPES.includes(pageType)) {
+      mustCrawl.push({ url, type: pageType });
+    } else if (SHOULD_CRAWL_TYPES.includes(pageType)) {
+      shouldCrawlUrls.push({ url, type: pageType });
     } else {
-      otherUrls.push(url);
+      otherUrls.push({ url, type: pageType });
     }
   }
 
-  const targetUrls = [...mustCrawl, ...shouldCrawlUrls, ...otherUrls].slice(0, MAX_PAGES);
+  // Deduplicate by type (only keep first of each high-value type)
+  const seenTypes = new Set<string>();
+  const deduped: string[] = [];
 
-  return { targetUrls, docsUrl };
+  for (const { url, type } of mustCrawl) {
+    if (MUST_CRAWL_TYPES.includes(type) && seenTypes.has(type)) continue;
+    seenTypes.add(type);
+    deduped.push(url);
+  }
+
+  for (const { url, type } of shouldCrawlUrls) {
+    if (SHOULD_CRAWL_TYPES.includes(type) && seenTypes.has(type)) continue;
+    seenTypes.add(type);
+    deduped.push(url);
+  }
+
+  // Fill remaining slots with "other" pages
+  for (const { url } of otherUrls) {
+    if (deduped.length >= MAX_PAGES) break;
+    deduped.push(url);
+  }
+
+  return { targetUrls: deduped.slice(0, MAX_PAGES), docsUrl };
 }
