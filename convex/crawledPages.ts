@@ -121,3 +121,20 @@ export const removeByScanJob = internalMutation({
     }
   },
 });
+
+// MCP-facing query: accepts userId directly for auth (MCP server validates via Clerk JWT)
+export const listByProductMcp = query({
+  args: {
+    userId: v.id("users"),
+    productId: v.id("products"),
+  },
+  handler: async (ctx, args) => {
+    const product = await ctx.db.get(args.productId);
+    if (!product || product.userId !== args.userId) return [];
+
+    return await ctx.db
+      .query("crawledPages")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .collect();
+  },
+});
