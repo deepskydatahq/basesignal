@@ -12,6 +12,30 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
+
+**Files Changed:**
+- `convex/crawledPages.ts` - Added `listByProductInternal` internalQuery (auth-free page retrieval for actions)
+- `convex/crawledPages.test.ts` - Added test for listByProductInternal
+- `convex/productProfiles.ts` - Added `createInternal`, `getInternal`, `updateSectionInternal` (auth-free internals for actions)
+- `convex/productProfiles.test.ts` - Added 3 tests for internal functions
+- `convex/analysis/extractIdentity.ts` - New: `extractIdentity` internalAction + pure helper functions
+- `convex/analysis/extractIdentity.test.ts` - New: 19 tests for helper functions (filtering, truncation, parsing, evidence)
+
+**Learnings:**
+- Pure helper functions exported from action files can be unit tested without Convex runtime
+- Claude Haiku model ID is `claude-haiku-4-20250414` for the latest Haiku
+- `internalAction` + `internalMutation` + `internalQuery` is the right pattern for action pipelines that bypass user auth
+- JSON extraction from LLM responses needs to handle code fences (`json...`) and raw JSON
+
+**Patterns Discovered:**
+- Analysis action pattern: fetch pages (internalQuery) → filter/prepare (pure functions) → LLM call → parse (pure function) → store (internalMutation)
+- Separating pure helpers from Convex runtime makes them independently testable with standard Vitest
+- Content truncation preserving whole lines prevents mid-word cuts in LLM context
+
+**Gotchas:**
+- Pre-existing UI test timeouts (AddEntityDialog, AddActivityModal, TrackingMaturityScreen) and "Write outside of transaction" errors from convex-test still present - unrelated to this work
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**
