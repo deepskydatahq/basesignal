@@ -259,4 +259,68 @@ describe("productProfiles", () => {
     const profile = await asOther.query(api.productProfiles.get, { productId });
     expect(profile).toBeNull();
   });
+
+  it("can update a section via internal mutation (no auth)", async () => {
+    const t = convexTest(schema);
+    const { productId } = await setupUserAndProduct(t);
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "identity",
+      data: {
+        productName: "Acme SaaS",
+        description: "A project management tool",
+        targetCustomer: "Engineering teams",
+        businessModel: "B2B SaaS",
+        confidence: 0.7,
+        evidence: [{ url: "https://acme.io", excerpt: "Built for engineering teams" }],
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    expect(profile?.identity?.productName).toBe("Acme SaaS");
+    expect(profile?.completeness).toBeGreaterThan(0);
+  });
+
+  it("updateSectionInternal recalculates completeness after update", async () => {
+    const t = convexTest(schema);
+    const { productId } = await setupUserAndProduct(t);
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    // Add two sections
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "identity",
+      data: {
+        productName: "Acme",
+        description: "Tool",
+        targetCustomer: "Devs",
+        businessModel: "SaaS",
+        confidence: 0.8,
+        evidence: [],
+      },
+    });
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "revenue",
+      data: {
+        model: "subscription",
+        hasFreeTier: false,
+        tiers: [],
+        expansionPaths: [],
+        contractionRisks: [],
+        confidence: 0.6,
+        evidence: [],
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    // 2 sections out of 10 = 0.2
+    expect(profile?.completeness).toBeCloseTo(0.2, 1);
+    // Average confidence: (0.8 + 0.6) / 2 = 0.7
+    expect(profile?.overallConfidence).toBeCloseTo(0.7, 1);
+  });
 });

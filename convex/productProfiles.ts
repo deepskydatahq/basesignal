@@ -202,6 +202,35 @@ export const getInternal = internalQuery({
   },
 });
 
+// Internal version for use by analysis pipeline (no auth check)
+export const updateSectionInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+    section: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+    if (!profile) throw new Error("Profile not found");
+
+    const update: Record<string, unknown> = {
+      [args.section]: args.data,
+      updatedAt: Date.now(),
+    };
+
+    await ctx.db.patch(profile._id, update);
+
+    const updated = await ctx.db.get(profile._id);
+    if (updated) {
+      const { completeness, overallConfidence } = calculateCompletenessAndConfidence(updated);
+      await ctx.db.patch(profile._id, { completeness, overallConfidence });
+    }
+  },
+});
+
 export const updateSection = mutation({
   args: {
     productId: v.id("products"),
