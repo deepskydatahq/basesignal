@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-04 - Story S005: Extract Product Outcomes from Marketing Content
+
+**Files Changed:**
+- `convex/crawledPages.ts` - Added `listByProductInternal` internalQuery for auth-free page access
+- `convex/productProfiles.ts` - Added `createInternal` and `updateSectionInternal` internalMutations for pipeline use
+- `convex/extractOutcomes.ts` - New: `extractOutcomes` internalAction — fetches crawled pages, calls Haiku, stores outcomes
+- `convex/extractOutcomes.test.ts` - 12 tests covering prompt building, JSON parsing, and internal helper integration
+- `convex/lib/extractOutcomesHelpers.ts` - Pure helper functions for prompt construction and response parsing
+
+**Learnings:**
+- Extraction actions that call external APIs (Anthropic) should separate pure logic (prompt building, parsing) from the Convex action for testability
+- `convex-test` can test `internalQuery` and `internalMutation` via `t.query(internal.*)` and `t.mutation(internal.*)` without auth context
+- The `internalAction` itself can't be tested in `convex-test` (needs external API), but extracting helpers makes the logic fully testable
+
+**Patterns Discovered:**
+- Extraction action pattern: `internalAction` → `createInternal` (ensure profile) → `listByProductInternal` (get pages) → Haiku call → `parseOutcomesResponse` → `updateSectionInternal` (store results)
+- Helper extraction pattern: pure functions in `convex/lib/` for prompt building and response parsing — no Convex runtime deps, fully unit-testable
+- Page filtering pattern: filter crawled pages to relevant types (homepage, features, customers) before sending to LLM, with fallback to all pages
+
+**Gotchas:**
+- Pre-existing lint errors in `productProfiles.ts` (`sectionValidators` and `DEFINITION_KEYS` unused) — not introduced by this change
+- Pre-existing UI test failures (AddEntityDialog, AddActivityModal, TrackingMaturityScreen) — timeouts in v1 components
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**
