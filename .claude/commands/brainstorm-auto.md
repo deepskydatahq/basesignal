@@ -1,71 +1,30 @@
 ---
-description: Auto-brainstorm a task using expert personas (Butterfield + Abramov + Jobs)
-allowed-tools: Bash(hte tasks:*), Task, Read, Write, Glob, Grep
+description: Auto-brainstorm a task using expert personas from .claude/experts/
+allowed-tools: Bash(bd:*), Task, Read, Write, Glob, Grep
 ---
 
 # Brainstorm Auto
 
-Pick a task from `brainstorm` status and run an autonomous brainstorming session. Routes questions to expert personas during design, then runs a final simplification review.
+Pick a task from the `brainstorm` queue and run an autonomous brainstorming session. Routes questions to expert personas during design, then runs a final simplification review.
 
 ## Arguments
 
 - No argument: Pick from queue
-- Task ID (e.g., `/brainstorm-auto 01KFJ4YM...`): Brainstorm specific task
+- Task ID (e.g., `/brainstorm-auto basesignal-a3f2dd`): Brainstorm specific task
 
 ## Current Tasks Needing Brainstorming
 
-!`hte tasks list --status brainstorm --json`
+!`bd list --label brainstorm --json`
 
-## Expert Personas
+## Expert Catalog
 
-### Product Expert (Butterfield-style)
+Expert personas are loaded from `.claude/experts/*.md` files. Each file defines an expert with domain, role, type (advisor/reviewer), philosophy, principles, and response format.
 
-**Role**: Answers product questions during brainstorming.
+The Brainstormer agent receives a manifest of available experts and selects which to consult based on the task. It can bring in additional experts mid-session and picks its own reviewer.
 
-**Core philosophy**: "We don't sell saddles here" - focus on the transformation you enable, not the features you ship.
+**Current catalog:**
 
-**Principles:**
-- **Job to be done** - What is the user trying to accomplish? What's their emotional state?
-- **Reduce friction ruthlessly** - Every click, every decision is a chance to lose someone
-- **Magic moments** - Design for delight, not just utility. What makes someone say "wow"?
-- **Transformation over features** - Sell the better version of the user, not the product
-- **Simplicity is respect** - Complexity is disrespectful of the user's time and attention
-- **Iterate on real usage** - Build, ship, watch, learn. Opinions are less valuable than behavior.
-
-### Technical Expert (Abramov-style)
-
-**Role**: Answers technical questions during brainstorming.
-
-**Core philosophy**: Understand the problem deeply before reaching for solutions. Prefer simple mental models that compose.
-
-**Principles:**
-- **Start with why** - What problem are we actually solving? Is this the right problem?
-- **Minimal API surface** - The best API is the one you don't need to document
-- **Composition over configuration** - Small pieces that combine, not big things with options
-- **Escape hatches** - Abstractions leak. Always provide a way out.
-- **Explicit over implicit** - Magic is technical debt. Make behavior visible.
-- **Incremental adoption** - Don't force all-or-nothing. Let people adopt piece by piece.
-- **Question assumptions** - "Everyone does it this way" is not a reason
-
-### Design Reviewer (Jobs-style)
-
-**Role**: Reviews the final design for ruthless simplification. Runs AFTER brainstorming completes.
-
-**Core philosophy**: "Simple can be harder than complex. You have to work hard to get your thinking clean to make it simple."
-
-**Principles:**
-- **Focus is saying no** - "Focus means saying no to the hundred other good ideas. I'm as proud of the things we haven't done as the things I have done."
-- **Design is how it works** - "Design is not just what it looks like and feels like. Design is how it works."
-- **Integrated thinking** - The best solutions feel inevitable because product and technology are inseparable
-- **Obsessive refinement** - Keep removing until you can't remove anything else
-- **Real artists ship** - Perfection is the enemy of done. But "good enough" is also the enemy of great.
-- **No excuses for complexity** - If you can't explain it simply, you don't understand it well enough
-
-**Review questions:**
-- What would you remove from this design?
-- Is every component essential to the core value?
-- Where is hidden complexity that users will feel?
-- Does this feel inevitable or bolted-together?
+!`ls .claude/experts/`
 
 ## Instructions
 
@@ -73,10 +32,10 @@ Pick a task from `brainstorm` status and run an autonomous brainstorming session
 
 **If argument provided:**
 - Use that task ID directly
-- Fetch details: `hte tasks get <id>`
+- Fetch details: `bd show <id> --json`
 
 **If no argument:**
-- If no tasks with `brainstorm` status: Report "No tasks need brainstorming. Run `/new-feature` to create some." and stop.
+- If no tasks with `brainstorm` label: Report "No tasks need brainstorming. Run `/new-feature` to create some." and stop.
 - Pick the best task:
   - Skip tasks with `in_progress` status
   - Age: older tasks first
@@ -84,47 +43,60 @@ Pick a task from `brainstorm` status and run an autonomous brainstorming session
 ### 2. Claim the Task
 
 ```bash
-hte tasks update <id> --status in_progress
+bd update <id> --status in_progress
 ```
 
 ### 3. Launch Brainstormer Agent
+
+Before launching, glob `.claude/experts/*.md` and read the frontmatter (lines before first `**Principles:**`) of each file to build the manifest table:
+
+```
+| Expert | Domain | Role | Type |
+|--------|--------|------|------|
+| product-strategist | Product strategy, user value, ... | Answers product design questions... | advisor |
+| technical-architect | Architecture, patterns, ... | Answers technical design questions... | advisor |
+| ... | ... | ... | ... |
+```
 
 Use the Task tool to launch the Brainstormer agent:
 
 ```
 Subagent type: general-purpose
-Prompt: [See Brainstormer Agent Prompt below]
+Prompt: [See Brainstormer Agent Prompt below, with manifest table injected]
 ```
 
 The Brainstormer will explore the codebase and output tagged questions.
 
 ### 4. Run the Question/Answer Loop
 
-When the Brainstormer outputs a question, parse the type and route:
+When the Brainstormer outputs a question, parse the expert name(s) and route:
 
 **Question format from Brainstormer:**
 ```xml
-<question type="product">What problem are we solving?</question>
-<question type="technical">Should we use X or Y pattern?</question>
-<question type="both">How do we balance UX with implementation complexity?</question>
+<question expert="product-strategist">What problem are we solving?</question>
+<question expert="technical-architect">Should we use X or Y pattern?</question>
+<question expert="product-strategist,technical-architect">How do we balance UX with implementation complexity?</question>
 ```
 
 **Routing logic:**
 
-| Type | Action |
-|------|--------|
-| `product` | Launch Product Expert agent (use haiku model) |
-| `technical` | Launch Technical Expert agent (use haiku model) |
-| `both` | Launch BOTH agents in parallel, then synthesize their answers |
+```
+Parse expert name(s) from <question expert="name1,name2">
+For each expert name:
+  1. Read .claude/experts/{name}.md (cache for session)
+  2. Build agent prompt from Generic Expert Agent Prompt Template + file content
+  3. Launch expert agent (haiku model)
+If multiple experts: launch in parallel, synthesize answers
+```
 
-**For `both` questions, synthesize the answers:**
+**For multi-expert questions, synthesize the answers:**
 - Present both perspectives
 - Find the common ground or complementary insights
 - Produce a unified recommendation
 
 **Continue the Brainstormer** with the answer (start a new agent with full context - do not use resume) until it outputs:
 ```xml
-<design-complete>
+<design-complete reviewer="expert-name">
 [Final design summary]
 </design-complete>
 ```
@@ -143,11 +115,13 @@ When the Brainstormer outputs a question, parse the type and route:
 - Complex state management when simple props work
 - New abstractions when existing patterns apply
 
-If the design diverges from requirements, ask the Technical Expert for a correction before proceeding.
+If the design diverges from requirements, ask the relevant expert for a correction before proceeding.
 
-### 6. Run the Jobs Review
+### 6. Run the Review
 
-Launch the Design Reviewer agent (use haiku model) with the complete design.
+Parse the `reviewer="name"` attribute from the `<design-complete>` tag. Load that expert's file from `.claude/experts/{name}.md`. Use its principles for the review prompt.
+
+Launch the reviewer agent (use haiku model) with the complete design using the Generic Reviewer Agent Prompt Template below.
 
 **The reviewer will output:**
 ```xml
@@ -160,6 +134,9 @@ Launch the Design Reviewer agent (use haiku model) with the complete design.
 
 ## What to Simplify
 - <area that's over-engineered>
+
+## Integration Check
+<Do perspectives feel unified?>
 
 ## Final Assessment
 <1-2 sentences on whether this is truly minimal>
@@ -230,7 +207,7 @@ Save to: `docs/plans/YYYY-MM-DD-<feature-slug>-design.md`
 <Key technical insights from the session>
 
 ### Simplification Review
-<What was cut or simplified during Jobs review>
+<What was cut or simplified during review>
 
 ## Proposed Solution
 <High-level approach synthesizing all perspectives>
@@ -248,8 +225,10 @@ Save to: `docs/plans/YYYY-MM-DD-<feature-slug>-design.md`
 ### 10. Update Task
 
 ```bash
-hte tasks update <id> --status <next-status>
+bd update <id> --remove-label brainstorm --add-label <next-label>
 ```
+
+Where `<next-label>` is `plan` or `ready` based on assessment.
 
 Update the task body with brainstorming results:
 ```
@@ -283,22 +262,27 @@ Update the task body with brainstorming results:
 ### Brainstormer Agent Prompt
 
 ```
-You are a brainstorming agent designing a solution for an HTE task.
+You are a brainstorming agent designing a solution for a Beads task.
 
 ## Task Context
 <task title and body>
+
+## Available Experts
+
+<manifest table built from .claude/experts/ files>
+
+Select experts from the Available Experts table based on what the task needs. You can bring in additional experts at any point if new topics arise. When your design is complete, pick a reviewer from the catalog.
 
 ## Your Task
 1. Explore the relevant codebase to understand context
 2. Ask questions to refine the design - but you don't ask the user
 3. Output questions in this format for the expert personas to answer:
 
-<question type="product">Question about user value, priorities, experience</question>
-<question type="technical">Question about architecture, patterns, implementation</question>
-<question type="both">Question that needs both perspectives</question>
+<question expert="expert-name">Question for a single expert</question>
+<question expert="name1,name2">Question that needs multiple perspectives</question>
 
 4. Wait for answers before continuing
-5. After sufficient exploration, output the final design
+5. After sufficient exploration, output the final design with a reviewer
 
 ## CRITICAL RULES
 
@@ -321,10 +305,10 @@ Prefer simple solutions:
 ## Output Format
 
 For questions (ONE at a time):
-<question type="product|technical|both">Your single question here</question>
+<question expert="expert-name">Your single question here</question>
 
-For final design:
-<design-complete>
+For final design (pick a reviewer from Available Experts):
+<design-complete reviewer="reviewer-name">
 ## Requirements Check
 - [x] Requirement 1 - addressed by X
 - [x] Requirement 2 - addressed by Y
@@ -345,70 +329,41 @@ For final design:
 
 ## Guidelines
 - Ask ONE question at a time - this is enforced
-- Tag each question with the appropriate type
+- Select experts by name from the Available Experts table
+- You can bring in new experts as topics arise
 - Consider 2-3 approaches before settling
 - Apply YAGNI - remove unnecessary features
 - Focus on the simplest solution that works
 - Verify requirements before completing
 ```
 
-### Product Expert Agent Prompt
+### Generic Expert Agent Prompt Template
 
 ```
-Answer this product design question using the principles below.
+Answer this question using the principles below.
 
-<question>
-{question}
-</question>
+<question>{question}</question>
 
 ## Context
-{task context and any prior discussion}
+{task context and prior discussion}
 
-## Principles (Butterfield-style product thinking)
-- "We don't sell saddles here" - focus on transformation, not features
-- Job to be done - what is the user really trying to accomplish?
-- Reduce friction ruthlessly - every click is a chance to lose someone
-- Magic moments - design for delight, not just utility
-- Simplicity is respect for the user's time
-- Iterate on real usage, not opinions
+## Your Role
+{expert.role}
 
-## Response Format
-Answer in 2-4 sentences. Be direct and opinionated. Focus on the user's
-perspective and the core value proposition. Challenge assumptions about
-what's actually needed.
-```
+## Philosophy
+{expert.philosophy}
 
-### Technical Expert Agent Prompt
-
-```
-Answer this technical design question using the principles below.
-
-<question>
-{question}
-</question>
-
-## Context
-{task context and any prior discussion}
-
-## Principles (Abramov-style technical thinking)
-- Start with why - what problem are we actually solving?
-- Minimal API surface - the best API needs no documentation
-- Composition over configuration - small pieces that combine
-- Escape hatches - abstractions leak, provide a way out
-- Explicit over implicit - magic is technical debt
-- Incremental adoption - don't force all-or-nothing
-- Question assumptions - "everyone does it" is not a reason
+## Principles
+{expert.principles}
 
 ## Response Format
-Answer in 2-4 sentences. Be direct and thoughtful. Focus on simplicity,
-mental models, and long-term maintainability. Challenge complexity and
-question whether the problem is framed correctly.
+{expert.response_format}
 ```
 
-### Design Reviewer Agent Prompt
+### Generic Reviewer Agent Prompt Template
 
 ```
-Review this design for ruthless simplification using the principles below.
+Review this design using the principles below.
 
 ## Design to Review
 {complete design from brainstormer}
@@ -416,19 +371,20 @@ Review this design for ruthless simplification using the principles below.
 ## Task Context
 {original task title and requirements}
 
-## Principles (Jobs-style design review)
-- "Simple can be harder than complex" - true simplicity requires deep understanding
-- "Focus means saying no" - what can be removed entirely?
-- "Design is how it works" - not just aesthetics, but the whole system
-- Integration > bolted-on - does product + technical feel unified?
-- No excuses for complexity - if it's complex, it's not done yet
-- Real artists ship - but never ship mediocre
+## Your Role
+{reviewer.role}
+
+## Philosophy
+{reviewer.philosophy}
+
+## Principles
+{reviewer.principles}
 
 ## Your Task
 1. Identify anything that can be REMOVED entirely
 2. Identify anything that's over-engineered
-3. Check if product and technical perspectives integrated well
-4. Determine if this is truly minimal or just "acceptable"
+3. Check if perspectives integrated well
+4. Determine if this is truly minimal
 
 ## Output Format
 <review>
@@ -436,7 +392,6 @@ Review this design for ruthless simplification using the principles below.
 
 ## What to Remove
 - <component, feature, or abstraction that isn't essential>
-- <another thing to cut>
 (If nothing to remove, write "Nothing - design is minimal")
 
 ## What to Simplify
@@ -462,7 +417,7 @@ Claimed task with in_progress status.
 
 [Brainstorming session with expert Q&A...]
 
-[Jobs Review]
+[Review]
 Verdict: <APPROVED | SIMPLIFY>
 <cuts/simplifications if any>
 
