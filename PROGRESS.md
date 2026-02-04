@@ -12,6 +12,28 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-04 - Story S006: Suggest Metrics Catalog Based on Business Model
+
+**Files Changed:**
+- `convex/productProfiles.ts` - Added `getInternal` (internalQuery) and `updateSectionInternal` (internalMutation) for use by internal actions
+- `convex/lib/metricSuggestions.ts` - New: pure functions `classifyArchetype`, `selectMetrics`, types, and `METRIC_CATALOG` (23 metrics)
+- `convex/lib/metricSuggestions.test.ts` - 24 unit tests for archetype classification and metric selection
+- `convex/suggestMetrics.ts` - New: `suggestMetrics` internalAction orchestrating the pipeline
+- `convex/suggestMetrics.test.ts` - 6 integration tests for the full pipeline
+
+**Learnings:**
+- Pure function extraction makes Convex actions highly testable — `classifyArchetype` and `selectMetrics` can be tested without Convex runtime
+- `convex-test` still doesn't support `internalAction` with `ctx.runMutation`/`ctx.runQuery` — integration tests should simulate the action's data flow using direct internal calls
+- Business archetype classification works well as keyword matching with revenue model fallback — covers PLG, sales-led, marketplace, ecommerce, usage-based
+
+**Patterns Discovered:**
+- Internal query/mutation pair pattern: `getInternal` + `updateSectionInternal` mirror the public versions but skip auth, enabling internal actions to read/write profiles
+- Archetype-based catalog filtering: hardcoded `METRIC_CATALOG` with `archetypes` field per metric enables static, testable selection without LLM calls
+- Metric categories map to P&L framework: reach, engagement, retention, revenue, value
+
+**Gotchas:**
+- Pre-existing UI test timeouts (13 tests in AddActivityModal, AddEntityDialog, FirstValueSection, TrackingMaturityScreen) remain on main
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**
