@@ -12,6 +12,32 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-04 - Story M001-E001-S003: Infer Entity Model from Product Content
+
+**Files Changed:**
+- `convex/crawledPages.ts` - Added `listByProductInternal` internalQuery (no auth, for extractors)
+- `convex/crawledPages.test.ts` - 1 new test for internal query
+- `convex/productProfiles.ts` - Added `getInternal` internalQuery and `updateSectionInternal` internalMutation (no auth, for extractors)
+- `convex/productProfiles.test.ts` - 2 new tests for internal helpers
+- `convex/extractEntities.ts` - New: `extractEntities` internalAction using Claude Haiku for entity model extraction
+- `convex/extractEntities.test.ts` - New: 7 tests covering happy path, code-block JSON, empty pages, evidence capping, page type filtering, partial pages, and missing profile
+
+**Learnings:**
+- `vi.hoisted()` is required for mock variables used inside `vi.mock()` factory — Vitest hoists `vi.mock()` above variable declarations
+- Mocking `@anthropic-ai/sdk` for convex-test actions requires a constructor function, not `vi.fn().mockImplementation()` — use a plain function that returns the mock object
+- `convex-test` action tests work with `vi.mock` since the action module is loaded in the test process
+- `internalAction` is the right pattern for LLM extraction — can make external HTTP calls and call internal mutations for DB writes
+
+**Patterns Discovered:**
+- Extractor pattern: `internalAction` fetches pages via `internalQuery`, calls LLM, stores results via `internalMutation` — no auth needed since internal functions are only callable from other Convex functions
+- JSON response parsing: strip code-block wrappers (`\`\`\`json ... \`\`\``) before JSON.parse
+- Evidence capping: limit evidence arrays to prevent unbounded growth in stored data
+- Page type filtering: only send relevant page types (features, pricing, homepage, about) to LLM for focused extraction
+
+**Gotchas:**
+- `vi.fn().mockImplementation(() => obj)` is not a constructor — `new` throws "is not a constructor". Use a plain function instead: `function Mock() { return obj; }`
+- Pre-existing test failures (7 UI component tests) and 2 harmless `Write outside of transaction` errors in convex-test are still present — unrelated to this work
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**
