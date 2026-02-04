@@ -12,6 +12,34 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-04 - Story S007: Orchestrate Analysis Pipeline After Scan Completion
+
+**Files Changed:**
+- `convex/crawledPages.ts` - Added `listByProductInternal` internalQuery for analysis pipeline
+- `convex/crawledPages.test.ts` - Test for internal query
+- `convex/productProfiles.ts` - Added `createInternal`, `getInternal`, `updateSectionInternal` internal functions
+- `convex/productProfiles.test.ts` - 4 new tests for internal functions
+- `convex/scanJobs.ts` - Added `updateStatus` internalMutation for analyzing/analyzed transitions
+- `convex/scanJobs.test.ts` - 2 new tests for status transitions
+- `convex/analysis/orchestrate.ts` - New: orchestrator internalAction with 6 Claude-powered extractors
+- `convex/analysis/orchestrate.test.ts` - 6 tests for orchestration prerequisites and prompt building
+- `convex/scanning.ts` - Wired `ctx.scheduler.runAfter(0)` to trigger analysis after scan completes
+
+**Learnings:**
+- `Promise.allSettled` is the right pattern for running independent extractors — errors in one don't block others
+- Convex internalAction can schedule other internalActions via `ctx.scheduler.runAfter`
+- The two-phase extraction pattern (independent → dependent) keeps the pipeline efficient while respecting data dependencies
+- Claude API extraction works well with structured JSON prompts and code fence parsing
+
+**Patterns Discovered:**
+- Internal function trio pattern: `createInternal` + `getInternal` + `updateSectionInternal` provides a complete auth-free API for pipeline operations
+- Orchestrator pattern: internalAction coordinates mutations/queries/schedulers, uses `Promise.allSettled` for parallel extraction with error isolation
+- Phase pattern for scan jobs: mapping → crawling → complete → analyzing → analyzed
+
+**Gotchas:**
+- `convex-test` "Write outside of transaction" errors still appear when tests trigger code that uses `ctx.scheduler.runAfter` — these are harmless noise, all assertions still pass
+- Claude extraction prompts need explicit JSON format instructions including code fence wrapping to parse reliably
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**
