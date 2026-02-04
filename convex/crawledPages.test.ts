@@ -177,6 +177,31 @@ describe("crawledPages", () => {
     expect(pages[0].metadata?.ogImage).toBe("https://test.io/og.png");
   });
 
+  it("can list pages by product via internal query (no auth)", async () => {
+    const t = convexTest(schema);
+    const { productId, jobId } = await setupUserProductAndJob(t);
+
+    await t.mutation(internal.crawledPages.store, {
+      productId,
+      scanJobId: jobId,
+      url: "https://test.io",
+      pageType: "homepage",
+      content: "Home",
+    });
+    await t.mutation(internal.crawledPages.store, {
+      productId,
+      scanJobId: jobId,
+      url: "https://test.io/features",
+      pageType: "features",
+      content: "Features",
+    });
+
+    // Internal query - no auth needed
+    const pages = await t.query(internal.crawledPages.listByProductInternal, { productId });
+    expect(pages).toHaveLength(2);
+    expect(pages[0].pageType).toBeDefined();
+  });
+
   it("enforces ownership - cannot list another user's pages", async () => {
     const t = convexTest(schema);
     const { productId, jobId } = await setupUserProductAndJob(t);

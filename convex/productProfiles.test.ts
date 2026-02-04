@@ -1,6 +1,6 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 function authenticatedUser(t: ReturnType<typeof convexTest>, clerkId = "test-clerk-id") {
@@ -219,6 +219,43 @@ describe("productProfiles", () => {
 
     const profile = await asUser.query(api.productProfiles.get, { productId });
     expect(profile).toBeNull();
+  });
+
+  it("can get profile via internal query (no auth)", async () => {
+    const t = convexTest(schema);
+    const { productId, asUser } = await setupUserAndProduct(t);
+    await asUser.mutation(api.productProfiles.create, { productId });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    expect(profile).toBeDefined();
+    expect(profile?.completeness).toBe(0);
+  });
+
+  it("can update section via internal mutation (no auth)", async () => {
+    const t = convexTest(schema);
+    const { productId, asUser } = await setupUserAndProduct(t);
+    await asUser.mutation(api.productProfiles.create, { productId });
+
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "entities",
+      data: {
+        items: [
+          { name: "User", type: "actor", properties: ["email", "plan"] },
+          { name: "Project", type: "object", properties: ["name", "status"] },
+        ],
+        relationships: [
+          { from: "User", to: "Project", type: "creates" },
+        ],
+        confidence: 0.7,
+        evidence: [{ url: "https://example.com/features", excerpt: "Users create projects" }],
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    expect(profile?.entities?.items).toHaveLength(2);
+    expect(profile?.entities?.confidence).toBe(0.7);
+    expect(profile?.completeness).toBeGreaterThan(0);
   });
 
   it("enforces ownership - cannot access other user's profile", async () => {
