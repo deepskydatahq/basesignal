@@ -1,4 +1,4 @@
-import { query, internalMutation } from "./_generated/server";
+import { query, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 const MAX_CONTENT_LENGTH = 100_000; // 100KB truncation limit
@@ -119,6 +119,17 @@ export const removeByScanJob = internalMutation({
     for (const page of pages) {
       await ctx.db.delete(page._id);
     }
+  },
+});
+
+// Internal query: no auth, for use by internalActions (e.g. analysis pipeline)
+export const listByProductInternal = internalQuery({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("crawledPages")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .collect();
   },
 });
 
