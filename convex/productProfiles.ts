@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 const evidenceValidator = v.array(v.object({ url: v.string(), excerpt: v.string() }));
@@ -202,6 +202,58 @@ export const updateSection = mutation({
     await ctx.db.patch(profile._id, update);
 
     // Recalculate completeness
+    const updated = await ctx.db.get(profile._id);
+    if (updated) {
+      const { completeness, overallConfidence } = calculateCompletenessAndConfidence(updated);
+      await ctx.db.patch(profile._id, { completeness, overallConfidence });
+    }
+  },
+});
+
+// Internal version for use by extraction actions (no auth check) - creates profile if needed
+export const createInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+    if (existing) return existing._id;
+
+    const now = Date.now();
+    return await ctx.db.insert("productProfiles", {
+      productId: args.productId,
+      completeness: 0,
+      overallConfidence: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+// Internal version for use by extraction actions (no auth check)
+export const updateSectionInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+    section: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+    if (!profile) throw new Error("Profile not found");
+
+    const update: Record<string, unknown> = {
+      [args.section]: args.data,
+      updatedAt: Date.now(),
+    };
+
+    await ctx.db.patch(profile._id, update);
+
     const updated = await ctx.db.get(profile._id);
     if (updated) {
       const { completeness, overallConfidence } = calculateCompletenessAndConfidence(updated);
