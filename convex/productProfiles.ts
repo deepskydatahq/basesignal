@@ -206,6 +206,38 @@ export const getInternal = internalQuery({
   },
 });
 
+// Internal version for use by Convex actions (no auth check)
+export const updateSectionInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+    section: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+    if (!profile) throw new Error("Profile not found");
+
+    // Build update
+    const update: Record<string, unknown> = {
+      [args.section]: args.data,
+      updatedAt: Date.now(),
+    };
+
+    // Patch the profile
+    await ctx.db.patch(profile._id, update);
+
+    // Recalculate completeness
+    const updated = await ctx.db.get(profile._id);
+    if (updated) {
+      const { completeness, overallConfidence } = calculateCompletenessAndConfidence(updated);
+      await ctx.db.patch(profile._id, { completeness, overallConfidence });
+    }
+  },
+});
+
 export const updateSection = mutation({
   args: {
     productId: v.id("products"),

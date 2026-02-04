@@ -251,6 +251,46 @@ describe("productProfiles", () => {
     expect(profile?.overallConfidence).toBe(0);
   });
 
+  it("can update section internally without auth", async () => {
+    const t = convexTest(schema);
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-clerk-id",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+    const productId = await t.run(async (ctx) => {
+      return await ctx.db.insert("products", {
+        userId,
+        name: "Test Product",
+        url: "https://test.io",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "identity",
+      data: {
+        productName: "Acme SaaS",
+        description: "A project management tool",
+        targetCustomer: "Engineering teams",
+        businessModel: "B2B SaaS",
+        confidence: 0.75,
+        evidence: [{ url: "https://acme.io", excerpt: "Built for engineers" }],
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    expect(profile?.identity?.productName).toBe("Acme SaaS");
+    expect(profile?.identity?.confidence).toBe(0.75);
+    expect(profile?.completeness).toBeCloseTo(0.1, 1);
+  });
+
   it("createInternal is idempotent", async () => {
     const t = convexTest(schema);
     const userId = await t.run(async (ctx) => {
