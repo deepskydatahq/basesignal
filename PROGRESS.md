@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-04 - Story M001-E001-S004: Infer Journey Stages & Lifecycle Definitions
+
+**Files Changed:**
+- `convex/crawledPages.ts` - Added `listByProductInternal` internalQuery for auth-free access from pipeline actions
+- `convex/productProfiles.ts` - Added `getInternal` internalQuery and `updateSectionInternal` internalMutation for pipeline actions
+- `convex/analysis/extractJourney.ts` - New: `extractJourney` internalAction with two sequential Claude Haiku calls
+- `convex/analysis/extractJourney.test.ts` - 28 tests covering pure functions and integration
+
+**Learnings:**
+- `convex/analysis/` directory pattern works well for LLM-powered extraction actions — keeps them separate from CRUD modules
+- Two-call architecture (journey first, definitions second) enables partial success — journey is persisted before definitions call
+- Exported pure functions (`prepareCrawledContent`, `buildJourneyPrompt`, `parseLlmJson`, `validateJourneyResult`, etc.) make unit testing easy without mocking the LLM
+- Internal queries/mutations (no auth) are essential for internalActions — actions can't use `ctx.auth.getUserIdentity()`
+
+**Patterns Discovered:**
+- Internal helper pattern: `getInternal`, `updateSectionInternal`, `listByProductInternal` — mirror public functions but skip auth, for use by pipeline internalActions
+- LLM extraction pattern: prepare content → build prompt → call API → parse JSON → validate structure → persist via internal mutation
+- Validation-before-persist: `validateJourneyResult` and `validateDefinitionsResult` ensure LLM output matches expected schema before database write
+
+**Gotchas:**
+- scanJobs schema requires `startedAt` and `currentPhase` (not `createdAt`/`updatedAt`) — test setup must match the full schema
+- Pre-existing test failures (9 timeout tests in UI components) continue on main — unrelated to this change
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**
