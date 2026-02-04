@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 const evidenceValidator = v.array(v.object({ url: v.string(), excerpt: v.string() }));
@@ -164,6 +164,41 @@ export const get = query({
     const product = await ctx.db.get(args.productId);
     if (!product || product.userId !== user._id) return null;
 
+    return await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+  },
+});
+
+// Internal version for use by Convex actions (no auth check)
+export const createInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+  },
+  handler: async (ctx, args) => {
+    // Check if profile already exists
+    const existing = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+    if (existing) return existing._id;
+
+    const now = Date.now();
+    return await ctx.db.insert("productProfiles", {
+      productId: args.productId,
+      completeness: 0,
+      overallConfidence: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+// Internal version for use by Convex actions (no auth check)
+export const getInternal = internalQuery({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
     return await ctx.db
       .query("productProfiles")
       .withIndex("by_product", (q) => q.eq("productId", args.productId))
