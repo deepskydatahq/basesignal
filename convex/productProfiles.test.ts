@@ -1,6 +1,6 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 function authenticatedUser(t: ReturnType<typeof convexTest>, clerkId = "test-clerk-id") {
@@ -219,6 +219,28 @@ describe("productProfiles", () => {
 
     const profile = await asUser.query(api.productProfiles.get, { productId });
     expect(profile).toBeNull();
+  });
+
+  it("can create a profile via internal mutation (no auth)", async () => {
+    const t = convexTest(schema);
+    const { productId } = await setupUserAndProduct(t);
+
+    const profileId = await t.mutation(internal.productProfiles.createInternal, { productId });
+    expect(profileId).toBeDefined();
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    expect(profile).toBeDefined();
+    expect(profile?.completeness).toBe(0);
+    expect(profile?.overallConfidence).toBe(0);
+  });
+
+  it("createInternal is idempotent - returns existing profile id", async () => {
+    const t = convexTest(schema);
+    const { productId } = await setupUserAndProduct(t);
+
+    const id1 = await t.mutation(internal.productProfiles.createInternal, { productId });
+    const id2 = await t.mutation(internal.productProfiles.createInternal, { productId });
+    expect(id1).toEqual(id2);
   });
 
   it("enforces ownership - cannot access other user's profile", async () => {
