@@ -125,6 +125,21 @@ export const fail = internalMutation({
   },
 });
 
+export const updateStatus = internalMutation({
+  args: {
+    jobId: v.id("scanJobs"),
+    status: v.string(),
+    currentPhase: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const update: Record<string, unknown> = { status: args.status };
+    if (args.currentPhase !== undefined) {
+      update.currentPhase = args.currentPhase;
+    }
+    await ctx.db.patch(args.jobId, update);
+  },
+});
+
 export const listByProduct = query({
   args: { productId: v.id("products") },
   handler: async (ctx, args) => {

@@ -166,4 +166,51 @@ describe("scanJobs", () => {
     expect(job?.discoveredPricing).toBe("https://test.io/pricing");
     expect(job?.crawledPages).toHaveLength(2);
   });
+
+  it("can transition to analyzing status via updateStatus", async () => {
+    const t = convexTest(schema);
+    const { productId, asUser } = await setupUserAndProduct(t);
+
+    const jobId = await asUser.mutation(api.scanJobs.create, {
+      productId,
+      url: "https://test.io",
+    });
+
+    await t.mutation(internal.scanJobs.complete, { jobId });
+    await t.mutation(internal.scanJobs.updateStatus, {
+      jobId,
+      status: "analyzing",
+      currentPhase: "Running analysis extractors",
+    });
+
+    const job = await asUser.query(api.scanJobs.get, { id: jobId });
+    expect(job?.status).toBe("analyzing");
+    expect(job?.currentPhase).toBe("Running analysis extractors");
+  });
+
+  it("can transition from analyzing to analyzed status", async () => {
+    const t = convexTest(schema);
+    const { productId, asUser } = await setupUserAndProduct(t);
+
+    const jobId = await asUser.mutation(api.scanJobs.create, {
+      productId,
+      url: "https://test.io",
+    });
+
+    await t.mutation(internal.scanJobs.complete, { jobId });
+    await t.mutation(internal.scanJobs.updateStatus, {
+      jobId,
+      status: "analyzing",
+      currentPhase: "Running analysis extractors",
+    });
+    await t.mutation(internal.scanJobs.updateStatus, {
+      jobId,
+      status: "analyzed",
+      currentPhase: "Analysis complete",
+    });
+
+    const job = await asUser.query(api.scanJobs.get, { id: jobId });
+    expect(job?.status).toBe("analyzed");
+    expect(job?.currentPhase).toBe("Analysis complete");
+  });
 });
