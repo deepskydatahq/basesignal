@@ -107,15 +107,27 @@ Evaluates the supporting evidence provided for each activation level.
 
 ## Validation Results
 
-<!-- Results will be added as extraction is tested -->
+**Status**: Implementation complete, ready for live testing.
 
-### Baseline Results (Pre-Refinement)
+To run validation:
+1. Ensure VITE_CONVEX_URL and ANTHROPIC_API_KEY are set
+2. Create test products via app UI (Miro, Linear, Figma)
+3. Run scan pipeline for each
+4. In Convex dashboard, invoke `extractActivationLevels` internal action
+5. Score results using `npx tsx scripts/test-activation-accuracy.ts`
+
+### Initial Implementation (with Refinements)
+
+The extractor was built with all refinements from M002-E004-S004 already incorporated.
+Validation should start from this refined state - there is no "pre-refinement" baseline.
 
 | Product | Progression | Criteria | Primary | Evidence | Total | Rating |
 |---------|-------------|----------|---------|----------|-------|--------|
-| TBD | - | - | - | - | - | - |
+| Miro | Pending | Pending | Pending | Pending | - | - |
+| Linear | Pending | Pending | Pending | Pending | - | - |
+| Figma | Pending | Pending | Pending | Pending | - | - |
 
-### Post-Refinement Results
+### Post-Testing Refinements (if needed)
 
 | Product | Progression | Criteria | Primary | Evidence | Total | Rating |
 |---------|-------------|----------|---------|----------|-------|--------|
@@ -123,16 +135,33 @@ Evaluates the supporting evidence provided for each activation level.
 
 ## Identified Refinements
 
-<!-- Document what was changed and why -->
+Refinements applied based on M002-E004-S004 story guidance:
 
 ### Prompt Improvements
 
-1. TBD
+1. **Product archetype examples**: Added specific aha-moment examples for collaboration (Miro, Figma, Notion), productivity (Linear, Asana), developer (GitHub, Vercel), and communication (Slack, Discord) tools.
+
+2. **Measurable criteria format**: Prompt now requires specific action + count format with explicit good/bad examples:
+   - Good: `{"action": "create_project", "count": 1}`
+   - Bad: `{"action": "use_product", "count": 1}` - marked as too vague
+
+3. **Signal strength definitions**: Clear mapping from weak (exploration) → medium (learning) → strong (value realized) → very_strong (team adoption).
+
+4. **Evidence quality guidance**: Prompt specifies preference for help docs and case studies over marketing copy, with confidence adjustments.
+
+5. **Confidence scoring bands**: Explicit ranges (0.8-1.0 for explicit docs, 0.6-0.8 for feature pages, etc.)
 
 ### Page Filtering Improvements
 
-1. TBD
+1. **Priority ordering**: Changed from simple filter to prioritized sort:
+   - onboarding (highest) > help > customers > features > homepage (lowest)
+
+2. **Activation-relevant page types**: Included onboarding, help, customers, features, homepage - excluding pricing/legal/other.
 
 ### Other Improvements
 
-1. TBD
+1. **Product identity context**: Extraction uses existing identity (name, description, target customer) to inform value prop identification.
+
+2. **Schema-compatible output**: Converts multi-level data to schema format while preserving full levels array for future use.
+
+3. **Comprehensive validation**: Parser validates signal strength, level numbers, criteria format, and primaryActivation references.
