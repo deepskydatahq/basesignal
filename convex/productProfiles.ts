@@ -324,6 +324,17 @@ export const validateSection = mutation({
   },
 });
 
+// Auth-free query for MCP server and validation scripts
+export const getMcp = query({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+  },
+});
+
 export const remove = mutation({
   args: { productId: v.id("products") },
   handler: async (ctx, args) => {
