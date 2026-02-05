@@ -1,0 +1,84 @@
+# Story: Optional Subdomain Crawl Pass
+# Add ability to crawl discovered documentation subdomains
+
+id = "M002-E002-S004"
+parent = "M002-E002"
+title = "Add optional subdomain crawl pass for help/docs content"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+When a docs subdomain is discovered during the main crawl (e.g., help.miro.com),
+an optional second crawl pass can be triggered to fetch onboarding-focused
+pages from that subdomain. This provides richer data for activation inference.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "scanning.ts can accept a docsSubdomain parameter for focused crawl"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Subdomain crawl uses shouldCrawlForActivation filter (from S001)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Subdomain crawl is limited to 10 pages maximum"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Subdomain pages are stored with correct pageType classification"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "scanJob.discoveredDocs is populated after main crawl completes"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Triggering subdomain crawl adds pages to same productId"
+
+[context]
+relevant_paths = [
+    "convex/scanning.ts",
+    "convex/scanJobs.ts",
+    "convex/lib/urlUtils.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Implementation approach:
+1. After main crawl completes, check scanJob.discoveredDocs
+2. If docs URL exists and subdomain crawl requested, trigger second crawl:
+   - Use Firecrawl map on the docs subdomain
+   - Filter to activation-relevant paths (shouldCrawlForActivation)
+   - Limit to 10 pages to stay under budget
+   - Store with appropriate pageType (help/docs/support)
+
+Options for triggering:
+A) Automatic: Always do second pass if docs discovered
+B) On-demand: Separate action to crawl docs when needed
+C) Flag-based: Add includeDocsSubdomain param to startScan
+
+Recommend option B initially - keep main crawl fast, allow explicit docs crawl.
+
+New action: scanDocsSubdomain(productId, docsUrl)
+- Maps the docs site
+- Filters to onboarding/getting-started paths
+- Scrapes up to 10 pages
+- Stores as additional crawledPages with scanJobId
+
+This enables LLM extractors to have richer behavioral content for activation.
+"""
+
+reference_files = [
+    "convex/scanning.ts",
+    "convex/scanJobs.ts"
+]

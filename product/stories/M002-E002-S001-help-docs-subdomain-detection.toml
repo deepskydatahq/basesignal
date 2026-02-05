@@ -1,0 +1,79 @@
+# Story: Help/Docs Subdomain Detection and Classification
+# Extend URL classifier to recognize and classify help center subdomains
+
+id = "M002-E002-S001"
+parent = "M002-E002"
+title = "Detect and classify help/docs subdomains for crawling"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+The URL classifier recognizes help center subdomains (help.*, docs.*, support.*)
+and classifies them appropriately. The shouldCrawl function is updated to allow
+these subdomains to be crawled when explicitly requested for activation analysis.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'help' for help.example.com URLs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'docs' for docs.example.com URLs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'support' for support.example.com URLs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "New function shouldCrawlForActivation returns true for help/docs subdomains"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "shouldCrawlForActivation filters to getting-started/onboarding paths within docs sites"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "filterHighValuePages includes help.miro.com in docsUrls when scanning miro.com"
+
+[context]
+relevant_paths = [
+    "convex/lib/urlUtils.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Current state: shouldCrawl() explicitly skips help.* and support.* subdomains.
+
+Changes needed:
+1. Add new page types to classifyPageType for subdomain detection:
+   - help.* → 'help'
+   - docs.* → 'docs'
+   - support.* → 'support'
+
+2. Create new function shouldCrawlForActivation(url):
+   - Returns true for help/docs/support subdomains
+   - Filters to high-value paths within those sites:
+     - /getting-started, /onboarding, /first-steps
+     - /tutorials, /quick-start
+     - Avoid deep reference docs initially
+
+3. Update filterHighValuePages to optionally use shouldCrawlForActivation
+   when crawling for activation analysis (new parameter or separate function).
+
+Keep shouldCrawl() unchanged - it's for marketing page crawling.
+Create parallel path for activation-focused crawling.
+"""
+
+reference_files = [
+    "convex/lib/urlUtils.ts"
+]

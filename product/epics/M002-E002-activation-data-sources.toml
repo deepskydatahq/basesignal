@@ -4,7 +4,7 @@
 id = "M002-E002"
 parent = "M002"
 title = "Enhanced Data Sources for Activation Discovery"
-status = "draft"
+status = "active"
 created = 2026-02-05
 
 [outcome]

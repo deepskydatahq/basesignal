@@ -1,0 +1,79 @@
+# Story: Case Study Content Prioritization
+# Improve case study page detection and crawling priority
+
+id = "M002-E002-S003"
+parent = "M002-E002"
+title = "Prioritize case study pages for success metrics extraction"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+Case study pages are recognized more comprehensively (including /success-stories,
+/testimonials, /results patterns) and prioritized higher in crawling. Multiple
+case studies can be crawled (not just one) to gather diverse success metrics.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'customers' for /success-stories paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'customers' for /testimonials paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'customers' for /results paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "filterHighValuePages allows up to 3 customer pages (not just 1)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Customer pages are promoted to MUST_CRAWL_TYPES tier"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Crawling miro.com captures multiple case study pages if available"
+
+[context]
+relevant_paths = [
+    "convex/lib/urlUtils.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Current state:
+- customers pattern: /customers?|case-studies?|stories
+- customers is in SHOULD_CRAWL_TYPES
+- Deduplication keeps only first of each type
+
+Changes needed:
+1. Expand pattern recognition:
+   if (path.match(/^\/(customers?|case-studies?|stories|success-stories|testimonials|results)(\/|$)/)) return "customers";
+
+2. Move "customers" from SHOULD_CRAWL_TYPES to MUST_CRAWL_TYPES
+   (Case studies often contain specific metrics and behaviors)
+
+3. Update deduplication logic to allow multiple customer pages:
+   - Keep first 3 customer pages instead of just 1
+   - This provides diverse examples for LLM to analyze
+
+Case studies are valuable because they often include:
+- Specific behaviors ("teams increased board creation by 40%")
+- Time-to-value metrics ("onboarded in 2 weeks")
+- Collaboration patterns ("500 team members now using daily")
+"""
+
+reference_files = [
+    "convex/lib/urlUtils.ts"
+]

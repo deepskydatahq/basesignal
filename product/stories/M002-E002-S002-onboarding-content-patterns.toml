@@ -1,0 +1,70 @@
+# Story: Onboarding Content Pattern Recognition
+# Detect pages with getting-started and onboarding content
+
+id = "M002-E002-S002"
+parent = "M002-E002"
+title = "Recognize onboarding and getting-started content patterns"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+The URL classifier recognizes onboarding-related paths across all page types,
+including /getting-started, /onboarding, /first-steps, /quick-start patterns.
+These are prioritized in crawling as they contain behavioral descriptions.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'onboarding' for /getting-started paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'onboarding' for /onboarding paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'onboarding' for /quick-start paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "classifyPageType returns 'onboarding' for /first-steps paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Onboarding pages are added to MUST_CRAWL_TYPES priority tier"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "filterHighValuePages prioritizes onboarding content over 'other' pages"
+
+[context]
+relevant_paths = [
+    "convex/lib/urlUtils.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add onboarding path patterns to classifyPageType:
+
+if (path.match(/^\/(getting-started|onboarding|quick-start|first-steps)(\/|$)/)) return "onboarding";
+if (path.match(/^\/(tutorials?|learn)(\/|$)/)) return "tutorial";
+
+Add to priority tiers:
+- Add "onboarding" to MUST_CRAWL_TYPES (highest priority for activation discovery)
+- Add "tutorial" to SHOULD_CRAWL_TYPES
+
+These paths contain behavioral language describing what users should DO,
+which is exactly what we need for activation level inference.
+"""
+
+reference_files = [
+    "convex/lib/urlUtils.ts"
+]
