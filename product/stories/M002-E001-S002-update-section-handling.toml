@@ -4,7 +4,7 @@
 id = "M002-E001-S002"
 parent = "M002-E001"
 title = "Update productProfiles to handle multi-level activation storage"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]

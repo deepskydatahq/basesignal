@@ -4,7 +4,7 @@
 id = "M002-E001-S003"
 parent = "M002-E001"
 title = "Add tests ensuring backward compatibility for activation schema"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]
