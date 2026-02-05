@@ -108,7 +108,7 @@ export const getByProductAndType = query({
   },
 });
 
-// Internal version for use by Convex actions (no auth check)
+// Internal query for use by extraction actions (no auth check)
 export const listByProductInternal = internalQuery({
   args: { productId: v.id("products") },
   handler: async (ctx, args) => {

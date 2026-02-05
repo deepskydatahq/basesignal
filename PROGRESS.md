@@ -36,6 +36,31 @@
 **Gotchas:**
 - Pre-existing UI test timeouts (AddEntityDialog, AddActivityModal, TrackingMaturityScreen) and "Write outside of transaction" errors from convex-test still present - unrelated to this work
 
+### 2026-02-04 - Story M001-E001-S002: Extract Revenue Architecture
+
+**Files Changed:**
+- `convex/crawledPages.ts` - Added `listByProductInternal` internalQuery for auth-free page retrieval
+- `convex/productProfiles.ts` - Added `getInternal` internalQuery and `updateSectionInternal` internalMutation
+- `convex/extractRevenue.ts` - New: `extractRevenue` internalAction with Claude Haiku extraction
+- `convex/extractRevenue.test.ts` - 20 tests: pure functions (selectPages, buildPageContext, parseExtractionResponse) + Convex internal query/mutation integration
+
+**Learnings:**
+- `internalQuery` follows the same pattern as `internalMutation` — import from `_generated/server`, no auth checks needed
+- Two-tier page selection (pricing → homepage+features → all) with confidence multipliers works well for degrading gracefully
+- Claude Haiku is sufficient for structured JSON extraction from pricing pages — no need for larger models
+- `parseExtractionResponse` should handle JSON embedded in surrounding text (Claude sometimes adds preamble)
+- Confidence adjustment by page tier (high=1.0, medium=0.8, low=0.6 multiplier) provides honest quality signals
+
+**Patterns Discovered:**
+- Internal query/mutation pair for extraction pipelines: `getInternal` + `updateSectionInternal` avoids auth overhead when called from internalActions
+- `updateSectionInternal` auto-creates profile if missing — simplifies extraction action logic
+- Pure function extraction (selectPages, buildPageContext, parseExtractionResponse) enables comprehensive unit testing without mocking external services
+- Evidence tracking from extraction: use page URL + title as evidence entries
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- Pre-existing UI test failures (10 tests in AddEntityDialog, AddActivityModal, FirstValueSection, TrackingMaturityScreen) still present — unrelated to extraction changes
+
 ### 2026-01-31 - Story 1.4: Basic Data Persistence
 
 **Files Changed:**

@@ -336,3 +336,53 @@ export const remove = mutation({
     }
   },
 });
+
+// Internal query for extraction actions (no auth check)
+export const getInternal = internalQuery({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+  },
+});
+
+// Internal mutation for extraction actions to update a section (no auth check)
+export const updateSectionInternal = internalMutation({
+  args: {
+    productId: v.id("products"),
+    section: v.string(),
+    data: v.any(),
+  },
+  handler: async (ctx, args) => {
+    let profile = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+
+    if (!profile) {
+      const now = Date.now();
+      const id = await ctx.db.insert("productProfiles", {
+        productId: args.productId,
+        completeness: 0,
+        overallConfidence: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+      profile = await ctx.db.get(id);
+      if (!profile) throw new Error("Failed to create profile");
+    }
+
+    await ctx.db.patch(profile._id, {
+      [args.section]: args.data,
+      updatedAt: Date.now(),
+    });
+
+    const updated = await ctx.db.get(profile._id);
+    if (updated) {
+      const { completeness, overallConfidence } = calculateCompletenessAndConfidence(updated);
+      await ctx.db.patch(profile._id, { completeness, overallConfidence });
+    }
+  },
+});
