@@ -1,0 +1,115 @@
+# Story: Activation Response Parser
+# Parse and validate Claude's activation levels response
+
+id = "M002-E003-S005"
+parent = "M002-E003"
+title = "Parse and validate activation levels response from Claude"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+A parser function extracts JSON from Claude's response, validates all required
+fields, clamps confidence values, and ensures signalStrength values are valid.
+The parser handles markdown code fences and provides clear error messages.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseActivationLevelsResponse extracts JSON from code fences"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates required fields: levels, primaryActivation, overallConfidence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates each level has: level, name, signalStrength, criteria, confidence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser throws descriptive error for missing required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser clamps confidence values to [0, 1] range"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates signalStrength is one of: weak, medium, strong, very_strong"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser ensures levels are sorted by level number ascending"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates primaryActivation references an existing level number"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Follow pattern from parseIdentityResponse in extractIdentity.ts:
+
+const VALID_SIGNAL_STRENGTHS = ['weak', 'medium', 'strong', 'very_strong'];
+
+export function parseActivationLevelsResponse(responseText: string): ActivationLevelsResult {
+  // Extract JSON from code fences
+  const fenceMatch = responseText.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  const jsonStr = fenceMatch ? fenceMatch[1].trim() : responseText.trim();
+
+  const parsed = JSON.parse(jsonStr);
+
+  // Validate top-level fields
+  if (!Array.isArray(parsed.levels)) {
+    throw new Error("Missing required field: levels (must be array)");
+  }
+  if (typeof parsed.primaryActivation !== 'number') {
+    throw new Error("Missing required field: primaryActivation (must be number)");
+  }
+  if (typeof parsed.overallConfidence !== 'number') {
+    throw new Error("Missing required field: overallConfidence (must be number)");
+  }
+
+  // Validate each level
+  for (const level of parsed.levels) {
+    if (typeof level.level !== 'number') throw new Error("Level missing: level number");
+    if (typeof level.name !== 'string') throw new Error("Level missing: name");
+    if (!VALID_SIGNAL_STRENGTHS.includes(level.signalStrength)) {
+      throw new Error(`Invalid signalStrength: ${level.signalStrength}`);
+    }
+    // ... validate criteria, confidence, evidence
+  }
+
+  // Sort levels by level number
+  parsed.levels.sort((a, b) => a.level - b.level);
+
+  // Clamp confidences
+  parsed.overallConfidence = Math.max(0, Math.min(1, parsed.overallConfidence));
+  for (const level of parsed.levels) {
+    level.confidence = Math.max(0, Math.min(1, level.confidence));
+  }
+
+  // Validate primaryActivation exists
+  if (!parsed.levels.some(l => l.level === parsed.primaryActivation)) {
+    throw new Error(`primaryActivation ${parsed.primaryActivation} does not match any level`);
+  }
+
+  return parsed;
+}
+"""
+
+reference_files = [
+    "convex/analysis/extractIdentity.ts"
+]

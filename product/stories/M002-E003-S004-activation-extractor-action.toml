@@ -1,0 +1,122 @@
+# Story: Activation Levels Extractor Action
+# Implement the internalAction that calls Claude for extraction
+
+id = "M002-E003-S004"
+parent = "M002-E003"
+title = "Implement extractActivationLevels internalAction"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+An internalAction fetches crawled pages, filters to activation-relevant content,
+calls Claude Haiku with the activation prompt, parses the response, and stores
+the multi-level activation data on the product profile.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractActivationLevels is exported as internalAction with productId arg"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action fetches crawled pages via internal.crawledPages.listByProductInternal"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action filters pages using filterActivationPages"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action calls Claude Haiku with ACTIVATION_SYSTEM_PROMPT"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Response is parsed via parseActivationLevelsResponse function"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parsed result is stored via updateSectionInternal with section='definitions'"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Running extractor on Miro product produces 3-4 activation levels"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Stored activation includes levels array with primaryActivation set"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts",
+    "convex/productProfiles.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E003-S001", "M002-E003-S002", "M002-E003-S003"]
+
+[handoff]
+implementation_hints = """
+Follow the exact pattern from extractIdentity.ts:
+
+export const extractActivationLevels = internalAction({
+  args: {
+    productId: v.id("products"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Fetch crawled pages
+    const pages = await ctx.runQuery(internal.crawledPages.listByProductInternal, {
+      productId: args.productId,
+    });
+
+    // 2. Filter to activation-relevant pages
+    const activationPages = filterActivationPages(pages);
+
+    // 3. Build page context (reuse from identity or shared util)
+    const pageContext = buildPageContext(activationPages);
+
+    // 4. Get identity for product context (helps with value prop identification)
+    const profile = await ctx.runQuery(internal.productProfiles.getInternal, {
+      productId: args.productId,
+    });
+    const identityContext = profile?.identity
+      ? `Product: ${profile.identity.productName}\nValue: ${profile.identity.description}`
+      : "";
+
+    // 5. Call Claude Haiku
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await client.messages.create({
+      model: "claude-haiku-4-20250414",
+      max_tokens: 2048,  // More tokens for detailed levels
+      system: ACTIVATION_SYSTEM_PROMPT,
+      messages: [{
+        role: "user",
+        content: `${identityContext}\n\nExtract activation levels from:\n\n${pageContext}`,
+      }],
+    });
+
+    // 6. Parse response
+    const activation = parseActivationLevelsResponse(responseText);
+
+    // 7. Store on profile (updates definitions.activation)
+    await ctx.runMutation(internal.productProfiles.updateSectionInternal, {
+      productId: args.productId,
+      section: "definitions",
+      data: { activation },  // Merges into existing definitions
+    });
+
+    return activation;
+  },
+});
+
+Note: Section is "definitions" not "activation" - we're updating definitions.activation.
+"""
+
+reference_files = [
+    "convex/analysis/extractIdentity.ts",
+    "convex/analysis/extractJourney.ts"
+]
