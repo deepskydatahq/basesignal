@@ -4,7 +4,7 @@
 id = "M002-E004-S004"
 parent = "M002-E004"
 title = "Apply refinements to extraction based on validation findings"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]

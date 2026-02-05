@@ -4,7 +4,7 @@
 id = "M002-E004-S003"
 parent = "M002-E004"
 title = "Run validation assessment on test product activation levels"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]
