@@ -21,7 +21,6 @@
  */
 
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../convex/_generated/api";
 
 // ============================================================================
 // Configuration
@@ -306,8 +305,10 @@ async function main() {
   console.log("      use the Convex dashboard or shell.");
   console.log("");
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const client = new ConvexHttpClient(convexUrl);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const results: Array<{
     product: TestProduct;
     score: RubricScore | null;
