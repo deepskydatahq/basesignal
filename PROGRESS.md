@@ -12,6 +12,31 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-05 - Story M002-E004-S004: Apply Refinements to Extraction Based on Validation
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - New: Multi-level activation extraction action with refined prompt
+- `convex/analysis/extractActivationLevels.test.ts` - New: 37 unit tests for types, prompt, filtering, and parsing
+- `scripts/test-activation-accuracy.ts` - New: Accuracy validation script with rubric scoring
+- `docs/plans/2026-02-05-activation-validation-rubric.md` - New: Validation rubric and refinement documentation
+
+**Learnings:**
+- Building extraction with refinements pre-applied is more efficient than iterating post-baseline
+- Prompt engineering benefits from explicit good/bad examples for criteria format
+- SignalStrength as a union type (`'weak' | 'medium' | 'strong' | 'very_strong'`) provides better type safety than string
+- Page priority ordering (onboarding > help > customers > features > homepage) should be explicit in the filter function
+
+**Patterns Discovered:**
+- Multi-level extraction pattern: Types → Prompt → Filter → Parser → Action → Tests (sequential TDD)
+- Validation rubric pattern: Explicit scoring bands (0-3) for each criterion with clear examples
+- Schema compatibility pattern: Store full extracted data in addition to schema-required fields for future flexibility
+- Product archetype examples in prompts help LLM identify domain-specific aha-moments
+
+**Gotchas:**
+- Internal actions cannot be called via ConvexHttpClient - need Convex dashboard or shell for live testing
+- Pre-existing lint errors and test failures should not block new work (documented in PROGRESS.md)
+- Headless sessions cannot run live API calls - build infrastructure for manual testing instead
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
