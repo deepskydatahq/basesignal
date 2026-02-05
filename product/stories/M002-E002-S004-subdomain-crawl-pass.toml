@@ -4,7 +4,7 @@
 id = "M002-E002-S004"
 parent = "M002-E002"
 title = "Add optional subdomain crawl pass for help/docs content"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]
