@@ -1,0 +1,87 @@
+# Story: Backward Compatibility Tests for Activation Schema
+# Ensure existing profiles continue to work with schema changes
+
+id = "M002-E001-S003"
+parent = "M002-E001"
+title = "Add tests ensuring backward compatibility for activation schema"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+Comprehensive tests verify that existing profiles with legacy activation format
+(criteria as string array) continue to work, and new multi-level activation
+profiles are correctly stored and retrieved.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: Legacy activation format (criteria: string[]) is still readable"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: New multi-level activation format stores and retrieves correctly"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: Profile with legacy activation shows correct completeness"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: Profile with multi-level activation shows correct completeness"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: signalStrength enum validates correctly (weak|medium|strong|very_strong)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Test: Mixed profiles (some legacy, some new) can coexist in database"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "All existing productProfiles tests pass after schema migration"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.test.ts",
+    "convex/productProfiles.ts",
+    "convex/schema.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E001-S001", "M002-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Add test cases to convex/productProfiles.test.ts:
+
+1. Legacy format test:
+   - Create profile with activation: { criteria: ["action1"], confidence: 0.8, ... }
+   - Verify it reads correctly
+   - Verify completeness calculation works
+
+2. New format test:
+   - Create profile with activation: { levels: [...], primaryActivation: 3, overallConfidence: 0.85 }
+   - Verify all levels persist
+   - Verify primaryActivation is correct
+   - Verify completeness uses overallConfidence
+
+3. Coexistence test:
+   - Create one legacy profile, one new format profile
+   - Query both, verify both return correctly
+
+4. Validation test:
+   - Attempt to store invalid signalStrength (e.g., "invalid")
+   - Should fail validation
+
+Run: npm test -- productProfiles.test.ts
+"""
+
+reference_files = [
+    "convex/productProfiles.test.ts"
+]
