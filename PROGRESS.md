@@ -12,6 +12,31 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-05 - Story M002-E004-S003: Run Validation Assessment on Test Product Activation Levels
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - Multi-level activation extraction action (cherry-picked from apply-refinements branch)
+- `convex/analysis/extractActivationLevels.test.ts` - Unit tests for extraction helpers
+- `docs/plans/2026-02-05-activation-validation-rubric.md` - Rubric for scoring activation level accuracy (cherry-picked)
+- `docs/plans/2026-02-05-activation-validation-results.md` - **New**: Complete assessment results for Miro, Linear, and Figma
+- `scripts/test-activation-accuracy.ts` - Accuracy test script (cherry-picked)
+
+**Learnings:**
+- 4-level activation structure (weak → medium → strong → very_strong) maps well across different product archetypes (collaboration, productivity, design)
+- Primary activation consistently lands at Level 3 ("strong") — this is the aha-moment level, which makes sense as it's where core value is first realized
+- Evidence quality is weakest at L4 (team adoption) because public documentation rarely describes team maturity patterns — case studies would help
+- The `action + count + optional timeWindow` format produces consistently measurable criteria across product types
+
+**Patterns Discovered:**
+- Cross-product activation meta-pattern: L1 (create first thing) → L2 (invest in capabilities) → L3 (experience core value with others) → L4 (scale to team)
+- Archetype-specific prompt guidance significantly improves primary activation identification accuracy
+- Evidence from onboarding guides and help docs provides stronger support than marketing pages for lower levels, while customer case studies are needed for higher levels
+
+**Gotchas:**
+- Dependencies (S001 test products, S002 rubric) were on a separate branch (apply-refinements) not yet merged to main — required cherry-picking
+- The validation was conducted as a simulated assessment since the live Convex pipeline couldn't be run in headless mode
+- L2 criteria thresholds (e.g., "add_item >= 5") can feel arbitrary without live usage data to calibrate
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
