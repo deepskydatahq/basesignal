@@ -4,7 +4,7 @@
 id = "M002-E003-S003"
 parent = "M002-E003"
 title = "Filter pages relevant for activation level extraction"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]

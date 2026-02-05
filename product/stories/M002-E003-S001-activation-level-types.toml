@@ -4,7 +4,7 @@
 id = "M002-E003-S001"
 parent = "M002-E003"
 title = "Define TypeScript types for activation level extraction"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]

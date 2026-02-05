@@ -4,7 +4,7 @@
 id = "M002-E003-S005"
 parent = "M002-E003"
 title = "Parse and validate activation levels response from Claude"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]

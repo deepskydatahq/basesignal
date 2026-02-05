@@ -4,7 +4,7 @@
 id = "M002-E003-S004"
 parent = "M002-E003"
 title = "Implement extractActivationLevels internalAction"
-status = "draft"
+status = "in-progress"
 created = 2026-02-05
 
 [outcome]
