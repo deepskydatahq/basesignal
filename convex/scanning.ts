@@ -163,6 +163,12 @@ export const startScan = internalAction({
       });
       await ctx.runMutation(internal.scanJobs.complete, { jobId });
 
+      // Trigger analysis pipeline
+      await ctx.scheduler.runAfter(0, internal.analysis.orchestrate.run, {
+        productId: args.productId,
+        scanJobId: jobId,
+      });
+
       // Persist discovered docs URL on the product
       if (docsUrl) {
         await ctx.runMutation(internal.products.updateDocsUrlInternal, {
