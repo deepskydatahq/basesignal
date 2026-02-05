@@ -12,6 +12,22 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-05 - Story M002-E004-S002: Define Judgment Criteria for Activation Level Accuracy
+
+**Files Changed:**
+- `docs/plans/2026-02-05-activation-validation-rubric.md` - New: activation level validation rubric with rating scale, evaluation criteria, worked example, and failure modes
+
+**Learnings:**
+- Documentation-only stories (no code) are straightforward — the story TOML's `handoff.implementation_hints` provides a near-complete template
+- The rubric's four criteria (progression, measurability, core value alignment, evidence quality) map directly to how the extraction pipeline should be evaluated
+
+**Patterns Discovered:**
+- Rubric-based validation: define point-scored criteria → aggregate into rating tiers → worked example shows expected application → failure modes guide prompt refinement
+- Known aha-moments table serves as a reference for validating primary activation across products
+
+**Gotchas:**
+- None — this was a pure documentation task with no code or test dependencies
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
