@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-05 - Story M002-E004-S001: Define and scan test product set for activation validation
+
+**Files Changed:**
+- `convex/productProfiles.ts` - Added `getMcp` auth-free query for MCP server and validation scripts
+- `convex/testing.ts` - New: `injectActivation` internalMutation + `listProductsWithProfiles` internalQuery
+- `convex/testing.test.ts` - 10 tests covering injection, auto-create, completeness, merging, and getMcp
+- `scripts/test-validation.mjs` - New: validation script defining 3 test products with mock activation levels
+
+**Learnings:**
+- `ConvexHttpClient` can only call public queries/mutations, not internal ones — scripts needing internal access should use `convex-test` infrastructure or dedicated public endpoints
+- The `definitions` object on productProfiles supports nested sub-sections (activation, firstValue, active, churn) each with their own confidence scores
+- Mock data injection via `internalMutation` is the cleanest way to test profile storage without hitting external APIs
+- Completeness calculation: 10 total sections (6 top-level + 4 definition sub-keys), so 4 definition sections = 40% completeness
+
+**Patterns Discovered:**
+- Validation script pattern: define test fixtures in the script itself, run structural validation (non-empty criteria, confidence ranges, reasoning length), report pass/fail against acceptance criteria
+- Auth-free query pattern: `getMcp` query with no auth check, parallel to the internal `getInternal` internalQuery, for use by MCP server and scripts
+- Testing module pattern: separate `testing.ts` with internalMutation/internalQuery for test-only operations, keeps test infrastructure isolated from production code
+
+**Gotchas:**
+- Worktree npm install still needed — `node_modules` not shared between worktrees
+- Pre-existing UI test failures (AddEntityDialog, AddActivityModal, TrackingMaturityScreen timeouts) and "Write outside of transaction" errors still present — unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
