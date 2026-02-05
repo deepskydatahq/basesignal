@@ -1,0 +1,68 @@
+# Mission: Validate MCP-First Product Profile Generation
+# Prove that crawling a website + LLM analysis can determine a complete product profile
+
+id = "M001"
+title = "Validate MCP-first product profile generation from website crawling"
+status = "active"
+created = 2026-02-04
+
+[outcome]
+description = """
+A user inputs a website URL (e.g., miro.com) via MCP, the system crawls relevant pages,
+and an LLM generates a complete product profile with confidence scores and evidence.
+An AI judge evaluates the result and confirms whether it accurately captures the product.
+This validates the core hypothesis that the MCP-first model can automate product profiling.
+"""
+
+user_progress = "From 'manually researching and filling in product profiles' to 'getting an accurate, evidence-backed profile generated automatically from a URL'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "End-to-end flow works: input URL → crawl → LLM generates profile → result stored",
+    "Profile covers at least identity, revenue, entities, journey, and definitions sections",
+    "Each populated section includes evidence (URL + excerpt) from crawled pages",
+    "Each section has a confidence score reflecting data quality",
+    "AI judge evaluates a generated profile (e.g., miro.com) and confirms key facts are accurate",
+    "Completeness score reaches >= 0.5 for a well-known SaaS product",
+]
+
+validator_context = [
+    "convex/scanning.ts",
+    "convex/crawledPages.ts",
+    "convex/productProfiles.ts",
+    "convex/lib/urlUtils.ts",
+    "server/tools/products.ts",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "docs/plans/2026-01-30-basic-page-crawler-design.md",
+    "docs/plans/2026-01-30-basic-data-persistence-design.md",
+]
+relevant_paths = [
+    "convex/",
+    "server/",
+]
+
+[notes]
+considerations = """
+Significant infrastructure already exists and should NOT be rebuilt:
+- Website crawling via Firecrawl (convex/scanning.ts) - COMPLETE
+- URL classification into 13 page types (convex/lib/urlUtils.ts) - COMPLETE
+- MCP server with OAuth + tools: create_product, scan_product, list_products, get_scan_status (server/) - COMPLETE
+- Product profile schema with 10 sections, evidence model, confidence scoring (convex/schema.ts) - COMPLETE
+- Profile CRUD: create, updateSection, validateSection (convex/productProfiles.ts) - COMPLETE
+- Crawled page storage and retrieval (convex/crawledPages.ts) - COMPLETE
+
+What's MISSING and needs to be built:
+1. LLM-powered profile generation: analyze crawledPages content → populate productProfile sections
+2. Orchestration: trigger generation after scan completes, store results via updateSection()
+3. MCP tool to expose generated profiles (or extend existing tools)
+4. AI judge: evaluate generated profile accuracy against ground truth
+5. End-to-end test with a real product URL (miro.com or similar)
+
+Future scope (NOT this mission): YouTube video analysis, additional source types beyond website crawling.
+"""

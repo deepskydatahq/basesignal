@@ -1,0 +1,72 @@
+# Epic: Multi-Level Activation Extraction
+# Build LLM extraction for activation spectrum
+
+id = "M002-E003"
+parent = "M002"
+title = "Multi-Level Activation Extraction"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+An LLM extractor analyzes crawled content and infers 3-4 activation levels
+for a product, each with measurable criteria, signal strength, and evidence.
+The extractor identifies the primary activation (aha-moment) level.
+"""
+
+job_story = """
+When the analysis pipeline runs after a scan completes,
+I want to extract multi-level activation definitions from the crawled content,
+so that the product profile shows the progression from weak to strong activation signals.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Extractor produces 3-4 activation levels for test products",
+    "Each level has: name, signalStrength, criteria with action/count/timeWindow",
+    "Levels are ordered by signal strength (weak → very_strong)",
+    "Primary activation is identified based on core value proposition",
+    "Confidence scores reflect evidence quality per level",
+    "Evidence excerpts support each inferred level",
+    "For Miro: collaboration (sharing + multi-user editing) is identified as strong/primary activation"
+]
+
+validator_context = [
+    "convex/analysis/",
+    "convex/lib/"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/",
+    "convex/lib/"
+]
+
+dependencies = ["M002-E001"]
+
+[notes]
+considerations = """
+Building on existing extractors pattern (extractIdentity, extractJourney, etc.):
+- Create extractActivationLevels.ts as new internalAction
+- Use Claude Haiku for extraction (consistent with other extractors)
+- Input: crawled pages filtered to relevant types (help, features, case studies)
+- Output: activation levels array matching new schema
+
+Extraction strategy:
+1. Identify product's core value prop from identity section
+2. Look for behavioral language: "create", "invite", "share", "collaborate"
+3. Infer progression: individual actions → social/collaborative actions
+4. Map to signal strengths based on value alignment
+
+Prompt engineering considerations:
+- Provide examples of activation spectrums for different product types
+- PLG products: individual → team adoption
+- B2B SaaS: setup → first use → team rollout
+- Marketplace: browse → first transaction → repeat buyer
+
+The extractor should work with limited data (marketing pages) but
+produce higher confidence with richer data (help docs, case studies).
+"""
+
+estimated_stories = 5

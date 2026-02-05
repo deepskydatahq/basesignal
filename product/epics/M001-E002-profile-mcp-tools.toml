@@ -1,0 +1,67 @@
+# Epic: Profile MCP Tools
+# Expose generated profiles through MCP server tools
+# Maps to product backlog Epic 4 (subset needed for validation)
+
+id = "M001-E002"
+parent = "M001"
+title = "Profile MCP Tools - expose generated profiles via MCP"
+status = "draft"
+created = 2026-02-04
+
+[outcome]
+description = """
+Users can retrieve their generated product profile through MCP tools:
+full profile, specific sections, and a concise summary. The profile is
+well-structured for LLM consumption with completeness and confidence metadata.
+"""
+
+job_story = """
+When the analysis engine has generated a product profile,
+I want to retrieve it through MCP tools in my AI assistant,
+so that I can review, discuss, and act on the profile data conversationally.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "get_profile() MCP tool returns the complete product profile with all sections",
+    "get_section(section_name) MCP tool returns a specific section with evidence and confidence",
+    "get_profile_summary() MCP tool returns a concise ~200 word overview",
+    "Profile includes completeness score and per-section confidence scores",
+    "Response format is well-structured for LLM consumption (clear JSON)",
+    "Auth-gated: only the profile owner can access their data",
+]
+
+validator_context = [
+    "server/tools/",
+    "convex/productProfiles.ts",
+    "convex/mcpProducts.ts",
+]
+
+[context]
+relevant_paths = [
+    "server/tools/",
+    "convex/productProfiles.ts",
+]
+dependencies = ["M001-E001"]
+
+[notes]
+considerations = """
+Existing infrastructure:
+- MCP server is fully implemented with auth (server/index.ts)
+- Tool registration pattern established (server/tools/index.ts)
+- products.ts already has create_product, list_products, scan_product, get_scan_status
+- productProfiles.ts has get() query that returns full profile
+- mcpProducts.ts has MCP-specific query wrappers
+
+What needs to be built:
+- get_profile tool: wraps existing get() query, returns full profile
+- get_section tool: returns specific section with validation of section names
+- get_profile_summary tool: generates concise overview with completeness/confidence
+- MCP-facing queries in Convex if not already sufficient
+
+This is a lighter epic since the MCP infrastructure and profile CRUD already exist.
+From product backlog: Stories 4.1, 4.2, 4.6 are critical; 4.3-4.5 can wait.
+"""
+
+estimated_stories = 3

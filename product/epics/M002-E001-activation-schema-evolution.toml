@@ -1,0 +1,77 @@
+# Epic: Activation Schema Evolution
+# Evolve the product profile schema to support multi-level activation
+
+id = "M002-E001"
+parent = "M002"
+title = "Activation Schema Evolution"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+The productProfiles schema supports activation as a spectrum with 3-4 levels,
+each having signal strength, measurable criteria, and a designated primary
+activation (aha-moment) indicator.
+"""
+
+job_story = """
+When the LLM extractor analyzes a product's activation patterns,
+I want to store multiple activation levels with signal strengths,
+so that the profile captures the full spectrum from weak to strong activation signals.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Schema defines activation.levels[] array with level, name, signalStrength, criteria[]",
+    "Each criterion supports: action (string), count (number), timeWindow (optional string)",
+    "Schema includes activation.primaryActivation to mark the aha-moment level",
+    "signalStrength enum includes: weak, medium, strong, very_strong",
+    "Existing tests pass after schema migration",
+    "updateSectionInternal correctly stores multi-level activation data"
+]
+
+validator_context = [
+    "convex/schema.ts",
+    "convex/productProfiles.ts",
+    "convex/productProfiles.test.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/schema.ts",
+    "convex/productProfiles.ts"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+Current schema has:
+  activation: { criteria: string[], timeWindow?, reasoning, confidence, source, evidence[] }
+
+Target schema:
+  activation: {
+    levels: [{
+      level: number,           // 1, 2, 3, 4
+      name: string,            // "explorer", "creator", "collaborator", "team"
+      signalStrength: string,  // "weak" | "medium" | "strong" | "very_strong"
+      criteria: [{
+        action: string,        // "create_board", "add_asset", "share_board"
+        count: number,         // 1, 5, 1
+        timeWindow?: string    // "first_7d", "first_14d"
+      }],
+      reasoning: string,
+      confidence: number,
+      evidence: [{ url, excerpt }]
+    }],
+    primaryActivation: number,  // Which level is the aha-moment (e.g., 3)
+    overallConfidence: number
+  }
+
+Migration considerations:
+- Backward compatible: existing profiles with old schema should still work
+- Consider a migration script or lazy migration on read
+"""
+
+estimated_stories = 3

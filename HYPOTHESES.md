@@ -80,6 +80,28 @@
 
 ---
 
+### H5: Multi-Level Activation
+**Status:** 🔵 Testing
+
+**Belief:** We believe that modeling activation as a spectrum (multiple levels from weak to strong signals) rather than a single binary definition will produce more accurate and actionable product understanding.
+
+**Because:** User behavior exists on a continuum. A user who creates a board (weak signal) is less activated than one who shares it with collaborators (strong signal). Binary activation misses this nuance and treats vastly different behaviors as equivalent.
+
+**Test:**
+- AI can infer 3-4 distinct activation levels from crawled product content with >70% confidence
+- Each level has measurable criteria (action + count + timeframe)
+- Levels correctly identify the product's "aha moment" (e.g., for Miro, collaboration is the strong signal)
+
+**Investment Area:** Measurement Foundation
+
+**Evidence:**
+- Feb 2026: Miro profile generated with single-level activation; user identified opportunity for multi-level modeling
+- Feb 2026: Mission M002 created to test multi-level activation discovery
+
+**Next Steps:** If validated, extend to other lifecycle definitions (active, at-risk, churn). If invalidated, determine if the data sources are insufficient or the model is wrong.
+
+---
+
 ## Validated Hypotheses
 
 (none yet)

@@ -1,0 +1,61 @@
+# Story: Outcomes Extraction
+# Extract the outcomes/jobs-to-be-done the product delivers from marketing content
+
+id = "M001-E001-S005"
+parent = "M001-E001"
+title = "Extract product outcomes from hero messaging and value props"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+A Convex action analyzes homepage hero messaging, value propositions, and customer
+testimonials to identify the outcomes the product delivers — primary and secondary
+jobs-to-be-done, linked to features where possible.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcomes extracted as array of { description, type, linkedFeatures[] } — type is primary/secondary/tertiary"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Primary outcome captures the main job-to-be-done (e.g., 'collaborate visually in real-time')"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcomes are linked to specific features mentioned on the site where possible"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Evidence includes URLs and excerpts from hero sections, value props, testimonials"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Result stored via updateSection(productId, 'outcomes', data) matching schema"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
+input_fixtures = ["homepage with hero messaging", "features page with value propositions", "customers page with testimonials"]
+depends_on = []
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/extractOutcomes.ts as an internalAction
+- Input: homepage (hero section), features page, customers/testimonials page
+- Look for outcome language: 'save time', 'increase revenue', 'reduce risk', 'collaborate better'
+- Distinguish primary outcome (main value prop) from secondary (supporting benefits)
+- linkedFeatures: connect outcomes to specific product features when mentioned together
+- Schema: { items: [{ description, type, linkedFeatures[] }], confidence, evidence[] }
+- Confidence: typically medium-high (0.6-0.8) since marketing copy is explicit about outcomes
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]

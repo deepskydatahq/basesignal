@@ -1,0 +1,90 @@
+# Story: Analysis Orchestration
+# Pipeline that triggers all analysis steps after scan completes and assembles the profile
+
+id = "M001-E001-S007"
+parent = "M001-E001"
+title = "Orchestrate analysis pipeline triggered after scan completion"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+When a scan completes, an orchestration action automatically triggers all analysis
+extractors, runs independent ones in parallel, chains dependent ones sequentially,
+creates the profile record, and marks it as generated — all within the Convex action limit.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Orchestration action is triggered after scanJobs.complete() sets status to 'complete'"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Profile record is created via productProfiles.create(productId) if it doesn't exist"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Independent extractors run in parallel: identity, revenue, entities, outcomes"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Dependent extractors run after prerequisites: journey+definitions after identity, metrics after identity+revenue"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "All section results are stored via updateSection mutations"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Final completeness and overallConfidence are recalculated after all sections stored"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "scanJob status is updated to reflect analysis phase (e.g., 'analyzing' → 'complete')"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Errors in individual extractors don't block other extractors — partial profiles are acceptable"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Total analysis completes within Convex 10-minute action limit for a typical site"
+
+[context]
+relevant_paths = [
+    "convex/scanning.ts",
+    "convex/scanJobs.ts",
+    "convex/productProfiles.ts",
+    "convex/crawledPages.ts",
+]
+input_fixtures = []
+depends_on = ["M001-E001-S001", "M001-E001-S002", "M001-E001-S003", "M001-E001-S004", "M001-E001-S005", "M001-E001-S006"]
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/orchestrate.ts as an internalAction
+- Trigger point: add ctx.scheduler.runAfter(0, internal.analysis.orchestrate.run, { productId, scanJobId })
+  at the end of scanning.startScan() after scanJobs.complete()
+- Orchestration flow:
+  1. Create profile record if absent
+  2. Fetch all crawled pages for the product
+  3. Run in parallel: extractIdentity, extractRevenue, extractEntities, extractOutcomes
+  4. After identity + revenue complete: run suggestMetrics
+  5. After identity complete: run extractJourneyAndDefinitions
+  6. Each extractor stores its own section via runMutation
+- Error handling: wrap each extractor in try/catch, log errors, continue with remaining
+- Update scanJob phases: 'analyzing identity...', 'analyzing revenue...', etc.
+- Consider: add an 'analysis' status to scanJobs between 'complete' and a new 'analyzed' status
+- Or add a separate analysisStatus field to avoid overloading the scan status
+
+Key constraint: Convex actions have a 10-minute limit. Each LLM call takes ~5-15s.
+With 6 extractors and some parallelism, total should be well under 2 minutes.
+"""
+reference_files = [
+    "convex/scanning.ts",
+    "convex/scanJobs.ts",
+    "convex/productProfiles.ts",
+]

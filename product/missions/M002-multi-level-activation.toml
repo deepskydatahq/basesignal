@@ -1,0 +1,75 @@
+# Mission: Multi-Level Activation Discovery
+# Evolve activation from binary to spectrum-based modeling
+
+id = "M002"
+title = "Discover and model multi-level activation from product content"
+status = "active"
+created = 2026-02-05
+hypothesis = "H5"
+
+[outcome]
+description = """
+A product profile captures activation as 3-4 distinct levels (weak to strong signals)
+rather than a single binary definition. Each level has measurable criteria and maps to
+the product's core value proposition. This enables more nuanced understanding of user
+journey progression and more accurate measurement recommendations.
+"""
+
+user_progress = "From 'single binary activation definition' to 'spectrum of activation levels with the aha-moment clearly identified'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Profile schema supports multiple activation levels with signal strength indicators",
+    "LLM extraction identifies 3-4 activation levels for a test product (Miro)",
+    "Each level has measurable criteria: action + count + optional timeframe",
+    "Levels correctly identify the 'primary activation' (aha moment) for the product",
+    "Confidence scores reflect data quality - levels with more evidence score higher",
+    "Evidence from crawled content supports each inferred level"
+]
+
+validator_context = [
+    "convex/schema.ts",
+    "convex/productProfiles.ts",
+    "convex/analysis/",
+    "convex/lib/",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "HYPOTHESES.md",
+    "docs/plans/2026-02-04-extract-journey-definitions-design.md"
+]
+relevant_paths = [
+    "convex/analysis/",
+    "convex/productProfiles.ts",
+    "convex/schema.ts"
+]
+
+[notes]
+considerations = """
+Building on M001 which validated the core profile generation pipeline:
+- Website crawling works (29 pages for Miro)
+- LLM extraction produces 91.6% confidence profiles
+- Current activation is a single definition with criteria array
+
+Key insight from M001 testing:
+- Miro's activation spectrum example:
+  L1 (weak): Create board + add items → individual exploration
+  L2 (medium): Create board + use template → learning product
+  L3 (strong): Share board + someone accesses → collaborative value realized
+  L4 (very strong): Multiple collaborators editing → team adoption
+- L3 is Miro's "aha moment" - collaboration is their core value prop
+
+Data source considerations:
+- Current crawl has marketing pages but may lack behavioral documentation
+- Help docs, developer docs, onboarding content may provide better activation signals
+- Case studies often mention specific behaviors that correlate with success
+
+Schema evolution needed:
+- activation.levels[] with level, name, signalStrength, criteria[]
+- activation.primaryActivation to mark the aha-moment level
+- Each criterion needs: action, count, optional timeWindow
+"""

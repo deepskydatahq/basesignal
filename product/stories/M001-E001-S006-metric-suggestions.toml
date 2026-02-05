@@ -1,0 +1,69 @@
+# Story: Metric Suggestions
+# Suggest relevant metrics based on business model and product type
+
+id = "M001-E001-S006"
+parent = "M001-E001"
+title = "Suggest metrics catalog based on business model and product type"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+A Convex action takes the already-extracted identity and revenue data and suggests
+relevant metrics categorized by reach/engagement/retention/revenue/value — with
+formulas where standard and links to relevant definitions and journey stages.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Metrics suggested as array of { name, category, formula?, linkedTo[] }"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Categories include reach, engagement, retention, revenue, and value"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Standard metric formulas included (e.g., 'Activation Rate = activated users / signups')"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Metrics are linked to relevant definitions or journey stages via linkedTo[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Business model type influences which metrics are suggested (PLG vs sales-led vs marketplace)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Result stored via updateSection(productId, 'metrics', data) matching schema"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
+input_fixtures = []
+depends_on = ["M001-E001-S001", "M001-E001-S002"]
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/suggestMetrics.ts as an internalAction
+- This action depends on identity + revenue sections being populated first
+- Read existing profile to get businessModel and revenue.model for context
+- Metric templates by product type:
+  - PLG: Activation Rate, Time to First Value, DAU/MAU, Feature Adoption, Free→Paid Conversion
+  - SaaS general: MRR, Churn Rate, Net Revenue Retention, Expansion Revenue
+  - All: Signup Rate, Active Rate, Retention (D7/D30), NPS
+- linkedTo: connect metrics to definitions (e.g., Activation Rate → definitions.activation)
+- Confidence: medium (0.5-0.7) since metrics are template-based, not extracted from content
+- Schema: { items: [{ name, category, formula?, linkedTo[] }], confidence, evidence[] }
+- Evidence may be empty/minimal since metrics are inferred, not directly from crawled content
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]

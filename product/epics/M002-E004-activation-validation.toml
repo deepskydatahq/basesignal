@@ -1,0 +1,77 @@
+# Epic: Activation Level Validation & Refinement
+# Test and refine multi-level activation with real products
+
+id = "M002-E004"
+parent = "M002"
+title = "Activation Level Validation & Refinement"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+Multi-level activation extraction is validated against 3-5 real products,
+with refinements made based on accuracy assessment. The system correctly
+identifies activation spectrums and aha-moments for different product types.
+"""
+
+job_story = """
+When I generate profiles for multiple products,
+I want to validate that the activation levels are accurate and useful,
+so that I can trust the system to produce actionable activation definitions.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Activation levels tested on 3+ products (Miro, Linear, Figma or similar)",
+    "AI judge validates each product's activation spectrum makes sense",
+    "Primary activation aligns with known product aha-moments",
+    "Different product types produce appropriately different activation patterns",
+    "Confidence scores correlate with data quality (more evidence = higher confidence)",
+    "Refinements documented and applied based on validation results"
+]
+
+validator_context = [
+    "convex/analysis/",
+    "docs/plans/"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/",
+    "scripts/"
+]
+
+dependencies = ["M002-E001", "M002-E003"]
+
+[notes]
+considerations = """
+Validation approach:
+1. Run extraction on 3-5 diverse products:
+   - Miro (collaboration tool, PLG)
+   - Linear (project management, PLG)
+   - Figma (design tool, PLG)
+   - Slack (communication, PLG with virality)
+   - HubSpot (CRM, sales-led with free tier)
+
+2. For each product, assess:
+   - Are the activation levels logical?
+   - Does the primary activation match the product's known aha-moment?
+   - Are the criteria measurable?
+   - Is the evidence supporting?
+
+3. Document patterns:
+   - What works well across products?
+   - What fails or produces low confidence?
+   - Are there product archetypes with distinct activation patterns?
+
+4. Refine based on findings:
+   - Adjust prompt engineering
+   - Add/modify activation level templates
+   - Improve evidence selection
+
+Success metric: 70%+ of inferred activation levels rated as "accurate" or "mostly accurate"
+by AI judge or manual review.
+"""
+
+estimated_stories = 4

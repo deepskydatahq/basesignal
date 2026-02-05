@@ -1,0 +1,65 @@
+# Story: Entity Model Inference
+# Infer core entities, types, properties, and relationships from product content
+
+id = "M001-E001-S003"
+parent = "M001-E001"
+title = "Infer entity model from features, pricing, and about pages"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+A Convex action analyzes crawled content to infer the product's entity model:
+core entities (User, Workspace, Project, etc.), their types (billable, value, supporting),
+properties, and relationships — with confidence and evidence.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action fetches crawled pages of types: features, pricing, homepage, about"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Entities extracted as array of { name, type, properties[] } — type is one of billable/value/supporting"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Relationships extracted as array of { from, to, type } — type describes cardinality (has_many, belongs_to, etc.)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Billing unit from pricing informs which entity is 'billable' type"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Evidence links entity claims to specific page content"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Result stored via updateSection(productId, 'entities', data) matching schema"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
+input_fixtures = ["features page describing workspaces/boards/projects", "pricing page showing per-seat billing"]
+depends_on = []
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/extractEntities.ts as an internalAction
+- Input: features, pricing, homepage, about pages
+- Key signals: pricing page reveals billable entity (e.g., 'per seat' → User is billable)
+- Features page reveals value entities (e.g., 'create boards' → Board is value entity)
+- This is medium confidence — entity models are harder to infer than identity/revenue
+- Prompt should ask for the product's 'data model objects that users create and interact with'
+- Schema: { items: [{ name, type, properties[] }], relationships: [{ from, to, type }], confidence, evidence[] }
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
