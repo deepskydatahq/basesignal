@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-05 - Story M002-E003-S005: Parse and Validate Activation Levels Response
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - New: types (SignalStrength, ActivationCriterion, ActivationLevel, ActivationLevelsResult) + `parseActivationLevelsResponse` function
+- `convex/analysis/extractActivationLevels.test.ts` - New: 29 tests covering types and parser validation
+
+**Learnings:**
+- `parseIdentityResponse` pattern in extractIdentity.ts is a solid template for all LLM response parsers
+- TypeScript `import type` doesn't cause runtime import errors even if the source file doesn't exist — type-only tests pass vacuously; need to test runtime behavior
+- The story spec's implementation hints (in TOML handoff section) provided a near-complete implementation — good pattern for story→code handoff
+
+**Patterns Discovered:**
+- LLM response parser pattern: extract from code fences → parse JSON → validate top-level fields → validate per-item fields → validate enum values → validate nested shapes → clamp numeric ranges → sort collections → validate cross-references → return typed result
+- VALID_SIGNAL_STRENGTHS constant array for runtime enum validation mirrors the TypeScript union type
+
+**Gotchas:**
+- Pre-existing test failures (5 tests in 3 files) and 2 convex-test "Write outside of transaction" errors remain — unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
