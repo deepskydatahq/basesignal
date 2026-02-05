@@ -4,7 +4,7 @@
 id = "M002-E004"
 parent = "M002"
 title = "Activation Level Validation & Refinement"
-status = "draft"
+status = "active"
 created = 2026-02-05
 
 [outcome]

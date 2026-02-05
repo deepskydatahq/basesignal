@@ -1,0 +1,79 @@
+# Story: Define Test Product Set for Validation
+# Select and scan 3-5 diverse products for activation validation
+
+id = "M002-E004-S001"
+parent = "M002-E004"
+title = "Define and scan test product set for activation validation"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+A set of 3-5 diverse PLG products is selected for validation testing.
+Each product is scanned and has a profile generated with multi-level
+activation extraction. Products represent different archetypes.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Miro.com is scanned and has activation levels extracted"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear.app is scanned and has activation levels extracted"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Figma.com is scanned and has activation levels extracted"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "At least 3 products have complete profiles with activation.levels populated"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Test products represent different archetypes (collaboration, productivity, design)"
+
+[context]
+relevant_paths = [
+    "scripts/test-scan.mjs",
+    "convex/scanning.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Run the existing scan + analysis pipeline on test products:
+
+1. Select diverse products:
+   - Miro (collaboration/whiteboard)
+   - Linear (project management)
+   - Figma (design tool)
+   - Optional: Slack, Notion, Airtable
+
+2. For each product:
+   - Create product entry if not exists
+   - Run startScan action
+   - Trigger analysis pipeline (including new extractActivationLevels)
+   - Verify profile has activation.levels populated
+
+3. Document in a test results file:
+   - Product name and URL
+   - Pages crawled count
+   - Profile completeness
+   - Activation levels count
+   - Any errors encountered
+
+Use scripts/test-scan.mjs as reference or create scripts/test-validation.mjs
+for batch testing multiple products.
+"""
+
+reference_files = [
+    "scripts/test-scan.mjs"
+]

@@ -1,0 +1,95 @@
+# Story: Apply Refinements Based on Validation
+# Improve extraction based on validation findings
+
+id = "M002-E004-S004"
+parent = "M002-E004"
+title = "Apply refinements to extraction based on validation findings"
+status = "draft"
+created = 2026-02-05
+
+[outcome]
+description = """
+Based on validation results, refinements are applied to improve extraction
+accuracy. Changes may include prompt adjustments, additional examples,
+or improved page filtering. Re-validation shows improvement.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Specific refinements are documented based on validation failures"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "If prompt changes needed: ACTIVATION_SYSTEM_PROMPT is updated"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "If filtering changes needed: filterActivationPages is updated"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Re-running extraction on failed products shows improvement"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Post-refinement validation achieves 70%+ accuracy target"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Refinements and rationale documented in validation results file"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts",
+    "docs/plans/"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E004-S003"]
+
+[handoff]
+implementation_hints = """
+Based on validation findings, apply targeted refinements:
+
+## Common Issues and Fixes
+
+### Issue: Primary activation misidentified
+Fix: Add more examples of aha-moments by product type in prompt
+- PLG collaboration: sharing + someone engaging
+- PLG productivity: first workflow completed
+- PLG creative: work shared + feedback received
+
+### Issue: Criteria not measurable
+Fix: Add prompt guidance requiring specific action + count format
+"Each criterion MUST have: specific action verb (create, share, invite),
+count (1, 5, 10), and optional timeWindow (first_7d)"
+
+### Issue: Weak evidence for higher levels
+Fix: Prioritize help docs and case studies in page filtering
+Consider: Add E002 (data sources) improvements before re-validation
+
+### Issue: Levels don't match product archetype
+Fix: Add product archetype examples in prompt
+- Collaboration tool: individual → shared → team adoption
+- Productivity tool: setup → first use → workflow habit
+- Marketplace: browse → first transaction → repeat buyer
+
+## Re-validation Process
+1. Apply changes to extractActivationLevels.ts
+2. Re-run extraction on products that scored < 6 points
+3. Re-evaluate with rubric
+4. Document improvement in validation results
+
+## Success Criteria
+- Overall accuracy improves from baseline
+- No product scores Inaccurate (< 6 points) after refinement
+- 70%+ of products score Accurate (10+ points)
+"""
+
+reference_files = [
+    "convex/analysis/extractActivationLevels.ts"
+]
