@@ -12,6 +12,25 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E001-S002: Update productProfiles for Multi-Level Activation
+
+**Files Changed:**
+- `convex/schema.ts` - Updated activation definition to support both legacy flat format and new multi-level format (levels array, primaryActivation, overallConfidence)
+- `convex/productProfiles.ts` - Updated `calculateCompletenessAndConfidence` to use `overallConfidence ?? confidence ?? 0` fallback
+- `convex/productProfiles.test.ts` - Added 4 tests: legacy fallback, overallConfidence usage, 4-level storage integration, mixed-section completeness integration
+
+**Learnings:**
+- Convex schema `v.optional()` on previously-required fields enables backward compatibility without data migration
+- The `overallConfidence ?? confidence ?? 0` transparent fallback pattern handles both formats with zero branching logic
+- `updateSectionInternal` already handles multi-level data without changes since it uses generic `v.any()` data and `[args.section]: args.data` patching
+
+**Patterns Discovered:**
+- Schema evolution pattern: make old fields optional, add new fields as optional, let the consuming code use fallback chains
+- Integration tests that store via `updateSectionInternal` and read via `getInternal` validate the full roundtrip through Convex schema validation
+
+**Gotchas:**
+- Pre-existing "Write outside of transaction" failures in scans.test.ts and mcpProducts.test.ts still present (scheduler-related, unrelated to this work)
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
