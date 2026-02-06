@@ -12,6 +12,23 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E003-S001: Define TypeScript types for activation level extraction
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - New: SignalStrength, ActivationCriterion, ActivationLevel, ActivationLevelsResult types + SIGNAL_STRENGTHS constant
+- `convex/analysis/extractActivationLevels.test.ts` - New: 5 tests verifying type shapes and SIGNAL_STRENGTHS constant
+
+**Learnings:**
+- `import type` in Vitest doesn't cause runtime failures when the module is missing — need at least one runtime value import (like a constant) to get a proper RED phase in TDD
+- Deriving union types from `as const` arrays (`typeof SIGNAL_STRENGTHS[number]`) provides both runtime values and compile-time type safety
+
+**Patterns Discovered:**
+- For type-only modules, export a runtime constant (e.g., `SIGNAL_STRENGTHS`) alongside types so tests can do a real import and verify module existence
+- Pattern matches extractIdentity.ts and extractJourney.ts: interfaces defined at top of analysis file, will be extended with action logic in subsequent stories
+
+**Gotchas:**
+- Pre-existing test failures (14 tests in 5 files) still present — unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
