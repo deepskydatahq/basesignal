@@ -88,6 +88,24 @@ describe("classifyPageType", () => {
     expect(classifyPageType("https://acme.io/use-cases")).toBe("solutions");
   });
 
+  it("classifies onboarding pages", () => {
+    expect(classifyPageType("https://acme.io/getting-started")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/getting-started/")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/getting-started/step-1")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/onboarding")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/onboarding/welcome")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/quick-start")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/quick-start/setup")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/first-steps")).toBe("onboarding");
+    expect(classifyPageType("https://acme.io/first-steps/create-account")).toBe("onboarding");
+  });
+
+  it("does not classify partial onboarding matches as onboarding", () => {
+    expect(classifyPageType("https://acme.io/getting-started-guide")).not.toBe("onboarding");
+    expect(classifyPageType("https://acme.io/blog/getting-started")).not.toBe("onboarding");
+    expect(classifyPageType("https://acme.io/onboarding-flow")).not.toBe("onboarding");
+  });
+
   it("returns other for unknown patterns", () => {
     expect(classifyPageType("https://acme.io/changelog")).toBe("other");
     expect(classifyPageType("https://acme.io/team")).toBe("other");
@@ -276,5 +294,37 @@ describe("filterHighValuePages", () => {
     ];
     const { docsUrl } = filterHighValuePages(urls, "https://acme.io");
     expect(docsUrl).toBe("https://acme.io/docs/getting-started");
+  });
+
+  it("prioritizes onboarding content over 'other' pages", () => {
+    const urls = [
+      "https://acme.io/changelog",
+      "https://acme.io/getting-started",
+      "https://acme.io/onboarding/welcome",
+      "https://acme.io/random-page",
+    ];
+    const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
+    const onboardingIdx = targetUrls.indexOf("https://acme.io/getting-started");
+    const changelogIdx = targetUrls.indexOf("https://acme.io/changelog");
+    const randomIdx = targetUrls.indexOf("https://acme.io/random-page");
+    // Onboarding should be in must-crawl tier, before other pages
+    expect(onboardingIdx).toBeGreaterThanOrEqual(0);
+    expect(onboardingIdx).toBeLessThan(changelogIdx);
+    expect(onboardingIdx).toBeLessThan(randomIdx);
+  });
+
+  it("deduplicates onboarding pages keeping only the first", () => {
+    const urls = [
+      "https://acme.io/getting-started",
+      "https://acme.io/onboarding/welcome",
+      "https://acme.io/quick-start",
+    ];
+    const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
+    // Only first onboarding page should be kept (dedup by type)
+    const onboardingUrls = targetUrls.filter(
+      (u) => u.includes("getting-started") || u.includes("onboarding") || u.includes("quick-start")
+    );
+    expect(onboardingUrls).toHaveLength(1);
+    expect(onboardingUrls[0]).toBe("https://acme.io/getting-started");
   });
 });
