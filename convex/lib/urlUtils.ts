@@ -92,7 +92,7 @@ export function classifyPageType(url: string, rootHostname?: string): string {
   if (path.match(/^\/(features?|product)(\/|$)/)) return "features";
   // Exclude careers/jobs subpaths from about classification
   if (path.match(/^\/(about|company)(\/|$)/) && !path.includes("career") && !path.includes("jobs")) return "about";
-  if (path.match(/^\/(customers?|case-studies?|stories)(\/|$)/)) return "customers";
+  if (path.match(/^\/(customers?|case-studies?|stories|success-stories|testimonials?|results)(\/|$)/)) return "customers";
   if (path.match(/^\/(enterprise)(\/|$)/)) return "enterprise";
   if (path.match(/^\/(integrations?)(\/|$)/)) return "integrations";
   if (path.match(/^\/(security|compliance|trust)(\/|$)/)) return "security";

@@ -74,6 +74,21 @@ describe("classifyPageType", () => {
     expect(classifyPageType("https://acme.io/case-studies/acme")).toBe("customers");
   });
 
+  it("classifies /success-stories as customers", () => {
+    expect(classifyPageType("https://acme.io/success-stories")).toBe("customers");
+    expect(classifyPageType("https://acme.io/success-stories/acme-corp")).toBe("customers");
+  });
+
+  it("classifies /testimonials as customers", () => {
+    expect(classifyPageType("https://acme.io/testimonials")).toBe("customers");
+    expect(classifyPageType("https://acme.io/testimonials/enterprise")).toBe("customers");
+  });
+
+  it("classifies /results as customers", () => {
+    expect(classifyPageType("https://acme.io/results")).toBe("customers");
+    expect(classifyPageType("https://acme.io/results/case-1")).toBe("customers");
+  });
+
   it("classifies integration pages", () => {
     expect(classifyPageType("https://acme.io/integrations")).toBe("integrations");
   });
