@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E001-S001: Define Activation Levels Schema Structure
+
+**Files Changed:**
+- `convex/schema.ts` - Replaced flat `definitions.activation` with multi-level structure (levels array, primaryActivation, overallConfidence)
+- `convex/activationLevelsSchema.test.ts` - New: 6 tests covering all acceptance criteria for multi-level activation schema
+
+**Learnings:**
+- Schema uses `v.any()` in `updateSectionInternal` for `data` param, so validation happens at the table level when `ctx.db.patch` is called — test must go through the mutation to verify schema acceptance
+- `v.union(v.literal("weak"), v.literal("medium"), ...)` is the Convex pattern for string enums
+- Storage uses `v.any()` for definitions, so old data with flat activation structure coexists without migration — new writes must use the new shape
+
+**Patterns Discovered:**
+- TDD for schema changes: write tests that insert data in the new shape via `updateSectionInternal`, watch them fail against old schema, update schema, watch them pass
+- Schema evolution without migration: since `definitions` is stored as `v.any()` in practice (the `updateSectionInternal` accepts `v.any()` for data), old documents remain valid even though the schema definition changed
+
+**Gotchas:**
+- Pre-existing test failures (8 tests in 4 files) and "Write outside of transaction" errors still present — unrelated to schema changes
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
