@@ -101,6 +101,9 @@ export function classifyPageType(url: string, rootHostname?: string): string {
 
   // Subdomain-specific classifications (only when rootHostname provided)
   if (rootHostname) {
+    if (hostname.startsWith("help.")) return "help";
+    if (hostname.startsWith("docs.")) return "docs";
+    if (hostname.startsWith("support.")) return "support";
     if (hostname.startsWith("status.")) return "status";
     if (hostname.startsWith("developers.") || hostname.startsWith("api.")) return "developers";
     if (hostname.startsWith("trust.")) return "trust";

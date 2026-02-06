@@ -89,6 +89,21 @@ describe("classifyPageType", () => {
     expect(classifyPageType("https://acme.io/use-cases")).toBe("solutions");
   });
 
+  it("classifies help subdomains", () => {
+    expect(classifyPageType("https://help.acme.io/", "acme.io")).toBe("help");
+    expect(classifyPageType("https://help.acme.io/articles/setup", "acme.io")).toBe("help");
+  });
+
+  it("classifies docs subdomains", () => {
+    expect(classifyPageType("https://docs.acme.io/", "acme.io")).toBe("docs");
+    expect(classifyPageType("https://docs.acme.io/api/reference", "acme.io")).toBe("docs");
+  });
+
+  it("classifies support subdomains", () => {
+    expect(classifyPageType("https://support.acme.io/", "acme.io")).toBe("support");
+    expect(classifyPageType("https://support.acme.io/tickets", "acme.io")).toBe("support");
+  });
+
   it("returns other for unknown patterns", () => {
     expect(classifyPageType("https://acme.io/changelog")).toBe("other");
     expect(classifyPageType("https://acme.io/team")).toBe("other");
