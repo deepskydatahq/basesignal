@@ -197,6 +197,7 @@ export function isDocsSite(url: string): boolean {
 }
 
 const MAX_PAGES = 30;
+const MAX_CUSTOMERS = 3;
 
 // Page types by priority tier
 const MUST_CRAWL_TYPES = ["homepage", "pricing", "features", "about", "enterprise", "customers"];
@@ -268,19 +269,26 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
     }
   }
 
-  // Deduplicate by type (only keep first of each high-value type)
-  const seenTypes = new Set<string>();
+  // Deduplicate by type with per-type limits
+  // Most types keep 1 page; customers allow up to MAX_CUSTOMERS for diverse case studies
+  const typeCounts = new Map<string, number>();
   const deduped: string[] = [];
 
+  function maxForType(type: string): number {
+    return type === "customers" ? MAX_CUSTOMERS : 1;
+  }
+
   for (const { url, type } of mustCrawl) {
-    if (MUST_CRAWL_TYPES.includes(type) && seenTypes.has(type)) continue;
-    seenTypes.add(type);
+    const count = typeCounts.get(type) ?? 0;
+    if (count >= maxForType(type)) continue;
+    typeCounts.set(type, count + 1);
     deduped.push(url);
   }
 
   for (const { url, type } of shouldCrawlUrls) {
-    if (SHOULD_CRAWL_TYPES.includes(type) && seenTypes.has(type)) continue;
-    seenTypes.add(type);
+    const count = typeCounts.get(type) ?? 0;
+    if (count >= maxForType(type)) continue;
+    typeCounts.set(type, count + 1);
     deduped.push(url);
   }
 

@@ -283,6 +283,41 @@ describe("filterHighValuePages", () => {
     expect(customerIdx).toBeLessThan(integrationsIdx);
   });
 
+  it("allows up to 3 customer pages", () => {
+    const urls = [
+      "https://acme.io/",
+      "https://acme.io/customers/acme-corp",
+      "https://acme.io/case-studies/beta-inc",
+      "https://acme.io/success-stories/gamma-llc",
+      "https://acme.io/testimonials/delta-co",
+    ];
+    const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
+    // Should include 3 customer pages (not just 1)
+    const customerUrls = targetUrls.filter(
+      (u) => u.includes("/customers/") || u.includes("/case-studies/") ||
+             u.includes("/success-stories/") || u.includes("/testimonials/")
+    );
+    expect(customerUrls.length).toBe(3);
+  });
+
+  it("does not exceed 3 customer pages", () => {
+    const urls = [
+      "https://acme.io/",
+      "https://acme.io/customers/a",
+      "https://acme.io/customers/b",
+      "https://acme.io/case-studies/c",
+      "https://acme.io/success-stories/d",
+      "https://acme.io/testimonials/e",
+    ];
+    const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
+    const customerUrls = targetUrls.filter(
+      (u) => u.includes("/customers/") || u.includes("/case-studies/") ||
+             u.includes("/success-stories/") || u.includes("/testimonials/")
+    );
+    // Cap at 3 even when 5 are available
+    expect(customerUrls.length).toBe(3);
+  });
+
   it("limits to 30 pages max", () => {
     const urls = Array.from({ length: 50 }, (_, i) => `https://acme.io/page-${i}`);
     const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
