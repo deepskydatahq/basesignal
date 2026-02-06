@@ -12,6 +12,26 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E003-S004: Implement extractActivationLevels internalAction
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - New: types, prompt, filtering, parsing, and internalAction for multi-level activation extraction
+- `convex/analysis/extractActivationLevels.test.ts` - New: 37 tests covering types, prompt, filterActivationPages, buildActivationPageContext, parseActivationLevelsResponse
+
+**Learnings:**
+- Dependent stories (S001 types, S002 prompt, S003 filtering, S005 parser) were not yet implemented — all needed to be built in a single file following the extractIdentity.ts pattern
+- Activation page filtering uses different page types than identity: onboarding, help, customers, features, homepage (vs homepage, about, features)
+- Priority ordering of page types matters for activation context — onboarding pages are most valuable
+- The `definitions` section in productProfiles stores sub-keys (activation, firstValue, active, atRisk, churn) so the action must merge with existing definitions rather than overwriting
+
+**Patterns Discovered:**
+- Same extraction action pattern as identity: fetch pages → filter → build context → LLM call → parse → store
+- When updating a nested section (definitions.activation), fetch current definitions and spread to preserve sibling keys
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- Pre-existing UI test failures (AddActivityModal, AddEntityDialog, TrackingMaturityScreen) and "Write outside of transaction" errors still present — unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
