@@ -315,6 +315,280 @@ describe("productProfiles", () => {
     expect(id1).toEqual(id2);
   });
 
+  it("uses legacy activation.confidence for completeness when no levels exist", async () => {
+    const t = convexTest(schema);
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-clerk-id",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+    const productId = await t.run(async (ctx) => {
+      return await ctx.db.insert("products", {
+        userId,
+        name: "Test Product",
+        url: "https://test.io",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    // Store legacy activation format (flat, no levels)
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "definitions",
+      data: {
+        activation: {
+          criteria: ["Signup completed"],
+          timeWindow: "first_7d",
+          reasoning: "Basic activation",
+          confidence: 0.7,
+          source: "crawl",
+          evidence: [],
+        },
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    // definitions.activation is 1 of 10 sections = 0.1
+    expect(profile?.completeness).toBeCloseTo(0.1, 1);
+    // Confidence should use legacy activation.confidence = 0.7
+    expect(profile?.overallConfidence).toBeCloseTo(0.7, 1);
+  });
+
+  it("uses activation.overallConfidence when levels exist", async () => {
+    const t = convexTest(schema);
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-clerk-id",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+    const productId = await t.run(async (ctx) => {
+      return await ctx.db.insert("products", {
+        userId,
+        name: "Test Product",
+        url: "https://test.io",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    // Store multi-level activation format
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "definitions",
+      data: {
+        activation: {
+          levels: [
+            {
+              level: 1,
+              name: "Setup",
+              signalStrength: "weak",
+              criteria: [{ action: "Account Created", count: 1 }],
+              reasoning: "Basic setup",
+              confidence: 0.9,
+              evidence: [],
+            },
+            {
+              level: 2,
+              name: "Aha moment",
+              signalStrength: "strong",
+              criteria: [{ action: "First Project Created", count: 1 }],
+              reasoning: "Core value",
+              confidence: 0.8,
+              evidence: [],
+            },
+          ],
+          primaryActivation: 2,
+          overallConfidence: 0.85,
+        },
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    // definitions.activation is 1 of 10 sections = 0.1
+    expect(profile?.completeness).toBeCloseTo(0.1, 1);
+    // Should use overallConfidence (0.85), NOT individual level confidences
+    expect(profile?.overallConfidence).toBeCloseTo(0.85, 1);
+  });
+
+  it("persists all 4 levels when storing multi-level activation via updateSectionInternal", async () => {
+    const t = convexTest(schema);
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-clerk-id",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+    const productId = await t.run(async (ctx) => {
+      return await ctx.db.insert("products", {
+        userId,
+        name: "Test Product",
+        url: "https://test.io",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    const fourLevels = {
+      activation: {
+        levels: [
+          {
+            level: 1,
+            name: "Setup",
+            signalStrength: "weak" as const,
+            criteria: [{ action: "Account Created", count: 1 }],
+            reasoning: "Account creation is table stakes",
+            confidence: 0.9,
+            evidence: [{ url: "https://test.io/signup", excerpt: "Sign up free" }],
+          },
+          {
+            level: 2,
+            name: "Onboarding",
+            signalStrength: "medium" as const,
+            criteria: [{ action: "Profile Completed", count: 1 }, { action: "Tutorial Started", count: 1 }],
+            reasoning: "Completing profile shows intent",
+            confidence: 0.75,
+            evidence: [],
+          },
+          {
+            level: 3,
+            name: "Aha Moment",
+            signalStrength: "strong" as const,
+            criteria: [{ action: "First Project Created", count: 1 }],
+            reasoning: "Creating a project demonstrates core value",
+            confidence: 0.8,
+            evidence: [{ url: "https://test.io/docs", excerpt: "Create your first project" }],
+          },
+          {
+            level: 4,
+            name: "Habit Formation",
+            signalStrength: "very_strong" as const,
+            criteria: [{ action: "Project Created", count: 3, timeWindow: "first_14d" }],
+            reasoning: "Repeated usage signals habit",
+            confidence: 0.65,
+            evidence: [],
+          },
+        ],
+        primaryActivation: 3,
+        overallConfidence: 0.78,
+      },
+    };
+
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "definitions",
+      data: fourLevels,
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    const activation = (profile as any)?.definitions?.activation;
+
+    // Verify all 4 levels persisted
+    expect(activation.levels).toHaveLength(4);
+    expect(activation.levels[0].name).toBe("Setup");
+    expect(activation.levels[0].signalStrength).toBe("weak");
+    expect(activation.levels[1].name).toBe("Onboarding");
+    expect(activation.levels[1].criteria).toHaveLength(2);
+    expect(activation.levels[2].name).toBe("Aha Moment");
+    expect(activation.levels[2].signalStrength).toBe("strong");
+    expect(activation.levels[3].name).toBe("Habit Formation");
+    expect(activation.levels[3].signalStrength).toBe("very_strong");
+    expect(activation.levels[3].criteria[0].timeWindow).toBe("first_14d");
+
+    // Verify primaryActivation and overallConfidence
+    expect(activation.primaryActivation).toBe(3);
+    expect(activation.overallConfidence).toBe(0.78);
+
+    // Verify evidence persisted
+    expect(activation.levels[0].evidence).toHaveLength(1);
+    expect(activation.levels[0].evidence[0].url).toBe("https://test.io/signup");
+  });
+
+  it("calculates correct completeness with multi-level activation and other sections", async () => {
+    const t = convexTest(schema);
+    const userId = await t.run(async (ctx) => {
+      return await ctx.db.insert("users", {
+        clerkId: "test-clerk-id",
+        email: "test@example.com",
+        createdAt: Date.now(),
+      });
+    });
+    const productId = await t.run(async (ctx) => {
+      return await ctx.db.insert("products", {
+        userId,
+        name: "Test Product",
+        url: "https://test.io",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    await t.mutation(internal.productProfiles.createInternal, { productId });
+
+    // Add identity section (1 of 10)
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "identity",
+      data: {
+        productName: "Acme",
+        description: "Tool",
+        targetCustomer: "Devs",
+        businessModel: "SaaS",
+        confidence: 0.8,
+        evidence: [],
+      },
+    });
+
+    // Add multi-level activation definition (2 of 10)
+    await t.mutation(internal.productProfiles.updateSectionInternal, {
+      productId,
+      section: "definitions",
+      data: {
+        activation: {
+          levels: [
+            {
+              level: 1,
+              name: "Setup",
+              signalStrength: "weak" as const,
+              criteria: [{ action: "Account Created", count: 1 }],
+              reasoning: "Basic setup",
+              confidence: 0.9,
+              evidence: [],
+            },
+            {
+              level: 2,
+              name: "Aha Moment",
+              signalStrength: "strong" as const,
+              criteria: [{ action: "First Project Created", count: 1 }],
+              reasoning: "Core value",
+              confidence: 0.8,
+              evidence: [],
+            },
+          ],
+          primaryActivation: 2,
+          overallConfidence: 0.85,
+        },
+      },
+    });
+
+    const profile = await t.query(internal.productProfiles.getInternal, { productId });
+    // 2 sections filled out of 10 = 0.2
+    expect(profile?.completeness).toBeCloseTo(0.2, 1);
+    // Average confidence: (identity 0.8 + activation overallConfidence 0.85) / 2 = 0.825
+    expect(profile?.overallConfidence).toBeCloseTo(0.825, 2);
+  });
+
   it("enforces ownership - cannot access other user's profile", async () => {
     const t = convexTest(schema);
     const { productId } = await setupUserAndProduct(t);
