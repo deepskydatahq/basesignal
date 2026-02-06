@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E003-S003: Filter Pages Relevant for Activation Level Extraction
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - New: types (S001) + `filterActivationPages` + `buildActivationPageContext` pure functions
+- `convex/analysis/extractActivationLevels.test.ts` - New: 14 tests (unit + integration with Miro-like crawl data)
+
+**Learnings:**
+- S001 types (ActivationCriterion, ActivationLevel, ActivationLevelsResult) were not yet implemented — created them alongside S003 since they're a dependency
+- The URL classifier (`classifyPageType`) doesn't produce "onboarding" or "help" types yet — `filterActivationPages` accepts them for forward compatibility when the classifier is extended
+- Reusing the truncateContent + buildPageContext pattern from extractIdentity.ts works cleanly for new extractors — keeping it as a private function rather than shared util for now
+
+**Patterns Discovered:**
+- Priority-sorted filtering pattern: filter by type list → sort by priority map → return. Simple, testable, composable with buildPageContext
+- Integration tests with realistic fixture data (Miro-like crawl) catch ordering/exclusion issues that unit tests miss
+
+**Gotchas:**
+- Same pre-existing test failures (scans.test.ts "Write outside of transaction", UI timeouts) — unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
