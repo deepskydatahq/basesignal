@@ -2,7 +2,7 @@ import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { validateUrl, classifyPageType, filterHighValuePages } from "./lib/urlUtils";
+import { validateUrl, classifyPageType, filterHighValuePages, shouldCrawlForActivation } from "./lib/urlUtils";
 
 /**
  * Start a scan of a product website.
@@ -183,6 +183,207 @@ export const startScan = internalAction({
         pagesCrawled: crawledPageSummaries.length,
         docsUrl,
         pricingUrl,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      await ctx.runMutation(internal.scanJobs.fail, {
+        jobId,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  },
+});
+
+const MAX_DOCS_PAGES = 10;
+
+/**
+ * Filter discovered docs URLs to activation-relevant pages.
+ * Deduplicates, filters through shouldCrawlForActivation, and limits to MAX_DOCS_PAGES.
+ */
+export function filterDocsUrls(urls: string[]): string[] {
+  const seen = new Set<string>();
+  const filtered: string[] = [];
+
+  for (const url of urls) {
+    if (seen.has(url)) continue;
+    seen.add(url);
+
+    if (shouldCrawlForActivation(url)) {
+      filtered.push(url);
+    }
+
+    if (filtered.length >= MAX_DOCS_PAGES) break;
+  }
+
+  return filtered;
+}
+
+/**
+ * Start a focused crawl of a docs/help subdomain for activation content.
+ *
+ * This is an on-demand action (option B from the spec) — separate from the main crawl.
+ * Flow: validate URL → create scanJob → Firecrawl map → filter activation URLs →
+ *       Firecrawl batch scrape → poll → store pages with docs pageType → complete
+ */
+export const startDocsScan = internalAction({
+  args: {
+    productId: v.id("products"),
+    userId: v.id("users"),
+    docsUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const validation = validateUrl(args.docsUrl);
+    if (!validation.valid) {
+      throw new Error(`Invalid docs URL: ${validation.error}`);
+    }
+
+    // Create a scan job for this docs crawl
+    const jobId: Id<"scanJobs"> = await ctx.runMutation(internal.scanJobs.createInternal, {
+      productId: args.productId,
+      userId: args.userId,
+      url: args.docsUrl,
+    });
+
+    try {
+      const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
+      if (!firecrawlApiKey) {
+        throw new Error("FIRECRAWL_API_KEY environment variable is not set");
+      }
+
+      // Step 1: Map the docs site
+      await ctx.runMutation(internal.scanJobs.updateProgress, {
+        jobId,
+        currentPhase: "Mapping docs site",
+      });
+
+      const mapResponse = await fetch("https://api.firecrawl.dev/v1/map", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${firecrawlApiKey}`,
+        },
+        body: JSON.stringify({ url: args.docsUrl }),
+      });
+
+      if (!mapResponse.ok) {
+        const errorText = await mapResponse.text();
+        throw new Error(`Firecrawl map failed (${mapResponse.status}): ${errorText}`);
+      }
+
+      const mapResult = await mapResponse.json() as { links?: string[] };
+      const discoveredUrls = mapResult.links ?? [];
+
+      // Step 2: Filter to activation-relevant pages (max 10)
+      const targetUrls = filterDocsUrls(discoveredUrls);
+
+      if (targetUrls.length === 0) {
+        // No activation-relevant pages found; at least scrape the root
+        targetUrls.push(args.docsUrl);
+      }
+
+      // Step 3: Update job and start crawling
+      await ctx.runMutation(internal.scanJobs.updateProgress, {
+        jobId,
+        status: "crawling",
+        pagesTotal: targetUrls.length,
+        currentPhase: `Crawling ${targetUrls.length} docs pages`,
+      });
+
+      // Step 4: Batch scrape
+      const scrapeResponse = await fetch("https://api.firecrawl.dev/v1/batch/scrape", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${firecrawlApiKey}`,
+        },
+        body: JSON.stringify({
+          urls: targetUrls,
+          formats: ["markdown"],
+        }),
+      });
+
+      if (!scrapeResponse.ok) {
+        const errorText = await scrapeResponse.text();
+        throw new Error(`Firecrawl batch scrape failed (${scrapeResponse.status}): ${errorText}`);
+      }
+
+      const scrapeResult = await scrapeResponse.json() as {
+        id?: string;
+        success?: boolean;
+      };
+
+      if (!scrapeResult.success || !scrapeResult.id) {
+        throw new Error("Firecrawl batch scrape did not return a job ID");
+      }
+
+      // Step 5: Poll for completion
+      const scrapedPages = await pollBatchScrape(
+        scrapeResult.id,
+        firecrawlApiKey,
+        async (completed, total) => {
+          await ctx.runMutation(internal.scanJobs.updateProgress, {
+            jobId,
+            pagesCrawled: completed,
+            currentPhase: `Crawled ${completed}/${total} docs pages`,
+          });
+        }
+      );
+
+      // Step 6: Store pages with docs-appropriate pageType
+      const crawledPageSummaries: Array<{
+        url: string;
+        pageType: string | undefined;
+        title: string | undefined;
+      }> = [];
+
+      // Determine the root hostname for proper classification
+      let rootHostname: string;
+      try {
+        rootHostname = new URL(args.docsUrl).hostname.toLowerCase().replace(/^www\./, "");
+      } catch {
+        rootHostname = "";
+      }
+
+      for (const page of scrapedPages) {
+        const pageUrl = page.url ?? page.metadata?.sourceURL ?? "";
+        const markdown = page.markdown ?? "";
+        if (!pageUrl || !markdown) continue;
+
+        // Use classifyPageType with rootHostname to get help/docs/support classification
+        const pageType = classifyPageType(pageUrl, rootHostname);
+
+        await ctx.runMutation(internal.crawledPages.store, {
+          productId: args.productId,
+          scanJobId: jobId,
+          url: pageUrl,
+          pageType,
+          title: page.metadata?.title,
+          content: markdown,
+          metadata: {
+            description: page.metadata?.description,
+            ogImage: page.metadata?.ogImage,
+          },
+        });
+
+        crawledPageSummaries.push({
+          url: pageUrl,
+          pageType,
+          title: page.metadata?.title,
+        });
+      }
+
+      // Step 7: Complete
+      await ctx.runMutation(internal.scanJobs.updateProgress, {
+        jobId,
+        crawledPages: crawledPageSummaries,
+      });
+      await ctx.runMutation(internal.scanJobs.complete, { jobId });
+
+      return {
+        jobId,
+        pagesDiscovered: discoveredUrls.length,
+        pagesCrawled: crawledPageSummaries.length,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
