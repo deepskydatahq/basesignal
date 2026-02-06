@@ -199,8 +199,8 @@ export function isDocsSite(url: string): boolean {
 const MAX_PAGES = 30;
 
 // Page types by priority tier
-const MUST_CRAWL_TYPES = ["homepage", "pricing", "features", "about", "enterprise"];
-const SHOULD_CRAWL_TYPES = ["customers", "integrations", "security", "solutions", "whiteboard"];
+const MUST_CRAWL_TYPES = ["homepage", "pricing", "features", "about", "enterprise", "customers"];
+const SHOULD_CRAWL_TYPES = ["integrations", "security", "solutions", "whiteboard"];
 const SKIP_TYPES = ["template", "status", "community"]; // Classified but not crawled
 
 /**

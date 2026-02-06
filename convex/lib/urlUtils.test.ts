@@ -269,6 +269,20 @@ describe("filterHighValuePages", () => {
     expect(homepageIdx).toBeLessThan(changelogIdx);
   });
 
+  it("prioritizes customer pages at must-crawl tier", () => {
+    // Customers should appear in the must-crawl batch, before should-crawl types
+    const urls = [
+      "https://acme.io/integrations", // should-crawl type
+      "https://acme.io/customers/acme-corp", // customer - should be must-crawl
+      "https://acme.io/",
+    ];
+    const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
+    const customerIdx = targetUrls.indexOf("https://acme.io/customers/acme-corp");
+    const integrationsIdx = targetUrls.indexOf("https://acme.io/integrations");
+    // If customers are must-crawl, they appear before should-crawl (integrations)
+    expect(customerIdx).toBeLessThan(integrationsIdx);
+  });
+
   it("limits to 30 pages max", () => {
     const urls = Array.from({ length: 50 }, (_, i) => `https://acme.io/page-${i}`);
     const { targetUrls } = filterHighValuePages(urls, "https://acme.io");
