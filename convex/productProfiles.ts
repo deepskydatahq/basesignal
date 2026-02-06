@@ -197,6 +197,17 @@ export const createInternal = internalMutation({
   },
 });
 
+// Test query for scripts (no auth check) - TODO: remove in production
+export const getForTest = query({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+  },
+});
+
 // Internal version for use by Convex actions (no auth check)
 export const getInternal = internalQuery({
   args: { productId: v.id("products") },

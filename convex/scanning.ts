@@ -164,7 +164,7 @@ export const startScan = internalAction({
       await ctx.runMutation(internal.scanJobs.complete, { jobId });
 
       // Trigger analysis pipeline
-      await ctx.scheduler.runAfter(0, internal.analysis.orchestrate.run, {
+      await ctx.scheduler.runAfter(0, internal.analysis.orchestrate.runAnalysisPipeline, {
         productId: args.productId,
         scanJobId: jobId,
       });

@@ -1,4 +1,4 @@
-import { internalAction } from "../_generated/server";
+import { action, internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import Anthropic from "@anthropic-ai/sdk";
@@ -256,6 +256,16 @@ export function parseActivationLevelsResponse(responseText: string): ActivationL
  * 5. Parse and validate response
  * 6. Store on product profile under definitions.activation
  */
+// Public test action to trigger activation extraction manually (for debugging)
+export const testExtractActivation = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    return await ctx.runAction(internal.analysis.extractActivationLevels.extractActivationLevels, {
+      productId: args.productId,
+    });
+  },
+});
+
 export const extractActivationLevels = internalAction({
   args: {
     productId: v.id("products"),
@@ -311,7 +321,7 @@ export const extractActivationLevels = internalAction({
       : `Extract activation levels from:\n\n${pageContext}`;
 
     const response = await client.messages.create({
-      model: "claude-haiku-4-20250414",
+      model: "claude-3-5-haiku-latest",
       max_tokens: 2048,
       system: ACTIVATION_SYSTEM_PROMPT,
       messages: [
