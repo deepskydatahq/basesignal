@@ -81,7 +81,7 @@
 ---
 
 ### H5: Multi-Level Activation
-**Status:** 🔵 Testing
+**Status:** 🟢 Validated
 
 **Belief:** We believe that modeling activation as a spectrum (multiple levels from weak to strong signals) rather than a single binary definition will produce more accurate and actionable product understanding.
 
@@ -97,14 +97,21 @@
 **Evidence:**
 - Feb 2026: Miro profile generated with single-level activation; user identified opportunity for multi-level modeling
 - Feb 2026: Mission M002 created to test multi-level activation discovery
+- Feb 2026: M002 completed - Linear profile extracted with 4 activation levels:
+  - L1 explorer (weak): create_first_issue
+  - L2 workflow_learner (medium): create_project + invite_team_member
+  - L3 workflow_optimizer (strong) ⭐ PRIMARY: complete_cycle + use_triage + resolve_bugs
+  - L4 product_workflow_master (very_strong): cross_team + insights + integrations
+- Feb 2026: All test criteria met - 4 levels with measurable criteria, aha-moment correctly identified
 
-**Next Steps:** If validated, extend to other lifecycle definitions (active, at-risk, churn). If invalidated, determine if the data sources are insufficient or the model is wrong.
+**Outcome:** Validated. Multi-level activation produces actionable, nuanced understanding of user progression.
 
 ---
 
 ## Validated Hypotheses
 
-(none yet)
+### H5: Multi-Level Activation ✓
+Modeling activation as a spectrum (weak → medium → strong → very_strong) produces more accurate and actionable product understanding than binary activation. Tested via M002 mission with Linear product - extracted 4 distinct levels with measurable criteria, correctly identifying L3 (workflow_optimizer) as the aha-moment.
 
 ---
 
