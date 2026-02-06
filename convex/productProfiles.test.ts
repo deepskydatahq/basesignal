@@ -315,6 +315,73 @@ describe("productProfiles", () => {
     expect(id1).toEqual(id2);
   });
 
+  describe("activation backward compatibility", () => {
+    async function setupProfileWithDirectInsert(t: ReturnType<typeof convexTest>) {
+      const userId = await t.run(async (ctx) => {
+        return await ctx.db.insert("users", {
+          clerkId: "test-clerk-id",
+          email: "test@example.com",
+          createdAt: Date.now(),
+        });
+      });
+      const productId = await t.run(async (ctx) => {
+        return await ctx.db.insert("products", {
+          userId,
+          name: "Test Product",
+          url: "https://test.io",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+      });
+      return { userId, productId };
+    }
+
+    it("stores and retrieves multi-level activation with overallConfidence for completeness", async () => {
+      const t = convexTest(schema);
+      const { productId } = await setupProfileWithDirectInsert(t);
+
+      await t.mutation(internal.productProfiles.createInternal, { productId });
+      await t.mutation(internal.productProfiles.updateSectionInternal, {
+        productId,
+        section: "definitions",
+        data: {
+          activation: {
+            levels: [
+              {
+                level: 1,
+                name: "explorer",
+                signalStrength: "weak",
+                criteria: [{ action: "view_page", count: 1, timeWindow: "first_7d" }],
+                reasoning: "Basic exploration",
+                confidence: 0.6,
+                evidence: [],
+              },
+              {
+                level: 2,
+                name: "creator",
+                signalStrength: "strong",
+                criteria: [{ action: "create_item", count: 1 }],
+                reasoning: "Created first item",
+                confidence: 0.9,
+                evidence: [],
+              },
+            ],
+            primaryActivation: 2,
+            overallConfidence: 0.85,
+          },
+        },
+      });
+
+      const profile = await t.query(internal.productProfiles.getInternal, { productId });
+      expect(profile?.definitions?.activation).toBeDefined();
+
+      // Completeness: 1 definition section out of 10 total = 0.1
+      expect(profile?.completeness).toBeCloseTo(0.1, 1);
+      // Should use overallConfidence (0.85), not individual level confidences
+      expect(profile?.overallConfidence).toBeCloseTo(0.85, 1);
+    });
+  });
+
   it("enforces ownership - cannot access other user's profile", async () => {
     const t = convexTest(schema);
     const { productId } = await setupUserAndProduct(t);
