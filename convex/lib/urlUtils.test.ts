@@ -3,6 +3,7 @@ import {
   validateUrl,
   classifyPageType,
   shouldCrawl,
+  shouldCrawlForActivation,
   isDocsSite,
   filterHighValuePages,
 } from "./urlUtils";
@@ -210,6 +211,61 @@ describe("isDocsSite", () => {
 
   it("returns false for invalid URLs", () => {
     expect(isDocsSite("not-a-url")).toBe(false);
+  });
+});
+
+describe("shouldCrawlForActivation", () => {
+  it("returns true for help subdomain getting-started paths", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/getting-started")).toBe(true);
+    expect(shouldCrawlForActivation("https://help.acme.io/getting-started/setup")).toBe(true);
+  });
+
+  it("returns true for docs subdomain onboarding paths", () => {
+    expect(shouldCrawlForActivation("https://docs.acme.io/onboarding")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/onboarding/first-project")).toBe(true);
+  });
+
+  it("returns true for support subdomain tutorial paths", () => {
+    expect(shouldCrawlForActivation("https://support.acme.io/tutorials")).toBe(true);
+    expect(shouldCrawlForActivation("https://support.acme.io/tutorials/basics")).toBe(true);
+  });
+
+  it("returns true for quick-start and first-steps paths", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/quick-start")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/first-steps")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/quickstart")).toBe(true);
+  });
+
+  it("returns true for root/index pages of docs subdomains", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/")).toBe(true);
+    expect(shouldCrawlForActivation("https://support.acme.io/")).toBe(true);
+  });
+
+  it("returns false for deep reference/API docs", () => {
+    expect(shouldCrawlForActivation("https://docs.acme.io/api/v2/endpoints/users")).toBe(false);
+    expect(shouldCrawlForActivation("https://docs.acme.io/reference/api/rest")).toBe(false);
+  });
+
+  it("returns false for non-docs subdomains", () => {
+    expect(shouldCrawlForActivation("https://www.acme.io/getting-started")).toBe(false);
+    expect(shouldCrawlForActivation("https://acme.io/tutorials")).toBe(false);
+    expect(shouldCrawlForActivation("https://blog.acme.io/getting-started")).toBe(false);
+  });
+
+  it("returns false for deep nested paths in docs subdomains", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/en/articles/12345/some-deep-page")).toBe(false);
+    expect(shouldCrawlForActivation("https://docs.acme.io/changelog/2024/january")).toBe(false);
+  });
+
+  it("returns false for invalid URLs", () => {
+    expect(shouldCrawlForActivation("not-a-url")).toBe(false);
+  });
+
+  it("handles developer and learn subdomains", () => {
+    expect(shouldCrawlForActivation("https://developer.acme.io/getting-started")).toBe(true);
+    expect(shouldCrawlForActivation("https://learn.acme.io/tutorials")).toBe(true);
+    expect(shouldCrawlForActivation("https://learn.acme.io/")).toBe(true);
   });
 });
 

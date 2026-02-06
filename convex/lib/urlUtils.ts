@@ -196,6 +196,79 @@ export function isDocsSite(url: string): boolean {
   }
 }
 
+/**
+ * Activation-relevant path prefixes for docs/help subdomains.
+ * These paths are likely to contain onboarding and getting-started content.
+ */
+const ACTIVATION_PATH_PREFIXES = [
+  "/getting-started",
+  "/onboarding",
+  "/first-steps",
+  "/tutorials",
+  "/quick-start",
+  "/quickstart",
+  "/guides",
+  "/learn",
+];
+
+/**
+ * Deep reference paths to exclude from activation crawling.
+ * These tend to be API references, changelogs, etc. — not onboarding content.
+ */
+const DEEP_REFERENCE_PREFIXES = [
+  "/api/",
+  "/reference/",
+  "/changelog/",
+];
+
+const MAX_ACTIVATION_PATH_DEPTH = 3;
+
+/**
+ * Determine if a docs/help URL should be crawled for activation analysis.
+ * Only returns true for activation-relevant pages on docs subdomains.
+ *
+ * Returns true for:
+ * - Root pages of docs subdomains (help.acme.io/, docs.acme.io/)
+ * - Onboarding paths: /getting-started, /onboarding, /tutorials, /quick-start, /first-steps, /quickstart
+ *
+ * Returns false for:
+ * - Non-docs subdomains (www.acme.io, blog.acme.io)
+ * - Deep reference/API docs
+ * - Deeply nested paths (more than 3 segments)
+ */
+export function shouldCrawlForActivation(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const path = parsed.pathname.toLowerCase();
+
+  // Must be a docs subdomain
+  const isDocsSubdomain = DOCS_HOSTNAME_PREFIXES.some((prefix) =>
+    hostname.startsWith(prefix)
+  );
+  if (!isDocsSubdomain) return false;
+
+  // Reject deep reference docs
+  if (DEEP_REFERENCE_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    return false;
+  }
+
+  // Allow root/index page
+  if (path === "/" || path === "") return true;
+
+  // Check path depth — reject deeply nested pages
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length > MAX_ACTIVATION_PATH_DEPTH) return false;
+
+  // Allow activation-relevant paths
+  return ACTIVATION_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 const MAX_PAGES = 30;
 
 // Page types by priority tier
