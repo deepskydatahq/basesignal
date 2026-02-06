@@ -101,6 +101,9 @@ export function classifyPageType(url: string, rootHostname?: string): string {
 
   // Subdomain-specific classifications (only when rootHostname provided)
   if (rootHostname) {
+    if (hostname.startsWith("help.")) return "help";
+    if (hostname.startsWith("docs.")) return "docs";
+    if (hostname.startsWith("support.")) return "support";
     if (hostname.startsWith("status.")) return "status";
     if (hostname.startsWith("developers.") || hostname.startsWith("api.")) return "developers";
     if (hostname.startsWith("trust.")) return "trust";
@@ -154,6 +157,53 @@ export function shouldCrawl(url: string): boolean {
   }
 
   return !SKIP_PATTERNS.some((p) => path.includes(p));
+}
+
+const ACTIVATION_HOSTNAME_PREFIXES = ["help.", "docs.", "support."];
+
+const ACTIVATION_PATH_PATTERNS = [
+  /^\/(getting-started|onboarding|first-steps|tutorials|quick-start)(\/|$)/,
+];
+
+// Deep reference paths to exclude from activation crawling
+const DEEP_REFERENCE_PATTERNS = [
+  /^\/api\//, // /api/v2/endpoints/...
+  /^\/reference\//, // /reference/sdk/methods/...
+];
+
+/**
+ * Determine if a URL should be crawled for activation analysis.
+ * Returns true for help/docs/support subdomains with high-value activation paths.
+ * Filters out deep reference docs to focus on getting-started/onboarding content.
+ * Root paths on docs subdomains are always allowed.
+ */
+export function shouldCrawlForActivation(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+
+    if (!ACTIVATION_HOSTNAME_PREFIXES.some((prefix) => hostname.startsWith(prefix))) {
+      return false;
+    }
+
+    // Root path is always allowed
+    if (path === "/" || path === "") return true;
+
+    // Filter out deep reference docs
+    if (DEEP_REFERENCE_PATTERNS.some((p) => p.test(path))) return false;
+
+    // Allow activation-related paths
+    if (ACTIVATION_PATH_PATTERNS.some((p) => p.test(path))) return true;
+
+    // Allow shallow paths (1-2 segments) as they're likely navigation/category pages
+    const segments = path.split("/").filter(Boolean);
+    if (segments.length <= 2) return true;
+
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 const DOCS_PATH_PREFIXES = [
@@ -210,15 +260,17 @@ const SKIP_TYPES = ["template", "status", "community"]; // Classified but not cr
 export function filterHighValuePages(urls: string[], rootUrl: string): {
   targetUrls: string[];
   docsUrl: string | undefined;
+  docsUrls: string[];
 } {
   let rootHostname: string;
   try {
     rootHostname = new URL(rootUrl).hostname.toLowerCase().replace(/^www\./, "");
   } catch {
-    return { targetUrls: [], docsUrl: undefined };
+    return { targetUrls: [], docsUrl: undefined, docsUrls: [] };
   }
 
   let docsUrl: string | undefined;
+  const docsUrls: string[] = [];
 
   // Filter to same domain, crawlable URLs
   const filtered = urls.filter((url) => {
@@ -232,6 +284,7 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
         // Check for docs subdomain on different domain
         if (isDocsSite(url)) {
           docsUrl = url;
+          docsUrls.push(url);
         }
         return false;
       }
@@ -243,8 +296,23 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
 
   // Check filtered URLs for docs sites
   for (const url of filtered) {
-    if (isDocsSite(url) && !docsUrl) {
-      docsUrl = url;
+    if (isDocsSite(url)) {
+      if (!docsUrl) docsUrl = url;
+      docsUrls.push(url);
+    }
+  }
+
+  // Also collect docs URLs from same-domain subdomains that shouldCrawl skips
+  for (const url of urls) {
+    try {
+      const parsed = new URL(url);
+      const hostname = parsed.hostname.toLowerCase();
+      if (!hostname.endsWith(rootHostname)) continue;
+      if (isDocsSite(url) && !docsUrls.includes(url)) {
+        docsUrls.push(url);
+      }
+    } catch {
+      // skip invalid URLs
     }
   }
 
@@ -290,5 +358,5 @@ export function filterHighValuePages(urls: string[], rootUrl: string): {
     deduped.push(url);
   }
 
-  return { targetUrls: deduped.slice(0, MAX_PAGES), docsUrl };
+  return { targetUrls: deduped.slice(0, MAX_PAGES), docsUrl, docsUrls };
 }
