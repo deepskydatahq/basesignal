@@ -501,12 +501,35 @@ export default defineSchema({
     // === Definitions (per-field confidence + source tracking) ===
     definitions: v.optional(v.object({
       activation: v.optional(v.object({
-        criteria: v.array(v.string()),
+        // Legacy flat format fields (kept for backward compatibility)
+        criteria: v.optional(v.array(v.string())),
         timeWindow: v.optional(v.string()),
-        reasoning: v.string(),
-        confidence: v.number(),
-        source: v.string(),
-        evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+        reasoning: v.optional(v.string()),
+        confidence: v.optional(v.number()),
+        source: v.optional(v.string()),
+        evidence: v.optional(v.array(v.object({ url: v.string(), excerpt: v.string() }))),
+
+        // Multi-level activation fields
+        levels: v.optional(v.array(v.object({
+          level: v.number(),
+          name: v.string(),
+          signalStrength: v.union(
+            v.literal("weak"),
+            v.literal("medium"),
+            v.literal("strong"),
+            v.literal("very_strong"),
+          ),
+          criteria: v.array(v.object({
+            action: v.string(),
+            count: v.number(),
+            timeWindow: v.optional(v.string()),
+          })),
+          reasoning: v.string(),
+          confidence: v.number(),
+          evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+        }))),
+        primaryActivation: v.optional(v.number()),
+        overallConfidence: v.optional(v.number()),
       })),
       firstValue: v.optional(v.object({
         description: v.string(),
