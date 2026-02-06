@@ -3,6 +3,7 @@ import {
   validateUrl,
   classifyPageType,
   shouldCrawl,
+  shouldCrawlForActivation,
   isDocsSite,
   filterHighValuePages,
 } from "./urlUtils";
@@ -92,6 +93,21 @@ describe("classifyPageType", () => {
     expect(classifyPageType("https://acme.io/changelog")).toBe("other");
     expect(classifyPageType("https://acme.io/team")).toBe("other");
   });
+
+  it("classifies help subdomains", () => {
+    expect(classifyPageType("https://help.acme.io/", "acme.io")).toBe("help");
+    expect(classifyPageType("https://help.acme.io/articles/setup", "acme.io")).toBe("help");
+  });
+
+  it("classifies docs subdomains", () => {
+    expect(classifyPageType("https://docs.acme.io/", "acme.io")).toBe("docs");
+    expect(classifyPageType("https://docs.acme.io/api/reference", "acme.io")).toBe("docs");
+  });
+
+  it("classifies support subdomains", () => {
+    expect(classifyPageType("https://support.acme.io/", "acme.io")).toBe("support");
+    expect(classifyPageType("https://support.acme.io/tickets", "acme.io")).toBe("support");
+  });
 });
 
 describe("shouldCrawl", () => {
@@ -125,6 +141,47 @@ describe("shouldCrawl", () => {
   it("skips careers pages", () => {
     expect(shouldCrawl("https://acme.io/careers/")).toBe(false);
     expect(shouldCrawl("https://acme.io/jobs/")).toBe(false);
+  });
+});
+
+describe("shouldCrawlForActivation", () => {
+  it("returns true for help subdomains", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/")).toBe(true);
+  });
+
+  it("returns true for docs subdomains", () => {
+    expect(shouldCrawlForActivation("https://docs.acme.io/")).toBe(true);
+  });
+
+  it("returns true for support subdomains", () => {
+    expect(shouldCrawlForActivation("https://support.acme.io/")).toBe(true);
+  });
+
+  it("returns false for non-docs subdomains", () => {
+    expect(shouldCrawlForActivation("https://acme.io/pricing")).toBe(false);
+    expect(shouldCrawlForActivation("https://blog.acme.io/")).toBe(false);
+  });
+
+  it("returns false for invalid URLs", () => {
+    expect(shouldCrawlForActivation("not-a-url")).toBe(false);
+  });
+
+  it("allows getting-started and onboarding paths within docs sites", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/getting-started")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/onboarding")).toBe(true);
+    expect(shouldCrawlForActivation("https://help.acme.io/first-steps")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/tutorials/basics")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/quick-start")).toBe(true);
+  });
+
+  it("filters out deep reference docs paths", () => {
+    expect(shouldCrawlForActivation("https://docs.acme.io/api/v2/endpoints/users/list")).toBe(false);
+    expect(shouldCrawlForActivation("https://docs.acme.io/reference/sdk/methods")).toBe(false);
+  });
+
+  it("allows root paths on docs subdomains", () => {
+    expect(shouldCrawlForActivation("https://help.acme.io/")).toBe(true);
+    expect(shouldCrawlForActivation("https://docs.acme.io/")).toBe(true);
   });
 });
 
@@ -276,5 +333,47 @@ describe("filterHighValuePages", () => {
     ];
     const { docsUrl } = filterHighValuePages(urls, "https://acme.io");
     expect(docsUrl).toBe("https://acme.io/docs/getting-started");
+  });
+
+  it("collects multiple docs URLs in docsUrls array", () => {
+    const urls = [
+      "https://acme.io/",
+      "https://docs.acme.io/",
+      "https://help.acme.io/getting-started",
+      "https://acme.io/docs/api",
+    ];
+    const { docsUrls } = filterHighValuePages(urls, "https://acme.io");
+    expect(docsUrls).toContain("https://docs.acme.io/");
+    expect(docsUrls).toContain("https://help.acme.io/getting-started");
+    expect(docsUrls).toContain("https://acme.io/docs/api");
+    expect(docsUrls.length).toBe(3);
+  });
+
+  it("returns empty docsUrls when no docs sites found", () => {
+    const urls = [
+      "https://acme.io/",
+      "https://acme.io/pricing",
+    ];
+    const { docsUrls } = filterHighValuePages(urls, "https://acme.io");
+    expect(docsUrls).toEqual([]);
+  });
+
+  it("includes help.miro.com in docsUrls when scanning miro.com", () => {
+    const urls = [
+      "https://miro.com/",
+      "https://miro.com/pricing",
+      "https://miro.com/features",
+      "https://help.miro.com/",
+      "https://help.miro.com/hc/en-us/articles/getting-started",
+      "https://miro.com/about",
+    ];
+    const result = filterHighValuePages(urls, "https://miro.com");
+    expect(result.docsUrls).toContain("https://help.miro.com/");
+    expect(result.docsUrls).toContain("https://help.miro.com/hc/en-us/articles/getting-started");
+    // help.miro.com URLs should NOT be in targetUrls (shouldCrawl skips them)
+    expect(result.targetUrls).not.toContain("https://help.miro.com/");
+    // marketing pages should still be in targetUrls
+    expect(result.targetUrls).toContain("https://miro.com/");
+    expect(result.targetUrls).toContain("https://miro.com/pricing");
   });
 });
