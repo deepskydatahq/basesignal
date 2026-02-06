@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E002-S003: Prioritize case study pages for success metrics extraction
+
+**Files Changed:**
+- `convex/lib/urlUtils.ts` - Expanded customer path regex, promoted customers to MUST_CRAWL_TYPES, replaced Set-based dedup with Map-based counting (MAX_CUSTOMERS=3)
+- `convex/lib/urlUtils.test.ts` - Added 6 tests: 3 for new path patterns (/success-stories, /testimonials, /results), 1 for priority tier, 2 for multi-customer page limits
+
+**Learnings:**
+- TDD worked well for incremental regex expansion — each new pattern test fails first, then minimal code makes it pass
+- Map-based counting is a clean generalization of Set-based dedup when some types need higher limits
+- The existing `stories` regex pattern already matched `/success-stories` since `stories` is a substring match in the alternation
+
+**Patterns Discovered:**
+- Per-type limit pattern: `maxForType(type)` function returns different limits for different page types, keeping the dedup loop generic
+- Priority tier promotion: moving a type between MUST_CRAWL and SHOULD_CRAWL arrays is the simplest way to change crawl priority
+
+**Gotchas:**
+- Pre-existing UI test failures (AddActivityModal, AddEntityDialog) still present — unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
