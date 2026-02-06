@@ -12,6 +12,25 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
+
+**Files Changed:**
+- `convex/schema.ts` - Updated `definitions.activation` to `v.union` supporting both legacy (criteria: string[]) and new multi-level (levels array with signalStrength enum) formats
+- `convex/productProfiles.ts` - Updated `calculateCompletenessAndConfidence` to use `overallConfidence` for multi-level format, falling back to `confidence` for legacy
+- `convex/productProfiles.test.ts` - Added 6 backward compatibility tests in new `activation backward compatibility` describe block
+
+**Learnings:**
+- Convex `v.union` cleanly supports backward-compatible schema evolution — both old and new shapes validated at DB write time
+- `updateSectionInternal` uses `v.any()` for the data arg, but `ctx.db.patch` still validates against the schema definition, so invalid `signalStrength` values are rejected at persistence
+- The `overallConfidence ?? confidence` fallback pattern in completeness calculation handles both formats without needing format detection
+
+**Patterns Discovered:**
+- Schema evolution via `v.union`: wrapping old and new object shapes in `v.union` lets them coexist without migration
+- `setupProfileWithDirectInsert` helper pattern for tests that need raw DB access without auth overhead
+
+**Gotchas:**
+- S001 and S002 (schema + section handling) were prerequisites that hadn't been implemented — had to implement them before writing the backward compatibility tests
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**

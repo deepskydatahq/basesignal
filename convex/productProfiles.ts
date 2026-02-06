@@ -111,7 +111,9 @@ function calculateCompletenessAndConfidence(profile: any) {
     for (const key of defKeys) {
       if (profile.definitions[key]) {
         filledSections++;
-        totalConfidence += profile.definitions[key].confidence ?? 0;
+        // Multi-level activation uses overallConfidence; legacy uses confidence
+        const defSection = profile.definitions[key];
+        totalConfidence += defSection.overallConfidence ?? defSection.confidence ?? 0;
       }
     }
   }

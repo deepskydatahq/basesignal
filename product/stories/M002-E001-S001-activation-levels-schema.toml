@@ -1,0 +1,95 @@
+# Story: Define Activation Levels Schema
+# Add multi-level activation support to productProfiles schema
+
+id = "M002-E001-S001"
+parent = "M002-E001"
+title = "Define activation levels schema structure"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+The productProfiles schema defines an activation structure that supports multiple levels,
+each with signal strength, structured criteria (action + count + timeWindow), and a
+primaryActivation marker to identify the aha-moment level.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Schema defines activation.levels as array of level objects"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each level has: level (number), name (string), signalStrength (enum: weak|medium|strong|very_strong)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each level has criteria array with objects containing: action (string), count (number), timeWindow (optional string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each level has: reasoning (string), confidence (number), evidence (array of {url, excerpt})"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Schema defines activation.primaryActivation as number indicating which level is the aha-moment"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Schema defines activation.overallConfidence as number"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Schema compiles without errors (npx convex dev succeeds)"
+
+[context]
+relevant_paths = [
+    "convex/schema.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Replace the current activation schema:
+  activation: v.optional(v.object({
+    criteria: v.array(v.string()),
+    timeWindow: v.optional(v.string()),
+    ...
+  }))
+
+With the new multi-level structure:
+  activation: v.optional(v.object({
+    levels: v.array(v.object({
+      level: v.number(),
+      name: v.string(),
+      signalStrength: v.union(
+        v.literal("weak"),
+        v.literal("medium"),
+        v.literal("strong"),
+        v.literal("very_strong")
+      ),
+      criteria: v.array(v.object({
+        action: v.string(),
+        count: v.number(),
+        timeWindow: v.optional(v.string()),
+      })),
+      reasoning: v.string(),
+      confidence: v.number(),
+      evidence: v.array(v.object({ url: v.string(), excerpt: v.string() })),
+    })),
+    primaryActivation: v.optional(v.number()),
+    overallConfidence: v.number(),
+  })),
+
+Note: Keep backward compatibility by making levels optional initially.
+"""
+
+reference_files = [
+    "convex/schema.ts"
+]

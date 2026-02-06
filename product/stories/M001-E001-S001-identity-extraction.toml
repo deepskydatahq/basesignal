@@ -1,0 +1,64 @@
+# Story: Core Identity Extraction
+# Extract product name, description, target customer, business model from crawled pages
+
+id = "M001-E001-S001"
+parent = "M001-E001"
+title = "Extract core identity from crawled homepage and about pages"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+A Convex action takes crawled page content (homepage, about, features) and uses Claude API
+to extract the identity section: productName, description, targetCustomer, businessModel,
+industry, companyStage — with confidence score and evidence array.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action accepts productId, fetches crawled pages filtered to homepage/about/features types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM prompt returns structured JSON matching the identity schema (productName, description, targetCustomer, businessModel, industry, companyStage)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each field includes evidence array with { url, excerpt } linking to source pages"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Confidence score is assigned (0-1) based on data quality — lower when inferred from limited content"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Result is stored via productProfiles.updateSection(productId, 'identity', data) and completeness recalculates"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/crawledPages.ts",
+    "convex/schema.ts",
+]
+input_fixtures = ["homepage markdown", "about page markdown", "features page markdown"]
+depends_on = []
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/extractIdentity.ts as an internalAction
+- Fetch pages: use internal query to get crawledPages by productId, filter to pageType in [homepage, about, features]
+- Build prompt: include page content (truncated if needed) and request structured JSON output
+- Use Claude API (already in tech stack) with JSON mode / structured output
+- Schema to match: { productName, description, targetCustomer, businessModel, industry?, companyStage?, confidence, evidence[] }
+- Evidence: for each field, include the URL and a relevant excerpt from the page that supports the claim
+- Store via ctx.runMutation(internal.productProfiles.updateSection, { productId, section: 'identity', data })
+- Note: updateSection uses v.any() for data, so the action must ensure correct shape
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/crawledPages.ts",
+    "convex/schema.ts",
+]

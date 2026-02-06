@@ -1,0 +1,100 @@
+# Story: Define Activation Judgment Criteria
+# Create rubric for evaluating activation level accuracy
+
+id = "M002-E004-S002"
+parent = "M002-E004"
+title = "Define judgment criteria for activation level accuracy"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+A rubric defines how to judge whether extracted activation levels are
+accurate and useful. Criteria include logical progression, measurability
+of criteria, alignment with known product aha-moments, and evidence quality.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Rubric defines 'accurate' vs 'mostly accurate' vs 'inaccurate' ratings"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Rubric includes criterion: levels show logical progression (weak → strong)"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Rubric includes criterion: criteria are measurable (action + count)"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Rubric includes criterion: primary activation aligns with product's core value"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Rubric includes criterion: evidence supports the inferred levels"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Rubric is documented in docs/plans/ for reuse"
+
+[context]
+relevant_paths = [
+    "docs/plans/"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create docs/plans/2026-02-05-activation-validation-rubric.md:
+
+# Activation Level Validation Rubric
+
+## Rating Scale
+- **Accurate (3)**: Levels are logical, measurable, and primary activation correctly identifies aha-moment
+- **Mostly Accurate (2)**: Levels are reasonable but minor issues (e.g., criteria too vague, wrong primary)
+- **Inaccurate (1)**: Levels don't make sense for the product or miss the core value prop
+
+## Evaluation Criteria
+
+### 1. Logical Progression (0-3 points)
+- 3: Clear progression from individual exploration → core value realization → team/habit adoption
+- 2: Progression exists but some levels feel out of order or redundant
+- 1: No clear progression, levels seem arbitrary
+
+### 2. Measurable Criteria (0-3 points)
+- 3: Each level has specific action + count + optional timeWindow
+- 2: Most levels have measurable criteria, some are vague
+- 1: Criteria are vague or unmeasurable ("uses the product regularly")
+
+### 3. Primary Activation Alignment (0-3 points)
+- 3: Primary activation correctly identifies the product's aha-moment
+- 2: Primary activation is close but slightly off
+- 1: Primary activation misses the core value proposition
+
+### 4. Evidence Quality (0-3 points)
+- 3: Evidence excerpts directly support each level
+- 2: Some evidence is relevant, some is weak
+- 1: Evidence doesn't support the inferred levels
+
+## Scoring
+- Total: 12 points possible
+- Accurate: 10-12 points
+- Mostly Accurate: 6-9 points
+- Inaccurate: 0-5 points
+
+## Known Product Aha-Moments (for reference)
+- Miro: Board shared + collaborator accesses it
+- Linear: First issue tracked through completion
+- Figma: Design shared + feedback received
+- Slack: Team communication replaces email
+- Notion: Workspace used by team for shared knowledge
+"""
+
+reference_files = []

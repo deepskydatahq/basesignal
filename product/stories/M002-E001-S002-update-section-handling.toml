@@ -1,0 +1,73 @@
+# Story: Update Section Handling for Multi-Level Activation
+# Modify productProfiles mutations to handle new activation structure
+
+id = "M002-E001-S002"
+parent = "M002-E001"
+title = "Update productProfiles to handle multi-level activation storage"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+The updateSectionInternal mutation correctly stores multi-level activation data,
+and calculateCompletenessAndConfidence properly accounts for activation levels
+when computing overall profile completeness and confidence scores.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "updateSectionInternal accepts activation data with levels array and stores it correctly"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "updateSectionInternal accepts activation data with primaryActivation marker"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "calculateCompletenessAndConfidence uses activation.overallConfidence when levels exist"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "calculateCompletenessAndConfidence falls back to legacy activation.confidence if no levels"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Storing activation with 4 levels via updateSectionInternal persists all level data"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Profile with multi-level activation shows correct completeness percentage"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Modify calculateCompletenessAndConfidence to handle both old and new activation formats:
+
+const definitionsActivation = definitions?.activation;
+const activationConfidence = definitionsActivation?.overallConfidence
+  ?? definitionsActivation?.confidence  // fallback for legacy
+  ?? 0;
+
+The updateSectionInternal handler should work without changes since it uses
+generic data storage, but add a test to verify multi-level data persists correctly.
+
+Key consideration: If activation.levels exists and has entries, use the new format.
+If only activation.criteria exists (legacy), use the old format. This enables
+gradual migration without breaking existing profiles.
+"""
+
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/productProfiles.test.ts"
+]

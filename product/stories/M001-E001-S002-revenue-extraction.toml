@@ -1,0 +1,70 @@
+# Story: Revenue Architecture Extraction
+# Extract revenue model, billing unit, tiers, expansion paths from pricing pages
+
+id = "M001-E001-S002"
+parent = "M001-E001"
+title = "Extract revenue architecture from pricing and feature pages"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+A Convex action analyzes pricing page content and extracts the revenue section:
+model, billingUnit, hasFreeTier, tiers (name/price/features), expansionPaths,
+contractionRisks — with confidence and evidence.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action fetches crawled pages filtered to pricing type, falls back to homepage/features if no pricing page"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM extracts revenue model type (subscription, usage-based, hybrid, freemium, etc.)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Pricing tiers extracted as array of { name, price, features[] }"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "hasFreeTier boolean is correctly detected"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Expansion paths and contraction risks are inferred from pricing structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Evidence array includes URLs and excerpts from pricing page content"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Result stored via updateSection(productId, 'revenue', data) matching schema"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/crawledPages.ts",
+    "convex/schema.ts",
+]
+input_fixtures = ["pricing page markdown", "homepage markdown with pricing mentions"]
+depends_on = []
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/extractRevenue.ts as an internalAction
+- Primary input: pricing page (pageType = 'pricing'). If absent, use homepage/features for partial extraction
+- Bilingual prompt: handle both per-seat and per-usage pricing language
+- Expansion paths examples: 'add seats', 'upgrade tier', 'add-on modules'
+- Contraction risks examples: 'downgrade tier', 'reduce seats', 'cancel add-ons'
+- Confidence: high if pricing page found, medium if inferred from features/homepage
+- Schema: { model, billingUnit?, hasFreeTier, tiers[], expansionPaths[], contractionRisks[], confidence, evidence[] }
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]

@@ -1,0 +1,84 @@
+# Story: Define Activation Level TypeScript Types
+# Create type definitions for multi-level activation extraction
+
+id = "M002-E003-S001"
+parent = "M002-E003"
+title = "Define TypeScript types for activation level extraction"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+TypeScript interfaces define the shape of multi-level activation extraction:
+ActivationLevel, ActivationCriterion, and ActivationLevelsResult. These types
+match the schema from M002-E001 and are used by the extractor and tests.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ActivationCriterion interface has: action (string), count (number), timeWindow (optional string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ActivationLevel interface has: level, name, signalStrength, criteria[], reasoning, confidence, evidence[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "signalStrength is typed as union: 'weak' | 'medium' | 'strong' | 'very_strong'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ActivationLevelsResult interface has: levels[], primaryActivation, overallConfidence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Types are exported from convex/analysis/extractActivationLevels.ts"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create the file convex/analysis/extractActivationLevels.ts with these types:
+
+interface ActivationCriterion {
+  action: string;           // e.g., "create_board", "invite_member"
+  count: number;            // e.g., 1, 5
+  timeWindow?: string;      // e.g., "first_7d", "first_14d"
+}
+
+type SignalStrength = 'weak' | 'medium' | 'strong' | 'very_strong';
+
+interface ActivationLevel {
+  level: number;            // 1, 2, 3, 4
+  name: string;             // e.g., "explorer", "creator", "collaborator"
+  signalStrength: SignalStrength;
+  criteria: ActivationCriterion[];
+  reasoning: string;
+  confidence: number;
+  evidence: Array<{ url: string; excerpt: string }>;
+}
+
+interface ActivationLevelsResult {
+  levels: ActivationLevel[];
+  primaryActivation: number;  // Which level is the aha-moment
+  overallConfidence: number;
+}
+
+These types should match what the schema expects in M002-E001.
+"""
+
+reference_files = [
+    "convex/analysis/extractIdentity.ts",
+    "convex/analysis/extractJourney.ts",
+    "convex/schema.ts"
+]

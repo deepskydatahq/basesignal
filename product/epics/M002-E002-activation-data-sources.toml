@@ -1,0 +1,67 @@
+# Epic: Enhanced Data Sources for Activation Discovery
+# Improve crawling to capture activation-relevant content
+
+id = "M002-E002"
+parent = "M002"
+title = "Enhanced Data Sources for Activation Discovery"
+status = "active"
+created = 2026-02-05
+
+[outcome]
+description = """
+The crawler discovers and retrieves activation-relevant content beyond marketing
+pages, including help documentation, onboarding guides, and case studies that
+describe specific user behaviors and success patterns.
+"""
+
+job_story = """
+When crawling a product website for profile generation,
+I want to discover help docs, onboarding content, and case studies,
+so that the LLM has richer data to infer activation levels and behaviors.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "URL classifier recognizes help/docs page types (e.g., help.*, docs.*, support.*)",
+    "URL classifier recognizes onboarding/getting-started content",
+    "Crawler prioritizes pages likely to contain behavioral descriptions",
+    "For Miro test: crawler finds help.miro.com or developers.miro.com content",
+    "Case study pages are identified and crawled for success metrics"
+]
+
+validator_context = [
+    "convex/lib/urlUtils.ts",
+    "convex/scanning.ts",
+    "convex/crawledPages.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/lib/urlUtils.ts",
+    "convex/scanning.ts"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+Current crawling captures 13 page types but may miss:
+- Help center content (often on subdomains: help.*, support.*)
+- Developer documentation (developers.*, docs.*)
+- Onboarding/getting-started guides
+- Case studies with specific metrics
+
+Key insight: Marketing pages describe WHAT the product does.
+Help docs describe HOW users do things - which is what we need for activation.
+
+Options to explore:
+1. Subdomain discovery and crawling (help.miro.com, developers.miro.com)
+2. In-page link following to documentation
+3. Sitemap.xml parsing for content discovery
+4. Prioritizing pages with behavioral language ("how to", "getting started", "first steps")
+
+This epic may require Firecrawl configuration changes or additional crawl passes.
+"""
+
+estimated_stories = 4

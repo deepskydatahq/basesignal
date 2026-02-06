@@ -1,0 +1,73 @@
+# Epic: Core Analysis Engine
+# LLM-powered extraction of structured profile data from crawled pages
+# Maps to product backlog Epic 3
+
+id = "M001-E001"
+parent = "M001"
+title = "Core Analysis Engine - LLM extraction into product profile"
+status = "active"
+created = 2026-02-04
+
+[outcome]
+description = """
+After a website is crawled, an LLM analyzes the crawled pages and populates
+all sections of the product profile (identity, revenue, entities, journey,
+definitions, outcomes, metrics) with confidence scores and evidence links.
+"""
+
+job_story = """
+When a website scan completes and crawled pages are stored,
+I want the system to automatically analyze the content and generate a structured profile,
+so that the user gets an accurate, evidence-backed product profile without manual work.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "LLM receives crawled page content and returns structured profile sections",
+    "Identity section populated: product name, description, target customer, business model, industry",
+    "Revenue section populated from pricing page: model, billing unit, tiers, free tier detection",
+    "Entity model inferred from feature/docs content with relationships",
+    "Journey stages proposed with customized names based on product language",
+    "Activation and First Value definitions drafted with reasoning and evidence",
+    "Outcomes extracted from hero messaging and value propositions",
+    "Metrics suggested based on business model and product type",
+    "All sections include confidence scores and source page references",
+    "Orchestration pipeline runs all analysis steps after crawl completes",
+]
+
+validator_context = [
+    "convex/scanning.ts",
+    "convex/crawledPages.ts",
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+    "convex/lib/",
+]
+
+[context]
+relevant_paths = [
+    "convex/",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Existing infrastructure to build on:
+- crawledPages table stores markdown content + metadata for up to 30 pages per scan
+- productProfiles schema has 10 sections with evidence model and confidence scoring
+- updateSection() mutation handles storing results with auto-recalculated completeness
+- Page types (homepage, pricing, features, about, etc.) are already classified in urlUtils.ts
+- scanJobs table tracks scan completion status
+
+Key design decisions:
+- Use Claude API for LLM analysis (already in tech stack)
+- Feed different page types to different analysis prompts (pricing pages → revenue, homepage → identity)
+- Run analysis sections in parallel where possible for speed
+- Store evidence as { url, excerpt } linking claims to specific crawled pages
+- Target < 2 minutes total analysis time for a typical site
+- Each section extraction should be its own Convex action for isolation and retry
+
+From product backlog: Stories 3.1-3.9 map to this epic.
+"""
+
+estimated_stories = 7

@@ -1,0 +1,72 @@
+# Epic: End-to-End Validation
+# Prove the complete flow works with a real product URL
+# Mission-specific validation epic (not in original backlog)
+
+id = "M001-E003"
+parent = "M001"
+title = "End-to-End Validation - prove the flow with a real product"
+status = "draft"
+created = 2026-02-04
+
+[outcome]
+description = """
+The complete flow is tested end-to-end: input a real product URL (e.g., miro.com),
+crawl it, generate a profile, retrieve it via MCP, and have an AI judge evaluate
+whether the generated profile accurately captures the product.
+"""
+
+job_story = """
+When all components are built (crawling, analysis, profile tools),
+I want to run a real end-to-end test with a known product,
+so that I can validate the MCP-first model produces accurate, useful profiles.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Complete flow runs: create_product → scan_product → analysis → get_profile",
+    "Profile for a well-known SaaS (e.g., miro.com) has completeness >= 0.5",
+    "AI judge confirms identity section accuracy (product name, description, target customer)",
+    "AI judge confirms revenue section accuracy (model, billing unit, tiers)",
+    "AI judge confirms entity model is reasonable for the product",
+    "AI judge confirms journey stages make sense for the product type",
+    "Evidence links trace back to actual crawled page content",
+    "Total time from URL input to profile available is under 3 minutes",
+]
+
+validator_context = [
+    "convex/",
+    "server/",
+]
+
+[context]
+relevant_paths = [
+    "convex/",
+    "server/",
+]
+dependencies = ["M001-E001", "M001-E002"]
+
+[notes]
+considerations = """
+This epic validates the mission hypothesis. It requires:
+
+1. Integration test: script or MCP session that runs the full pipeline
+2. AI judge: a prompt/action that evaluates profile accuracy against known facts
+   - Judge should check each section for factual accuracy
+   - Judge should flag hallucinations or incorrect inferences
+   - Judge should score overall accuracy
+3. Test with 2-3 products of different types:
+   - B2B SaaS with clear pricing (e.g., miro.com)
+   - PLG product (e.g., notion.so or linear.app)
+   - Consider edge case: product with minimal web presence
+
+The AI judge is itself a Convex action or standalone script that:
+- Takes a product profile as input
+- Compares key claims against web search or known facts
+- Produces a structured evaluation with pass/fail per section
+
+Success threshold: if the judge confirms >= 70% of profile sections are
+substantially accurate for a well-known product, the mission hypothesis is validated.
+"""
+
+estimated_stories = 3

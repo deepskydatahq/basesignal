@@ -1,0 +1,102 @@
+# Story: Activation Levels Prompt Engineering
+# Design the LLM prompt for extracting multi-level activation
+
+id = "M002-E003-S002"
+parent = "M002-E003"
+title = "Design LLM prompt for multi-level activation extraction"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+A system prompt instructs Claude to extract 3-4 activation levels from product
+content. The prompt includes examples of activation spectrums for different
+product types (PLG, B2B SaaS, marketplace) and guidance on identifying the
+primary activation (aha-moment).
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ACTIVATION_SYSTEM_PROMPT constant is defined with extraction instructions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt requests output as JSON matching ActivationLevelsResult structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes examples for PLG product activation spectrum"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes guidance on identifying primary activation based on value prop"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt instructs to look for behavioral language (create, invite, share, collaborate)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt explains signalStrength mapping (weak = individual exploration, very_strong = team adoption)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Create ACTIVATION_SYSTEM_PROMPT following the pattern from extractIdentity.ts.
+
+Key elements:
+1. Role: "You are a product analyst identifying user activation progression"
+
+2. Output format: JSON matching ActivationLevelsResult
+{
+  "levels": [
+    {
+      "level": 1,
+      "name": "explorer",
+      "signalStrength": "weak",
+      "criteria": [{"action": "create_board", "count": 1}],
+      "reasoning": "...",
+      "confidence": 0.7,
+      "evidence": [{"url": "...", "excerpt": "..."}]
+    },
+    ...
+  ],
+  "primaryActivation": 3,
+  "overallConfidence": 0.8
+}
+
+3. Signal strength mapping:
+   - weak: Individual exploration (created first item, browsed content)
+   - medium: Learning the product (used template, completed tutorial)
+   - strong: Realized core value (shared, collaborated, first outcome)
+   - very_strong: Team/habit adoption (multiple users, regular usage)
+
+4. Primary activation = the level where core value prop is realized
+   - For Miro: collaboration (sharing + someone accessing)
+   - For Linear: first issue tracked through completion
+   - For Figma: design shared and feedback received
+
+5. Look for behavioral language:
+   - Onboarding steps, getting started guides
+   - Success stories mentioning specific actions
+   - Feature descriptions with user actions
+
+6. Confidence scoring:
+   - Higher if help docs or case studies mention specific behaviors
+   - Lower if inferring from marketing copy only
+"""
+
+reference_files = [
+    "convex/analysis/extractIdentity.ts"
+]

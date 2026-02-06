@@ -1,0 +1,93 @@
+# Story: Run Validation Assessment on Test Products
+# Evaluate extracted activation levels against rubric
+
+id = "M002-E004-S003"
+parent = "M002-E004"
+title = "Run validation assessment on test product activation levels"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+Each test product's activation levels are evaluated against the rubric.
+Results are documented with scores, observations, and identified patterns.
+At least 70% of products score as 'accurate' or 'mostly accurate'.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Each test product has a completed rubric assessment"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Assessment documents specific observations per product"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Common patterns across products are identified"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Failure modes are documented (what doesn't work)"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "At least 70% of products score 6+ points (mostly accurate or better)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Results documented in docs/plans/2026-02-05-activation-validation-results.md"
+
+[context]
+relevant_paths = [
+    "docs/plans/"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E004-S001", "M002-E004-S002"]
+
+[handoff]
+implementation_hints = """
+For each test product:
+
+1. Retrieve the activation levels from the profile
+2. Apply the rubric criteria:
+   - Score logical progression (0-3)
+   - Score measurable criteria (0-3)
+   - Score primary activation alignment (0-3)
+   - Score evidence quality (0-3)
+3. Calculate total score and rating
+4. Document specific observations
+
+Example assessment for Miro:
+
+## Miro Assessment
+
+### Extracted Activation Levels
+- L1 (weak): Create board, add 1 item
+- L2 (medium): Use template, add 5+ items
+- L3 (strong): Share board, 1 collaborator accesses
+- L4 (very_strong): 3+ collaborators editing, daily usage
+
+Primary Activation: L3
+
+### Rubric Scores
+- Logical Progression: 3/3 - Clear individual → collaborative progression
+- Measurable Criteria: 3/3 - Specific actions with counts
+- Primary Alignment: 3/3 - Collaboration is Miro's core value
+- Evidence Quality: 2/3 - Good for L1-L2, less evidence for L3-L4
+
+Total: 11/12 = Accurate
+
+### Observations
+- Collaboration correctly identified as primary
+- Would benefit from more help doc content for L3-L4 evidence
+
+Document all assessments in docs/plans/2026-02-05-activation-validation-results.md
+"""
+
+reference_files = []

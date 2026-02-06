@@ -1,0 +1,77 @@
+# Story: Journey Stages and Definition Drafts
+# Infer user journey stages and draft activation/firstValue/active/churn definitions
+
+id = "M001-E001-S004"
+parent = "M001-E001"
+title = "Infer journey stages and draft lifecycle definitions"
+status = "in-progress"
+created = 2026-02-04
+
+[outcome]
+description = """
+A Convex action analyzes crawled content to propose journey stages (signup → activated →
+active → paying → retained) customized to the product, and drafts definitions for
+activation, firstValue, active, atRisk, and churn — each with reasoning and evidence.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Journey stages extracted as array of { name, description, order } with product-specific naming"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Activation definition drafted with criteria[], timeWindow, reasoning, and evidence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "First Value definition drafted with description, criteria[], reasoning, and evidence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Active, atRisk, and churn definitions drafted with same structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each definition has source field set to 'ai-inferred' to distinguish from user-validated"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Confidence scores are medium-low (0.3-0.5) reflecting these are drafts needing user validation"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Journey stored via updateSection(productId, 'journey', data)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Definitions stored via updateSection(productId, 'definitions', data) with all sub-keys"
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
+input_fixtures = ["homepage with onboarding language", "features page", "about page with product type hints"]
+depends_on = []
+
+[handoff]
+implementation_hints = """
+- Create convex/analysis/extractJourneyAndDefinitions.ts as an internalAction
+- Combined because journey and definitions are tightly coupled
+- Input: homepage, features, about, and any getting-started/onboarding content
+- Use business model type (if identity already extracted) to inform defaults:
+  - PLG: signup → first value → activated → active → paying
+  - Sales-led: trial → onboarding → activated → active → renewal
+- Journey schema: { stages: [{ name, description, order }], confidence, evidence[] }
+- Definitions schema: { activation: { criteria[], timeWindow?, reasoning, confidence, source, evidence[] }, firstValue: { description, criteria[], reasoning, confidence, source, evidence[] }, active: {...}, atRisk: {...}, churn: {...} }
+- Set source = 'ai-inferred' for all definitions
+- These are explicitly drafts — the prompt should explain it's proposing starting points
+- Look for onboarding, getting-started, 'aha moment' language in content
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]

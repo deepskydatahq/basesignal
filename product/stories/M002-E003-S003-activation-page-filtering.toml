@@ -1,0 +1,80 @@
+# Story: Activation-Relevant Page Filtering
+# Filter crawled pages to those most useful for activation extraction
+
+id = "M002-E003-S003"
+parent = "M002-E003"
+title = "Filter pages relevant for activation level extraction"
+status = "in-progress"
+created = 2026-02-05
+
+[outcome]
+description = """
+A function filters crawled pages to those most likely to contain activation
+signals: onboarding content, help docs, features pages, and case studies.
+The function prioritizes pages with behavioral language.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "filterActivationPages function accepts array of crawled pages"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function includes pages of type: onboarding, help, features, customers"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function includes homepage as fallback for value prop context"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Pages are prioritized: onboarding > help > customers > features > homepage"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Content is truncated appropriately for context window limits"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Given Miro crawl data, function returns relevant pages for activation"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M002-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Follow pattern from extractIdentity.ts (filterIdentityPages, buildPageContext).
+
+const ACTIVATION_PAGE_TYPES = ["onboarding", "help", "customers", "features", "homepage"];
+
+export function filterActivationPages(
+  pages: Array<{ pageType: string; content: string; url: string; title?: string }>
+): Array<{ pageType: string; content: string; url: string; title?: string }> {
+  // Filter to activation-relevant types
+  const relevant = pages.filter((p) => ACTIVATION_PAGE_TYPES.includes(p.pageType));
+
+  // Sort by priority (onboarding first, homepage last)
+  const priorityOrder = { onboarding: 0, help: 1, customers: 2, features: 3, homepage: 4 };
+  relevant.sort((a, b) =>
+    (priorityOrder[a.pageType] ?? 5) - (priorityOrder[b.pageType] ?? 5)
+  );
+
+  return relevant;
+}
+
+Reuse buildPageContext from extractIdentity.ts for content formatting.
+Consider extracting shared utilities to convex/lib/extractorUtils.ts.
+"""
+
+reference_files = [
+    "convex/analysis/extractIdentity.ts"
+]
