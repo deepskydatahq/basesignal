@@ -12,6 +12,22 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E002-S002: Recognize onboarding and getting-started content patterns
+
+**Files Changed:**
+- `convex/lib/urlUtils.ts` - Added onboarding pattern to `classifyPageType` + added "onboarding" to `MUST_CRAWL_TYPES`
+- `convex/lib/urlUtils.test.ts` - Added 4 tests: onboarding classification (9 positive assertions), negative/partial match tests, filterHighValuePages priority test, deduplication test
+
+**Learnings:**
+- The `(\/|$)` regex suffix is the established pattern for strict path segment matching - prevents `/getting-started-guide` from matching
+- MUST_CRAWL_TYPES controls both priority ordering and deduplication in `filterHighValuePages` - adding a type there automatically gets dedup behavior
+
+**Patterns Discovered:**
+- TDD cycle for URL classifier changes: write assertions for new page type → add regex to classifyPageType → add to priority tier → verify integration with filterHighValuePages
+
+**Gotchas:**
+- Pre-existing UI test failures (8 tests) and convex-test "Write outside of transaction" errors still present - unrelated to this work
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
