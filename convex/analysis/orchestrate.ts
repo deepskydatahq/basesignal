@@ -222,6 +222,13 @@ export const runAnalysisPipeline = internalAction({
       extractAndStore("revenue"),
       extractAndStore("entities"),
       extractAndStore("outcomes"),
+      // Run activation extraction in parallel (uses its own LLM call)
+      ctx.runAction(internal.analysis.extractActivationLevels.extractActivationLevels, {
+        productId: args.productId,
+      }).catch((e) => {
+        console.error("Activation extraction failed:", e);
+        return null;
+      }),
     ]).then((results) => [
       results[0].status === "fulfilled" ? results[0].value : null,
       results[1].status === "fulfilled" ? results[1].value : null,
