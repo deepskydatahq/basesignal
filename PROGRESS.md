@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E003-S001+S002: Activation Level Types & Prompt
+
+**Files Changed:**
+- `convex/analysis/extractActivationLevels.ts` - New: types (ActivationCriterion, SignalStrength, ActivationLevel, ActivationLevelsResult) + ACTIVATION_SYSTEM_PROMPT constant
+- `convex/analysis/extractActivationLevels.test.ts` - New: 6 tests verifying prompt content against all acceptance criteria
+
+**Learnings:**
+- S001 (types) and S002 (prompt) can be combined in a single file since the prompt references the types directly
+- ~700 word prompt with one strong example is sufficient — multiple examples add noise without improving extraction quality
+- Signal strength mapping is a 4-line table, not paragraphs of explanation
+
+**Patterns Discovered:**
+- Prompt constant pattern: export named constant from the same file as types, test by checking string content for required elements
+- Acceptance criteria map 1:1 to test assertions — each AC becomes one `it()` block
+
+**Gotchas:**
+- Worktree needs `npm install` before tests run (node_modules not shared)
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
