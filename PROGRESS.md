@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-06 - Story M002-E002-S004: Add Optional Subdomain Crawl Pass
+
+**Files Changed:**
+- `convex/lib/urlUtils.ts` - Added `shouldCrawlForActivation()` function and help/docs/support classification in `classifyPageType()`
+- `convex/lib/urlUtils.test.ts` - Added 13 tests: 10 for `shouldCrawlForActivation`, 3 for new `classifyPageType` subdomain types
+- `convex/scanning.ts` - Added `filterDocsUrls()` pure helper and `startDocsScan` internalAction
+- `convex/scanning.test.ts` - New: 8 tests (5 unit for `filterDocsUrls`, 3 integration for docs crawl job/page storage)
+
+**Learnings:**
+- S001 dependency (`shouldCrawlForActivation`) needed to be implemented inline since it wasn't on the branch
+- `classifyPageType` subdomain classification only works when `rootHostname` parameter is provided — important for docs crawl to pass the right hostname
+- Firecrawl map → filter → batch scrape pattern from `startScan` is cleanly reusable for docs-focused crawling
+- Pure helper function `filterDocsUrls` enables thorough unit testing without mocking Firecrawl
+
+**Patterns Discovered:**
+- On-demand secondary crawl pattern: separate action (`startDocsScan`) with its own scanJob, sharing same `productId` for page storage
+- Activation-path filtering: whitelist approach (getting-started, onboarding, tutorials, quick-start, first-steps) + depth limit (max 3 segments) + deep reference exclusion (api/, reference/, changelog/)
+- Integration tests with `convex-test`: directly call `internal.*` mutations to simulate what actions do, avoiding need to mock HTTP calls
+
+**Gotchas:**
+- Pre-existing UI test failures (AddEntityDialog, AddActivityModal, TrackingMaturityScreen) and "Write outside of transaction" from convex-test still present — unrelated to this work
+- Worktree needed `npm install` before tests would run (node_modules not shared between worktrees)
+
 ### 2026-02-04 - Story M001-E001-S001: Extract Core Identity from Crawled Pages
 
 **Files Changed:**
