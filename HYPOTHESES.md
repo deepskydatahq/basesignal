@@ -2,7 +2,7 @@
 
 **Vision:** Transform B2B SaaS measurement from interaction-driven to outcome-driven, revealing where products lose revenue potential.
 
-**Last Updated:** January 2026
+**Last Updated:** February 2026
 
 ---
 
@@ -108,6 +108,27 @@
 
 ---
 
+### H6: 7-Lens Value Discovery
+**Status:** 🔵 Testing
+
+**Belief:** We believe that applying 7 analytical lenses to crawled product content and converging their outputs produces a tiered catalog of value moments that match what a human product expert would identify.
+
+**Because:** Value moments emerge at the intersection of multiple perspectives. A capability becomes valuable when it eliminates effort (Lens 2), compresses time (Lens 6), AND creates artifacts others can use (Lens 7). Convergence across lenses is signal; single-lens findings are noise.
+
+**Test:**
+- Run pipeline on Linear (reference case with existing product knowledge)
+- 70%+ of Tier 1 moments (5+ lens convergence) rated "accurate" or "mostly accurate" by manual review
+- Tier 1 moments are recognizable as "obviously important" to someone who knows the product
+
+**Investment Area:** Measurement Foundation
+
+**Evidence:**
+- Feb 2026: Mission M003 created with 3 epics (Lens Execution, Validation & Convergence, Reference Comparison)
+
+**Next Steps:** If validated, build output layers (ICPs, activation maps, measurement specs). If invalidated, identify which lenses underperform and refine prompts.
+
+---
+
 ## Validated Hypotheses
 
 ### H5: Multi-Level Activation ✓
@@ -129,4 +150,4 @@ Modeling activation as a spectrum (weak → medium → strong → very_strong) p
 
 ## Next Action
 
-**Work through epic #9.** Deploy to staging, recruit test users, run sessions. See [Epic: Test H2 - Interview Completion](https://github.com/deepskydatahq/basesignal/issues/9) for task breakdown.
+**Test H6 via M003.** Build 7-lens execution pipeline, validation & convergence, and compare against Linear reference analysis. See `product/missions/M003-7-lens-value-discovery.toml` for mission details.

@@ -1,0 +1,72 @@
+# Epic: Lens Execution Pipeline
+# Build and run the 7 analytical lenses against the knowledge graph
+
+id = "M003-E001"
+parent = "M003"
+title = "Lens Execution Pipeline"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+Seven analytical lens prompts execute against the product knowledge graph
+(from M001/M002), each producing 8-20 value moment candidates with confidence
+scores and source traceability.
+"""
+
+job_story = """
+When analyzing a product's crawled content,
+I want to apply 7 distinct analytical lenses that each find value moments,
+so that I get comprehensive coverage of how the product delivers value.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "All 7 lens prompts are implemented as Convex internalActions",
+    "Each lens produces 8-20 candidates for a test product (Linear)",
+    "Candidates have required fields: name, description, role, confidence, source_urls",
+    "Lenses run in parallel where possible (batch 1: 1,2,6,7; batch 2: 3,4,5)",
+    "Total candidate count across lenses is 60-140 for Linear",
+    "Each lens has lens-specific fields (effort_eliminated, decision_enabled, etc.)"
+]
+
+validator_context = [
+    "convex/analysis/lenses/",
+    "convex/analysis/"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/",
+    "convex/lib/"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+The 7 lenses with their knowledge graph slice requirements:
+
+Batch 1 (parallel):
+- Lens 1: Capability Mapping - needs features, roles, workflows
+- Lens 2: Effort Elimination - needs features (pain), positioning, roles
+- Lens 6: Time Compression - needs positioning, features, workflows
+- Lens 7: Artifact Creation - needs features (outputs), object_model
+
+Batch 2 (can benefit from batch 1 context):
+- Lens 3: Info Asymmetry - needs roles, multi_user_dynamics, features
+- Lens 4: Decision Enablement - needs roles, workflows, object_model
+- Lens 5: State Transitions - needs object_model (states), workflows
+
+Key insight from brief: The same candidate may appear from multiple lenses
+with different framing - that's intentional. Convergence (E002) handles this.
+
+Implementation pattern: Follow existing extractors (extractActivationLevels.ts)
+- Use Claude Sonnet for quality
+- Low temperature (0.1-0.2) for precision
+- Require source_url traceability
+- Output structured candidates matching schema
+"""
+
+estimated_stories = 4

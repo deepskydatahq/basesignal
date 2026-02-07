@@ -1,0 +1,69 @@
+# Epic: Validation & Convergence
+# Clean lens output and cluster into tiered value moments
+
+id = "M003-E002"
+parent = "M003"
+title = "Validation & Convergence"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+Raw lens candidates are validated (catching feature-as-value, vague candidates,
+duplicates), then converged into a tiered catalog where moments appearing across
+5+ lenses are Tier 1, 3-4 lenses are Tier 2, and 1-2 lenses are Tier 3.
+"""
+
+job_story = """
+When the 7 lenses have produced raw candidates,
+I want to validate for common failure modes and cluster similar candidates,
+so that I get a prioritized catalog where convergence indicates importance.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Validation catches 'feature disguised as value' candidates",
+    "Validation catches vague candidates ('better visibility' without specifics)",
+    "Duplicates within same lens are merged",
+    "Semantic clustering groups similar candidates across lenses",
+    "Clusters with 5+ lenses become Tier 1 moments",
+    "Final output is 15-30 named value moments per product",
+    "Each moment has: tier, convergence_count, contributing_lenses, description"
+]
+
+validator_context = [
+    "convex/analysis/",
+    "docs/plans/"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/"
+]
+
+dependencies = ["M003-E001"]
+
+[notes]
+considerations = """
+Validation checks from the brief:
+1. Feature disguised as value - starts with "Use the...", "Click the..."
+2. Too vague to measure - "better visibility" without what's visible
+3. Duplicate within same lens - similarity >0.85
+4. Role mismatch - candidate attributed to wrong role
+5. Unsupported by source - claim goes beyond crawled content
+6. Hallucinated feature - references feature not in knowledge graph
+
+Convergence approach:
+1. Compute embeddings for all validated candidates
+2. Cluster candidates with similarity >0.7 across different lenses
+3. Use LLM to merge cluster into single named moment
+4. Tier by lens count: 5+ = Tier 1, 3-4 = Tier 2, 1-2 = Tier 3
+
+Expected output for Linear:
+- 4-6 Tier 1 moments (high confidence, obvious value)
+- 4-8 Tier 2 moments (likely real, worth measuring)
+- 5-15 Tier 3 moments (possible, needs validation)
+"""
+
+estimated_stories = 4

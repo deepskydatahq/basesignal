@@ -1,0 +1,72 @@
+# Epic: Reference Comparison
+# Compare generated value moments against known product analysis
+
+id = "M003-E003"
+parent = "M003"
+title = "Reference Comparison"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+The generated value moments for Linear are compared against known aha-moments
+and product understanding, with each Tier 1 moment rated for accuracy.
+Hypothesis H6 is validated or invalidated based on the comparison.
+"""
+
+job_story = """
+When the convergence engine has produced tiered value moments,
+I want to compare them against what we know about Linear's actual value,
+so that I can validate whether the 7-lens approach produces accurate results.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Reference analysis of Linear's known value moments is documented",
+    "Each Tier 1 generated moment is rated: accurate / mostly accurate / inaccurate",
+    "70%+ of Tier 1 moments rated accurate or mostly accurate",
+    "Tier 1 moments are recognizable as 'obviously important' for Linear",
+    "HYPOTHESES.md H6 status updated based on results",
+    "Learnings documented: which lenses worked, which need refinement"
+]
+
+validator_context = [
+    "HYPOTHESES.md",
+    "docs/plans/",
+    "convex/analysis/"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/",
+    "docs/plans/"
+]
+
+dependencies = ["M003-E002"]
+
+[notes]
+considerations = """
+Linear's known value moments (for reference comparison):
+- Issue tracking with cycle-based workflow (complete_cycle is the aha)
+- Team visibility without status meetings
+- Triage workflow for prioritization
+- Roadmap/project planning
+- Integration with dev tools (GitHub, Slack)
+- Cross-team coordination (later activation level)
+
+Success criteria from H6:
+- 70%+ of Tier 1 moments rated accurate or mostly accurate
+- Moments are recognizable to someone who knows Linear
+
+If validated:
+- Update H6 to 🟢 Validated
+- Proceed to output layers (ICPs, activation maps, measurement specs)
+
+If invalidated:
+- Document which lenses underperformed
+- Identify refinement opportunities
+- Update H6 with learnings
+"""
+
+estimated_stories = 2
