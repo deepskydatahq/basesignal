@@ -12,6 +12,23 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-07 - Story M003-E003-S001: Document Linear Reference Analysis
+
+**Files Changed:**
+- `docs/reference/linear-value-moments.md` - New: structured reference document with 6 value moments (REF-01 through REF-06) for Linear, M002 activation mapping table, and sources
+
+**Learnings:**
+- Reference documents are pure documentation tasks — no code changes, no tests needed
+- The brainstorm design (6 moments with flat REF-NN IDs) kept this focused and mechanical
+- M002 activation levels provide concrete evidence anchors for each value moment
+
+**Patterns Discovered:**
+- REF-NN flat ID scheme enables clean cross-referencing in downstream validation (H6 comparison table)
+- Separating reference authoring (this task) from pipeline validation (S002) keeps concerns clean
+
+**Gotchas:**
+- Brainstorm said "primary aha-moment is L2 (team_adopter)" but M002 data uses different level names (L3 = workflow_optimizer). The implementation plan's acceptance criteria correctly specified "L2 team_adopter mapping" in the Why primary field, but the actual M002 data maps the primary moment to L3. Document uses the actual M002 level names.
+
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
 **Files Changed:**
