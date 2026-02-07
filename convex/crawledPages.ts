@@ -133,6 +133,17 @@ export const removeByScanJob = internalMutation({
   },
 });
 
+// Test query for scripts (no auth check) - TODO: remove in production
+export const listByProductForTest = query({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("crawledPages")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .collect();
+  },
+});
+
 // MCP-facing query: accepts userId directly for auth (MCP server validates via Clerk JWT)
 export const listByProductMcp = query({
   args: {
