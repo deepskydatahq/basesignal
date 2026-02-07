@@ -6,9 +6,9 @@ import type {
   LensResult,
 } from "./types";
 
-describe("Lens candidate types", () => {
-  it("LensType is a union of exactly 7 lens values", () => {
-    const values: LensType[] = [
+describe("LensType", () => {
+  it("includes all 7 lenses", () => {
+    const lenses: LensType[] = [
       "capability_mapping",
       "effort_elimination",
       "info_asymmetry",
@@ -17,138 +17,130 @@ describe("Lens candidate types", () => {
       "time_compression",
       "artifact_creation",
     ];
-    expect(values).toHaveLength(7);
+    expect(lenses).toHaveLength(7);
   });
+});
 
-  it("ConfidenceLevel is a union of high, medium, low", () => {
-    const values: ConfidenceLevel[] = ["high", "medium", "low"];
-    expect(values).toHaveLength(3);
+describe("ConfidenceLevel", () => {
+  it("includes high, medium, low", () => {
+    const levels: ConfidenceLevel[] = ["high", "medium", "low"];
+    expect(levels).toHaveLength(3);
   });
+});
 
-  it("LensCandidate has all shared fields", () => {
+describe("LensCandidate", () => {
+  it("defines shared fields: id, lens, name, description, role, confidence, source_urls", () => {
     const candidate: LensCandidate = {
-      id: "cap-001",
+      id: "c-001",
       lens: "capability_mapping",
-      name: "Board Creation",
-      description: "Users can create collaborative boards",
-      role: "creator",
+      name: "Track team velocity",
+      description: "Users can track team velocity across sprints",
+      role: "Engineering Manager",
       confidence: "high",
       source_urls: ["https://example.com/features"],
     };
-    expect(candidate.id).toBe("cap-001");
+    expect(candidate.id).toBe("c-001");
     expect(candidate.lens).toBe("capability_mapping");
-    expect(candidate.name).toBe("Board Creation");
-    expect(candidate.description).toBeTruthy();
-    expect(candidate.role).toBe("creator");
+    expect(candidate.name).toBe("Track team velocity");
+    expect(candidate.description).toBe("Users can track team velocity across sprints");
+    expect(candidate.role).toBe("Engineering Manager");
     expect(candidate.confidence).toBe("high");
-    expect(candidate.source_urls).toHaveLength(1);
+    expect(candidate.source_urls).toEqual(["https://example.com/features"]);
   });
 
-  it("LensCandidate supports enabling_features optional field", () => {
-    const candidate: LensCandidate = {
-      id: "cap-002",
+  it("supports lens-specific optional fields", () => {
+    const capabilityCandidate: LensCandidate = {
+      id: "c-002",
       lens: "capability_mapping",
-      name: "Real-time Collaboration",
-      description: "Multiple users can edit simultaneously",
-      role: "collaborator",
+      name: "Automate CI/CD",
+      description: "Enables automated deployment pipelines",
+      role: "DevOps Engineer",
       confidence: "medium",
       source_urls: [],
-      enabling_features: ["websockets", "cursor-sharing"],
+      enabling_features: ["Pipeline Builder", "Auto-Deploy"],
     };
-    expect(candidate.enabling_features).toEqual(["websockets", "cursor-sharing"]);
-  });
+    expect(capabilityCandidate.enabling_features).toEqual(["Pipeline Builder", "Auto-Deploy"]);
 
-  it("LensCandidate supports effort_eliminated optional field", () => {
-    const candidate: LensCandidate = {
-      id: "eff-001",
+    const effortCandidate: LensCandidate = {
+      id: "c-003",
       lens: "effort_elimination",
-      name: "Auto-formatting",
-      description: "Eliminates manual layout work",
-      role: "editor",
+      name: "Skip manual reporting",
+      description: "Eliminates manual report generation",
+      role: "Product Manager",
       confidence: "high",
       source_urls: [],
-      effort_eliminated: "manual diagram layout and alignment",
+      effort_eliminated: "Manual weekly report creation",
     };
-    expect(candidate.effort_eliminated).toBe("manual diagram layout and alignment");
-  });
+    expect(effortCandidate.effort_eliminated).toBe("Manual weekly report creation");
 
-  it("LensCandidate supports information_gained optional field", () => {
-    const candidate: LensCandidate = {
-      id: "info-001",
+    const infoCandidate: LensCandidate = {
+      id: "c-004",
       lens: "info_asymmetry",
-      name: "Usage Analytics",
-      description: "Reveals how teams use boards",
-      role: "admin",
+      name: "Surface hidden dependencies",
+      description: "Reveals cross-team dependencies",
+      role: "Tech Lead",
       confidence: "low",
       source_urls: [],
-      information_gained: "team collaboration patterns",
+      information_gained: "Cross-team dependency visibility",
     };
-    expect(candidate.information_gained).toBe("team collaboration patterns");
-  });
+    expect(infoCandidate.information_gained).toBe("Cross-team dependency visibility");
 
-  it("LensCandidate supports decision_enabled optional field", () => {
-    const candidate: LensCandidate = {
-      id: "dec-001",
+    const decisionCandidate: LensCandidate = {
+      id: "c-005",
       lens: "decision_enablement",
-      name: "Priority Matrix",
-      description: "Helps teams prioritize work",
-      role: "manager",
+      name: "Prioritize backlog",
+      description: "Data-driven backlog prioritization",
+      role: "Product Manager",
       confidence: "medium",
       source_urls: [],
-      decision_enabled: "which features to build next",
+      decision_enabled: "Which features to build next",
     };
-    expect(candidate.decision_enabled).toBe("which features to build next");
-  });
+    expect(decisionCandidate.decision_enabled).toBe("Which features to build next");
 
-  it("LensCandidate supports state_transition optional field", () => {
-    const candidate: LensCandidate = {
-      id: "st-001",
+    const stateCandidate: LensCandidate = {
+      id: "c-006",
       lens: "state_transitions",
-      name: "Onboarding Flow",
-      description: "Moves users from new to activated",
-      role: "new_user",
+      name: "Move to production-ready",
+      description: "Transitions code from draft to production",
+      role: "Developer",
       confidence: "high",
       source_urls: [],
-      state_transition: "new_user → activated_user",
+      state_transition: "Draft → Production-ready",
     };
-    expect(candidate.state_transition).toBe("new_user → activated_user");
-  });
+    expect(stateCandidate.state_transition).toBe("Draft → Production-ready");
 
-  it("LensCandidate supports time_compression optional field", () => {
-    const candidate: LensCandidate = {
-      id: "tc-001",
+    const timeCandidate: LensCandidate = {
+      id: "c-007",
       lens: "time_compression",
-      name: "Template Gallery",
-      description: "Skip blank-canvas setup time",
-      role: "creator",
+      name: "Instant test results",
+      description: "Reduces test feedback from hours to seconds",
+      role: "Developer",
+      confidence: "high",
+      source_urls: [],
+      time_compression: "Hours → Seconds for test feedback",
+    };
+    expect(timeCandidate.time_compression).toBe("Hours → Seconds for test feedback");
+
+    const artifactCandidate: LensCandidate = {
+      id: "c-008",
+      lens: "artifact_creation",
+      name: "Generate compliance report",
+      description: "Auto-generates SOC2 compliance reports",
+      role: "Security Engineer",
       confidence: "medium",
       source_urls: [],
-      time_compression: "hours of setup → minutes with template",
+      artifact_type: "Compliance Report",
     };
-    expect(candidate.time_compression).toBe("hours of setup → minutes with template");
+    expect(artifactCandidate.artifact_type).toBe("Compliance Report");
   });
 
-  it("LensCandidate supports artifact_type optional field", () => {
+  it("optional lens-specific fields are undefined when not set", () => {
     const candidate: LensCandidate = {
-      id: "art-001",
-      lens: "artifact_creation",
-      name: "Export to PDF",
-      description: "Creates shareable deliverable",
-      role: "presenter",
-      confidence: "high",
-      source_urls: [],
-      artifact_type: "PDF report",
-    };
-    expect(candidate.artifact_type).toBe("PDF report");
-  });
-
-  it("LensCandidate works with no optional fields", () => {
-    const candidate: LensCandidate = {
-      id: "min-001",
+      id: "c-009",
       lens: "capability_mapping",
-      name: "Minimal Candidate",
-      description: "Only required fields",
-      role: "user",
+      name: "Basic candidate",
+      description: "A basic candidate with no lens-specific fields",
+      role: "User",
       confidence: "low",
       source_urls: [],
     };
@@ -160,54 +152,30 @@ describe("Lens candidate types", () => {
     expect(candidate.time_compression).toBeUndefined();
     expect(candidate.artifact_type).toBeUndefined();
   });
+});
 
-  it("LensResult has lens, candidates, candidate_count, execution_time_ms", () => {
+describe("LensResult", () => {
+  it("wraps array of candidates with lens metadata", () => {
     const result: LensResult = {
       lens: "effort_elimination",
       candidates: [
         {
-          id: "eff-001",
+          id: "c-010",
           lens: "effort_elimination",
-          name: "Auto-formatting",
-          description: "Eliminates manual layout work",
-          role: "editor",
+          name: "Skip manual deploy",
+          description: "Automates deployment process",
+          role: "DevOps",
           confidence: "high",
           source_urls: ["https://example.com"],
-          effort_eliminated: "manual layout",
+          effort_eliminated: "Manual deployment steps",
         },
       ],
-      candidate_count: 1,
-      execution_time_ms: 1250,
+      total_candidates: 1,
+      execution_time_ms: 1234,
     };
     expect(result.lens).toBe("effort_elimination");
     expect(result.candidates).toHaveLength(1);
-    expect(result.candidate_count).toBe(1);
-    expect(result.execution_time_ms).toBe(1250);
-  });
-
-  it("all 4 types are importable from ./types", () => {
-    // This test verifies the imports at the top of this file compile
-    // If any type were missing, the import would fail at compile time
-    const lensType: LensType = "capability_mapping";
-    const confidence: ConfidenceLevel = "high";
-    const candidate: LensCandidate = {
-      id: "test",
-      lens: lensType,
-      name: "test",
-      description: "test",
-      role: "test",
-      confidence,
-      source_urls: [],
-    };
-    const result: LensResult = {
-      lens: lensType,
-      candidates: [candidate],
-      candidate_count: 1,
-      execution_time_ms: 0,
-    };
-    expect(lensType).toBeDefined();
-    expect(confidence).toBeDefined();
-    expect(candidate).toBeDefined();
-    expect(result).toBeDefined();
+    expect(result.total_candidates).toBe(1);
+    expect(result.execution_time_ms).toBe(1234);
   });
 });
