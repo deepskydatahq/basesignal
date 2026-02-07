@@ -21,7 +21,8 @@ import { fileURLToPath } from "url";
 // --- Config ---
 const CONVEX_URL = "https://woozy-kangaroo-701.convex.cloud";
 const LINEAR_PRODUCT_ID = "nh78n36ve9dt5q0z2pnj9gadnx80mm54";
-const SIMILARITY_THRESHOLD = 0.35;
+const LINEAR_USER_ID = "jd7a4vr0mhfwnf20930zzpsmqs80ntnf";
+const SIMILARITY_THRESHOLD = 0.15;
 const TIER_1_MIN_LENSES = 5;
 const TIER_2_MIN_LENSES = 3;
 const MODEL = "claude-haiku-4-5-20251001";
@@ -203,9 +204,19 @@ function parseReferenceDoc(filePath) {
 
 async function loadLinearData(convex) {
   console.log("Loading crawled pages from Convex...");
-  const pages = await convex.query(api.crawledPages.listByProductForTest, {
-    productId: LINEAR_PRODUCT_ID,
-  });
+  let pages;
+  try {
+    pages = await convex.query(api.crawledPages.listByProductForTest, {
+      productId: LINEAR_PRODUCT_ID,
+    });
+  } catch {
+    // Fallback to MCP query if listByProductForTest isn't deployed yet
+    console.log("  (listByProductForTest not deployed, using listByProductMcp)");
+    pages = await convex.query(api.crawledPages.listByProductMcp, {
+      userId: LINEAR_USER_ID,
+      productId: LINEAR_PRODUCT_ID,
+    });
+  }
   console.log(`  Loaded ${pages.length} crawled pages`);
 
   let profile = null;
@@ -384,36 +395,50 @@ function clusterCandidates(candidates) {
     return idx;
   }
 
+  // Collect all cross-lens similarity scores for diagnostics
+  const allScores = [];
+
   // Compare all pairs, merge if similar enough and from different lenses
   for (let i = 0; i < candidates.length; i++) {
     for (let j = i + 1; j < candidates.length; j++) {
-      const ci = findCluster(i);
-      const cj = findCluster(j);
-      if (ci === cj) continue;
-
-      // Same-lens constraint: don't merge candidates from the same lens
-      const clusterI = clusters[ci];
-      const clusterJ = clusters[cj];
-
-      // Check if merging would create duplicate lenses within cluster
-      // (we allow it — the constraint is just that direct same-lens pairs don't trigger merge)
       if (candidates[i].lens === candidates[j].lens) continue;
 
       const textI = `${candidates[i].name} ${candidates[i].description}`;
       const textJ = `${candidates[j].name} ${candidates[j].description}`;
       const sim = jaccardSimilarity(textI, textJ);
 
+      if (sim > 0.05) {
+        allScores.push({ i, j, sim, nameI: candidates[i].name, nameJ: candidates[j].name });
+      }
+
+      const ci = findCluster(i);
+      const cj = findCluster(j);
+      if (ci === cj) continue;
+
+      const clusterI = clusters[ci];
+
       if (sim >= SIMILARITY_THRESHOLD) {
+        // Cap cluster size to prevent mega-clusters
+        const mergedSize = clusterI.candidates.length + clusters[cj].candidates.length;
+        if (mergedSize > 15) continue;
+
         // Merge j's cluster into i's cluster
         clusterMap[cj] = ci;
-        clusterI.candidates.push(...clusterJ.candidates);
-        for (const lens of clusterJ.lenses) {
+        clusterI.candidates.push(...clusters[cj].candidates);
+        for (const lens of clusters[cj].lenses) {
           clusterI.lenses.add(lens);
         }
-        clusterJ.candidates = [];
-        clusterJ.lenses = new Set();
+        clusters[cj].candidates = [];
+        clusters[cj].lenses = new Set();
       }
     }
+  }
+
+  // Print top similarity scores for diagnostics
+  allScores.sort((a, b) => b.sim - a.sim);
+  console.log("  Top 20 cross-lens similarity scores:");
+  for (const s of allScores.slice(0, 20)) {
+    console.log(`    ${s.sim.toFixed(3)} | "${s.nameI}" <-> "${s.nameJ}"`);
   }
 
   // Collect non-empty clusters
@@ -476,9 +501,9 @@ function compareAgainstReference(tier1Moments, referenceMoments) {
     }
 
     let suggestedRating;
-    if (bestScore > 0.3) {
+    if (bestScore > 0.15) {
       suggestedRating = "accurate";
-    } else if (bestScore > 0.15) {
+    } else if (bestScore > 0.08) {
       suggestedRating = "mostly accurate";
     } else {
       suggestedRating = "inaccurate";
