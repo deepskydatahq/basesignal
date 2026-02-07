@@ -1,36 +1,57 @@
-/**
- * Types for the convergence/validation pipeline.
- * Used across lens output processing, validation, and merging.
- */
+// Types for the convergence pipeline (M003-E002)
 
-/** A single candidate from a lens analysis */
-export interface LensCandidate {
-  id: string;
-  name: string;
-  description: string;
-  source_urls?: string[];
-}
+export type LensType =
+  | "jtbd"
+  | "outcomes"
+  | "pains"
+  | "gains"
+  | "alternatives"
+  | "workflows"
+  | "emotions";
 
-/** Output from a single lens analysis */
-export interface LensResult {
-  lens: string;
-  candidates: LensCandidate[];
-}
-
-/** Validation status after checks */
 export type ValidationStatus = "valid" | "rewritten" | "removed";
 
-/** A candidate after validation */
 export interface ValidatedCandidate {
+  id: string;
+  lens: LensType;
+  name: string;
+  description: string;
+  confidence: number;
+  validation_status: ValidationStatus;
+  validation_issue?: string;
+  rewritten_from?: { name: string; description: string };
+}
+
+export interface CandidateCluster {
+  cluster_id: string;
+  candidates: ValidatedCandidate[];
+  lens_count: number;
+  lenses: LensType[];
+}
+
+export type ValueMomentTier = 1 | 2 | 3;
+
+export interface ValueMoment {
   id: string;
   name: string;
   description: string;
-  lens: string;
-  validation_status: ValidationStatus;
-  validation_issue?: string;
-  rewritten_from?: {
-    name: string;
-    description: string;
+  tier: ValueMomentTier;
+  lenses: LensType[];
+  lens_count: number;
+  roles: string[];
+  product_surfaces: string[];
+  contributing_candidates: string[];
+}
+
+export interface ConvergenceResult {
+  value_moments: ValueMoment[];
+  clusters: CandidateCluster[];
+  stats: {
+    total_candidates: number;
+    total_clusters: number;
+    total_moments: number;
+    tier_1_count: number;
+    tier_2_count: number;
+    tier_3_count: number;
   };
-  source_urls?: string[];
 }

@@ -12,28 +12,25 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E002-S002: Implement Candidate Validation Pass
+### 2026-02-07 - Story M003-E002-S003: Implement Semantic Clustering of Candidates
 
 **Files Changed:**
-- `convex/analysis/convergence/types.ts` - New: LensResult, LensCandidate, ValidatedCandidate types for convergence pipeline
-- `convex/analysis/convergence/validateCandidates.ts` - New: Deterministic validation checks (feature-as-value, vague, duplicates, unverified feature refs) + Claude Haiku LLM review orchestrator
-- `convex/analysis/convergence/validateCandidates.test.ts` - New: 42 tests (unit + integration) covering all validation functions and pipeline
-- `convex/lib/similarity.ts` - New: TF-IDF vectorization + cosine similarity for text duplicate detection
-- `convex/lib/similarity.test.ts` - New: 13 tests for similarity utilities
+- `convex/analysis/convergence/types.ts` - Created type definitions for convergence pipeline: `ValidatedCandidate`, `CandidateCluster`, `ValueMoment`, `ConvergenceResult`, `LensType`
+- `convex/lib/similarity.ts` - Pure TF-IDF library: `tokenize`, `termFrequency`, `inverseDocumentFrequency`, `computeTfIdfVectors`, `cosineSimilarity`, `pairwiseSimilarity`
+- `convex/lib/similarity.test.ts` - 28 unit tests covering all TF-IDF functions
+- `convex/analysis/convergence/clusterCandidates.ts` - UnionFind + `clusterCandidatesCore` pure function + `clusterCandidates` internalAction
+- `convex/analysis/convergence/clusterCandidates.test.ts` - 24 tests (unit + integration) covering all 7 acceptance criteria
 
 **Learnings:**
-- TF-IDF cosine similarity with only 2 short documents doesn't produce high scores for texts differing in abbreviations ("minutes" vs "min") — 0.47 instead of 0.85+. Texts need substantial word overlap for high similarity
-- Separating `runValidationPipeline` as a pure function from the Convex `internalAction` orchestrator enables comprehensive testing without Convex runtime
-- The `buildKnownFeaturesSet` pattern extracts features from both `entities.items[].name` and `outcomes.items[].linkedFeatures` for cross-referencing
+- TF-IDF + cosine similarity is sufficient for clustering short descriptions (10-30 words) — no need for embeddings API
+- Smoothed IDF formula `log((N+1)/(df+1)) + 1` prevents zero weights in small corpora where a term appears in all documents
+- Union-find with `canMerge()` pre-check prevents transitive same-lens violations that naive pairwise checking would miss
+- Pure function architecture (`clusterCandidatesCore`) enables direct unit testing without Convex test harness overhead
 
 **Patterns Discovered:**
-- Validation pipeline pattern: deterministic checks first (fast, testable) → collect flagged candidates → single LLM call for judgment/rewriting → graceful degradation if LLM fails
-- Pure pipeline + action wrapper: export pure `runValidationPipeline()` for testing, wrap in `internalAction` for Convex runtime integration
-- `computeTfIdfVectors` shared IDF across a document set makes within-group comparison fair
-
-**Gotchas:**
-- TF-IDF similarity threshold of 0.85 requires truly near-identical text (same words, minor variation). For duplicate detection with abbreviated terms, consider lowering threshold or using n-gram overlap
-- Pre-existing UI test timeouts and convex-test "Write outside of transaction" errors still present (10 failing test files, 23 tests) — unrelated to this work
+- Pure function + internalAction wrapper: keep business logic in a pure function, wrap with `internalAction` for Convex integration — enables fast unit tests
+- Union-find with constraint checking: `canMerge()` checks cluster lens overlap before allowing `union()`, preventing constraint violations through transitive merges
+- TF-IDF library as reusable module in `convex/lib/` — can be used by other similarity needs (e.g., within-lens duplicate detection in validateCandidates)
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
