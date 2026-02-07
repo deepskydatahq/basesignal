@@ -12,25 +12,35 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E002-S001: Define Value Moment Schema and Types
+### 2026-02-07 - Story M003-E001-S003: Implement Batch 2 Lenses (Info, Decision, State)
 
 **Files Changed:**
-- `convex/analysis/lenses/types.ts` - New: LensType, ConfidenceLevel, LensCandidate, LensResult types for the 7-lens pipeline
-- `convex/analysis/lenses/types.test.ts` - 6 unit tests validating type shapes and field contracts
-- `convex/analysis/convergence/types.ts` - New: ValueMomentTier, ValidationStatus, ValidatedCandidate, ValueMoment, ConvergenceResult types
-- `convex/analysis/convergence/types.test.ts` - 10 unit tests validating type shapes and field contracts
+- `convex/analysis/lenses/types.ts` - New: LensType, ConfidenceLevel, LensCandidate, LensResult types (inline until S001 merge)
+- `convex/analysis/lenses/shared.ts` - New: shared utilities (truncateContent, buildPageContext, extractJson, parseLensResponse, callClaude)
+- `convex/analysis/lenses/extractInfoAsymmetry.ts` - New: internalAction extracting information asymmetries from crawled pages
+- `convex/analysis/lenses/extractDecisionEnablement.ts` - New: internalAction extracting decision enablement candidates
+- `convex/analysis/lenses/extractStateTransitions.ts` - New: internalAction extracting user state transitions
+- `convex/analysis/lenses/shared.test.ts` - 26 tests for shared utilities
+- `convex/analysis/lenses/extractInfoAsymmetry.test.ts` - 16 tests for info asymmetry lens
+- `convex/analysis/lenses/extractDecisionEnablement.test.ts` - 13 tests for decision enablement lens
+- `convex/analysis/lenses/extractStateTransitions.test.ts` - 14 tests for state transitions lens
 
 **Learnings:**
-- Type-only files with `import type` don't fail at vitest runtime when the module is missing — TypeScript compilation (`tsc --noEmit`) is needed to verify importability
-- `ValidatedCandidate extends LensCandidate` cleanly adds validation fields while preserving all lens candidate data
-- Convergence types use `Id<"products">` from Convex's generated data model for type-safe product references
+- Shared utilities (truncation, page context, JSON extraction, response parsing) eliminate ~60% of boilerplate per lens
+- `parseLensResponse` validates shared fields (name, description, role, confidence, source_urls) plus a lens-specific field — single validation function for all lens types
+- `crypto.randomUUID()` works in Convex runtime for generating candidate IDs
+- Confidence normalization handles both string ("high"/"medium"/"low") and numeric (0-1 range) from Claude responses
+- Claude Sonnet at temp 0.2 is the right choice for inference-heavy lenses (vs Haiku for extraction-only lenses like activation)
 
 **Patterns Discovered:**
-- Type test pattern: create typed object literals with all required fields, assert each field value — validates the type contract without runtime logic
-- Two-tier type modules: `lenses/types.ts` defines upstream pipeline types, `convergence/types.ts` imports and extends them for downstream consumption
+- Lens extractor pattern: PAGE_TYPES constant → filter function → knowledge context builder → batch1 context builder → system prompt → internalAction handler
+- Each lens has a distinct set of page types: Info Asymmetry (features, customers, help, homepage, solutions), Decision Enablement (features, solutions, customers, homepage), State Transitions (customers, features, onboarding, help, homepage)
+- Knowledge context varies per lens domain: Info Asymmetry uses identity+entities+revenue, Decision Enablement uses identity+entities+journey, State Transitions uses identity+entities+journey+activation definitions
+- Optional batch1Results parameter allows richer inference when Batch 1 (capability/effort) results are available
 
 **Gotchas:**
-- Pre-existing test failures (UI timeouts, convex-test "Write outside of transaction") still present — unrelated to type definitions
+- S001 types (basesignal-6ab) was marked closed but types weren't in the codebase — created inline types.ts with TODO comment
+- Pre-existing test failures (10 tests: AddEntityDialog, AddActivityModal, TrackingMaturityScreen timeouts + convex-test "Write outside of transaction") unchanged
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
