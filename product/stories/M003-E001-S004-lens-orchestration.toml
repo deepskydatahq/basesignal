@@ -4,7 +4,7 @@
 id = "M003-E001-S004"
 parent = "M003-E001"
 title = "Create lens orchestration pipeline"
-status = "in-progress"
+status = "draft"
 created = 2026-02-07
 
 [outcome]
