@@ -12,6 +12,26 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-07 - Story M003-E002-S004: Implement Convergence and Tiering
+
+**Files Changed:**
+- `convex/analysis/convergence/convergeAndTier.ts` - Core convergence module: `assignTier` (pure tier mapping), `parseMergeResponse` (LLM JSON parsing), `directMerge` (fallback), `convergeAndTier` (Promise.allSettled LLM merge), `runConvergencePipeline` (internalAction orchestrator)
+- `convex/analysis/convergence/convergeAndTier.test.ts` - 29 tests covering all pure functions, mocked LLM integration, fallback behavior, and edge cases
+
+**Learnings:**
+- `Promise.allSettled` + per-result fallback gives resilient convergence: if some LLM calls fail, the pipeline still completes with directMerge fallbacks
+- Mocking Anthropic client with `vi.fn().mockResolvedValueOnce()` works cleanly for testing per-cluster LLM calls
+- `parseMergeResponse` verb validation (first character uppercase) is a lightweight proxy for "starts with a verb" without needing a verb dictionary
+
+**Patterns Discovered:**
+- LLM-merge-with-fallback pattern: `convergeAndTier` wraps each cluster's LLM call in Promise.allSettled, maps fulfilled results to LLM output and rejected to `directMerge` — no data loss on partial failures
+- Mock client factory: `makeMockClient(responses[])` creates a mock with ordered `.mockResolvedValueOnce()` calls, making per-cluster test setup clean
+- Pure tier function tested exhaustively at boundaries (1, 2, 3, 4, 5, 7, 10) covers all three tier bins
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- Pre-existing test failures (14 tests in UI components) and "Write outside of transaction" errors from convex-test still present — unrelated to convergence work
+
 ### 2026-02-07 - Story M003-E002-S003: Implement Semantic Clustering of Candidates
 
 **Files Changed:**
