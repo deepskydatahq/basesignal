@@ -4,7 +4,7 @@
 id = "M003-E001-S003"
 parent = "M003-E001"
 title = "Implement Batch 2 lenses (Info, Decision, State)"
-status = "draft"
+status = "in-progress"
 created = 2026-02-07
 
 [outcome]
