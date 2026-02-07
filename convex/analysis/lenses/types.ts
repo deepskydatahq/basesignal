@@ -37,3 +37,16 @@ export interface LensResult {
   candidate_count: number;
   execution_time_ms: number;
 }
+
+export interface AllLensesResult {
+  productId: string;
+  candidates: LensCandidate[];
+  per_lens: Array<{
+    lens: LensType;
+    candidate_count: number;
+    execution_time_ms: number;
+  }>;
+  total_candidates: number;
+  execution_time_ms: number;
+  errors: Array<{ lens: LensType; error: string }>;
+}

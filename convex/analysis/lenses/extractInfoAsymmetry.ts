@@ -126,6 +126,7 @@ export const extractInfoAsymmetry = internalAction({
     batch1Results: v.optional(v.any()),
   },
   handler: async (ctx, args): Promise<LensResult> => {
+    const startTime = Date.now();
     const pages = await ctx.runQuery(
       internal.crawledPages.listByProductInternal,
       { productId: args.productId },
@@ -169,13 +170,10 @@ export const extractInfoAsymmetry = internalAction({
     );
 
     return {
-      lensType: "info_asymmetry",
+      lens: "info_asymmetry",
       candidates,
-      overallConfidence:
-        candidates.length > 0
-          ? candidates.filter((c) => c.confidence === "high").length /
-            candidates.length
-          : 0,
+      candidate_count: candidates.length,
+      execution_time_ms: Date.now() - startTime,
     };
   },
 });
