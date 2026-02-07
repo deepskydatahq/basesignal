@@ -4,7 +4,7 @@
 id = "M003-E002-S004"
 parent = "M003-E002"
 title = "Implement convergence and tiering"
-status = "in-progress"
+status = "draft"
 created = 2026-02-07
 
 [outcome]

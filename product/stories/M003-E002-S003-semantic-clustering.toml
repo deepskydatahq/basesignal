@@ -4,7 +4,7 @@
 id = "M003-E002-S003"
 parent = "M003-E002"
 title = "Implement semantic clustering of candidates"
-status = "in-progress"
+status = "draft"
 created = 2026-02-07
 
 [outcome]
