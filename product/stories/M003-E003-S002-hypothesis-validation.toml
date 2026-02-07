@@ -1,0 +1,111 @@
+# Story: Hypothesis Validation
+# Compare generated moments against reference and validate H6
+
+id = "M003-E003-S002"
+parent = "M003-E003"
+title = "Run comparison and validate H6 hypothesis"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+Generated value moments for Linear are compared against the reference analysis.
+Each Tier 1 moment is rated for accuracy. If 70%+ are accurate or mostly accurate,
+H6 is validated and HYPOTHESES.md is updated.
+"""
+
+[acceptance_criteria]
+executable = false
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "runAllLenses executed on Linear product with results captured"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "runConvergencePipeline executed with lens results"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Each Tier 1 moment rated: accurate / mostly accurate / inaccurate"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Accuracy calculation: (accurate + mostly_accurate) / total >= 70%"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Tier 1 moments are recognizable as 'obviously important'"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/plans/M003-validation-results.md documents comparison findings"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "HYPOTHESES.md H6 status updated based on validation result"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "If invalidated: learnings documented with lens-specific refinement opportunities"
+
+[context]
+relevant_paths = [
+    "HYPOTHESES.md",
+    "docs/plans/",
+    "docs/reference/"
+]
+
+input_fixtures = ["Linear value moments from convergence pipeline", "Linear reference analysis"]
+
+depends_on = ["M003-E003-S001"]
+
+[handoff]
+implementation_hints = """
+This is a manual validation story. Steps:
+
+1. Run the full pipeline on Linear:
+   - Ensure Linear product exists with crawled pages
+   - Run testRunAllLenses(productId) to get lens candidates
+   - Run testRunConvergencePipeline(lensResults) to get value moments
+
+2. Capture Tier 1 moments (expected 4-6):
+   - List each with name, description, contributing lenses
+
+3. Compare each Tier 1 moment against reference:
+   For each moment, rate:
+   - **Accurate**: Directly matches a known Linear value moment
+   - **Mostly accurate**: Captures the essence but framing differs
+   - **Inaccurate**: Doesn't match any known value moment
+
+4. Calculate accuracy:
+   accuracy = (accurate_count + mostly_accurate_count) / tier_1_count
+
+   Success criteria: accuracy >= 0.70
+
+5. Document in docs/plans/M003-validation-results.md:
+   - Generated moments with ratings
+   - Comparison notes for each
+   - Overall accuracy score
+   - Which lenses contributed most to accurate moments
+   - Which lenses underperformed (if any)
+
+6. Update HYPOTHESES.md:
+   If validated (>= 70% accurate):
+   - Change H6 status to 🟢 Validated
+   - Add evidence with specific numbers
+   - Update outcome section
+
+   If invalidated (< 70% accurate):
+   - Keep H6 status at 🔵 Testing
+   - Add evidence documenting what didn't work
+   - Document refinement plan in Next Steps
+
+7. If validated, next mission is output layers:
+   - M004: ICP Generation, Activation Maps, Measurement Specs
+"""
+
+reference_files = [
+    "HYPOTHESES.md",
+    "docs/reference/linear-value-moments.md"
+]

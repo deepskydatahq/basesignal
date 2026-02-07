@@ -1,0 +1,114 @@
+# Story: Linear Reference Analysis
+# Document known value moments for Linear as comparison baseline
+
+id = "M003-E003-S001"
+parent = "M003-E003"
+title = "Document Linear reference analysis"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+A reference document captures Linear's known value moments based on public
+product understanding, our M002 activation analysis, and expert product
+knowledge. This serves as the baseline for validating 7-lens output.
+"""
+
+[acceptance_criteria]
+executable = false
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/reference/linear-value-moments.md exists with structured analysis"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Document lists 6-10 known value moments for Linear"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Each value moment includes: name, description, evidence/source"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Primary aha-moment (cycle completion) is clearly identified"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Multi-user dynamics (team visibility) are documented"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Reference includes activation levels from M002 for context"
+
+[context]
+relevant_paths = [
+    "docs/reference/"
+]
+
+input_fixtures = ["M002 Linear activation analysis results"]
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create docs/reference/linear-value-moments.md as a reference document.
+
+Structure:
+```markdown
+# Linear: Reference Value Moment Analysis
+
+## Product Overview
+- Issue tracking and project management for software teams
+- Core proposition: Streamlined issue tracking with cycle-based workflow
+
+## Known Value Moments
+
+### Primary (Aha-Moment)
+**Complete a cycle with team visibility**
+- User tracks issues through a sprint/cycle to completion
+- Team can see progress without status meetings
+- Evidence: M002 activation L3 (workflow_optimizer) identified this
+
+### Secondary Value Moments
+
+1. **First issue tracked through workflow**
+   - Create issue → assign → update status → resolve
+   - Evidence: M002 activation L1-L2
+
+2. **Team gains visibility without meetings**
+   - Multiple team members see each other's progress
+   - Board views, filters, progress indicators
+
+3. **Triage workflow reduces noise**
+   - Backlog grooming, prioritization views
+   - Focus on what matters
+
+4. **Roadmap connects to execution**
+   - Projects → Issues → Progress visible
+   - Planning and execution linked
+
+5. **Development tools integrated**
+   - GitHub PRs linked to issues
+   - Slack notifications for updates
+
+6. **Cross-team coordination**
+   - Multiple teams, shared visibility
+   - Evidence: M002 activation L4
+
+## Activation Levels (from M002)
+- L1 explorer (weak): create_first_issue
+- L2 workflow_learner (medium): create_project + invite_team_member
+- L3 workflow_optimizer (strong) ⭐ PRIMARY: complete_cycle + use_triage
+- L4 product_workflow_master (very_strong): cross_team + insights
+```
+
+Sources:
+- M002 activation extraction results
+- Linear public website
+- General product knowledge about Linear
+"""
+
+reference_files = [
+    "HYPOTHESES.md"
+]

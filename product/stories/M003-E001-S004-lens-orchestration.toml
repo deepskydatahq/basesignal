@@ -1,0 +1,127 @@
+# Story: Lens Orchestration
+# Orchestrator to run all 7 lenses and collect results
+
+id = "M003-E001-S004"
+parent = "M003-E001"
+title = "Create lens orchestration pipeline"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+A Convex internalAction orchestrates all 7 lens executions: runs Batch 1 (4 lenses)
+in parallel, then Batch 2 (3 lenses) in parallel with Batch 1 context. Collects
+all candidates into a unified result with timing and metadata.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "runAllLenses internalAction exists with productId arg"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Batch 1 lenses (1,2,6,7) are invoked in parallel using Promise.all"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Batch 2 lenses (3,4,5) are invoked after Batch 1 completes"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Batch 2 receives Batch 1 results as optional context"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Returns AllLensesResult with candidates from all 7 lenses"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Total candidate count is 60-140 for Linear product"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Execution completes within 3 minutes (parallelized)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Error in one lens does not block other lenses (partial results acceptable)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "AllLensesResult includes per-lens timing and total timing"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/",
+    "convex/analysis/orchestrate.ts"
+]
+
+input_fixtures = ["Linear product profile with crawled pages"]
+
+depends_on = ["M003-E001-S002", "M003-E001-S003"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/lenses/orchestrate.ts following the pattern from convex/analysis/orchestrate.ts.
+
+Structure:
+```typescript
+export interface AllLensesResult {
+  productId: Id<"products">;
+  candidates: LensCandidate[];
+  per_lens_results: LensResult[];
+  total_candidates: number;
+  execution_time_ms: number;
+  errors: Array<{ lens: LensType; error: string }>;
+}
+
+export const runAllLenses = internalAction({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    const startTime = Date.now();
+    const errors: Array<{ lens: LensType; error: string }> = [];
+
+    // Batch 1: Run 4 lenses in parallel
+    const batch1 = await Promise.allSettled([
+      ctx.runAction(internal.analysis.lenses.extractCapabilityMapping, { productId }),
+      ctx.runAction(internal.analysis.lenses.extractEffortElimination, { productId }),
+      ctx.runAction(internal.analysis.lenses.extractTimeCompression, { productId }),
+      ctx.runAction(internal.analysis.lenses.extractArtifactCreation, { productId }),
+    ]);
+
+    // Extract successful results, log errors
+    const batch1Results = batch1.filter(r => r.status === 'fulfilled').map(r => r.value);
+
+    // Batch 2: Run 3 lenses with batch1 context
+    const batch2 = await Promise.allSettled([
+      ctx.runAction(internal.analysis.lenses.extractInfoAsymmetry, { productId, batch1Results }),
+      ctx.runAction(internal.analysis.lenses.extractDecisionEnablement, { productId, batch1Results }),
+      ctx.runAction(internal.analysis.lenses.extractStateTransitions, { productId, batch1Results }),
+    ]);
+
+    // Collect all candidates
+    const allResults = [...batch1Results, ...batch2Results];
+    const candidates = allResults.flatMap(r => r.candidates);
+
+    return {
+      productId,
+      candidates,
+      per_lens_results: allResults,
+      total_candidates: candidates.length,
+      execution_time_ms: Date.now() - startTime,
+      errors
+    };
+  }
+});
+```
+
+Add testRunAllLenses public action for manual testing (like testExtractActivation).
+"""
+
+reference_files = [
+    "convex/analysis/orchestrate.ts",
+    "convex/analysis/extractActivationLevels.ts"
+]

@@ -1,0 +1,105 @@
+# Story: Batch 2 Lenses
+# Implement the 3 inference-heavy lenses that benefit from batch 1 context
+
+id = "M003-E001-S003"
+parent = "M003-E001"
+title = "Implement Batch 2 lenses (Info, Decision, State)"
+status = "draft"
+created = 2026-02-07
+
+[outcome]
+description = """
+Three lens extractors implemented as Convex internalActions: Information Asymmetry,
+Decision Enablement, and State Transitions. These lenses are more inference-heavy
+and benefit from having Batch 1 results as additional context.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractInfoAsymmetry action exists with productId and optional batch1Results args"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractDecisionEnablement action exists with productId and optional batch1Results args"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractStateTransitions action exists with productId and optional batch1Results args"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each lens produces 8-20 candidates when run against Linear product"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Info Asymmetry populates information_gained field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Decision Enablement populates decision_enabled field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "State Transitions populates state_transition field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Lenses produce higher quality output when batch1Results are provided"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "All candidates have source_urls linking to crawled pages"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/",
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = ["Linear product profile with crawled pages", "Batch 1 lens results"]
+
+depends_on = ["M003-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Create three files following the extractActivationLevels.ts pattern:
+- convex/analysis/lenses/extractInfoAsymmetry.ts
+- convex/analysis/lenses/extractDecisionEnablement.ts
+- convex/analysis/lenses/extractStateTransitions.ts
+
+These lenses are more inference-heavy:
+- Info Asymmetry: What do users learn they couldn't know before? Needs roles, multi_user_dynamics, features
+- Decision Enablement: What decisions become possible? Needs roles, workflows, entity_model
+- State Transitions: What user states change? Needs entity_model (states), workflows
+
+Optional batch1Results parameter:
+- If provided, inject capability mapping and effort elimination candidates as context
+- This helps these lenses understand what the product does before analyzing information/decisions/states
+
+Prompt structure:
+```
+You are a product analyst identifying value moments through the [Lens Name] lens.
+
+[If batch1Results provided:]
+Context from earlier analysis:
+- Capabilities identified: [list from capability_mapping]
+- Efforts eliminated: [list from effort_elimination]
+
+[Lens-specific analysis instructions]
+
+Focus on what users LEARN, DECIDE, or BECOME - not what they DO (capabilities already covered).
+```
+
+Key insight: These lenses often find the "why" behind the "what" from Batch 1.
+- Capability → What decision does this enable?
+- Effort eliminated → What state change does the user experience?
+- Feature → What information asymmetry does this create?
+"""
+
+reference_files = [
+    "convex/analysis/extractActivationLevels.ts",
+    "convex/productProfiles.ts"
+]
