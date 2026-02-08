@@ -12,23 +12,23 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E001-S001: Define Output Types for ICP, ActivationMap, and MeasurementSpec
+### 2026-02-08 - Story M004-E002-S001: Aggregate Role and Value Moment Data for ICP Generation
 
 **Files Changed:**
-- `convex/analysis/outputs/types.ts` - New: Pure TypeScript interfaces for three output artifacts (ICPProfile, ActivationMap, MeasurementSpec) plus container type (OutputGenerationResult). Imports and re-exports upstream types (ValueMoment, ValueMomentTier, ActivationLevel, SignalStrength).
-- `convex/analysis/outputs/types.test.ts` - New: 25 tests verifying all interfaces, discriminated union variants, re-exported upstream types, and confidence/sources on all output types.
+- `convex/analysis/outputs/aggregateICPInputs.ts` - New: `aggregateICPInputsCore` pure function + `aggregateICPInputs` internalQuery wrapper. Types: `RoleAggregation`, `ICPInputData`
+- `convex/analysis/outputs/aggregateICPInputs.test.ts` - New: 11 tests (9 unit + 1 integration) covering fan-out grouping, role normalization, targetCustomer handling, sorting, edge cases
 
 **Learnings:**
-- Pure type-only files (no runtime code) are straightforward — interfaces compile without issue and test via object construction + TypeScript compilation
-- Discriminated union (`MapsTo`) with a `type` field per variant avoids optional-field ambiguity — each variant has exactly the required fields
-- Pre-existing TS errors in the codebase (convex/ai.ts, amplitudeActions.ts, node_modules) don't affect new type files — `grep` for specific file in tsc output confirms isolation
+- Pure core + thin Convex wrapper pattern continues to work well — all business logic testable without Convex runtime
+- Fan-out grouping (each value moment appears under ALL its roles) is a simple Map accumulation pattern
+- `internalQuery` is the right choice when the wrapper only reads from DB (vs `internalAction` which is for side-effects/external calls)
 
 **Patterns Discovered:**
-- Output types pattern: separate interfaces per artifact, flat peer fields for coverage (no wrapper objects), discriminated unions for polymorphic references
-- Re-export pattern: `export type { X } from "../upstream"` makes downstream consumers import from a single location
+- Phantom role pattern: adding targetCustomer as a zero-occurrence role entry provides a slot for the downstream ICP generator even when no value moments explicitly mention that customer segment
+- Sorting by tier_1_moments desc as primary key ensures the most strategically important roles surface first
 
 **Gotchas:**
-- `npx tsc --noEmit` on the whole project shows many pre-existing errors — filter output by filename to verify new code is clean
+- None encountered — clean implementation matching existing codebase conventions
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
