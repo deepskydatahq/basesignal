@@ -1,0 +1,144 @@
+# Story: Output Orchestration
+# Orchestrate all output generators into single pipeline
+
+id = "M004-E004-S004"
+parent = "M004-E004"
+title = "Orchestrate all output generators into single pipeline"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+An orchestration action runs all output generators in sequence (ICP → Map → Spec)
+and returns a complete OutputGenerationResult with all three outputs.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateAllOutputs internalAction accepts productId and returns OutputGenerationResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Runs ICP generation first"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Runs activation map generation second"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Runs measurement spec generation third (using ICP and map)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Result includes all three outputs: icp_profiles, activation_map, measurement_spec"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "testGenerateAllOutputs public action available for dashboard testing"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test completes in under 60 seconds"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Errors in one generator don't block others (partial results returned)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/orchestrate.ts"
+]
+
+input_fixtures = ["Linear product with value moments and activation levels"]
+
+depends_on = ["M004-E004-S003"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/orchestrate.ts:
+
+```typescript
+export const generateAllOutputs = internalAction({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const start = Date.now();
+    const errors: string[] = [];
+
+    // 1. Generate ICP profiles
+    let icp_profiles: ICPProfile[] = [];
+    try {
+      icp_profiles = await ctx.runAction(
+        internal.analysis.outputs.generateICPProfiles.generateICPProfiles,
+        { productId }
+      );
+    } catch (e) {
+      errors.push(`ICP generation failed: ${e}`);
+    }
+
+    // 2. Generate activation map
+    let activation_map: ActivationMap | null = null;
+    try {
+      activation_map = await ctx.runAction(
+        internal.analysis.outputs.generateActivationMap.generateActivationMap,
+        { productId }
+      );
+    } catch (e) {
+      errors.push(`Activation map generation failed: ${e}`);
+    }
+
+    // 3. Generate measurement spec (uses ICP and map)
+    let measurement_spec: MeasurementSpec | null = null;
+    try {
+      measurement_spec = await ctx.runAction(
+        internal.analysis.outputs.generateMeasurementSpec.generateMeasurementSpec,
+        { productId }
+      );
+    } catch (e) {
+      errors.push(`Measurement spec generation failed: ${e}`);
+    }
+
+    return {
+      productId,
+      icp_profiles,
+      activation_map,
+      measurement_spec,
+      errors: errors.length > 0 ? errors : undefined,
+      generated_at: new Date().toISOString(),
+      execution_time_ms: Date.now() - start
+    };
+  }
+});
+
+export const testGenerateAllOutputs = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const result = await ctx.runAction(
+      internal.analysis.outputs.orchestrate.generateAllOutputs,
+      { productId }
+    );
+
+    console.log(`=== Output Generation Complete ===`);
+    console.log(`ICP Profiles: ${result.icp_profiles.length}`);
+    console.log(`Activation Map Stages: ${result.activation_map?.stages.length ?? 0}`);
+    console.log(`Measurement Events: ${result.measurement_spec?.total_events ?? 0}`);
+    console.log(`Time: ${result.execution_time_ms}ms`);
+    if (result.errors) {
+      console.log(`Errors: ${result.errors.join(", ")}`);
+    }
+
+    return result;
+  }
+});
+```
+
+This is the main entry point for M004 output generation.
+"""
+
+reference_files = [
+    "convex/analysis/lenses/orchestrate.ts",
+    "convex/analysis/orchestrate.ts"
+]

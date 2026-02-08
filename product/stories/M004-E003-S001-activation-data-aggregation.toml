@@ -1,0 +1,83 @@
+# Story: Activation Data Aggregation
+# Aggregate activation levels and value moments for map generation
+
+id = "M004-E003-S001"
+parent = "M004-E003"
+title = "Aggregate activation levels and value moments for map generation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+A helper function aggregates activation levels and value moments, mapping
+value moments to their likely unlock stage based on tier and role alignment.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "aggregateActivationInputs function accepts productId and returns ActivationInputData"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes all activation levels from extractActivationLevels"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes all value moments from convergence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Pre-maps value moments to suggested stages based on tier"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test returns 4 activation levels with value moment suggestions"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/aggregateActivationInputs.ts"
+]
+
+input_fixtures = ["Linear activation levels", "Linear value moments"]
+
+depends_on = ["M004-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/aggregateActivationInputs.ts:
+
+```typescript
+export interface ActivationInputData {
+  activation_levels: ActivationLevel[];
+  value_moments: ValueMoment[];
+  suggested_mappings: Array<{
+    moment_id: string;
+    moment_name: string;
+    tier: ValueMomentTier;
+    suggested_level: number;  // Based on tier: T1->L3/L4, T2->L2/L3, T3->L1/L2
+    reason: string;
+  }>;
+  primary_activation_level: number;
+}
+
+function suggestLevel(tier: ValueMomentTier): number {
+  // Tier 1 = high value = unlocked at advanced stages (L3/L4)
+  // Tier 3 = basic value = unlocked early (L1/L2)
+  switch (tier) {
+    case 1: return 3;  // Strong activation
+    case 2: return 2;  // Medium activation
+    case 3: return 1;  // Early activation
+  }
+}
+```
+
+This provides structured input for the LLM to refine.
+"""
+
+reference_files = [
+    "convex/analysis/extractActivationLevels.ts",
+    "convex/analysis/convergence/types.ts"
+]

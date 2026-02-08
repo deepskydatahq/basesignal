@@ -1,0 +1,99 @@
+# Story: Output Types Tests
+# Add unit tests validating output type structures
+
+id = "M004-E001-S002"
+parent = "M004-E001"
+title = "Add unit tests for output type validation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+Unit tests verify that output types are properly defined and that type guards
+and validation helpers work correctly for runtime type checking.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test file exists at convex/analysis/outputs/types.test.ts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify ICPProfile required fields are present"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify ActivationMap stages array structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify MeasurementSpec events array structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify TrackingEvent maps_to field validation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Type guard functions isICPProfile, isActivationMap, isMeasurementSpec are tested"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/types.test.ts"
+]
+
+input_fixtures = ["Sample ICP profile", "Sample activation map", "Sample measurement spec"]
+
+depends_on = ["M004-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/types.test.ts with tests for:
+
+1. Type structure validation:
+   - Create sample objects matching each type
+   - Verify TypeScript accepts them (compile-time)
+   - Test type guards for runtime validation
+
+2. Type guard implementation (add to types.ts):
+```typescript
+export function isICPProfile(obj: unknown): obj is ICPProfile {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "id" in obj &&
+    "name" in obj &&
+    "value_moment_priorities" in obj &&
+    Array.isArray((obj as ICPProfile).value_moment_priorities)
+  );
+}
+```
+
+3. Test fixtures - create realistic examples:
+```typescript
+const sampleICPProfile: ICPProfile = {
+  id: "icp-pm-001",
+  name: "Product Manager optimizing roadmap",
+  description: "PM focused on aligning team execution with product strategy",
+  value_moment_priorities: [
+    { moment_id: "vm-001", priority: 1, relevance_reason: "Core workflow" }
+  ],
+  activation_triggers: ["create_roadmap", "link_issues_to_initiatives"],
+  pain_points: ["Lack of visibility into progress", "Scattered feedback"],
+  success_metrics: ["Cycle completion rate", "Roadmap accuracy"],
+  confidence: 0.8,
+  sources: ["features page", "use cases page"]
+};
+```
+
+Follow patterns from convergence/types.test.ts.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/convergence/types.test.ts"
+]

@@ -1,0 +1,84 @@
+# Story: ICP Test Action
+# Public action for testing ICP generation
+
+id = "M004-E002-S003"
+parent = "M004-E002"
+title = "Add public test action for ICP generation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+A public testGenerateICPProfiles action allows manual testing of ICP generation
+via Convex dashboard, with results logged and returned for inspection.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "testGenerateICPProfiles public action accepts productId"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action calls generateICPProfiles and returns full result"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Result includes execution_time_ms for performance tracking"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Action callable from Convex dashboard"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test via dashboard produces valid ICPProfile[]"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateICPProfiles.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M004-E002-S002"]
+
+[handoff]
+implementation_hints = """
+Add to convex/analysis/outputs/generateICPProfiles.ts:
+
+```typescript
+export const testGenerateICPProfiles = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const start = Date.now();
+
+    const profiles = await ctx.runAction(
+      internal.analysis.outputs.generateICPProfiles.generateICPProfiles,
+      { productId }
+    );
+
+    const execution_time_ms = Date.now() - start;
+
+    console.log(`Generated ${profiles.length} ICP profiles in ${execution_time_ms}ms`);
+    profiles.forEach((p, i) => {
+      console.log(`  ${i + 1}. ${p.name} (${p.value_moment_priorities.length} priorities)`);
+    });
+
+    return {
+      profiles,
+      count: profiles.length,
+      execution_time_ms
+    };
+  }
+});
+```
+
+Follow pattern from testRunAllLenses in lenses/orchestrate.ts.
+"""
+
+reference_files = [
+    "convex/analysis/lenses/orchestrate.ts"
+]

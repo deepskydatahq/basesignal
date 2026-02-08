@@ -1,0 +1,88 @@
+# Story: Measurement Spec Test Action
+# Public action for testing measurement spec generation
+
+id = "M004-E004-S003"
+parent = "M004-E004"
+title = "Add public test action for measurement spec generation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+A public testGenerateMeasurementSpec action allows manual testing of measurement
+spec generation via Convex dashboard, with results logged and returned.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "testGenerateMeasurementSpec public action accepts productId"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action calls generateMeasurementSpec and returns full result"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Result includes event count by category"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Action callable from Convex dashboard"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test via dashboard produces valid MeasurementSpec"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M004-E004-S002"]
+
+[handoff]
+implementation_hints = """
+Add to convex/analysis/outputs/generateMeasurementSpec.ts:
+
+```typescript
+export const testGenerateMeasurementSpec = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const start = Date.now();
+
+    const spec = await ctx.runAction(
+      internal.analysis.outputs.generateMeasurementSpec.generateMeasurementSpec,
+      { productId }
+    );
+
+    const execution_time_ms = Date.now() - start;
+
+    const byCategory = spec.events.reduce((acc, e) => {
+      acc[e.category] = (acc[e.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    console.log(`Generated measurement spec in ${execution_time_ms}ms`);
+    console.log(`  Total events: ${spec.total_events}`);
+    console.log(`  By category:`, byCategory);
+    console.log(`  Coverage: ${spec.coverage.activation_levels_covered.length} levels, ${spec.coverage.value_moments_covered.length} moments`);
+
+    return {
+      spec,
+      total_events: spec.total_events,
+      by_category: byCategory,
+      execution_time_ms
+    };
+  }
+});
+```
+"""
+
+reference_files = [
+    "convex/analysis/lenses/orchestrate.ts"
+]

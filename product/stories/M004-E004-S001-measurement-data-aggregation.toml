@@ -1,0 +1,93 @@
+# Story: Measurement Data Aggregation
+# Aggregate all inputs for measurement spec generation
+
+id = "M004-E004-S001"
+parent = "M004-E004"
+title = "Aggregate all inputs for measurement spec generation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+A helper function aggregates value moments, activation levels, ICP profiles,
+and activation map to provide comprehensive input for measurement spec generation.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "aggregateMeasurementInputs function accepts productId and returns MeasurementInputData"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes all value moments with product_surfaces"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes activation level criteria as event templates"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes ICP profiles for persona-based event variants"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes activation map stages for event grouping"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test returns comprehensive input data"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/aggregateMeasurementInputs.ts"
+]
+
+input_fixtures = ["Linear value moments", "Linear activation levels", "Linear ICP profiles", "Linear activation map"]
+
+depends_on = ["M004-E001-S001", "M004-E002-S002", "M004-E003-S002"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/aggregateMeasurementInputs.ts:
+
+```typescript
+export interface MeasurementInputData {
+  value_moments: ValueMoment[];
+  activation_levels: ActivationLevel[];
+  icp_profiles: ICPProfile[];
+  activation_map: ActivationMap;
+
+  // Pre-computed event suggestions
+  activation_event_templates: Array<{
+    level: number;
+    criteria: ActivationCriterion[];
+    suggested_event_name: string;  // e.g., "issue_created" from "create_first_issue"
+  }>;
+
+  value_event_templates: Array<{
+    moment_id: string;
+    moment_name: string;
+    tier: ValueMomentTier;
+    surfaces: string[];
+    suggested_event_name: string;
+  }>;
+}
+
+function suggestEventName(action: string): string {
+  // Convert "create_first_issue" -> "issue_created"
+  // Convert "complete_cycle" -> "cycle_completed"
+  // Basic transformation, LLM will refine
+}
+```
+
+This synthesizes all previous outputs into measurement-ready format.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/generateActivationMap.ts"
+]

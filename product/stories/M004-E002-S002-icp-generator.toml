@@ -1,0 +1,109 @@
+# Story: ICP Generator
+# LLM-powered ICP profile generation from aggregated data
+
+id = "M004-E002-S002"
+parent = "M004-E002"
+title = "Implement LLM-powered ICP profile generator"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+An internalAction uses Claude to generate 2-3 distinct ICP profiles from
+aggregated role and value moment data, producing personas with prioritized
+value moments, activation triggers, and success metrics.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateICPProfiles internalAction accepts productId and returns ICPProfile[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes aggregated role data and value moments"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM output is parsed into ICPProfile[] structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Produces exactly 2-3 personas (enforced by prompt)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each persona has distinct value_moment_priorities (not identical lists)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Persona names are specific, not generic (contains role context)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test produces PM, Engineer, and Team Lead personas"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateICPProfiles.ts"
+]
+
+input_fixtures = ["Linear aggregated ICP inputs"]
+
+depends_on = ["M004-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/generateICPProfiles.ts:
+
+```typescript
+const ICP_GENERATION_PROMPT = `
+You are analyzing a product to identify distinct Ideal Customer Profiles (ICPs).
+
+## Input Data
+- Target customer: {target_customer}
+- Roles identified: {roles_summary}
+- Value moments by role: {value_moments_by_role}
+
+## Task
+Generate 2-3 distinct ICP profiles. Each profile should represent a meaningfully
+different user type with different priorities and paths to value.
+
+## Requirements
+1. Persona names must be specific and role-based:
+   - GOOD: "Product Manager optimizing roadmap alignment"
+   - BAD: "Power User", "Basic User", "Admin"
+
+2. Each persona must have:
+   - name: Specific, role-based name
+   - description: 1-2 sentences about who they are and what they care about
+   - value_moment_priorities: Top 3-5 value moments, ordered by importance TO THIS PERSONA
+   - activation_triggers: 2-4 actions that indicate this persona is activating
+   - pain_points: 2-3 problems this persona has that the product solves
+   - success_metrics: 2-3 measurable outcomes this persona cares about
+
+3. Personas should have DIFFERENT value moment priorities, not identical lists
+
+## Output Format
+Return JSON array of ICPProfile objects.
+`;
+
+export const generateICPProfiles = internalAction({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const inputs = await aggregateICPInputs(ctx, productId);
+    const response = await callClaude(buildPrompt(inputs));
+    return parseICPProfiles(response);
+  }
+});
+```
+
+Use Claude Sonnet for quality. Temperature 0.3 for consistency.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/lenses/shared.ts"
+]

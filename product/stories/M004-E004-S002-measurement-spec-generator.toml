@@ -1,0 +1,118 @@
+# Story: Measurement Spec Generator
+# LLM-powered measurement specification generation
+
+id = "M004-E004-S002"
+parent = "M004-E004"
+title = "Implement LLM-powered measurement spec generator"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+An internalAction uses Claude to generate a measurement specification with
+trackable events, each with standardized names, properties, trigger conditions,
+and mapping to value moments or activation levels.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateMeasurementSpec internalAction accepts productId and returns MeasurementSpec"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes event templates from aggregated inputs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM output is parsed into MeasurementSpec structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Events use entity_action naming format"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each event includes at least 2 properties"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Events are categorized: activation, value, retention, expansion"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each event maps_to a value moment or activation level"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test produces 15-25 events covering key moments"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts"
+]
+
+input_fixtures = ["Linear aggregated measurement inputs"]
+
+depends_on = ["M004-E004-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/generateMeasurementSpec.ts:
+
+```typescript
+const MEASUREMENT_SPEC_PROMPT = `
+You are creating a measurement specification for product analytics.
+
+## Input Data
+- Activation event templates: {activation_templates}
+- Value moment event templates: {value_templates}
+- ICP profiles: {icp_summary}
+- Activation stages: {stages_summary}
+
+## Task
+Generate a comprehensive event tracking specification.
+
+## Requirements
+1. Event naming: entity_action format
+   - GOOD: issue_created, cycle_completed, member_invited
+   - BAD: button_clicked, page_viewed, user_action
+
+2. For each event:
+   - name: standardized entity_action format
+   - description: what this event represents
+   - properties: 2-5 properties to capture (with types)
+   - trigger_condition: when exactly to fire this event
+   - maps_to: which value moment or activation level this measures
+   - category: activation | value | retention | expansion
+
+3. Event categories:
+   - activation: events from activation level criteria
+   - value: events tied to Tier 1-2 value moments
+   - retention: events indicating ongoing engagement
+   - expansion: events indicating team/cross-team growth
+
+4. Properties should enable segmentation:
+   - Always include: user_id, timestamp
+   - Common: user_role, team_size, plan_type
+   - Context-specific: project_id, issue_type, etc.
+
+5. Target 15-25 events total, covering:
+   - All activation level criteria
+   - All Tier 1 value moments
+   - Key Tier 2 value moments
+
+## Output Format
+Return JSON MeasurementSpec object.
+`;
+```
+
+Use Claude Sonnet. Temperature 0.2 for consistency.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/lenses/shared.ts"
+]

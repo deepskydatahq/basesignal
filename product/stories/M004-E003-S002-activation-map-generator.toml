@@ -1,0 +1,104 @@
+# Story: Activation Map Generator
+# LLM-powered activation map generation
+
+id = "M004-E003-S002"
+parent = "M004-E003"
+title = "Implement LLM-powered activation map generator"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+An internalAction uses Claude to generate an activation map from aggregated
+activation levels and value moments, producing stages with trigger events,
+value unlocks, and drop-off risk indicators.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateActivationMap internalAction accepts productId and returns ActivationMap"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes activation levels and value moment suggestions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM output is parsed into ActivationMap structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Stages array length matches activation levels count"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each stage has trigger_events derived from activation criteria"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Value moments are distributed across stages (not all at one stage)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Drop-off risks are identified for at least one stage"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test produces 4-stage map with cycle completion as primary"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateActivationMap.ts"
+]
+
+input_fixtures = ["Linear aggregated activation inputs"]
+
+depends_on = ["M004-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/generateActivationMap.ts:
+
+```typescript
+const ACTIVATION_MAP_PROMPT = `
+You are creating an activation map showing how users progress through a product.
+
+## Input Data
+- Activation levels: {levels_summary}
+- Value moments: {moments_summary}
+- Suggested value unlock stages: {suggested_mappings}
+
+## Task
+Generate an activation map with stages, transitions, and value unlocks.
+
+## Requirements
+1. One stage per activation level (maintain the level numbers)
+
+2. For each stage:
+   - trigger_events: actions that move users INTO this stage (from criteria)
+   - value_moments_unlocked: which value moments become accessible here
+   - drop_off_risk: low/medium/high based on complexity of reaching this stage
+   - drop_off_reasons: if medium/high, explain why users might get stuck
+
+3. For transitions:
+   - Define happy path transitions (L1->L2->L3->L4)
+   - Include recovery paths where applicable (e.g., L2->L1 if user churns)
+   - Estimate typical timeframes between stages
+
+4. Identify primary_activation_level (the "aha moment" stage)
+
+## Output Format
+Return JSON ActivationMap object.
+`;
+```
+
+Use Claude Sonnet. Temperature 0.2 for consistency.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/lenses/shared.ts"
+]

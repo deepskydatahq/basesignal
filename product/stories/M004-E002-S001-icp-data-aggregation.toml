@@ -1,0 +1,82 @@
+# Story: ICP Data Aggregation
+# Aggregate role and value moment data for ICP generation
+
+id = "M004-E002-S001"
+parent = "M004-E002"
+title = "Aggregate role and value moment data for ICP generation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+A helper function aggregates all role mentions from value moments, lens candidates,
+and identity extraction to provide input data for the ICP generator.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "aggregateICPInputs function accepts productId and returns ICPInputData"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Collects all unique roles from ValueMoment.roles[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Includes target_customer from identity extraction"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Groups value moments by role affinity"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test returns 3+ distinct roles with associated value moments"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/aggregateICPInputs.ts"
+]
+
+input_fixtures = ["Linear value moments", "Linear identity data"]
+
+depends_on = ["M004-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/outputs/aggregateICPInputs.ts:
+
+```typescript
+export interface ICPInputData {
+  roles: Array<{
+    name: string;
+    occurrence_count: number;
+    value_moments: ValueMoment[];
+    tier_1_moments: number;
+  }>;
+  target_customer: string;
+  total_value_moments: number;
+}
+
+export async function aggregateICPInputs(
+  ctx: ActionCtx,
+  productId: Id<"products">
+): Promise<ICPInputData> {
+  // 1. Fetch value moments from convergence results
+  // 2. Fetch identity for target_customer
+  // 3. Extract and count all roles
+  // 4. Group value moments by primary role
+  // 5. Sort roles by tier-1 moment count
+}
+```
+
+This prepares clean input for the LLM prompt.
+"""
+
+reference_files = [
+    "convex/analysis/convergence/types.ts",
+    "convex/analysis/extractIdentity.ts"
+]

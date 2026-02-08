@@ -1,0 +1,85 @@
+# Story: Activation Map Test Action
+# Public action for testing activation map generation
+
+id = "M004-E003-S003"
+parent = "M004-E003"
+title = "Add public test action for activation map generation"
+status = "ready"
+created = 2026-02-08
+
+[outcome]
+description = """
+A public testGenerateActivationMap action allows manual testing of activation
+map generation via Convex dashboard, with results logged and returned.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "testGenerateActivationMap public action accepts productId"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Action calls generateActivationMap and returns full result"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Result includes execution_time_ms and stage count"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Action callable from Convex dashboard"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Linear test via dashboard produces valid ActivationMap"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateActivationMap.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M004-E003-S002"]
+
+[handoff]
+implementation_hints = """
+Add to convex/analysis/outputs/generateActivationMap.ts:
+
+```typescript
+export const testGenerateActivationMap = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const start = Date.now();
+
+    const map = await ctx.runAction(
+      internal.analysis.outputs.generateActivationMap.generateActivationMap,
+      { productId }
+    );
+
+    const execution_time_ms = Date.now() - start;
+
+    console.log(`Generated activation map in ${execution_time_ms}ms`);
+    console.log(`  Stages: ${map.stages.length}`);
+    console.log(`  Primary activation: L${map.primary_activation_level}`);
+    map.stages.forEach((s) => {
+      console.log(`    L${s.level} ${s.name}: ${s.value_moments_unlocked.length} moments, ${s.drop_off_risk} risk`);
+    });
+
+    return {
+      map,
+      stage_count: map.stages.length,
+      transition_count: map.transitions.length,
+      execution_time_ms
+    };
+  }
+});
+```
+"""
+
+reference_files = [
+    "convex/analysis/lenses/orchestrate.ts"
+]
