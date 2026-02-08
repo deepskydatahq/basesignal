@@ -12,22 +12,22 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E003-S001: Document Linear Reference Analysis
+### 2026-02-07 - Story M003-E001-S001: Define Lens Candidate Schema and Types
 
 **Files Changed:**
-- `docs/reference/linear-value-moments.md` - New: structured reference document with 6 value moments (REF-01 through REF-06) for Linear, M002 activation mapping table, and sources
+- `convex/analysis/lenses/types.ts` - New: Exports `LensType` (7-value union), `ConfidenceLevel`, `LensCandidate` interface (7 shared + 7 optional lens-specific fields), `LensResult` interface
+- `convex/analysis/lenses/types.test.ts` - New: 13 tests covering all type shapes, optional fields, and importability
 
 **Learnings:**
-- Reference documents are pure documentation tasks — no code changes, no tests needed
-- The brainstorm design (6 moments with flat REF-NN IDs) kept this focused and mechanical
-- M002 activation levels provide concrete evidence anchors for each value moment
+- Pure TypeScript type files with no runtime dependencies are the simplest units to implement and test
+- Type-level tests (creating typed objects and asserting field values) provide compile-time and runtime verification simultaneously
 
 **Patterns Discovered:**
-- REF-NN flat ID scheme enables clean cross-referencing in downstream validation (H6 comparison table)
-- Separating reference authoring (this task) from pipeline validation (S002) keeps concerns clean
+- Lens-specific optional fields pattern: shared interface with optional fields per lens type avoids needing a discriminated union while keeping the type simple for consumers
+- `convex/analysis/lenses/` directory structure mirrors the existing `convex/analysis/` pattern for extraction modules
 
 **Gotchas:**
-- Brainstorm said "primary aha-moment is L2 (team_adopter)" but M002 data uses different level names (L3 = workflow_optimizer). The implementation plan's acceptance criteria correctly specified "L2 team_adopter mapping" in the Why primary field, but the actual M002 data maps the primary moment to L3. Document uses the actual M002 level names.
+- Worktree needs `npm install` before tests can run — `node_modules` not shared between worktrees
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
