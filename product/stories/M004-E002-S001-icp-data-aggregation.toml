@@ -4,7 +4,7 @@
 id = "M004-E002-S001"
 parent = "M004-E002"
 title = "Aggregate role and value moment data for ICP generation"
-status = "in-progress"
+status = "complete"
 created = 2026-02-08
 
 [outcome]

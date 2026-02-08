@@ -4,7 +4,7 @@
 id = "M004-E003-S001"
 parent = "M004-E003"
 title = "Aggregate activation levels and value moments for map generation"
-status = "in-progress"
+status = "complete"
 created = 2026-02-08
 
 [outcome]
