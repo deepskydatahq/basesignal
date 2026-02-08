@@ -12,23 +12,24 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E003-S001: Aggregate Activation Inputs
+### 2026-02-08 - Story M004-E003-S002: LLM-powered Activation Map Generator
 
 **Files Changed:**
-- `convex/analysis/outputs/aggregateActivationInputs.ts` - New: `suggestLevel` and `aggregateActivationInputs` pure functions + `aggregateActivationInputsQuery` internalQuery wrapper. Types: `SuggestedMapping`, `ActivationInputData`
-- `convex/analysis/outputs/aggregateActivationInputs.test.ts` - New: 21 tests covering suggestLevel (all tier/maxLevel combos including edge cases), aggregateActivationInputs (level inclusion, moment inclusion, tier mapping, primary level, minimal data, empty moments), Linear integration test (4 levels, 6 mappings), and type contracts
+- `convex/analysis/outputs/generateActivationMap.ts` - New: types (ActivationMap, ActivationMapStage, ActivationMapTransition), system prompt, prompt builder, response parser, generateActivationMap internalAction, testGenerateActivationMap public action
+- `convex/analysis/outputs/generateActivationMap.test.ts` - New: 41 tests covering type shapes, prompt content, prompt builder, parser (raw JSON, code-fenced, sorting, validation errors, edge cases)
 
 **Learnings:**
-- Proportional tier-to-level mapping via `Math.ceil(maxLevel * ratio)` with `Math.max(1, ...)` cleanly handles all level counts including edge case of 1
-- Pure functions importing from sibling analysis modules (extractActivationLevels, convergence/types) are straightforward to test without Convex runtime
-- The `convergence` section on productProfiles stores the full `ConvergenceResult` and `definitions.activation` stores `ActivationLevelsResult`
+- The `extractJson` utility from `lenses/shared.ts` handles both raw JSON and code-fenced JSON, reducing boilerplate in parsers
+- `callClaude` from `lenses/shared.ts` already wraps the Anthropic client with sensible defaults — no need to construct a client manually
+- The `outputs` section on product profiles uses `v.any()` via `updateSectionInternal`, so no schema changes needed for storing activation maps
 
 **Patterns Discovered:**
-- Outputs directory pattern: `convex/analysis/outputs/` for functions that aggregate/transform analysis results into downstream-consumable formats
-- Thin Convex wrapper pattern: pure function does all logic, internalQuery just fetches data from profile and delegates
+- Output generator pattern: fetch profile data (internalQuery) → build prompt from profile sections → LLM call via callClaude() → parse with extractJson() + field validation → store on profile via updateSectionInternal
+- Cross-section data flow: activation levels from `definitions.activation` + value moments from `convergence.value_moments` → combined into activation map stored in `outputs.activationMap`
 
 **Gotchas:**
 - Worktree needs `npm install` — node_modules not shared between worktrees
+- `convex/analysis/outputs/types.ts` doesn't exist yet (depends on M004-E001-S001) — types defined locally in the generator file
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
