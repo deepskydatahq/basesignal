@@ -3,6 +3,7 @@ import {
   ACTIVATION_MAP_SYSTEM_PROMPT,
   buildActivationMapUserPrompt,
   parseActivationMapResponse,
+  enrichActivationMapResult,
 } from "./generateActivationMap";
 import type {
   ActivationMap,
@@ -573,5 +574,62 @@ describe("parseActivationMapResponse", () => {
       const result = parseActivationMapResponse(JSON.stringify(data));
       expect(result.sources).toEqual(["123", "true", "activation_levels"]);
     });
+  });
+});
+
+describe("enrichActivationMapResult", () => {
+  const makeActivationMap = (stageCount: number): ActivationMap => ({
+    stages: Array.from({ length: stageCount }, (_, i) => ({
+      level: i + 1,
+      name: `stage_${i + 1}`,
+      signal_strength: "medium",
+      trigger_events: [`event_${i + 1}`],
+      value_moments_unlocked: [],
+      drop_off_risk: { level: "low", reason: "test" },
+    })),
+    transitions: [],
+    primary_activation_level: 1,
+    confidence: "medium",
+    sources: ["test"],
+  });
+
+  it("adds stage_count equal to stages.length for 0 stages", () => {
+    const result = enrichActivationMapResult(makeActivationMap(0), 100);
+    expect(result.stage_count).toBe(0);
+  });
+
+  it("adds stage_count equal to stages.length for 1 stage", () => {
+    const result = enrichActivationMapResult(makeActivationMap(1), 100);
+    expect(result.stage_count).toBe(1);
+  });
+
+  it("adds stage_count equal to stages.length for 4 stages", () => {
+    const result = enrichActivationMapResult(makeActivationMap(4), 100);
+    expect(result.stage_count).toBe(4);
+  });
+
+  it("adds execution_time_ms as a number", () => {
+    const result = enrichActivationMapResult(makeActivationMap(2), 42);
+    expect(result.execution_time_ms).toBe(42);
+    expect(typeof result.execution_time_ms).toBe("number");
+  });
+
+  it("preserves all original ActivationMap fields", () => {
+    const original = makeActivationMap(2);
+    const result = enrichActivationMapResult(original, 100);
+    expect(result.stages).toEqual(original.stages);
+    expect(result.transitions).toEqual(original.transitions);
+    expect(result.primary_activation_level).toBe(original.primary_activation_level);
+    expect(result.confidence).toBe(original.confidence);
+    expect(result.sources).toEqual(original.sources);
+  });
+
+  it("preserves stages from Linear fixture response", () => {
+    const parsed = parseActivationMapResponse(linearFixtureResponse);
+    const result = enrichActivationMapResult(parsed, 500);
+    expect(result.stage_count).toBe(4);
+    expect(result.stages).toHaveLength(4);
+    expect(result.stages[0].name).toBe("explorer");
+    expect(result.stages[3].name).toBe("product_workflow_master");
   });
 });

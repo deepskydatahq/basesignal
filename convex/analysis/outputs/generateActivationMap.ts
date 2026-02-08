@@ -323,13 +323,31 @@ export const generateActivationMap = internalAction({
   },
 });
 
-// Public test action for manual triggering
+// --- Test Action Enrichment ---
+
+/**
+ * Enrich an ActivationMap result with convenience metadata for dashboard inspection.
+ */
+export function enrichActivationMapResult(
+  result: ActivationMap,
+  executionTimeMs: number,
+) {
+  return {
+    ...result,
+    stage_count: result.stages.length,
+    execution_time_ms: executionTimeMs,
+  };
+}
+
+// Public test action for manual triggering via Convex dashboard
 export const testGenerateActivationMap = action({
   args: { productId: v.id("products") },
   handler: async (ctx, args) => {
-    return await ctx.runAction(
+    const startTime = Date.now();
+    const result = await ctx.runAction(
       internal.analysis.outputs.generateActivationMap.generateActivationMap,
       { productId: args.productId },
     );
+    return enrichActivationMapResult(result, Date.now() - startTime);
   },
 });
