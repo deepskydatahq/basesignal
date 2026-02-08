@@ -12,38 +12,34 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E001-S002: Implement Batch 1 Lenses (Capability, Effort, Time, Artifact)
+### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
 **Files Changed:**
-- `convex/analysis/lenses/types.ts` - New: LensType, ConfidenceLevel, LensCandidate, LensResult types for all 7 analytical lenses
-- `convex/analysis/lenses/types.test.ts` - New: 9 tests validating type shapes and optional fields
-- `convex/analysis/lenses/shared.ts` - New: `callClaude` (Claude Sonnet wrapper) and `extractJson` (code-fence-aware JSON parser)
-- `convex/analysis/lenses/shared.test.ts` - New: 8 tests for extractJson (raw, fenced, error cases)
-- `convex/analysis/lenses/extractCapabilityMapping.ts` - New: internalAction + parser for "What new capacities does the product unlock?"
-- `convex/analysis/lenses/extractCapabilityMapping.test.ts` - New: 17 tests for parser and prompt validation
-- `convex/analysis/lenses/extractEffortElimination.ts` - New: internalAction + parser for "What repetitive work vanishes entirely?"
-- `convex/analysis/lenses/extractEffortElimination.test.ts` - New: 16 tests for parser and prompt validation
-- `convex/analysis/lenses/extractTimeCompression.ts` - New: internalAction + parser for "What workflows become fast enough to change behavior?"
-- `convex/analysis/lenses/extractTimeCompression.test.ts` - New: 16 tests for parser and prompt validation
-- `convex/analysis/lenses/extractArtifactCreation.ts` - New: internalAction + parser for "What tangible outputs have value beyond the tool?"
-- `convex/analysis/lenses/extractArtifactCreation.test.ts` - New: 16 tests for parser and prompt validation
+- `convex/analysis/lenses/types.ts` - Added `AllLensesResult` interface with productId, candidates, per_lens timing, total_candidates, execution_time_ms, and errors fields
+- `convex/analysis/lenses/orchestrate.ts` - New: `runAllLenses` internalAction + `testRunAllLenses` public action. Runs Batch 1 (4 lenses) in parallel via Promise.allSettled, builds context summary, then Batch 2 (3 lenses) in parallel with context
+- `convex/analysis/lenses/orchestrate.test.ts` - New: 15 tests for orchestrator helper functions (buildBatch1ContextSummary, processSettledResults, AllLensesResult type, batch configuration)
+- `convex/analysis/lenses/shared.ts` - Fixed `parseLensResponse` to set the `lens` field on candidates (was missing)
+- `convex/analysis/lenses/extractInfoAsymmetry.ts` - Fixed return type to match `LensResult` interface (was using `lensType` + `overallConfidence`)
+- `convex/analysis/lenses/extractDecisionEnablement.ts` - Fixed return type to match `LensResult` interface
+- `convex/analysis/lenses/extractStateTransitions.ts` - Fixed return type to match `LensResult` interface
+- `convex/analysis/lenses/*.ts` (all Batch 1 + Batch 2 files) - Cherry-picked from dependency branches
 
 **Learnings:**
-- Each lens has a "core question" and distinct anti-patterns — keeping these in the system prompt improves extraction quality
-- Inline page filtering/context per lens (no shared abstraction) keeps each lens self-contained and easy to modify independently
-- `crypto.randomUUID()` works in Convex internalActions for generating candidate IDs
-- Confidence normalization (defaulting to "medium" for invalid values) is more robust than throwing errors for LLM output
+- Cherry-picking files from multiple worktree branches via `git checkout <branch> -- <path>` is effective for bringing in dependency work
+- Batch 2 branch had divergent types.ts (different LensType values, different LensResult fields) — Batch 1 branch matched the canonical S001 spec
+- `parseLensResponse` in shared.ts was not setting the `lens` field on `LensCandidate` — needed to be added as it's a required field in the type
+- `Promise.allSettled` + `processSettledResults` pattern cleanly separates error collection from result processing
+- Batch 2 lenses accept `batch1Results: v.any()` which makes passing structured context objects from the orchestrator straightforward
 
 **Patterns Discovered:**
-- Lens extractor pattern: filterPages → buildPageContext → buildProfileContext → callClaude → parseResponse → return LensResult
-- Each lens owns its own PAGE_TYPES, PAGE_PRIORITY, and profile section selection — no shared config needed
-- Parser exports for testing: each lens exports its parser function (e.g., `parseCapabilityMappingResponse`) for direct unit testing without Convex runtime
-- Minimal shared.ts: only `callClaude` and `extractJson` — avoids premature abstraction while reusing actual infrastructure
+- Orchestrator pattern: separate pure helper functions (buildBatch1ContextSummary, processSettledResults) from the Convex action for testability
+- Cross-branch dependency resolution: checkout files from dependency branches, fix incompatibilities, then build new functionality on top
+- Context passing between batches: pass structured objects (not strings) that downstream lenses format themselves via their own `buildBatch1Context`
 
 **Gotchas:**
+- Pre-existing UI test timeouts (AddActivityModal, AddEntityDialog, TrackingMaturityScreen) still present — unrelated to this work
+- Pre-existing "Write outside of transaction" convex-test errors from scheduled functions
 - Worktree needs `npm install` — node_modules not shared between worktrees
-- Pre-existing UI test failures (12 tests in AddActivityModal, AddEntityDialog, FirstValueSection, TrackingMaturityScreen) still present — unrelated to lens work
-- S001 types dependency was "closed" in another branch but not on this branch — had to create types.ts here
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 

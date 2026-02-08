@@ -122,6 +122,7 @@ export const extractDecisionEnablement = internalAction({
     batch1Results: v.optional(v.any()),
   },
   handler: async (ctx, args): Promise<LensResult> => {
+    const startTime = Date.now();
     const pages = await ctx.runQuery(
       internal.crawledPages.listByProductInternal,
       { productId: args.productId },
@@ -165,13 +166,10 @@ export const extractDecisionEnablement = internalAction({
     );
 
     return {
-      lensType: "decision_enablement",
+      lens: "decision_enablement",
       candidates,
-      overallConfidence:
-        candidates.length > 0
-          ? candidates.filter((c) => c.confidence === "high").length /
-            candidates.length
-          : 0,
+      candidate_count: candidates.length,
+      execution_time_ms: Date.now() - startTime,
     };
   },
 });
