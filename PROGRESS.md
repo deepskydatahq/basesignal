@@ -12,25 +12,28 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E004-S001: Aggregate Measurement Inputs
+### 2026-02-08 - Story M004-E004-S002: LLM-powered Measurement Spec Generator
 
 **Files Changed:**
-- `convex/analysis/outputs/types.ts` - New: MeasurementInputData, ICPProfile, ActivationMap, ActivationMapStage types. Re-exports ValueMoment, ActivationLevel, ActivationCriterion.
-- `convex/analysis/outputs/aggregateMeasurementInputs.ts` - New: `aggregateMeasurementInputsCore` pure function + `aggregateMeasurementInputs` Convex internalAction wrapper
-- `convex/analysis/outputs/aggregateMeasurementInputs.test.ts` - New: 13 tests covering all four section extractions, product_surfaces inclusion, criteria inclusion, passthrough verification, error validation for missing sections, and Linear integration test
+- `convex/analysis/outputs/types.ts` - New: TypeScript types for output pipeline — ICPProfile, ActivationMap, MeasurementSpec, TrackingEvent, EventProperty, MeasurementInputData, and re-exports of upstream ValueMoment/ActivationLevel types
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - New: `generateMeasurementSpec` internalAction + `MEASUREMENT_SPEC_SYSTEM_PROMPT` constant + `buildMeasurementSpecPrompt` pure function + `parseMeasurementSpecResponse` pure function with entity_action regex validation, category enum, maps_to discriminated union validation
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - New: 41 tests — system prompt validation (6), prompt builder (9), parser validation (22), fixture integration (1 with 20 events)
+- `convex/analysis/outputs/aggregateMeasurementInputs.ts` - New: Stub internalAction to aggregate value moments, activation levels, ICP profiles, and activation map from product profile (dependency for S002)
 
 **Learnings:**
-- ICPProfile and ActivationMap types from dependency stories (M004-E002-S002, M004-E003-S002) weren't implemented yet — defined them in outputs/types.ts as the canonical location
-- Pure aggregation function pattern: read 4 profile sections, validate all exist, collect all missing in single error message — no transformation, just passthrough
-- Convergence results stored at `profile.convergence.value_moments`, activation at `profile.definitions.activation.levels`, ICP at `profile.icpProfiles`, map at `profile.activationMap`
+- Hybrid pattern (internalAction + pure functions) enables thorough testing without Convex runtime
+- `extractJson()` from `lenses/shared.ts` handles both raw JSON and code-fenced responses cleanly
+- Entity_action regex `/^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/` validates names like `issue_created` while rejecting `issueCreated`, `UPPER_CASE`, leading underscore, digit-start
+- Computing `total_events` from `events.length` and coverage fields from maps_to data (instead of trusting LLM output) prevents inconsistencies
 
 **Patterns Discovered:**
-- Dependency validation with collected errors: check all required sections, collect names of missing ones, throw single error listing all — better DX than failing on first missing
-- Pure core function + thin Convex wrapper pattern continues to work well for testability
+- Discriminated union validation for maps_to: check `type` field first, then validate required fields per type (`value_moment` needs `moment_id`, `activation_level` needs `activation_level` number, `both` needs both)
+- Fixture factory pattern with `makeValidEvent(overrides)` and `makeValidResponse(overrides)` makes parser tests concise while keeping defaults valid
+- Conditional prompt sections (ICP profiles, activation map) only included when data present — avoids empty sections in LLM prompt
 
 **Gotchas:**
-- Pre-existing TS errors in convex/ai.ts and convex/_generated/api.d.ts — unrelated to this work
-- Worktree needs `npm install` before tests can run
+- `convex/analysis/outputs/` directory didn't exist yet — S001 (types) and S004-S001 (aggregation) were "in-progress" but not implemented; created types + stub aggregator as part of this work
+- Pre-existing UI test failures (AddEntityDialog, AddActivityModal) still present — unrelated to this work
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 

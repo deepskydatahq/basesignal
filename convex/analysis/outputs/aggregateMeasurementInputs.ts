@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { v } from "convex/values";
@@ -49,11 +50,98 @@ export const aggregateMeasurementInputs = internalAction({
     const profile = await ctx.runQuery(internal.productProfiles.getInternal, {
       productId: args.productId,
     });
+=======
+// Stub: Aggregate measurement inputs from product profile
+// Full implementation tracked in M004-E004-S001
+
+import { internalAction } from "../../_generated/server";
+import { internal } from "../../_generated/api";
+import { v } from "convex/values";
+import type {
+  MeasurementInputData,
+  ValueMoment,
+  ActivationLevel,
+  ICPProfile,
+  ActivationMap,
+} from "./types";
+
+/**
+ * Convert an action string like "create_first_issue" to entity_action format "issue_created".
+ * Basic heuristic — the LLM will refine these suggestions.
+ */
+function suggestEventName(action: string): string {
+  const cleaned = action
+    .toLowerCase()
+    .replace(/[^a-z0-9_\s]/g, "")
+    .trim();
+  const words = cleaned.split(/[\s_]+/).filter(Boolean);
+  if (words.length < 2) return cleaned || "unknown_action";
+  return words.join("_");
+}
+
+export const aggregateMeasurementInputs = internalAction({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args): Promise<MeasurementInputData> => {
+    const profile = await ctx.runQuery(
+      internal.productProfiles.getInternal,
+      { productId: args.productId },
+    );
+>>>>>>> 18422f3 (feat: implement LLM-powered measurement spec generator)
 
     if (!profile) {
       throw new Error("Product profile not found");
     }
 
+<<<<<<< HEAD
     return aggregateMeasurementInputsCore(profile);
+=======
+    // Extract value moments from convergence results
+    const convergence = profile.convergence as
+      | { value_moments?: ValueMoment[] }
+      | undefined;
+    const valueMoments: ValueMoment[] = convergence?.value_moments ?? [];
+
+    // Extract activation levels from definitions
+    const definitions = profile.definitions as
+      | { activation?: { levels?: ActivationLevel[] } }
+      | undefined;
+    const activationLevels: ActivationLevel[] =
+      definitions?.activation?.levels ?? [];
+
+    // Extract ICP profiles (if generated)
+    const outputs = profile.outputs as
+      | { icp_profiles?: ICPProfile[]; activation_map?: ActivationMap }
+      | undefined;
+    const icpProfiles: ICPProfile[] = outputs?.icp_profiles ?? [];
+    const activationMap: ActivationMap | null =
+      outputs?.activation_map ?? null;
+
+    // Build event templates from activation criteria
+    const activationEventTemplates = activationLevels.map((al) => ({
+      level: al.level,
+      criteria: al.criteria,
+      suggested_event_name: al.criteria[0]
+        ? suggestEventName(al.criteria[0].action)
+        : `level_${al.level}_reached`,
+    }));
+
+    // Build event templates from value moments
+    const valueEventTemplates = valueMoments.map((vm) => ({
+      moment_id: vm.id,
+      moment_name: vm.name,
+      tier: vm.tier,
+      surfaces: vm.product_surfaces,
+      suggested_event_name: suggestEventName(vm.name),
+    }));
+
+    return {
+      value_moments: valueMoments,
+      activation_levels: activationLevels,
+      icp_profiles: icpProfiles,
+      activation_map: activationMap,
+      activation_event_templates: activationEventTemplates,
+      value_event_templates: valueEventTemplates,
+    };
+>>>>>>> 18422f3 (feat: implement LLM-powered measurement spec generator)
   },
 });
