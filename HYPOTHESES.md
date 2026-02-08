@@ -109,7 +109,7 @@
 ---
 
 ### H6: 7-Lens Value Discovery
-**Status:** 🔵 Testing
+**Status:** 🟢 Validated
 
 **Belief:** We believe that applying 7 analytical lenses to crawled product content and converging their outputs produces a tiered catalog of value moments that match what a human product expert would identify.
 
@@ -124,12 +124,21 @@
 
 **Evidence:**
 - Feb 2026: Mission M003 created with 3 epics (Lens Execution, Validation & Convergence, Reference Comparison)
+- Feb 2026: M003 validation completed — 7-lens pipeline on Linear produced 102 candidates across 7 lenses, converging into 6 Tier 1 moments
+- Feb 2026: Human-reviewed accuracy: 83.3% (5/6 Tier 1 moments rated accurate or mostly accurate, exceeding 70% threshold)
+- Feb 2026: Pipeline independently discovered a real value moment (Customer Asks) not in reference doc
+- Feb 2026: All 7 lenses contributed to Tier 1 moments — no unproductive lenses
 
-**Next Steps:** If validated, build output layers (ICPs, activation maps, measurement specs). If invalidated, identify which lenses underperform and refine prompts.
+**Outcome:** Validated. Multi-lens convergence produces accurate value moment catalogs. Jaccard word similarity is insufficient for automated clustering/comparison — full pipeline (E001/E002) should use embedding-based similarity.
+
+**Next Steps:** Build output layers (ICPs, activation maps, measurement specs). For E001/E002 pipeline: replace Jaccard with embedding-based similarity, add post-convergence value filter to exclude switching costs.
 
 ---
 
 ## Validated Hypotheses
+
+### H6: 7-Lens Value Discovery ✓
+Applying 7 analytical lenses (Capability, Effort, Information, Decision, State, Time, Artifact) to crawled product content and converging outputs produces a tiered catalog of value moments matching expert assessment. Tested via M003 mission with Linear product — 102 candidates across 7 lenses, 6 Tier 1 moments, 83.3% human-reviewed accuracy (5/6 accurate or mostly accurate). Pipeline independently discovered value moments beyond reference doc. Key learning: Jaccard word similarity insufficient for automated comparison; use embeddings for production pipeline.
 
 ### H5: Multi-Level Activation ✓
 Modeling activation as a spectrum (weak → medium → strong → very_strong) produces more accurate and actionable product understanding than binary activation. Tested via M002 mission with Linear product - extracted 4 distinct levels with measurable criteria, correctly identifying L3 (workflow_optimizer) as the aha-moment.
@@ -150,4 +159,4 @@ Modeling activation as a spectrum (weak → medium → strong → very_strong) p
 
 ## Next Action
 
-**Test H6 via M003.** Build 7-lens execution pipeline, validation & convergence, and compare against Linear reference analysis. See `product/missions/M003-7-lens-value-discovery.toml` for mission details.
+**Build output layers (M004).** H6 validated — proceed with ICP generation, activation maps, and measurement specs. For E001/E002 infrastructure: replace Jaccard with embedding-based similarity for clustering and reference comparison.
