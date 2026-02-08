@@ -12,23 +12,23 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E002-S001: Aggregate Role and Value Moment Data for ICP Generation
+### 2026-02-08 - Story M004-E003-S001: Aggregate Activation Inputs
 
 **Files Changed:**
-- `convex/analysis/outputs/aggregateICPInputs.ts` - New: `aggregateICPInputsCore` pure function + `aggregateICPInputs` internalQuery wrapper. Types: `RoleAggregation`, `ICPInputData`
-- `convex/analysis/outputs/aggregateICPInputs.test.ts` - New: 11 tests (9 unit + 1 integration) covering fan-out grouping, role normalization, targetCustomer handling, sorting, edge cases
+- `convex/analysis/outputs/aggregateActivationInputs.ts` - New: `suggestLevel` and `aggregateActivationInputs` pure functions + `aggregateActivationInputsQuery` internalQuery wrapper. Types: `SuggestedMapping`, `ActivationInputData`
+- `convex/analysis/outputs/aggregateActivationInputs.test.ts` - New: 21 tests covering suggestLevel (all tier/maxLevel combos including edge cases), aggregateActivationInputs (level inclusion, moment inclusion, tier mapping, primary level, minimal data, empty moments), Linear integration test (4 levels, 6 mappings), and type contracts
 
 **Learnings:**
-- Pure core + thin Convex wrapper pattern continues to work well — all business logic testable without Convex runtime
-- Fan-out grouping (each value moment appears under ALL its roles) is a simple Map accumulation pattern
-- `internalQuery` is the right choice when the wrapper only reads from DB (vs `internalAction` which is for side-effects/external calls)
+- Proportional tier-to-level mapping via `Math.ceil(maxLevel * ratio)` with `Math.max(1, ...)` cleanly handles all level counts including edge case of 1
+- Pure functions importing from sibling analysis modules (extractActivationLevels, convergence/types) are straightforward to test without Convex runtime
+- The `convergence` section on productProfiles stores the full `ConvergenceResult` and `definitions.activation` stores `ActivationLevelsResult`
 
 **Patterns Discovered:**
-- Phantom role pattern: adding targetCustomer as a zero-occurrence role entry provides a slot for the downstream ICP generator even when no value moments explicitly mention that customer segment
-- Sorting by tier_1_moments desc as primary key ensures the most strategically important roles surface first
+- Outputs directory pattern: `convex/analysis/outputs/` for functions that aggregate/transform analysis results into downstream-consumable formats
+- Thin Convex wrapper pattern: pure function does all logic, internalQuery just fetches data from profile and delegates
 
 **Gotchas:**
-- None encountered — clean implementation matching existing codebase conventions
+- Worktree needs `npm install` — node_modules not shared between worktrees
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
