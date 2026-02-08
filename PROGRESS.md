@@ -12,45 +12,38 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E002-S004: Implement Convergence and Tiering
+### 2026-02-07 - Story M003-E001-S002: Implement Batch 1 Lenses (Capability, Effort, Time, Artifact)
 
 **Files Changed:**
-- `convex/analysis/convergence/convergeAndTier.ts` - Core convergence module: `assignTier` (pure tier mapping), `parseMergeResponse` (LLM JSON parsing), `directMerge` (fallback), `convergeAndTier` (Promise.allSettled LLM merge), `runConvergencePipeline` (internalAction orchestrator)
-- `convex/analysis/convergence/convergeAndTier.test.ts` - 29 tests covering all pure functions, mocked LLM integration, fallback behavior, and edge cases
+- `convex/analysis/lenses/types.ts` - New: LensType, ConfidenceLevel, LensCandidate, LensResult types for all 7 analytical lenses
+- `convex/analysis/lenses/types.test.ts` - New: 9 tests validating type shapes and optional fields
+- `convex/analysis/lenses/shared.ts` - New: `callClaude` (Claude Sonnet wrapper) and `extractJson` (code-fence-aware JSON parser)
+- `convex/analysis/lenses/shared.test.ts` - New: 8 tests for extractJson (raw, fenced, error cases)
+- `convex/analysis/lenses/extractCapabilityMapping.ts` - New: internalAction + parser for "What new capacities does the product unlock?"
+- `convex/analysis/lenses/extractCapabilityMapping.test.ts` - New: 17 tests for parser and prompt validation
+- `convex/analysis/lenses/extractEffortElimination.ts` - New: internalAction + parser for "What repetitive work vanishes entirely?"
+- `convex/analysis/lenses/extractEffortElimination.test.ts` - New: 16 tests for parser and prompt validation
+- `convex/analysis/lenses/extractTimeCompression.ts` - New: internalAction + parser for "What workflows become fast enough to change behavior?"
+- `convex/analysis/lenses/extractTimeCompression.test.ts` - New: 16 tests for parser and prompt validation
+- `convex/analysis/lenses/extractArtifactCreation.ts` - New: internalAction + parser for "What tangible outputs have value beyond the tool?"
+- `convex/analysis/lenses/extractArtifactCreation.test.ts` - New: 16 tests for parser and prompt validation
 
 **Learnings:**
-- `Promise.allSettled` + per-result fallback gives resilient convergence: if some LLM calls fail, the pipeline still completes with directMerge fallbacks
-- Mocking Anthropic client with `vi.fn().mockResolvedValueOnce()` works cleanly for testing per-cluster LLM calls
-- `parseMergeResponse` verb validation (first character uppercase) is a lightweight proxy for "starts with a verb" without needing a verb dictionary
+- Each lens has a "core question" and distinct anti-patterns — keeping these in the system prompt improves extraction quality
+- Inline page filtering/context per lens (no shared abstraction) keeps each lens self-contained and easy to modify independently
+- `crypto.randomUUID()` works in Convex internalActions for generating candidate IDs
+- Confidence normalization (defaulting to "medium" for invalid values) is more robust than throwing errors for LLM output
 
 **Patterns Discovered:**
-- LLM-merge-with-fallback pattern: `convergeAndTier` wraps each cluster's LLM call in Promise.allSettled, maps fulfilled results to LLM output and rejected to `directMerge` — no data loss on partial failures
-- Mock client factory: `makeMockClient(responses[])` creates a mock with ordered `.mockResolvedValueOnce()` calls, making per-cluster test setup clean
-- Pure tier function tested exhaustively at boundaries (1, 2, 3, 4, 5, 7, 10) covers all three tier bins
+- Lens extractor pattern: filterPages → buildPageContext → buildProfileContext → callClaude → parseResponse → return LensResult
+- Each lens owns its own PAGE_TYPES, PAGE_PRIORITY, and profile section selection — no shared config needed
+- Parser exports for testing: each lens exports its parser function (e.g., `parseCapabilityMappingResponse`) for direct unit testing without Convex runtime
+- Minimal shared.ts: only `callClaude` and `extractJson` — avoids premature abstraction while reusing actual infrastructure
 
 **Gotchas:**
 - Worktree needs `npm install` — node_modules not shared between worktrees
-- Pre-existing test failures (14 tests in UI components) and "Write outside of transaction" errors from convex-test still present — unrelated to convergence work
-
-### 2026-02-07 - Story M003-E002-S003: Implement Semantic Clustering of Candidates
-
-**Files Changed:**
-- `convex/analysis/convergence/types.ts` - Created type definitions for convergence pipeline: `ValidatedCandidate`, `CandidateCluster`, `ValueMoment`, `ConvergenceResult`, `LensType`
-- `convex/lib/similarity.ts` - Pure TF-IDF library: `tokenize`, `termFrequency`, `inverseDocumentFrequency`, `computeTfIdfVectors`, `cosineSimilarity`, `pairwiseSimilarity`
-- `convex/lib/similarity.test.ts` - 28 unit tests covering all TF-IDF functions
-- `convex/analysis/convergence/clusterCandidates.ts` - UnionFind + `clusterCandidatesCore` pure function + `clusterCandidates` internalAction
-- `convex/analysis/convergence/clusterCandidates.test.ts` - 24 tests (unit + integration) covering all 7 acceptance criteria
-
-**Learnings:**
-- TF-IDF + cosine similarity is sufficient for clustering short descriptions (10-30 words) — no need for embeddings API
-- Smoothed IDF formula `log((N+1)/(df+1)) + 1` prevents zero weights in small corpora where a term appears in all documents
-- Union-find with `canMerge()` pre-check prevents transitive same-lens violations that naive pairwise checking would miss
-- Pure function architecture (`clusterCandidatesCore`) enables direct unit testing without Convex test harness overhead
-
-**Patterns Discovered:**
-- Pure function + internalAction wrapper: keep business logic in a pure function, wrap with `internalAction` for Convex integration — enables fast unit tests
-- Union-find with constraint checking: `canMerge()` checks cluster lens overlap before allowing `union()`, preventing constraint violations through transitive merges
-- TF-IDF library as reusable module in `convex/lib/` — can be used by other similarity needs (e.g., within-lens duplicate detection in validateCandidates)
+- Pre-existing UI test failures (12 tests in AddActivityModal, AddEntityDialog, FirstValueSection, TrackingMaturityScreen) still present — unrelated to lens work
+- S001 types dependency was "closed" in another branch but not on this branch — had to create types.ts here
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
