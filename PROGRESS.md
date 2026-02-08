@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-08 - Story M004-E004-S004: Output Orchestration Pipeline
+
+**Files Changed:**
+- `convex/analysis/outputs/types.ts` - Cherry-picked from dependency branch, updated `OutputGenerationResult` with nullable `activation_map`/`measurement_spec` fields and optional `errors` array for partial failure support
+- `convex/analysis/outputs/generateICPProfiles.ts` - Cherry-picked from `feat/implement-llm-powered-icp-profile-generator` branch
+- `convex/analysis/outputs/generateActivationMap.ts` - Cherry-picked from `feat/implement-llm-powered-activation-map-generator` branch
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Cherry-picked from `feat/implement-llm-powered-measurement-spec-generator` branch
+- `convex/analysis/outputs/orchestrate.ts` - New: `generateAllOutputs` internalAction (sequential ICP → map → spec) + `testGenerateAllOutputs` public action
+- `convex/analysis/outputs/orchestrate.test.ts` - New: 9 tests for GENERATION_STEPS constant and OutputGenerationResult type shape
+
+**Learnings:**
+- Sequential execution with per-step try/catch is the right pattern for dependent generators — simpler than Promise.allSettled when order matters
+- The ICP generator returns `{ profiles: ICPProfile[]; execution_time_ms: number }` (wrapped), not raw `ICPProfile[]` — need to access `.profiles`
+- Cherry-picking files from multiple branches works well when dependency stories are in parallel development
+
+**Patterns Discovered:**
+- Output orchestrator pattern: sequential try/catch per step, nullable result fields, errors array only present when non-empty
+- Following the lenses orchestrator pattern (`convex/analysis/lenses/orchestrate.ts`) but simplified for sequential (vs batched parallel) execution
+
+**Gotchas:**
+- Dependency generator files have slightly different type shapes (e.g., activation map generator defines its own local `ActivationMap` type) — orchestrator uses the returned value as-is
+- Pre-existing UI test failures (AddActivityModal, AddEntityDialog, TrackingMaturityScreen) and "Write outside of transaction" convex-test errors still present
+
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
 **Files Changed:**
