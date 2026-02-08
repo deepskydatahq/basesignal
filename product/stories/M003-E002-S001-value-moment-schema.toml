@@ -4,7 +4,7 @@
 id = "M003-E002-S001"
 parent = "M003-E002"
 title = "Define value moment schema and types"
-status = "in-progress"
+status = "complete"
 created = 2026-02-07
 
 [outcome]

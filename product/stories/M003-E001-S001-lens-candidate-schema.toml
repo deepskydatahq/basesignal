@@ -4,7 +4,7 @@
 id = "M003-E001-S001"
 parent = "M003-E001"
 title = "Define lens candidate schema and types"
-status = "in-progress"
+status = "complete"
 created = 2026-02-07
 
 [outcome]

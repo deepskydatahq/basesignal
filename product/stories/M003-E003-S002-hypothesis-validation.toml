@@ -4,7 +4,7 @@
 id = "M003-E003-S002"
 parent = "M003-E003"
 title = "Run comparison and validate H6 hypothesis"
-status = "in-progress"
+status = "complete"
 created = 2026-02-07
 
 [outcome]
