@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { v } from "convex/values";
@@ -252,5 +253,35 @@ export const generateICPProfiles = internalAction({
       profiles,
       execution_time_ms: Date.now() - startTime,
     };
+=======
+import { action, internalAction } from "../../_generated/server";
+import { internal } from "../../_generated/api";
+import { v } from "convex/values";
+
+// S002: Internal action stub — will be replaced by full ICP generation implementation
+export const generateICPProfiles = internalAction({
+  args: { productId: v.id("products") },
+  handler: async (_ctx, { productId }) => {
+    throw new Error(
+      `generateICPProfiles not yet implemented for product ${productId}. Waiting for S002.`,
+    );
+  },
+});
+
+// S003: Public test action for manual testing via Convex dashboard
+export const testGenerateICPProfiles = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, { productId }) => {
+    const result = await ctx.runAction(
+      internal.analysis.outputs.generateICPProfiles.generateICPProfiles,
+      { productId },
+    );
+
+    console.log(
+      `Generated ${result.profiles.length} ICP profiles in ${result.execution_time_ms}ms`,
+    );
+
+    return result;
+>>>>>>> 09e5a3e (feat: add public testGenerateICPProfiles action for ICP generation)
   },
 });
