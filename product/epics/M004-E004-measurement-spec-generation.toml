@@ -1,0 +1,72 @@
+# Epic: Measurement Spec Generation
+# Generate event tracking specifications from value moments
+
+id = "M004-E004"
+parent = "M004"
+title = "Measurement Spec Generation"
+status = "active"
+created = 2026-02-08
+
+[outcome]
+description = """
+An LLM-powered generator produces event tracking specifications that map
+directly to value moments and activation levels. Each event has a standardized
+name, properties to capture, trigger conditions, and traceability to what it measures.
+"""
+
+job_story = """
+When I have value moments and activation levels for a product,
+I want to generate a measurement specification with trackable events,
+so that I can implement analytics that measure actual value delivery.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "generateMeasurementSpec action accepts productId and returns MeasurementSpec",
+    "Events use standardized naming: entity_action format (e.g., issue_created)",
+    "Each event includes properties to capture (e.g., issue_type, project_id)",
+    "Trigger conditions specify when the event fires",
+    "Events map to specific value moments or activation criteria",
+    "Includes both leading indicators (actions) and lagging indicators (outcomes)",
+    "Linear test produces ~15-25 events covering key value moments"
+]
+
+validator_context = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/",
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+dependencies = ["M004-E001", "M004-E002", "M004-E003"]
+
+[notes]
+considerations = """
+Input data available:
+- ValueMoment[] with product_surfaces for event context
+- ActivationLevel[] with criteria (action + count) as event templates
+- ICPProfile[] for persona-specific event variants
+- ActivationMap for stage-based event grouping
+
+Event naming conventions:
+- entity_action: issue_created, cycle_completed, member_invited
+- Avoid generic names: button_clicked, page_viewed
+- Include context in properties, not name
+
+Event categories:
+1. Activation events: match criteria from ActivationLevel[]
+2. Value events: map to Tier 1-2 ValueMoment[]
+3. Retention events: recurring usage patterns
+4. Expansion events: team/cross-team behaviors
+
+Properties should enable segmentation:
+- user_role, team_size, plan_type, days_since_signup
+
+This is the capstone epic - it synthesizes all other outputs.
+"""
+
+estimated_stories = 4

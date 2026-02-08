@@ -1,0 +1,67 @@
+# Epic: Activation Map Generation
+# Generate visual activation maps from levels and value moments
+
+id = "M004-E003"
+parent = "M004"
+title = "Activation Map Generation"
+status = "active"
+created = 2026-02-08
+
+[outcome]
+description = """
+An LLM-powered generator combines activation levels (H5) with value moments (H6)
+to produce activation maps showing user progression, trigger events at each
+stage, value moments unlocked, and drop-off risk indicators.
+"""
+
+job_story = """
+When I have activation levels and value moments for a product,
+I want to generate an activation map showing how users progress,
+so that I can identify where users get stuck and what value they unlock.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "generateActivationMap action accepts productId and returns ActivationMap",
+    "Stages align with extracted activation levels (L1-L4)",
+    "Each stage shows trigger events that move user to next stage",
+    "Value moments are mapped to the stage where they're unlocked",
+    "Drop-off risks identify where users commonly fail to progress",
+    "Transitions include both happy path and recovery paths",
+    "Linear test produces map matching known activation progression"
+]
+
+validator_context = [
+    "convex/analysis/outputs/generateActivationMap.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractActivationLevels.ts",
+    "convex/analysis/convergence/"
+]
+
+dependencies = ["M004-E001"]
+
+[notes]
+considerations = """
+Input data available:
+- ActivationLevel[] from extractActivationLevels (L1-L4 with criteria)
+- ValueMoment[] from convergence (tiered, with roles and surfaces)
+- Identity/journey data from profile
+
+Key mappings:
+1. Stage <-> ActivationLevel: direct mapping with enriched context
+2. Value unlock <-> Tier: Tier 1 moments likely at L3/L4, Tier 3 at L1/L2
+3. Drop-off risk: infer from activation criteria complexity
+
+Visual considerations:
+- This data will eventually render in React Flow
+- Structure should support horizontal stage progression
+- Include metadata for visualization (colors, icons, positions)
+
+The map should tell a story: "First they do X, which unlocks Y value..."
+"""
+
+estimated_stories = 3

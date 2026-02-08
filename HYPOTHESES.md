@@ -108,6 +108,28 @@
 
 ---
 
+### H7: Actionable Output Generation
+**Status:** 🔵 Testing
+
+**Belief:** We believe that generating ICP profiles, activation maps, and measurement specs directly from discovered value moments produces outputs that users find immediately actionable without significant customization.
+
+**Because:** Value moments (H6) and activation levels (H5) contain the raw insights; the challenge is packaging them into formats users can act on. If outputs map directly to discovered value, they should feel "obviously right" rather than generic.
+
+**Test:**
+- ICP profiles identify 2-3 distinct personas with different value moment priorities
+- Activation maps show clear progression from weak → strong signals with specific triggers
+- Measurement specs produce trackable events tied to value moments
+- 3 of 5 users say outputs are "ready to use" or "need minor tweaks only"
+
+**Investment Area:** Measurement Foundation
+
+**Evidence:**
+- Feb 2026: Mission M004 created with 4 epics (Schema, ICP, Activation Map, Measurement Spec)
+
+**Next Steps:** If validated, focus on export/integration formats. If invalidated, identify which output type needs refinement.
+
+---
+
 ### H6: 7-Lens Value Discovery
 **Status:** 🟢 Validated
 
@@ -165,4 +187,4 @@ Modeling activation as a spectrum (weak → medium → strong → very_strong) p
 
 ## Next Action
 
-**Build output layers (M004).** With H5 (multi-level activation) and H6 (7-lens value discovery) validated, next mission is generating actionable outputs: ICP profiles, activation maps, and measurement specs from the discovered value moments.
+**Test H7 via M004.** Build output generators for ICP profiles, activation maps, and measurement specs. Validate outputs against Linear reference case. See `product/missions/M004-actionable-output-generation.toml` for mission details.

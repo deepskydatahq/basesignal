@@ -1,0 +1,66 @@
+# Epic: ICP Profile Generation
+# Generate persona profiles from value moments and role analysis
+
+id = "M004-E002"
+parent = "M004"
+title = "ICP Profile Generation"
+status = "active"
+created = 2026-02-08
+
+[outcome]
+description = """
+An LLM-powered generator analyzes tiered value moments and role information
+to produce 2-3 distinct ICP profiles, each with prioritized value moments,
+activation triggers, and success metrics specific to that persona.
+"""
+
+job_story = """
+When I have discovered value moments for a product,
+I want to generate ICP profiles that show which personas benefit most,
+so that I can prioritize features and messaging by audience.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "generateICPProfiles action accepts productId and returns ICPProfile[]",
+    "Produces 2-3 distinct personas (not generic 'user' and 'admin')",
+    "Each profile prioritizes value moments by relevance to that persona",
+    "Activation triggers are persona-specific (different paths to value)",
+    "Pain points addressed map to value moments that solve them",
+    "Success metrics are measurable and persona-appropriate",
+    "Linear test produces recognizable personas (PM, engineer, team lead)"
+]
+
+validator_context = [
+    "convex/analysis/outputs/generateICPProfiles.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/",
+    "convex/analysis/lenses/"
+]
+
+dependencies = ["M004-E001"]
+
+[notes]
+considerations = """
+Input data available:
+- ValueMoment[] with roles[] field from convergence
+- LensCandidate[] with role information from each lens
+- Identity extraction with target_customer info
+
+Persona differentiation strategies:
+1. Role-based: group by roles that appear in value moments
+2. Journey-based: group by which activation level they target
+3. Problem-based: group by which pain points they prioritize
+
+Avoid generic personas:
+- BAD: "Power User", "Basic User", "Admin"
+- GOOD: "Product Manager optimizing roadmap", "Engineer reducing context-switching"
+
+The prompt should synthesize across all inputs to find natural clusters.
+"""
+
+estimated_stories = 3

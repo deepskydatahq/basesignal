@@ -1,0 +1,81 @@
+# Mission: Actionable Output Generation
+# Generate ICP profiles, activation maps, and measurement specs from value moments
+
+id = "M004"
+title = "Actionable Output Generation"
+status = "active"
+created = 2026-02-08
+
+[outcome]
+description = """
+The system generates three actionable outputs from discovered value moments:
+ICP profiles (who benefits most), activation maps (how users progress), and
+measurement specs (what to track). Users find these outputs immediately usable.
+"""
+
+user_progress = "From 'raw value moment data requiring expert interpretation' to 'actionable profiles, maps, and specs ready for implementation'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "ICP generation produces 2-3 distinct personas with prioritized value moments",
+    "Activation maps show progression across activation levels with trigger events",
+    "Measurement specs produce trackable events tied to specific value moments",
+    "Outputs include confidence scores and source traceability",
+    "Linear test case produces coherent, non-generic outputs",
+    "Outputs align with what a product expert would create manually"
+]
+
+validator_context = [
+    "convex/analysis/outputs/",
+    "convex/analysis/",
+    "docs/plans/"
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "HYPOTHESES.md"
+]
+relevant_paths = [
+    "convex/analysis/",
+    "convex/productProfiles.ts"
+]
+
+[notes]
+considerations = """
+This mission builds on validated H5 (multi-level activation) and H6 (7-lens value discovery).
+
+Three output types:
+
+1. **ICP Profiles**
+   - Input: Value moments (tiered) + roles from lens analysis
+   - Output: 2-3 persona profiles with:
+     - Primary value moments they care about
+     - Activation triggers specific to their role
+     - Pain points addressed
+     - Success metrics
+
+2. **Activation Maps**
+   - Input: Activation levels (H5) + value moments (H6)
+   - Output: Visual progression showing:
+     - Stages from first touch to power user
+     - Trigger events at each stage
+     - Value moments unlocked at each level
+     - Drop-off risk indicators
+
+3. **Measurement Specs**
+   - Input: Value moments + activation levels + ICP profiles
+   - Output: Event tracking specification:
+     - Event names (standardized format)
+     - Properties to capture
+     - When to fire (trigger conditions)
+     - Which value moment/activation level it measures
+
+Key design principle: Outputs should feel "obviously right" because they're
+derived directly from discovered value, not from generic templates.
+
+Reference: Linear should produce outputs that someone familiar with Linear
+would recognize as accurate representations of their user journey.
+"""

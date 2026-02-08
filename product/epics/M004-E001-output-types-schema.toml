@@ -1,0 +1,59 @@
+# Epic: Output Types Schema
+# Define TypeScript types for all output artifacts
+
+id = "M004-E001"
+parent = "M004"
+title = "Output Types Schema"
+status = "active"
+created = 2026-02-08
+
+[outcome]
+description = """
+TypeScript types define the structure for ICP profiles, activation maps, and
+measurement specs. These types ensure consistency across generation and storage.
+"""
+
+job_story = """
+When building output generators,
+I want well-defined types for each output artifact,
+so that all generators produce consistent, storable results.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "ICPProfile type includes: persona name, description, value_moments[], activation_triggers[], pain_points[], success_metrics[]",
+    "ActivationMap type includes: stages[], transitions[], value_unlocks[], drop_off_risks[]",
+    "MeasurementSpec type includes: events[], each with name, properties, trigger_condition, maps_to",
+    "All types include confidence scores and source traceability",
+    "Types are exportable from convex/analysis/outputs/types.ts"
+]
+
+validator_context = [
+    "convex/analysis/outputs/types.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/types.ts",
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+Types should reference existing types where possible:
+- ValueMoment from convergence/types.ts
+- ActivationLevel from extractActivationLevels.ts
+
+Key design decisions:
+- ICPProfile.value_moments: reference by ID or embed full ValueMoment?
+  Recommend: reference by ID with priority score
+- ActivationMap.stages: should align with ActivationLevel but add value context
+- MeasurementSpec.events: standardized naming (entity_action format)
+
+Storage: These will likely be stored in productProfiles or a new outputs table.
+"""
+
+estimated_stories = 2
