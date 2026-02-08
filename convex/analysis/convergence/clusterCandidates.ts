@@ -1,30 +1,20 @@
-/**
- * Semantic clustering of validated candidates using TF-IDF + cosine similarity.
- *
- * Groups similar candidates across different lenses into clusters.
- * Candidates from the same lens are never merged into the same cluster.
- *
- * Approach:
- * 1. Compute TF-IDF vectors from candidate name + description
- * 2. Calculate pairwise cosine similarity
- * 3. Use union-find to build clusters with same-lens constraint
- * 4. Return CandidateCluster[] with traceability
- */
-
 import { internalAction } from "../../_generated/server";
 import { v } from "convex/values";
-import type { ValidatedCandidate, CandidateCluster } from "./types";
+import { internal } from "../../_generated/api";
 import {
   computeTfIdfVectors,
-  pairwiseSimilarity,
+  cosineSimilarity,
 } from "../../lib/similarity";
+import type {
+  ValidatedCandidate,
+  CandidateCluster,
+  LensType,
+} from "./types";
 
-// --- Union-Find ---
+export const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
 
-/**
- * Union-Find (disjoint set) data structure with path compression
- * and union by rank for efficient clustering.
- */
+// --- Union-Find data structure ---
+
 export class UnionFind {
   private parent: number[];
   private rank: number[];
@@ -34,91 +24,104 @@ export class UnionFind {
     this.rank = new Array(size).fill(0);
   }
 
-  /**
-   * Find the root of the set containing element x.
-   * Uses path compression for amortized near-constant time.
-   */
   find(x: number): number {
     if (this.parent[x] !== x) {
-      this.parent[x] = this.find(this.parent[x]);
+      this.parent[x] = this.find(this.parent[x]); // path compression
     }
     return this.parent[x];
   }
 
-  /**
-   * Merge the sets containing elements x and y.
-   * Uses union by rank to keep the tree balanced.
-   * Returns true if a merge occurred, false if already in same set.
-   */
-  union(x: number, y: number): boolean {
-    const rootX = this.find(x);
-    const rootY = this.find(y);
-    if (rootX === rootY) return false;
-
-    if (this.rank[rootX] < this.rank[rootY]) {
-      this.parent[rootX] = rootY;
-    } else if (this.rank[rootX] > this.rank[rootY]) {
-      this.parent[rootY] = rootX;
+  union(x: number, y: number): void {
+    const rx = this.find(x);
+    const ry = this.find(y);
+    if (rx === ry) return;
+    // union by rank
+    if (this.rank[rx] < this.rank[ry]) {
+      this.parent[rx] = ry;
+    } else if (this.rank[rx] > this.rank[ry]) {
+      this.parent[ry] = rx;
     } else {
-      this.parent[rootY] = rootX;
-      this.rank[rootX]++;
+      this.parent[ry] = rx;
+      this.rank[rx]++;
     }
-    return true;
   }
 
-  /**
-   * Check if elements x and y are in the same set.
-   */
   connected(x: number, y: number): boolean {
     return this.find(x) === this.find(y);
   }
-
-  /**
-   * Return groups as a map from root index to array of member indices.
-   */
-  groups(): Map<number, number[]> {
-    const result = new Map<number, number[]>();
-    for (let i = 0; i < this.parent.length; i++) {
-      const root = this.find(i);
-      const group = result.get(root);
-      if (group) {
-        group.push(i);
-      } else {
-        result.set(root, [i]);
-      }
-    }
-    return result;
-  }
 }
 
-// --- Clustering Logic (pure functions) ---
-
-/** Default similarity threshold for clustering. */
-export const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
+// --- Helper functions ---
 
 /**
- * Build the text to embed for a candidate: name + description concatenated.
+ * Build the text representation of a candidate for TF-IDF vectorization.
  */
 export function candidateText(candidate: ValidatedCandidate): string {
   return `${candidate.name} ${candidate.description}`;
 }
 
 /**
- * Check whether two candidates come from the same lens.
+ * Check if two candidates are from the same lens.
  */
 export function sameLens(a: ValidatedCandidate, b: ValidatedCandidate): boolean {
   return a.lens === b.lens;
 }
 
 /**
- * Core clustering algorithm.
+ * Check if merging two candidates would violate the same-lens constraint
+ * in the current union-find state. Two candidates can merge only if no
+ * candidate in one's cluster shares a lens with any candidate in the other's.
+ */
+export function canMerge(
+  uf: UnionFind,
+  i: number,
+  j: number,
+  candidates: ValidatedCandidate[]
+): boolean {
+  // Collect lenses in i's cluster
+  const iLenses = new Set<LensType>();
+  const jLenses = new Set<LensType>();
+
+  for (let k = 0; k < candidates.length; k++) {
+    if (uf.connected(i, k)) {
+      iLenses.add(candidates[k].lens);
+    }
+    if (uf.connected(j, k)) {
+      jLenses.add(candidates[k].lens);
+    }
+  }
+
+  // Check for overlap
+  for (const lens of iLenses) {
+    if (jLenses.has(lens)) return false;
+  }
+  return true;
+}
+
+/**
+ * Build a CandidateCluster from a group of candidates.
+ */
+export function buildCluster(
+  clusterId: string,
+  candidates: ValidatedCandidate[]
+): CandidateCluster {
+  const lenses = [...new Set(candidates.map((c) => c.lens))];
+  return {
+    cluster_id: clusterId,
+    candidates,
+    lens_count: lenses.length,
+    lenses,
+  };
+}
+
+// --- Core clustering function ---
+
+/**
+ * Cluster validated candidates by semantic similarity using TF-IDF + cosine similarity.
  *
- * 1. Compute TF-IDF vectors for all candidates
- * 2. Compute pairwise similarity
- * 3. For each pair above threshold from DIFFERENT lenses, union them
- * 4. Extract clusters from the union-find structure
- *
- * Returns CandidateCluster[] sorted by cluster size descending.
+ * Candidates from the same lens are never placed in the same cluster.
+ * Uses union-find for efficient cluster merging with canMerge pre-check
+ * to prevent transitive same-lens violations.
  */
 export function clusterCandidatesCore(
   candidates: ValidatedCandidate[],
@@ -126,139 +129,61 @@ export function clusterCandidatesCore(
 ): CandidateCluster[] {
   if (candidates.length === 0) return [];
 
-  // Single candidate -> singleton cluster
-  if (candidates.length === 1) {
-    return [buildCluster("cluster-0", [candidates[0]])];
-  }
+  // Compute TF-IDF vectors
+  const texts = candidates.map(candidateText);
+  const vectors = computeTfIdfVectors(texts);
 
-  // 1. Compute TF-IDF vectors
-  const documents = candidates.map(candidateText);
-  const vectors = computeTfIdfVectors(documents);
+  // Initialize union-find
+  const uf = new UnionFind(candidates.length);
 
-  // 2. Compute pairwise similarity
-  const n = candidates.length;
-  const similarities = pairwiseSimilarity(vectors);
+  // Compute pairwise similarity and merge where appropriate
+  for (let i = 0; i < candidates.length; i++) {
+    for (let j = i + 1; j < candidates.length; j++) {
+      // Skip same-lens pairs
+      if (sameLens(candidates[i], candidates[j])) continue;
 
-  // 3. Union-find with same-lens constraint
-  const uf = new UnionFind(n);
-
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      const sim = similarities[i * n + j];
-      if (sim >= threshold && !sameLens(candidates[i], candidates[j])) {
-        // Before merging, verify the merge won't create a cluster
-        // with two candidates from the same lens
-        if (canMerge(uf, candidates, i, j)) {
-          uf.union(i, j);
-        }
+      const similarity = cosineSimilarity(vectors[i], vectors[j]);
+      if (similarity >= threshold && canMerge(uf, i, j, candidates)) {
+        uf.union(i, j);
       }
     }
   }
 
-  // 4. Extract clusters
-  const groups = uf.groups();
-  const clusters: CandidateCluster[] = [];
-  let clusterIndex = 0;
-
-  for (const [, memberIndices] of groups) {
-    const clusterCandidates = memberIndices.map((idx) => candidates[idx]);
-    clusters.push(
-      buildCluster(`cluster-${clusterIndex}`, clusterCandidates)
-    );
-    clusterIndex++;
+  // Group candidates by cluster root
+  const groups = new Map<number, ValidatedCandidate[]>();
+  for (let i = 0; i < candidates.length; i++) {
+    const root = uf.find(i);
+    if (!groups.has(root)) {
+      groups.set(root, []);
+    }
+    groups.get(root)!.push(candidates[i]);
   }
 
-  // Sort by cluster size descending (largest clusters first)
-  clusters.sort((a, b) => b.candidates.length - a.candidates.length);
+  // Build cluster objects
+  let clusterIndex = 0;
+  const clusters: CandidateCluster[] = [];
+  for (const [, group] of groups) {
+    clusters.push(buildCluster(`cluster-${clusterIndex++}`, group));
+  }
 
   return clusters;
 }
 
-/**
- * Check whether merging indices i and j would create a cluster
- * containing two candidates from the same lens.
- *
- * We need this because union-find is transitive: if A-B merge and B-C merge,
- * A and C end up in the same cluster even if A and C have the same lens.
- */
-export function canMerge(
-  uf: UnionFind,
-  candidates: ValidatedCandidate[],
-  i: number,
-  j: number
-): boolean {
-  // Collect all lenses in the group that would be formed if i and j merge
-  const rootI = uf.find(i);
-  const rootJ = uf.find(j);
-
-  // If already in same group, no conflict
-  if (rootI === rootJ) return true;
-
-  // Gather lenses from both groups
-  const lenses = new Set<string>();
-  for (let k = 0; k < candidates.length; k++) {
-    const root = uf.find(k);
-    if (root === rootI || root === rootJ) {
-      if (lenses.has(candidates[k].lens)) {
-        return false; // Merging would create duplicate lens
-      }
-      lenses.add(candidates[k].lens);
-    }
-  }
-
-  return true;
-}
-
-/**
- * Build a CandidateCluster from a set of candidates.
- */
-export function buildCluster(
-  clusterId: string,
-  candidates: ValidatedCandidate[]
-): CandidateCluster {
-  const lensSet = new Set(candidates.map((c) => c.lens));
-  return {
-    cluster_id: clusterId,
-    candidates,
-    lens_count: lensSet.size,
-    lenses: [...lensSet].sort(),
-  };
-}
-
 // --- Convex internalAction ---
 
-/**
- * Cluster validated candidates into groups based on semantic similarity.
- *
- * Input: Array of ValidatedCandidate objects (from the validation pass).
- * Output: Array of CandidateCluster objects.
- *
- * Uses TF-IDF + cosine similarity (pure TypeScript, no external APIs).
- * Same-lens candidates are never placed in the same cluster.
- */
 export const clusterCandidates = internalAction({
   args: {
-    candidates: v.any(),
+    productId: v.id("products"),
+    validatedCandidates: v.any(),
     threshold: v.optional(v.number()),
   },
-  handler: async (
-    _ctx,
-    args: { candidates: ValidatedCandidate[]; threshold?: number }
-  ): Promise<CandidateCluster[]> => {
+  handler: async (_ctx, args) => {
+    const candidates = args.validatedCandidates as ValidatedCandidate[];
+
+    // Filter out removed candidates
+    const active = candidates.filter((c) => c.validation_status !== "removed");
+
     const threshold = args.threshold ?? DEFAULT_SIMILARITY_THRESHOLD;
-
-    // Filter out removed candidates before clustering
-    const activeCandidates = args.candidates.filter(
-      (c) => c.validation_status !== "removed"
-    );
-
-    const clusters = clusterCandidatesCore(activeCandidates, threshold);
-
-    console.log(
-      `Clustered ${activeCandidates.length} candidates into ${clusters.length} clusters ` +
-        `(${clusters.filter((c) => c.lens_count > 1).length} multi-lens)`
-    );
-
-    return clusters;
+    return clusterCandidatesCore(active, threshold);
   },
 });
