@@ -12,23 +12,24 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E001-S001: Define Output Types for ICP, ActivationMap, and MeasurementSpec
+### 2026-02-08 - Story M004-E003-S003: Public Test Action for Activation Map Generation
 
 **Files Changed:**
-- `convex/analysis/outputs/types.ts` - New: Pure TypeScript interfaces for three output artifacts (ICPProfile, ActivationMap, MeasurementSpec) plus container type (OutputGenerationResult). Imports and re-exports upstream types (ValueMoment, ValueMomentTier, ActivationLevel, SignalStrength).
-- `convex/analysis/outputs/types.test.ts` - New: 25 tests verifying all interfaces, discriminated union variants, re-exported upstream types, and confidence/sources on all output types.
+- `convex/analysis/outputs/generateActivationMap.ts` - Cherry-picked from S002 branch, enhanced `testGenerateActivationMap` with `enrichActivationMapResult` helper that adds `execution_time_ms` and `stage_count` metadata
+- `convex/analysis/outputs/generateActivationMap.test.ts` - Cherry-picked from S002 branch, added 6 tests for `enrichActivationMapResult` covering stage_count for 0/1/4 stages, execution_time_ms type, and field preservation
+- `convex/analysis/outputs/types.ts` - Cherry-picked from S001 branch (output type definitions)
 
 **Learnings:**
-- Pure type-only files (no runtime code) are straightforward — interfaces compile without issue and test via object construction + TypeScript compilation
-- Discriminated union (`MapsTo`) with a `type` field per variant avoids optional-field ambiguity — each variant has exactly the required fields
-- Pre-existing TS errors in the codebase (convex/ai.ts, amplitudeActions.ts, node_modules) don't affect new type files — `grep` for specific file in tsc output confirms isolation
+- S002 branch already had a basic `testGenerateActivationMap` pass-through — the S003 task enriches it with timing and convenience metadata (Pattern B from brainstorm)
+- Extracting the enrichment into a pure `enrichActivationMapResult` helper makes the logic testable without Convex runtime
+- Cherry-picking files across dependency branches via `git checkout <branch> -- <path>` continues to work well for bringing in prerequisite work
 
 **Patterns Discovered:**
-- Output types pattern: separate interfaces per artifact, flat peer fields for coverage (no wrapper objects), discriminated unions for polymorphic references
-- Re-export pattern: `export type { X } from "../upstream"` makes downstream consumers import from a single location
+- Enriched wrapper pattern: extract `enrichResult(result, executionTimeMs)` as a pure function for testability, call it in the action handler after timing the internal action
+- Convention: `stage_count` as convenience field mirrors the `total_candidates` pattern in `AllLensesResult`
 
 **Gotchas:**
-- `npx tsc --noEmit` on the whole project shows many pre-existing errors — filter output by filename to verify new code is clean
+- Worktree needs `npm install` — node_modules not shared between worktrees (recurring)
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
