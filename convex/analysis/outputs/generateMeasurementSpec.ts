@@ -1,4 +1,4 @@
-import { internalAction } from "../../_generated/server";
+import { action, internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { v } from "convex/values";
 import { extractJson, callClaude } from "../lenses/shared";
@@ -374,5 +374,33 @@ export const generateMeasurementSpec = internalAction({
     const spec = parseMeasurementSpecResponse(responseText);
 
     return spec;
+  },
+});
+
+// --- Test Action ---
+
+export const testGenerateMeasurementSpec = action({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    const startTime = Date.now();
+    const spec = await ctx.runAction(
+      internal.analysis.outputs.generateMeasurementSpec.generateMeasurementSpec,
+      { productId: args.productId },
+    );
+
+    const byCategory = spec.events.reduce(
+      (acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      spec,
+      total_events: spec.total_events,
+      by_category: byCategory,
+      execution_time_ms: Date.now() - startTime,
+    };
   },
 });

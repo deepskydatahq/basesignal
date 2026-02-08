@@ -88,6 +88,15 @@ export interface MeasurementSpec {
   sources: string[];
 }
 
+// --- Measurement Input Data ---
+
+export interface MeasurementInputData {
+  value_moments: ValueMoment[];
+  activation_levels: ActivationLevel[];
+  icp_profiles: ICPProfile[];
+  activation_map: ActivationMap;
+}
+
 // --- Container Type ---
 
 export interface OutputGenerationResult {
