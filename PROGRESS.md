@@ -12,24 +12,27 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E003-S002: LLM-powered Activation Map Generator
+### 2026-02-08 - Story M004-E002-S002: LLM-Powered ICP Profile Generator
 
 **Files Changed:**
-- `convex/analysis/outputs/generateActivationMap.ts` - New: types (ActivationMap, ActivationMapStage, ActivationMapTransition), system prompt, prompt builder, response parser, generateActivationMap internalAction, testGenerateActivationMap public action
-- `convex/analysis/outputs/generateActivationMap.test.ts` - New: 41 tests covering type shapes, prompt content, prompt builder, parser (raw JSON, code-fenced, sorting, validation errors, edge cases)
+- `convex/analysis/outputs/types.ts` - New: `ValueMomentPriority` and `ICPProfile` interfaces for ICP output structure
+- `convex/analysis/outputs/generateICPProfiles.ts` - New: `ICP_SYSTEM_PROMPT` constant, `buildICPPrompt` and `parseICPProfiles` pure functions, `generateICPProfiles` internalAction, inline `aggregateRoles` helper
+- `convex/analysis/outputs/generateICPProfiles.test.ts` - New: 26 unit tests covering system prompt content, prompt builder, parser happy paths, count/field/distinctness validation, confidence clamping, and code-fenced JSON
 
 **Learnings:**
-- The `extractJson` utility from `lenses/shared.ts` handles both raw JSON and code-fenced JSON, reducing boilerplate in parsers
-- `callClaude` from `lenses/shared.ts` already wraps the Anthropic client with sensible defaults — no need to construct a client manually
-- The `outputs` section on product profiles uses `v.any()` via `updateSectionInternal`, so no schema changes needed for storing activation maps
+- ICP generator follows the same pattern as lens extractors but outputs structured personas instead of candidates
+- Inline role aggregation from convergence value moments (grouping by `vm.roles`) works as a simple bridge until S001 aggregation lands
+- Confidence for ICP profiles uses numeric 0-1 range (clamped) unlike lenses which use categorical "high"/"medium"/"low"
+- Distinctness validation compares sorted moment_id sets as joined strings — catches identical sets regardless of order
 
 **Patterns Discovered:**
-- Output generator pattern: fetch profile data (internalQuery) → build prompt from profile sections → LLM call via callClaude() → parse with extractJson() + field validation → store on profile via updateSectionInternal
-- Cross-section data flow: activation levels from `definitions.activation` + value moments from `convergence.value_moments` → combined into activation map stored in `outputs.activationMap`
+- Output generator pattern: fetch profile → extract convergence data → aggregate inline → build prompt → LLM call → parse with validation → return typed result
+- Pure function extraction for testability: `buildICPPrompt` and `parseICPProfiles` are independently testable without Convex runtime or LLM calls
+- `extractJson` from `lenses/shared.ts` reusable for any LLM JSON parsing (handles code fences)
 
 **Gotchas:**
-- Worktree needs `npm install` — node_modules not shared between worktrees
-- `convex/analysis/outputs/types.ts` doesn't exist yet (depends on M004-E001-S001) — types defined locally in the generator file
+- Pre-existing test failures (5 tests in 3 files: UI timeouts + convex-test "Write outside of transaction") still present — unrelated to this work
+- `convex/analysis/outputs/` directory didn't exist yet — first file in the outputs module
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
