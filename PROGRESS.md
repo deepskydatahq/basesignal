@@ -12,24 +12,26 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E002-S003: Add Public Test Action for ICP Generation
+### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
 **Files Changed:**
-- `convex/analysis/outputs/generateICPProfiles.ts` - New: `testGenerateICPProfiles` public action + `generateICPProfiles` internal action stub (S002 placeholder)
+- `convex/analysis/outputs/types.ts` - Cherry-picked from S002: MeasurementSpec, TrackingEvent, EventProperty, MeasurementInputData, ICPProfile, ActivationMap types
+- `convex/analysis/outputs/aggregateMeasurementInputs.ts` - Cherry-picked from S002: stub aggregator that fetches value moments, activation levels, ICP profiles from product profile
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Cherry-picked S002 internalAction + added `testGenerateMeasurementSpec` public action with timing, category counting, and dashboard logging
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - Cherry-picked S002 tests (41) + added 6 new return-shape tests for the test action
 
 **Learnings:**
-- Trivial pass-through test actions (like `testRunAllLenses`, `testExtractActivation`) follow a consistent pattern: public `action()` wrapping `ctx.runAction()` to an internal action, no tests needed
-- When implementing a story that depends on an unimplemented dependency (S002), a stub internal action with `throw new Error("not implemented")` allows the file to compile and the public wrapper to be structurally correct
-- `npx convex codegen` requires `CONVEX_DEPLOYMENT` — can't regenerate `_generated/api.d.ts` in worktrees without deployment config, so `internal.analysis.outputs.generateICPProfiles` resolves as `any` until `npx convex dev` runs
+- Public test action pattern is thin: wrap internalAction call with timing + enriched return. Same pattern as `testRunAllLenses` in orchestrate.ts
+- Category count reduce is simple enough to inline — extracting a utility would be over-engineering for a single-use computation
+- Testing the reduce logic via a duplicated helper function in tests avoids needing Convex runtime for pure computation verification
 
 **Patterns Discovered:**
-- Stub-and-replace pattern for dependent stories: create a minimal stub for the dependency in the same file, mark it with a comment referencing the story that will replace it (e.g., `// S002: stub`)
-- Public test action convention: name starts with `test`, uses public `action()` (not `internalAction`), accepts `productId`, delegates to internal action, logs summary, returns full result
+- Test action pattern: `action` wraps `internalAction` via `ctx.runAction(internal...)`, adds `Date.now()` timing, computes derived fields, logs summary, returns enriched result
+- Return-shape testing: duplicate the pure computation in test code to verify the logic independently from the Convex action runtime
 
 **Gotchas:**
-- Pre-existing UI test failures (21 files / 37 tests) still present — unrelated to this work
-- `convex/README.md` and `convex/tsconfig.json` get modified by `npm install` / convex setup — don't commit these unrelated changes
-- Worktree needs `npm install` — node_modules not shared between worktrees
+- S002 dependency files need to be cherry-picked since the S002 branch hasn't been merged to main yet
+- Pre-existing UI test timeouts (AddActivityModal, AddEntityDialog, TrackingMaturityScreen) still present — unrelated to this work
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
