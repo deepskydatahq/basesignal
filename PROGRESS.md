@@ -12,27 +12,25 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E002-S002: LLM-Powered ICP Profile Generator
+### 2026-02-08 - Story M004-E004-S001: Aggregate Measurement Inputs
 
 **Files Changed:**
-- `convex/analysis/outputs/types.ts` - New: `ValueMomentPriority` and `ICPProfile` interfaces for ICP output structure
-- `convex/analysis/outputs/generateICPProfiles.ts` - New: `ICP_SYSTEM_PROMPT` constant, `buildICPPrompt` and `parseICPProfiles` pure functions, `generateICPProfiles` internalAction, inline `aggregateRoles` helper
-- `convex/analysis/outputs/generateICPProfiles.test.ts` - New: 26 unit tests covering system prompt content, prompt builder, parser happy paths, count/field/distinctness validation, confidence clamping, and code-fenced JSON
+- `convex/analysis/outputs/types.ts` - New: MeasurementInputData, ICPProfile, ActivationMap, ActivationMapStage types. Re-exports ValueMoment, ActivationLevel, ActivationCriterion.
+- `convex/analysis/outputs/aggregateMeasurementInputs.ts` - New: `aggregateMeasurementInputsCore` pure function + `aggregateMeasurementInputs` Convex internalAction wrapper
+- `convex/analysis/outputs/aggregateMeasurementInputs.test.ts` - New: 13 tests covering all four section extractions, product_surfaces inclusion, criteria inclusion, passthrough verification, error validation for missing sections, and Linear integration test
 
 **Learnings:**
-- ICP generator follows the same pattern as lens extractors but outputs structured personas instead of candidates
-- Inline role aggregation from convergence value moments (grouping by `vm.roles`) works as a simple bridge until S001 aggregation lands
-- Confidence for ICP profiles uses numeric 0-1 range (clamped) unlike lenses which use categorical "high"/"medium"/"low"
-- Distinctness validation compares sorted moment_id sets as joined strings — catches identical sets regardless of order
+- ICPProfile and ActivationMap types from dependency stories (M004-E002-S002, M004-E003-S002) weren't implemented yet — defined them in outputs/types.ts as the canonical location
+- Pure aggregation function pattern: read 4 profile sections, validate all exist, collect all missing in single error message — no transformation, just passthrough
+- Convergence results stored at `profile.convergence.value_moments`, activation at `profile.definitions.activation.levels`, ICP at `profile.icpProfiles`, map at `profile.activationMap`
 
 **Patterns Discovered:**
-- Output generator pattern: fetch profile → extract convergence data → aggregate inline → build prompt → LLM call → parse with validation → return typed result
-- Pure function extraction for testability: `buildICPPrompt` and `parseICPProfiles` are independently testable without Convex runtime or LLM calls
-- `extractJson` from `lenses/shared.ts` reusable for any LLM JSON parsing (handles code fences)
+- Dependency validation with collected errors: check all required sections, collect names of missing ones, throw single error listing all — better DX than failing on first missing
+- Pure core function + thin Convex wrapper pattern continues to work well for testability
 
 **Gotchas:**
-- Pre-existing test failures (5 tests in 3 files: UI timeouts + convex-test "Write outside of transaction") still present — unrelated to this work
-- `convex/analysis/outputs/` directory didn't exist yet — first file in the outputs module
+- Pre-existing TS errors in convex/ai.ts and convex/_generated/api.d.ts — unrelated to this work
+- Worktree needs `npm install` before tests can run
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
