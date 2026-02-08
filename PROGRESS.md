@@ -12,22 +12,25 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E001-S001: Define Lens Candidate Schema and Types
+### 2026-02-07 - Story M003-E002-S001: Define Value Moment Schema and Types
 
 **Files Changed:**
-- `convex/analysis/lenses/types.ts` - New: Exports `LensType` (7-value union), `ConfidenceLevel`, `LensCandidate` interface (7 shared + 7 optional lens-specific fields), `LensResult` interface
-- `convex/analysis/lenses/types.test.ts` - New: 13 tests covering all type shapes, optional fields, and importability
+- `convex/analysis/lenses/types.ts` - New: LensType, ConfidenceLevel, LensCandidate, LensResult types for the 7-lens pipeline
+- `convex/analysis/lenses/types.test.ts` - 6 unit tests validating type shapes and field contracts
+- `convex/analysis/convergence/types.ts` - New: ValueMomentTier, ValidationStatus, ValidatedCandidate, ValueMoment, ConvergenceResult types
+- `convex/analysis/convergence/types.test.ts` - 10 unit tests validating type shapes and field contracts
 
 **Learnings:**
-- Pure TypeScript type files with no runtime dependencies are the simplest units to implement and test
-- Type-level tests (creating typed objects and asserting field values) provide compile-time and runtime verification simultaneously
+- Type-only files with `import type` don't fail at vitest runtime when the module is missing — TypeScript compilation (`tsc --noEmit`) is needed to verify importability
+- `ValidatedCandidate extends LensCandidate` cleanly adds validation fields while preserving all lens candidate data
+- Convergence types use `Id<"products">` from Convex's generated data model for type-safe product references
 
 **Patterns Discovered:**
-- Lens-specific optional fields pattern: shared interface with optional fields per lens type avoids needing a discriminated union while keeping the type simple for consumers
-- `convex/analysis/lenses/` directory structure mirrors the existing `convex/analysis/` pattern for extraction modules
+- Type test pattern: create typed object literals with all required fields, assert each field value — validates the type contract without runtime logic
+- Two-tier type modules: `lenses/types.ts` defines upstream pipeline types, `convergence/types.ts` imports and extends them for downstream consumption
 
 **Gotchas:**
-- Worktree needs `npm install` before tests can run — `node_modules` not shared between worktrees
+- Pre-existing test failures (UI timeouts, convex-test "Write outside of transaction") still present — unrelated to type definitions
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
