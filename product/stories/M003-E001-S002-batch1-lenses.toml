@@ -1,0 +1,115 @@
+# Story: Batch 1 Lenses
+# Implement the 4 independent lenses that can run in parallel
+
+id = "M003-E001-S002"
+parent = "M003-E001"
+title = "Implement Batch 1 lenses (Capability, Effort, Time, Artifact)"
+status = "in-progress"
+created = 2026-02-07
+
+[outcome]
+description = """
+Four lens extractors implemented as Convex internalActions: Capability Mapping,
+Effort Elimination, Time Compression, and Artifact Creation. Each produces
+8-20 candidates from the product knowledge graph with lens-specific fields populated.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractCapabilityMapping action exists with productId arg, returns LensResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractEffortElimination action exists with productId arg, returns LensResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractTimeCompression action exists with productId arg, returns LensResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extractArtifactCreation action exists with productId arg, returns LensResult"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each lens produces 8-20 candidates when run against Linear product"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Capability Mapping populates enabling_features field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Effort Elimination populates effort_eliminated field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Time Compression populates time_compression field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Artifact Creation populates artifact_type field on candidates"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "All candidates have source_urls linking to crawled pages"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/",
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = ["Linear product profile with crawled pages"]
+
+depends_on = ["M003-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Create four files following the extractActivationLevels.ts pattern:
+- convex/analysis/lenses/extractCapabilityMapping.ts
+- convex/analysis/lenses/extractEffortElimination.ts
+- convex/analysis/lenses/extractTimeCompression.ts
+- convex/analysis/lenses/extractArtifactCreation.ts
+
+Each lens needs:
+1. Knowledge graph slice selection (what data to inject into prompt)
+2. System prompt with lens-specific analysis instructions
+3. Response parser to extract candidates
+
+Knowledge graph requirements per lens:
+- Capability Mapping: features, roles, workflows from profile
+- Effort Elimination: features (pain_addressed), positioning, roles
+- Time Compression: positioning, features, workflows
+- Artifact Creation: features (outputs), entity_model
+
+Prompt structure for each:
+```
+You are a product analyst identifying value moments through the [Lens Name] lens.
+
+[Lens-specific analysis instructions]
+
+For each value moment candidate, output:
+{
+  "name": "Clear name for this value moment",
+  "description": "1-2 sentence description",
+  "role": "Which user role benefits",
+  "confidence": "high|medium|low",
+  "source_urls": ["URLs from provided content"],
+  "[lens_field]": "Lens-specific insight"
+}
+
+Return 8-20 candidates as a JSON array.
+```
+
+Use Claude Sonnet for quality (model: "claude-sonnet-4-20250514").
+Low temperature (0.1-0.2) for precision.
+"""
+
+reference_files = [
+    "convex/analysis/extractActivationLevels.ts",
+    "convex/productProfiles.ts"
+]

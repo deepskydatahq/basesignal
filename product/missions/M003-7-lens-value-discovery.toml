@@ -1,0 +1,67 @@
+# Mission: 7-Lens Value Discovery Validation
+# Test whether 7 analytical lenses + convergence produces accurate value moments
+
+id = "M003"
+title = "7-Lens Value Discovery Validation"
+status = "active"
+created = 2026-02-07
+
+[outcome]
+description = """
+The system applies 7 analytical lenses to crawled product content, validates
+and converges their outputs into a tiered catalog of value moments, and
+produces results that match what a human product expert would identify.
+"""
+
+user_progress = "From 'manually identifying value moments through expert intuition' to 'automated discovery with multi-perspective validation'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "7 lens prompts execute against Linear's knowledge graph and produce candidates",
+    "Validation pass catches feature-as-value and vague candidates",
+    "Convergence engine clusters candidates into tiered value moments",
+    "70%+ of Tier 1 moments rated accurate by manual review against Linear's known aha-moments",
+    "Tier 1 moments recognizable as 'obviously important' to someone who knows the product"
+]
+
+validator_context = [
+    "convex/analysis/",
+    "docs/plans/",
+    "HYPOTHESES.md"
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "HYPOTHESES.md"
+]
+relevant_paths = [
+    "convex/analysis/",
+    "convex/lib/"
+]
+
+[notes]
+considerations = """
+This is a focused validation mission - test the core hypothesis before building
+all output layers. Uses Linear as reference case since we have existing profile data.
+
+The 7 lenses from the brief:
+1. Capability Mapping - what can users do?
+2. Effort Elimination - what work does the product remove?
+3. Information Asymmetry - what do users learn that they couldn't before?
+4. Decision Enablement - what decisions does the product make possible?
+5. State Transitions - what user states does the product change?
+6. Time Compression - what becomes faster?
+7. Artifact Creation - what valuable outputs do users produce?
+
+Builds on M001/M002 infrastructure:
+- Existing crawling and page classification
+- Existing entity/identity/journey extractors
+- Multi-level activation pattern (template for lens approach)
+- Evidence tracking and confidence scoring
+
+Key validation: Does convergence across lenses actually identify the moments
+that matter? If yes, proceed to output layers. If no, refine lens prompts.
+"""

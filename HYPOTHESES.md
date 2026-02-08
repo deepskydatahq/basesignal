@@ -2,7 +2,7 @@
 
 **Vision:** Transform B2B SaaS measurement from interaction-driven to outcome-driven, revealing where products lose revenue potential.
 
-**Last Updated:** January 2026
+**Last Updated:** February 2026
 
 ---
 
@@ -81,7 +81,7 @@
 ---
 
 ### H5: Multi-Level Activation
-**Status:** 🔵 Testing
+**Status:** 🟢 Validated
 
 **Belief:** We believe that modeling activation as a spectrum (multiple levels from weak to strong signals) rather than a single binary definition will produce more accurate and actionable product understanding.
 
@@ -97,14 +97,42 @@
 **Evidence:**
 - Feb 2026: Miro profile generated with single-level activation; user identified opportunity for multi-level modeling
 - Feb 2026: Mission M002 created to test multi-level activation discovery
+- Feb 2026: M002 completed - Linear profile extracted with 4 activation levels:
+  - L1 explorer (weak): create_first_issue
+  - L2 workflow_learner (medium): create_project + invite_team_member
+  - L3 workflow_optimizer (strong) ⭐ PRIMARY: complete_cycle + use_triage + resolve_bugs
+  - L4 product_workflow_master (very_strong): cross_team + insights + integrations
+- Feb 2026: All test criteria met - 4 levels with measurable criteria, aha-moment correctly identified
 
-**Next Steps:** If validated, extend to other lifecycle definitions (active, at-risk, churn). If invalidated, determine if the data sources are insufficient or the model is wrong.
+**Outcome:** Validated. Multi-level activation produces actionable, nuanced understanding of user progression.
+
+---
+
+### H6: 7-Lens Value Discovery
+**Status:** 🔵 Testing
+
+**Belief:** We believe that applying 7 analytical lenses to crawled product content and converging their outputs produces a tiered catalog of value moments that match what a human product expert would identify.
+
+**Because:** Value moments emerge at the intersection of multiple perspectives. A capability becomes valuable when it eliminates effort (Lens 2), compresses time (Lens 6), AND creates artifacts others can use (Lens 7). Convergence across lenses is signal; single-lens findings are noise.
+
+**Test:**
+- Run pipeline on Linear (reference case with existing product knowledge)
+- 70%+ of Tier 1 moments (5+ lens convergence) rated "accurate" or "mostly accurate" by manual review
+- Tier 1 moments are recognizable as "obviously important" to someone who knows the product
+
+**Investment Area:** Measurement Foundation
+
+**Evidence:**
+- Feb 2026: Mission M003 created with 3 epics (Lens Execution, Validation & Convergence, Reference Comparison)
+
+**Next Steps:** If validated, build output layers (ICPs, activation maps, measurement specs). If invalidated, identify which lenses underperform and refine prompts.
 
 ---
 
 ## Validated Hypotheses
 
-(none yet)
+### H5: Multi-Level Activation ✓
+Modeling activation as a spectrum (weak → medium → strong → very_strong) produces more accurate and actionable product understanding than binary activation. Tested via M002 mission with Linear product - extracted 4 distinct levels with measurable criteria, correctly identifying L3 (workflow_optimizer) as the aha-moment.
 
 ---
 
@@ -122,4 +150,4 @@
 
 ## Next Action
 
-**Work through epic #9.** Deploy to staging, recruit test users, run sessions. See [Epic: Test H2 - Interview Completion](https://github.com/deepskydatahq/basesignal/issues/9) for task breakdown.
+**Test H6 via M003.** Build 7-lens execution pipeline, validation & convergence, and compare against Linear reference analysis. See `product/missions/M003-7-lens-value-discovery.toml` for mission details.

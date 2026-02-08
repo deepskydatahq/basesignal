@@ -1,0 +1,100 @@
+# Story: Lens Candidate Schema
+# Define the common output structure for all 7 analytical lenses
+
+id = "M003-E001-S001"
+parent = "M003-E001"
+title = "Define lens candidate schema and types"
+status = "in-progress"
+created = 2026-02-07
+
+[outcome]
+description = """
+TypeScript types and Convex schema define the common LensCandidate structure
+used by all 7 lenses, including shared fields (name, description, role, confidence,
+source_urls) and lens-specific fields per lens type.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LensCandidate type defines shared fields: id, lens, name, description, role, confidence, source_urls"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LensType enum includes all 7 lenses: capability_mapping, effort_elimination, info_asymmetry, decision_enablement, state_transitions, time_compression, artifact_creation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Lens-specific optional fields defined: enabling_features, effort_eliminated, information_gained, decision_enabled, state_transition, time_compression, artifact_type"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ConfidenceLevel type includes: high, medium, low"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LensResult type wraps array of candidates with lens metadata"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Schema exports are importable from convex/analysis/lenses/types.ts"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/types.ts",
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/lenses/types.ts following the pattern from extractActivationLevels.ts.
+
+Key types:
+
+export type LensType =
+  | "capability_mapping"
+  | "effort_elimination"
+  | "info_asymmetry"
+  | "decision_enablement"
+  | "state_transitions"
+  | "time_compression"
+  | "artifact_creation";
+
+export type ConfidenceLevel = "high" | "medium" | "low";
+
+export interface LensCandidate {
+  id: string;           // auto-generated UUID
+  lens: LensType;
+  name: string;         // short name for the value moment
+  description: string;  // 1-2 sentence description
+  role: string;         // which role benefits
+  confidence: ConfidenceLevel;
+  source_urls: string[];
+
+  // Lens-specific fields (only one populated per candidate)
+  enabling_features?: string[];     // Lens 1: Capability Mapping
+  effort_eliminated?: string;       // Lens 2: Effort Elimination
+  information_gained?: string;      // Lens 3: Info Asymmetry
+  decision_enabled?: string;        // Lens 4: Decision Enablement
+  state_transition?: string;        // Lens 5: State Transitions
+  time_compression?: string;        // Lens 6: Time Compression
+  artifact_type?: string;           // Lens 7: Artifact Creation
+}
+
+export interface LensResult {
+  lens: LensType;
+  candidates: LensCandidate[];
+  total_candidates: number;
+  execution_time_ms: number;
+}
+"""
+
+reference_files = [
+    "convex/analysis/extractActivationLevels.ts"
+]

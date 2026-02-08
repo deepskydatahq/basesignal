@@ -1,0 +1,104 @@
+# Story: Semantic Clustering
+# Group similar candidates across lenses
+
+id = "M003-E002-S003"
+parent = "M003-E002"
+title = "Implement semantic clustering of candidates"
+status = "in-progress"
+created = 2026-02-07
+
+[outcome]
+description = """
+A clustering function groups validated candidates that describe the same
+underlying value moment across different lenses. Candidates with semantic
+similarity >0.7 are clustered together, with the constraint that candidates
+from the same lens should NOT cluster.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "clusterCandidates function accepts ValidatedCandidate[] and returns CandidateCluster[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Embeddings are computed for each candidate description"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Candidates with similarity >0.7 are grouped into same cluster"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Candidates from the same lens are never in the same cluster"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Clusters correctly identify multi-lens value moments"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Single-lens candidates remain as singleton clusters"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each cluster includes candidate IDs for traceability"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/"
+]
+
+input_fixtures = ["Validated candidates from Linear product"]
+
+depends_on = ["M003-E002-S002"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/convergence/clusterCandidates.ts as an internalAction.
+
+Approach:
+
+1. Compute embeddings
+   - Use OpenAI text-embedding-3-small or Claude's embedding API
+   - Embed candidate name + description concatenated
+   - Store as vectors
+
+2. Compute pairwise similarity
+   - Cosine similarity between all candidate pairs
+   - Filter to pairs from DIFFERENT lenses only
+   - Threshold: >0.7 similarity
+
+3. Build clusters using union-find
+   - Start with each candidate in its own cluster
+   - For each high-similarity pair, merge their clusters
+   - Constraint: never merge if same lens
+
+4. Output cluster structure:
+```typescript
+interface CandidateCluster {
+  cluster_id: string;
+  candidates: ValidatedCandidate[];
+  lens_count: number;  // how many unique lenses
+  lenses: LensType[];  // which lenses contributed
+}
+```
+
+Alternative approach (if embeddings are expensive):
+- Use LLM to compare candidate pairs in batches
+- "Do these two candidates describe the same underlying value moment?"
+- More expensive but may be more accurate for subtle distinctions
+
+For V1: Start with embeddings approach, consider LLM validation for edge cases.
+
+Expected output for Linear (~60-100 validated candidates):
+- 15-30 clusters
+- Largest clusters have 4-7 candidates from different lenses
+- Many singleton clusters (lens-specific moments)
+"""
+
+reference_files = [
+    "convex/analysis/convergence/types.ts"
+]

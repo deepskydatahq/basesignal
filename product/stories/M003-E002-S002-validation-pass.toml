@@ -1,0 +1,117 @@
+# Story: Validation Pass
+# Catch common failure modes in lens candidates
+
+id = "M003-E002-S002"
+parent = "M003-E002"
+title = "Implement candidate validation pass"
+status = "in-progress"
+created = 2026-02-07
+
+[outcome]
+description = """
+A validation function reviews lens candidates and catches common failure modes:
+feature-as-value, vague candidates, duplicates within lens, role mismatches,
+unsupported claims, and hallucinated features. Candidates are marked valid,
+rewritten, or removed.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateCandidates function accepts LensResult[] and returns ValidatedCandidate[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Candidates starting with 'Use the...' or 'Click the...' are flagged as feature-as-value"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Candidates with vague terms ('better visibility', 'improved efficiency') without specifics are flagged"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Duplicate candidates within same lens (similarity >0.85) are merged"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Candidates referencing features not in knowledge graph are flagged"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Validation reduces total candidate count by 20-40% through removal and merging"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Rewritten candidates have outcome-focused descriptions"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Each flagged candidate includes validation_issue explaining why"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/",
+    "convex/analysis/lenses/types.ts"
+]
+
+input_fixtures = ["Lens results from Linear product"]
+
+depends_on = ["M003-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/convergence/validateCandidates.ts as an internalAction.
+
+Validation checks (run in order):
+
+1. Feature disguised as value
+   - Pattern: starts with "Use the...", "Click the...", "Open the..."
+   - Action: Rewrite to outcome framing, or remove if no outcome can be inferred
+
+2. Too vague to measure
+   - Pattern: "better visibility", "improved efficiency", "easier to manage"
+   - Action: LLM prompt to make specific, or remove
+
+3. Duplicate within same lens
+   - Method: Compute semantic similarity between candidates from same lens
+   - Threshold: >0.85 similarity
+   - Action: Merge, keeping richer description
+
+4. Role mismatch
+   - Check: Cross-reference with roles from product profile
+   - Action: Reassign to correct role, or flag for low confidence
+
+5. Unsupported by source
+   - Check: Verify source_urls contain evidence for the claim
+   - Action: Downgrade confidence or remove
+
+6. Hallucinated feature
+   - Check: Feature name matches extracted features in knowledge graph
+   - Action: Remove
+
+Implementation approach:
+- Run a single validation prompt per lens output (efficient batching)
+- Use Claude Haiku for validation (faster, cheaper)
+- Return ValidatedCandidate[] with status and any rewrites
+
+Prompt structure:
+```
+Review these value moment candidates from the [Lens Name] lens.
+For each candidate, check for these issues: [list of checks]
+
+Product knowledge for reference: {features list, roles list}
+
+For each candidate, output:
+- id: original candidate id
+- status: valid | rewrite | remove
+- issue: [which check failed, if any]
+- rewritten: [improved version, if status is "rewrite"]
+```
+"""
+
+reference_files = [
+    "convex/analysis/lenses/types.ts",
+    "convex/productProfiles.ts"
+]

@@ -1,0 +1,99 @@
+# Story: Value Moment Schema
+# Define the output structure for converged value moments
+
+id = "M003-E002-S001"
+parent = "M003-E002"
+title = "Define value moment schema and types"
+status = "in-progress"
+created = 2026-02-07
+
+[outcome]
+description = """
+TypeScript types define the ValueMoment structure that represents a converged
+value moment with tier, convergence count, contributing lenses, and merged
+description. This is the output of the convergence pipeline.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ValueMomentTier type includes: 1, 2, 3"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ValueMoment type defines: id, name, tier, convergence_count, contributing_lenses[], description, roles[], product_surfaces[], contributing_candidates[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ConvergenceResult type wraps array of ValueMoments with metadata"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ValidatedCandidate type extends LensCandidate with validation_status"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ValidationStatus type includes: valid, rewritten, removed"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Schema exports are importable from convex/analysis/convergence/types.ts"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/types.ts",
+    "convex/analysis/lenses/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create convex/analysis/convergence/types.ts:
+
+export type ValueMomentTier = 1 | 2 | 3;
+
+export type ValidationStatus = "valid" | "rewritten" | "removed";
+
+export interface ValidatedCandidate extends LensCandidate {
+  validation_status: ValidationStatus;
+  validation_issue?: string;  // which check failed, if any
+  rewritten_from?: LensCandidate;  // original if rewritten
+}
+
+export interface ValueMoment {
+  id: string;                     // auto-generated UUID
+  name: string;                   // verb + what user gets
+  tier: ValueMomentTier;
+  convergence_count: number;      // how many lenses
+  contributing_lenses: LensType[];
+  description: string;            // merged description from all candidates
+  roles: string[];                // roles that benefit
+  product_surfaces: string[];     // features/areas involved
+  contributing_candidates: string[];  // candidate IDs for traceability
+}
+
+export interface ConvergenceResult {
+  productId: Id<"products">;
+  value_moments: ValueMoment[];
+  tier_1_count: number;
+  tier_2_count: number;
+  tier_3_count: number;
+  total_moments: number;
+  execution_time_ms: number;
+  validation_stats: {
+    total_candidates: number;
+    valid: number;
+    rewritten: number;
+    removed: number;
+  };
+}
+"""
+
+reference_files = [
+    "convex/analysis/lenses/types.ts"
+]
