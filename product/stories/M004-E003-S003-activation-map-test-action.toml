@@ -4,7 +4,7 @@
 id = "M004-E003-S003"
 parent = "M004-E003"
 title = "Add public test action for activation map generation"
-status = "ready"
+status = "in-progress"
 created = 2026-02-08
 
 [outcome]

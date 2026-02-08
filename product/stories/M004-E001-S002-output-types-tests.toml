@@ -4,7 +4,7 @@
 id = "M004-E001-S002"
 parent = "M004-E001"
 title = "Add unit tests for output type validation"
-status = "ready"
+status = "in-progress"
 created = 2026-02-08
 
 [outcome]
