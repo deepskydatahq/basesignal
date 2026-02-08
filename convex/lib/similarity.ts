@@ -1,160 +1,103 @@
 /**
- * Pure TypeScript TF-IDF + cosine similarity implementation.
- *
- * No external dependencies. Designed for clustering 60-100 candidate
- * descriptions where each document is a short text (name + description).
+ * Text similarity utilities using TF-IDF vectors and cosine similarity.
+ * Used by the candidate validation pipeline for duplicate detection.
  */
 
-// --- Tokenization ---
-
-/**
- * Basic English stop words to filter out common low-signal terms.
- */
-const STOP_WORDS = new Set([
-  "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
-  "of", "with", "by", "from", "is", "are", "was", "were", "be", "been",
-  "being", "have", "has", "had", "do", "does", "did", "will", "would",
-  "could", "should", "may", "might", "shall", "can", "need", "dare",
-  "it", "its", "this", "that", "these", "those", "i", "you", "he", "she",
-  "we", "they", "me", "him", "her", "us", "them", "my", "your", "his",
-  "our", "their", "what", "which", "who", "whom", "when", "where", "why",
-  "how", "all", "each", "every", "both", "few", "more", "most", "other",
-  "some", "such", "no", "nor", "not", "only", "own", "same", "so",
-  "than", "too", "very", "just", "because", "as", "until", "while",
-  "about", "between", "through", "during", "before", "after", "above",
-  "below", "up", "down", "out", "off", "over", "under", "again",
-  "further", "then", "once", "here", "there", "also", "into",
-]);
-
-/**
- * Tokenize text into lowercase word tokens, filtering stop words
- * and tokens shorter than 2 characters.
- */
+/** Tokenize text into lowercase words, stripping punctuation */
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((t) => t.length >= 2 && !STOP_WORDS.has(t));
+    .filter((w) => w.length > 0);
 }
 
-// --- TF-IDF ---
-
-/**
- * Term frequency: count of each token in a document, normalized by
- * document length.
- */
+/** Compute term frequency map for a list of tokens */
 export function termFrequency(tokens: string[]): Map<string, number> {
-  const counts = new Map<string, number>();
+  const tf = new Map<string, number>();
   for (const token of tokens) {
-    counts.set(token, (counts.get(token) ?? 0) + 1);
+    tf.set(token, (tf.get(token) ?? 0) + 1);
   }
-  const length = tokens.length;
-  if (length === 0) return counts;
-  for (const [term, count] of counts) {
-    counts.set(term, count / length);
+  // Normalize by total tokens
+  const total = tokens.length;
+  if (total > 0) {
+    for (const [term, count] of tf) {
+      tf.set(term, count / total);
+    }
   }
-  return counts;
+  return tf;
 }
 
-/**
- * Inverse document frequency for each term across a corpus.
- * Uses smoothed IDF: log(1 + N / (1 + df(t))) to handle small corpora
- * where most terms appear in all documents. Without smoothing, shared
- * terms get IDF=0 and nearly identical texts become orthogonal.
- */
+/** Compute inverse document frequency from a collection of token lists */
 export function inverseDocumentFrequency(
-  tokenizedDocs: string[][]
+  documents: string[][]
 ): Map<string, number> {
-  const docCount = tokenizedDocs.length;
+  const docCount = documents.length;
   const df = new Map<string, number>();
 
-  for (const tokens of tokenizedDocs) {
-    const uniqueTerms = new Set(tokens);
-    for (const term of uniqueTerms) {
+  for (const tokens of documents) {
+    const seen = new Set(tokens);
+    for (const term of seen) {
       df.set(term, (df.get(term) ?? 0) + 1);
     }
   }
 
   const idf = new Map<string, number>();
   for (const [term, count] of df) {
-    idf.set(term, Math.log(1 + docCount / (1 + count)));
+    idf.set(term, Math.log((docCount + 1) / (count + 1)) + 1);
   }
   return idf;
 }
 
-/**
- * A TF-IDF vector represented as a Map from term to weight.
- */
-export type TfIdfVector = Map<string, number>;
-
-/**
- * Compute TF-IDF vectors for a list of documents.
- * Each document is a string that will be tokenized internally.
- */
-export function computeTfIdfVectors(documents: string[]): TfIdfVector[] {
-  const tokenizedDocs = documents.map(tokenize);
-  const idf = inverseDocumentFrequency(tokenizedDocs);
-
-  return tokenizedDocs.map((tokens) => {
-    const tf = termFrequency(tokens);
-    const vector: TfIdfVector = new Map();
-    for (const [term, tfVal] of tf) {
-      const idfVal = idf.get(term) ?? 0;
-      const weight = tfVal * idfVal;
-      if (weight > 0) {
-        vector.set(term, weight);
-      }
-    }
-    return vector;
-  });
+/** Compute TF-IDF vector for a document given its tokens and IDF map */
+export function tfidfVector(
+  tokens: string[],
+  idf: Map<string, number>
+): Map<string, number> {
+  const tf = termFrequency(tokens);
+  const vector = new Map<string, number>();
+  for (const [term, tfVal] of tf) {
+    const idfVal = idf.get(term) ?? 1;
+    vector.set(term, tfVal * idfVal);
+  }
+  return vector;
 }
 
-// --- Cosine Similarity ---
-
-/**
- * Compute cosine similarity between two TF-IDF vectors.
- * Returns a value between 0 and 1 (vectors are non-negative).
- */
-export function cosineSimilarity(a: TfIdfVector, b: TfIdfVector): number {
+/** Compute cosine similarity between two sparse vectors */
+export function cosineSimilarity(
+  a: Map<string, number>,
+  b: Map<string, number>
+): number {
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
 
-  for (const [term, weightA] of a) {
-    normA += weightA * weightA;
-    const weightB = b.get(term);
-    if (weightB !== undefined) {
-      dotProduct += weightA * weightB;
+  for (const [term, val] of a) {
+    normA += val * val;
+    const bVal = b.get(term);
+    if (bVal !== undefined) {
+      dotProduct += val * bVal;
     }
   }
 
-  for (const [, weightB] of b) {
-    normB += weightB * weightB;
+  for (const [, val] of b) {
+    normB += val * val;
   }
 
   const denominator = Math.sqrt(normA) * Math.sqrt(normB);
   if (denominator === 0) return 0;
+
   return dotProduct / denominator;
 }
 
 /**
- * Compute the full pairwise similarity matrix for a set of TF-IDF vectors.
- * Returns a flat array where entry [i * n + j] is the similarity between
- * document i and document j.
+ * Compute TF-IDF vectors for a set of texts.
+ * Returns one vector per input text, sharing the same IDF values.
  */
-export function pairwiseSimilarity(vectors: TfIdfVector[]): number[] {
-  const n = vectors.length;
-  const matrix = new Array<number>(n * n).fill(0);
-
-  for (let i = 0; i < n; i++) {
-    matrix[i * n + i] = 1; // self-similarity
-    for (let j = i + 1; j < n; j++) {
-      const sim = cosineSimilarity(vectors[i], vectors[j]);
-      matrix[i * n + j] = sim;
-      matrix[j * n + i] = sim;
-    }
-  }
-
-  return matrix;
+export function computeTfIdfVectors(
+  texts: string[]
+): Map<string, number>[] {
+  const tokenized = texts.map(tokenize);
+  const idf = inverseDocumentFrequency(tokenized);
+  return tokenized.map((tokens) => tfidfVector(tokens, idf));
 }

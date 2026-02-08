@@ -12,34 +12,28 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-07 - Story M003-E003-S002: Run Comparison and Validate H6 Hypothesis
+### 2026-02-07 - Story M003-E002-S002: Implement Candidate Validation Pass
 
 **Files Changed:**
-- `convex/crawledPages.ts` - Added `listByProductForTest` public query (no auth) for validation scripts, following `productProfiles.getForTest` pattern
-- `docs/reference/linear-value-moments.md` - Imported from document-linear-reference-analysis branch (6 reference moments REF-01 through REF-06)
-- `scripts/validate-h6.mjs` - New: Monolithic ESM validation script — loads Linear crawled pages, runs 7 lens prompts via Claude API, clusters by Jaccard, tiers by convergence, compares against reference
-- `docs/plans/M003-validation-results.md` - Generated validation report with human-reviewed ratings
-- `HYPOTHESES.md` - Updated H6 status from Testing to Validated with evidence
+- `convex/analysis/convergence/types.ts` - New: LensResult, LensCandidate, ValidatedCandidate types for convergence pipeline
+- `convex/analysis/convergence/validateCandidates.ts` - New: Deterministic validation checks (feature-as-value, vague, duplicates, unverified feature refs) + Claude Haiku LLM review orchestrator
+- `convex/analysis/convergence/validateCandidates.test.ts` - New: 42 tests (unit + integration) covering all validation functions and pipeline
+- `convex/lib/similarity.ts` - New: TF-IDF vectorization + cosine similarity for text duplicate detection
+- `convex/lib/similarity.test.ts` - New: 13 tests for similarity utilities
 
 **Learnings:**
-- Jaccard word similarity is fundamentally insufficient for cross-lens semantic similarity — at threshold 0.35 (planned), zero merges happened; at 0.15, reasonable clustering emerged but only with human review for final accuracy
-- Automated Jaccard accuracy: 50% vs. human-reviewed accuracy: 83.3% — the gap is entirely due to vocabulary mismatch (different lenses use different words for same concepts)
-- Single-linkage clustering with low thresholds creates mega-clusters — need max cluster size cap or better similarity metric
-- 7-lens pipeline produces ~14-15 candidates per lens (~100 total) from 29 crawled pages — good volume for convergence analysis
-- Pipeline can discover value moments NOT in the reference doc (Customer Asks feature) — this is a strength, not a failure
-- ConvexHttpClient works with `anyApi` proxy for function references even without regenerating generated API files
-- Convex `deploy` requires interactive confirmation or `--yes` flag and fails with pre-existing TS errors
+- TF-IDF cosine similarity with only 2 short documents doesn't produce high scores for texts differing in abbreviations ("minutes" vs "min") — 0.47 instead of 0.85+. Texts need substantial word overlap for high similarity
+- Separating `runValidationPipeline` as a pure function from the Convex `internalAction` orchestrator enables comprehensive testing without Convex runtime
+- The `buildKnownFeaturesSet` pattern extracts features from both `entities.items[].name` and `outcomes.items[].linkedFeatures` for cross-referencing
 
 **Patterns Discovered:**
-- Throwaway validation script pattern: single ESM file with hardcoded config, runs outside Convex, uses ConvexHttpClient + Claude API directly — validates hypothesis before building infrastructure
-- Two-batch lens execution: Batch 1 (4 lenses) runs independently, Batch 2 (3 lenses) receives Batch 1 summary as additional context
-- Fallback query pattern: try `listByProductForTest`, fall back to `listByProductMcp` with hardcoded userId — handles undeployed functions gracefully
-- Human review of automated ratings is essential — Jaccard comparison is a starting point, not final judgment
+- Validation pipeline pattern: deterministic checks first (fast, testable) → collect flagged candidates → single LLM call for judgment/rewriting → graceful degradation if LLM fails
+- Pure pipeline + action wrapper: export pure `runValidationPipeline()` for testing, wrap in `internalAction` for Convex runtime integration
+- `computeTfIdfVectors` shared IDF across a document set makes within-group comparison fair
 
 **Gotchas:**
-- `listByProductForTest` requires `npx convex dev` or deploy to be available — local code changes don't auto-deploy
-- Convex deploy fails in non-interactive terminals even with `--yes` flag if there are pre-existing TS errors
-- Pre-existing UI test failures (29 tests) still present — all in frontend component tests, unrelated to backend changes
+- TF-IDF similarity threshold of 0.85 requires truly near-identical text (same words, minor variation). For duplicate detection with abbreviated terms, consider lowering threshold or using n-gram overlap
+- Pre-existing UI test timeouts and convex-test "Write outside of transaction" errors still present (10 failing test files, 23 tests) — unrelated to this work
 
 ### 2026-02-06 - Story M002-E001-S003: Backward Compatibility Tests for Activation Schema
 
