@@ -12,26 +12,24 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E001-S002: Unit Tests for Output Type Validation
+### 2026-02-08 - Story M004-E002-S003: Add Public Test Action for ICP Generation
 
 **Files Changed:**
-- `convex/analysis/outputs/types.ts` - Cherry-picked from `feat/define-output-types-for-icp-activationmap-and-meas` branch (dependency S001)
-- `convex/analysis/outputs/guards.ts` - New: three type guard functions (`isICPProfile`, `isActivationMap`, `isMeasurementSpec`) with shallow structural checks
-- `convex/analysis/outputs/types.test.ts` - New: 20 tests across 4 describe blocks covering type construction, guard validation, and discriminated union variants
+- `convex/analysis/outputs/generateICPProfiles.ts` - New: `testGenerateICPProfiles` public action + `generateICPProfiles` internal action stub (S002 placeholder)
 
 **Learnings:**
-- Cherry-picking files from dependency branches via `git checkout <branch> -- <path>` continues to work well for bringing in prerequisite work
-- Shallow structural guards (field existence + `typeof`/`Array.isArray`) are sufficient for runtime type checking of LLM JSON output — deep validation belongs in generators
-- Type guard pattern: `value is T` return type provides TypeScript narrowing downstream
+- Trivial pass-through test actions (like `testRunAllLenses`, `testExtractActivation`) follow a consistent pattern: public `action()` wrapping `ctx.runAction()` to an internal action, no tests needed
+- When implementing a story that depends on an unimplemented dependency (S002), a stub internal action with `throw new Error("not implemented")` allows the file to compile and the public wrapper to be structurally correct
+- `npx convex codegen` requires `CONVEX_DEPLOYMENT` — can't regenerate `_generated/api.d.ts` in worktrees without deployment config, so `internal.analysis.outputs.generateICPProfiles` resolves as `any` until `npx convex dev` runs
 
 **Patterns Discovered:**
-- Type guard pattern: check `null`, check `typeof value === "object"`, then check 2-3 discriminating fields per type
-- Test file follows convergence/types.test.ts style: construct typed objects, assert field values, test guards with valid/invalid inputs
-- Discriminated union testing: construct each variant separately, assert the discriminant field (`type`) and variant-specific fields
+- Stub-and-replace pattern for dependent stories: create a minimal stub for the dependency in the same file, mark it with a comment referencing the story that will replace it (e.g., `// S002: stub`)
+- Public test action convention: name starts with `test`, uses public `action()` (not `internalAction`), accepts `productId`, delegates to internal action, logs summary, returns full result
 
 **Gotchas:**
-- Worktree needs `npm install` — node_modules not shared between worktrees (recurring)
-- Pre-existing test failures (UI timeouts, convex-test "Write outside of transaction") still present — unrelated to this work
+- Pre-existing UI test failures (21 files / 37 tests) still present — unrelated to this work
+- `convex/README.md` and `convex/tsconfig.json` get modified by `npm install` / convex setup — don't commit these unrelated changes
+- Worktree needs `npm install` — node_modules not shared between worktrees
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
