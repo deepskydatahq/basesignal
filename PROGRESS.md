@@ -12,25 +12,26 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-08 - Story M004-E004-S001: Aggregate Measurement Inputs
+### 2026-02-08 - Story M004-E001-S002: Unit Tests for Output Type Validation
 
 **Files Changed:**
-- `convex/analysis/outputs/types.ts` - New: MeasurementInputData, ICPProfile, ActivationMap, ActivationMapStage types. Re-exports ValueMoment, ActivationLevel, ActivationCriterion.
-- `convex/analysis/outputs/aggregateMeasurementInputs.ts` - New: `aggregateMeasurementInputsCore` pure function + `aggregateMeasurementInputs` Convex internalAction wrapper
-- `convex/analysis/outputs/aggregateMeasurementInputs.test.ts` - New: 13 tests covering all four section extractions, product_surfaces inclusion, criteria inclusion, passthrough verification, error validation for missing sections, and Linear integration test
+- `convex/analysis/outputs/types.ts` - Cherry-picked from `feat/define-output-types-for-icp-activationmap-and-meas` branch (dependency S001)
+- `convex/analysis/outputs/guards.ts` - New: three type guard functions (`isICPProfile`, `isActivationMap`, `isMeasurementSpec`) with shallow structural checks
+- `convex/analysis/outputs/types.test.ts` - New: 20 tests across 4 describe blocks covering type construction, guard validation, and discriminated union variants
 
 **Learnings:**
-- ICPProfile and ActivationMap types from dependency stories (M004-E002-S002, M004-E003-S002) weren't implemented yet — defined them in outputs/types.ts as the canonical location
-- Pure aggregation function pattern: read 4 profile sections, validate all exist, collect all missing in single error message — no transformation, just passthrough
-- Convergence results stored at `profile.convergence.value_moments`, activation at `profile.definitions.activation.levels`, ICP at `profile.icpProfiles`, map at `profile.activationMap`
+- Cherry-picking files from dependency branches via `git checkout <branch> -- <path>` continues to work well for bringing in prerequisite work
+- Shallow structural guards (field existence + `typeof`/`Array.isArray`) are sufficient for runtime type checking of LLM JSON output — deep validation belongs in generators
+- Type guard pattern: `value is T` return type provides TypeScript narrowing downstream
 
 **Patterns Discovered:**
-- Dependency validation with collected errors: check all required sections, collect names of missing ones, throw single error listing all — better DX than failing on first missing
-- Pure core function + thin Convex wrapper pattern continues to work well for testability
+- Type guard pattern: check `null`, check `typeof value === "object"`, then check 2-3 discriminating fields per type
+- Test file follows convergence/types.test.ts style: construct typed objects, assert field values, test guards with valid/invalid inputs
+- Discriminated union testing: construct each variant separately, assert the discriminant field (`type`) and variant-specific fields
 
 **Gotchas:**
-- Pre-existing TS errors in convex/ai.ts and convex/_generated/api.d.ts — unrelated to this work
-- Worktree needs `npm install` before tests can run
+- Worktree needs `npm install` — node_modules not shared between worktrees (recurring)
+- Pre-existing test failures (UI timeouts, convex-test "Write outside of transaction") still present — unrelated to this work
 
 ### 2026-02-07 - Story M003-E001-S004: Lens Orchestration Pipeline
 
