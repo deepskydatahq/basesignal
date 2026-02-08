@@ -54,13 +54,13 @@ done
 
 # Function to fetch brainstorm tasks
 fetch_brainstorm_tasks() {
-    hte tasks list --status brainstorm --json
+    bd list --label brainstorm --json
 }
 
 # Function to fetch specific task
 fetch_specific_task() {
     local TASK_ID="$1"
-    hte tasks get "$TASK_ID" --json
+    bd show "$TASK_ID" --json | jq '.[0]'
 }
 
 # Function to process a single task
@@ -74,7 +74,7 @@ process_task() {
     # Claim the task (unless skipping)
     if [[ "$SKIP_CLAIM" != "true" ]]; then
         echo "Claiming task (setting in_progress status)..."
-        hte tasks update "$TASK_ID" --status in_progress
+        bd update "$TASK_ID" --status in_progress
     else
         echo "Skipping claim (specific task mode)"
     fi
@@ -172,7 +172,7 @@ while true; do
             echo "Task $TASK_ID failed with exit code $EXIT_CODE"
             FAILED=$((FAILED + 1))
             # Reset status on failure so it can be retried
-            hte tasks update "$TASK_ID" --status brainstorm 2>/dev/null || true
+            bd update "$TASK_ID" --status open 2>/dev/null || true
         else
             PROCESSED=$((PROCESSED + 1))
         fi

@@ -166,6 +166,27 @@ bd status
 
 All scripts support `--loop`, `--max N`, and `--continue-on-error` flags.
 
+### Parallel Automation
+
+For faster processing, use parallel workers with file-based locking:
+
+```bash
+# Parallel brainstorming (3 workers default)
+./brainstorm-parallel.sh            # 3 workers
+./brainstorm-parallel.sh -w 5       # 5 workers
+
+# Parallel planning (3 workers default)
+./plan-parallel.sh                  # 3 workers
+./plan-parallel.sh -w 5             # 5 workers
+
+# Parallel implementation with dependency awareness
+./run-parallel.sh                   # 3 workers, respects task dependencies
+./run-parallel.sh -w 5              # 5 workers
+```
+
+Workers automatically skip tasks with unresolved dependencies (registered via `bd dep add`).
+The `/product-story-handoff` command registers dependencies when creating tasks from stories.
+
 ---
 
 ## Product Thinking

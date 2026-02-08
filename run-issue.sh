@@ -59,7 +59,7 @@ done
 
 # Function to fetch ready tasks with full details for AI selection
 fetch_ready_tasks_detailed() {
-    hte tasks list --status ready --json
+    bd list --label ready --json
 }
 
 # Function to format tasks for the prompt
@@ -91,7 +91,7 @@ process_task_with_worktree() {
 
     # Claim the task
     echo "Claiming task..."
-    hte tasks update "$TASK_ID" --status in_progress
+    bd update "$TASK_ID" --status in_progress
 
     # Create worktree directory
     mkdir -p "$WORKTREE_BASE"
@@ -106,7 +106,7 @@ process_task_with_worktree() {
     fi
 
     # Get task body for the prompt
-    local TASK_DATA=$(hte tasks get "$TASK_ID" --json)
+    local TASK_DATA=$(bd show "$TASK_ID" --json | jq '.[0]' --json)
     local TASK_BODY=$(echo "$TASK_DATA" | jq -r '.body')
 
     # Build the prompt
@@ -195,7 +195,7 @@ Use conventional commit types: feat, fix, refactor, docs, test, chore
 ### Step 7: Mark Task Done
 
 \`\`\`bash
-hte tasks update $TASK_ID --status done
+bd close $TASK_ID
 \`\`\`
 
 ## Start
@@ -224,7 +224,7 @@ process_tasks() {
     if [[ -n "$SPECIFIC" ]]; then
         # Specific task mode - fetch just that task
         echo "Fetching task $SPECIFIC..."
-        TASK_DATA=$(hte tasks get "$SPECIFIC" --json 2>/dev/null)
+        TASK_DATA=$(bd show "$SPECIFIC" --json 2>/dev/null)
 
         if [[ -z "$TASK_DATA" ]]; then
             echo "Error: Task $SPECIFIC not found"

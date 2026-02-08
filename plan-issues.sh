@@ -44,7 +44,7 @@ done
 
 # Function to fetch plan tasks
 fetch_plan_tasks() {
-    hte tasks list --status plan --json
+    bd list --label plan --json
 }
 
 # Function to process a single task
@@ -56,11 +56,11 @@ process_task() {
 
     # Claim the task
     echo "Claiming task (setting in_progress status)..."
-    hte tasks update "$TASK_ID" --status in_progress
+    bd update "$TASK_ID" --status in_progress
 
     # Get full task content
     echo "Fetching task details..."
-    TASK_DATA=$(hte tasks get "$TASK_ID" --json)
+    TASK_DATA=$(bd show "$TASK_ID" --json | jq '.[0]')
     TASK_BODY=$(echo "$TASK_DATA" | jq -r '"# Task: \(.title)\n\n## Description\n\(.body)"')
 
     # Build the prompt
@@ -124,7 +124,7 @@ After creating the full plan document, update the task body with:
 ### 5. Move to Ready
 
 \`\`\`bash
-hte tasks update $TASK_ID --status ready
+bd update $TASK_ID --remove-label plan --add-label ready
 \`\`\`
 
 ## Output Format
@@ -211,7 +211,7 @@ while true; do
             echo "Task $TASK_ID failed with exit code $EXIT_CODE"
             FAILED=$((FAILED + 1))
             # Reset status on failure so it can be retried
-            hte tasks update "$TASK_ID" --status plan 2>/dev/null || true
+            bd update "$TASK_ID" --status open 2>/dev/null || true
         else
             PROCESSED=$((PROCESSED + 1))
         fi
