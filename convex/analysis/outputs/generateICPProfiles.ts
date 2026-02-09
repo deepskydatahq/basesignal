@@ -248,6 +248,16 @@ export const generateICPProfiles = internalAction({
     // 7. Parse response
     const profiles = parseICPProfiles(responseText);
 
+    // 8. Store result on profile
+    const existingOutputs =
+      (profile as Record<string, unknown>).outputs as Record<string, unknown> ?? {};
+
+    await ctx.runMutation(internal.productProfiles.updateSectionInternal, {
+      productId: args.productId,
+      section: "outputs",
+      data: { ...existingOutputs, icpProfiles: profiles },
+    });
+
     return {
       profiles,
       execution_time_ms: Date.now() - startTime,

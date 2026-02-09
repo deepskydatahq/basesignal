@@ -173,6 +173,40 @@ export const get = query({
   },
 });
 
+// Get generated outputs (ICP profiles, activation map, measurement spec)
+export const getOutputs = query({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) return null;
+
+    // Verify product ownership
+    const product = await ctx.db.get(args.productId);
+    if (!product || product.userId !== user._id) return null;
+
+    const profile = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+
+    if (!profile) return null;
+
+    const outputs = (profile as Record<string, unknown>).outputs as {
+      icpProfiles?: unknown[];
+      activationMap?: unknown;
+      measurementSpec?: unknown;
+    } | undefined;
+
+    return {
+      productId: args.productId,
+      icpProfiles: outputs?.icpProfiles ?? [],
+      activationMap: outputs?.activationMap ?? null,
+      measurementSpec: outputs?.measurementSpec ?? null,
+      generatedAt: profile.updatedAt,
+    };
+  },
+});
+
 // Internal version for use by Convex actions (no auth check)
 export const createInternal = internalMutation({
   args: {
@@ -216,6 +250,33 @@ export const getInternal = internalQuery({
       .query("productProfiles")
       .withIndex("by_product", (q) => q.eq("productId", args.productId))
       .first();
+  },
+});
+
+// Internal version of getOutputs for use by Convex actions
+export const getOutputsInternal = internalQuery({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("productProfiles")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .first();
+
+    if (!profile) return null;
+
+    const outputs = (profile as Record<string, unknown>).outputs as {
+      icpProfiles?: unknown[];
+      activationMap?: unknown;
+      measurementSpec?: unknown;
+    } | undefined;
+
+    return {
+      productId: args.productId,
+      icpProfiles: outputs?.icpProfiles ?? [],
+      activationMap: outputs?.activationMap ?? null,
+      measurementSpec: outputs?.measurementSpec ?? null,
+      generatedAt: profile.updatedAt,
+    };
   },
 });
 

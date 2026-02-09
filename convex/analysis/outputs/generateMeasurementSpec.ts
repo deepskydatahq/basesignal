@@ -373,6 +373,19 @@ export const generateMeasurementSpec = internalAction({
     // 4. Parse response
     const spec = parseMeasurementSpecResponse(responseText);
 
+    // 5. Store result on profile
+    const profile = await ctx.runQuery(internal.productProfiles.getInternal, {
+      productId: args.productId,
+    });
+    const existingOutputs =
+      (profile as Record<string, unknown> | null)?.outputs as Record<string, unknown> ?? {};
+
+    await ctx.runMutation(internal.productProfiles.updateSectionInternal, {
+      productId: args.productId,
+      section: "outputs",
+      data: { ...existingOutputs, measurementSpec: spec },
+    });
+
     return spec;
   },
 });
