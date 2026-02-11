@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-11 - Story M005-E001-S002: Create ProductsListPage and Wire Routing
+
+**Files Changed:**
+- `src/routes/ProductsListPage.tsx` - New component: renders product cards from `listWithProfiles` query with name, URL, completeness, and convergence/outputs badges
+- `src/routes/ProductsListPage.test.tsx` - 8 unit tests covering loading, empty state, card rendering, badges, links, and completeness display
+- `src/routes/ProductProfilePage.tsx` - Skeleton placeholder for `/products/:productId` route
+- `src/App.tsx` - Changed index route from ProfilePage to ProductsListPage, added `/products/:productId` route
+- `src/components/Sidebar.tsx` - Updated Home nav active state to match `/` and `/products/*`
+
+**Learnings:**
+- Cherry-picked dependency commit (listWithProfiles query) from S001 branch since it wasn't yet merged to main
+- Followed established test mock pattern: mutable `let` variables + `vi.mock("convex/react")` with query string matching
+- Kept ProfilePage import in App.tsx since it's still used by the `/p/:shareToken` public share route
+
+**Patterns:**
+- Product card component extracted as local function within same file (matching JourneysListPage pattern)
+- Sidebar `isActive` check for home uses `||` with `/products` prefix to handle sub-routes
+
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
 **Files Changed:**
