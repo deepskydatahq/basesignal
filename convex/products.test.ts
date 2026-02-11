@@ -123,3 +123,71 @@ describe("products", () => {
     expect(products).toEqual([]);
   });
 });
+
+describe("listWithProfiles", () => {
+  it("returns products for authenticated user", async () => {
+    const t = convexTest(schema);
+    await setupUser(t);
+    const asUser = authenticatedUser(t);
+
+    await asUser.mutation(api.products.create, { name: "Product A", url: "https://a.io" });
+    await asUser.mutation(api.products.create, { name: "Product B", url: "https://b.io" });
+
+    const products = await asUser.query(api.products.listWithProfiles, {});
+    expect(products).toHaveLength(2);
+    expect(products[0].name).toBeDefined();
+    expect(products[0].url).toBeDefined();
+  });
+
+  it("includes profile summary fields when profile exists", async () => {
+    const t = convexTest(schema);
+    await setupUser(t);
+    const asUser = authenticatedUser(t);
+
+    const productId = await asUser.mutation(api.products.create, {
+      name: "Profiled Product",
+      url: "https://profiled.io",
+    });
+
+    // Insert a profile directly with some data
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      await ctx.db.insert("productProfiles", {
+        productId,
+        completeness: 0.3,
+        overallConfidence: 0.75,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const products = await asUser.query(api.products.listWithProfiles, {});
+    expect(products).toHaveLength(1);
+    expect(products[0].profile).not.toBeNull();
+    expect(products[0].profile!.completeness).toBe(0.3);
+    expect(products[0].profile!.overallConfidence).toBe(0.75);
+    expect(products[0].profile!.hasConvergence).toBe(false);
+    expect(products[0].profile!.hasOutputs).toBe(false);
+  });
+
+  it("returns profile: null for products without a profile", async () => {
+    const t = convexTest(schema);
+    await setupUser(t);
+    const asUser = authenticatedUser(t);
+
+    await asUser.mutation(api.products.create, {
+      name: "No Profile Product",
+      url: "https://noprofile.io",
+    });
+
+    const products = await asUser.query(api.products.listWithProfiles, {});
+    expect(products).toHaveLength(1);
+    expect(products[0].profile).toBeNull();
+  });
+
+  it("returns empty for unauthenticated user", async () => {
+    const t = convexTest(schema);
+    const products = await t.query(api.products.listWithProfiles, {});
+    expect(products).toEqual([]);
+  });
+});
