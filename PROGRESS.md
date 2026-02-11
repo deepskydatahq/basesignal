@@ -12,6 +12,27 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-11 - Story M005-E002-S002: Build ValueMomentsSection Component
+
+**Files Changed:**
+- `src/components/product-profile/types.ts` - New: Frontend type definitions mirroring `convex/analysis/convergence/types.ts` (LensType, ValueMomentTier, ValueMoment)
+- `src/components/product-profile/ValueMomentsSection.tsx` - New: Pure presentational component with StatsBar, TierSection, MomentCard, and EmptyState subcomponents
+- `src/components/product-profile/ValueMomentsSection.test.tsx` - New: 14 RTL tests covering all 5 acceptance criteria (stats bar, tier grouping, card content, color coding, empty state)
+
+**Learnings:**
+- RTL `testing-library/no-node-access` lint rule forbids `.closest()` — use `data-testid` with `getByTestId` instead for tier section verification
+- When stats bar labels duplicate tier section headings (e.g., "Core" in both), use `getAllByText` to avoid RTL duplicate match errors
+- `toHaveClass` is cleaner than `.className.toMatch()` for verifying Tailwind color classes
+
+**Patterns Discovered:**
+- Pure presentational component pattern: accept typed data as props, no Convex hooks, purely renders what it receives — enables simple RTL testing without mocking
+- `makeMoment()` factory function with `Partial<ValueMoment>` overrides provides clean test data setup
+- Tier config map (`tierConfig`) centralizes per-tier styling (colors, labels) to avoid scattered conditionals
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- Pre-existing UI test timeouts still present — unrelated to this work
+
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
 **Files Changed:**
