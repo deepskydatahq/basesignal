@@ -21,6 +21,7 @@ import JourneysListPage from './routes/JourneysListPage'
 import JourneyEditorPage from './routes/JourneyEditorPage'
 import MetricCatalogPage from './routes/MetricCatalogPage'
 import MeasurementPlanPage from './routes/MeasurementPlanPage'
+import ProductProfilePage from './routes/ProductProfilePage'
 import { SetupResumeScreen } from './components/setup/SetupResumeScreen'
 import { useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
@@ -145,6 +146,7 @@ function AppRoutes() {
         <Route path="journeys/:journeyId" element={<JourneyEditorPage />} />
         <Route path="metric-catalog" element={<MetricCatalogPage />} />
         <Route path="measurement-plan" element={<MeasurementPlanPage />} />
+        <Route path="products/:productId" element={<ProductProfilePage />} />
       </Route>
     </Routes>
   );
