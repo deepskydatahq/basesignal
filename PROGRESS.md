@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
+
+**Files Changed:**
+- `src/components/product-profile/MeasurementSpecSection.tsx` - New: MeasurementSpecSection component with summary bar, category-grouped events, collapsible rows with property details, empty state
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - New: 7 tests covering empty state, summary stats, category grouping, event details, collapsible properties
+
+**Learnings:**
+- Radix Collapsible works well outside of table rows — using grid-based layout with CollapsibleTrigger on a button avoids the div-in-tbody hydration issue
+- JavaScript default parameters apply when the argument is `undefined`, so `setup(undefined)` with a default param silently uses the default — use `arguments.length` check for explicit undefined handling in tests
+
+**Patterns Discovered:**
+- Category color map pattern: `Record<string, { bg: string; text: string }>` with a default fallback for unknown categories
+- Event grouping via reduce into `Record<string, TrackingEvent[]>` is clean and avoids sorting/re-sorting
+- Grid-based "table" layout (CSS grid instead of HTML table) works better with Radix Collapsible since it avoids DOM nesting issues
+
+**Gotchas:**
+- `setup(undefined)` in vitest will trigger default parameter values — need explicit `arguments.length` check to test undefined prop behavior
+
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
 **Files Changed:**
