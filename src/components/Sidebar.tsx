@@ -35,7 +35,7 @@ interface NavItemProps {
 function NavItem({ icon: Icon, label, to, expanded, locked }: NavItemProps) {
   const location = useLocation()
   const isActive = to === '/'
-    ? location.pathname === '/'
+    ? location.pathname === '/' || location.pathname.startsWith('/products')
     : location.pathname.startsWith(to)
 
   if (locked) {
