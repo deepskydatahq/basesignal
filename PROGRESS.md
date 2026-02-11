@@ -12,6 +12,25 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-11 - Story M005-E003-S001: Build ICPProfilesSection Component
+
+**Files Changed:**
+- `src/components/product-profile/ICPProfilesSection.tsx` - New: ICPProfilesSection component displaying persona cards in responsive grid with confidence badges, value moment priorities, and collapsible subsections
+- `src/components/product-profile/ICPProfilesSection.test.tsx` - New: 8 tests covering empty state, persona rendering, confidence badge variants, value moment priorities, collapsible toggle behavior, and multiple profile rendering
+
+**Learnings:**
+- `Record<string, boolean>` state pattern works cleanly for managing multiple collapsible sections across multiple cards without extracting per-card components
+- Badge component accepts className override for custom color schemes (green/amber/gray for confidence levels)
+- Radix Collapsible with controlled open/onOpenChange pattern matches ActivityTimeline precedent
+
+**Patterns Discovered:**
+- Collapsible state map: `useState<Record<string, boolean>>({})` with `toggle(key)` helper avoids N separate useState hooks when multiple collapsibles exist across multiple items
+- Inline helper component (CollapsibleSection) within the same file keeps the flat-file approach while reducing repetition for the 3 collapsible sections per card
+
+**Gotchas:**
+- Worktree needs `npm install` before running tests — node_modules not shared between worktrees
+- `src/components/product-profile/` directory didn't exist yet — created as part of this story (dependency basesignal-ohe not yet merged)
+
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
 **Files Changed:**
