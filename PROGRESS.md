@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-11 - Story M005-E003-S002: Build ActivationMapSection Component
+
+**Files Created:**
+- `src/components/product-profile/types.ts` - Re-exports ActivationMap, ActivationStage, StageTransition, SignalStrength from convex output types
+- `src/components/product-profile/ActivationMapSection.tsx` - Pure presentation component displaying activation stages as horizontal progression cards
+- `src/components/product-profile/ActivationMapSection.test.tsx` - 8 unit tests covering all acceptance criteria
+
+**Patterns:**
+- Pure presentation components take data as props (no Convex hooks) — easy to test without mocking
+- Defensive type normalization: `normalizeDropOffRisk()` handles both string and `{ level, reason }` shapes with a simple type guard
+- Signal strength and risk level colors mapped via `Record<string, string>` lookup tables
+- `data-testid` attributes on stage cards and transition connectors for reliable test targeting with RTL `within()`
+- TDD approach: wrote all 8 tests first, then implemented component to pass them
+
+**Learnings:**
+- The `product-profile/` component directory is new — this is the first component in the Product Profile View feature (M005)
+- Badge component from `ui/badge.tsx` uses CVA variants but for inline color-coded badges, plain Tailwind classes on `<span>` work better since the color mapping is domain-specific
+
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
 **Files Changed:**
