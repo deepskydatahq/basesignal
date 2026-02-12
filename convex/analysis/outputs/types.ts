@@ -57,6 +57,22 @@ export interface ActivationMap {
   sources: string[];
 }
 
+// --- Entity Definition Types ---
+
+export interface EntityPropertyDef {
+  name: string;
+  type: "string" | "number" | "boolean" | "array";
+  description: string;
+  isRequired: boolean;
+}
+
+export interface EntityDefinition {
+  id: string;
+  name: string;
+  description: string;
+  properties: EntityPropertyDef[];
+}
+
 // --- Measurement Spec Types ---
 
 export interface EventProperty {
@@ -72,6 +88,7 @@ export type MapsTo =
 
 export interface TrackingEvent {
   name: string;
+  entity_id: string;
   description: string;
   properties: EventProperty[];
   trigger_condition: string;
@@ -80,10 +97,13 @@ export interface TrackingEvent {
 }
 
 export interface MeasurementSpec {
+  entities: EntityDefinition[];
   events: TrackingEvent[];
   total_events: number;
-  activation_levels_covered: number[];
-  value_moments_covered: string[];
+  coverage: {
+    activation_levels_covered: number[];
+    value_moments_covered: string[];
+  };
   confidence: number;
   sources: string[];
 }

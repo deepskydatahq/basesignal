@@ -23,6 +23,7 @@ export function isMeasurementSpec(value: unknown): value is MeasurementSpec {
   if (value === null || typeof value !== "object") return false;
   const v = value as Record<string, unknown>;
   return (
+    Array.isArray(v.entities) &&
     Array.isArray(v.events) &&
     typeof v.total_events === "number"
   );

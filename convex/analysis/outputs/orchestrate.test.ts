@@ -48,9 +48,20 @@ const mockActivationMap: ActivationMap = {
 };
 
 const mockMeasurementSpec: MeasurementSpec = {
+  entities: [
+    {
+      id: "project",
+      name: "Project",
+      description: "A project workspace",
+      properties: [
+        { name: "project_id", type: "string", description: "ID of project", isRequired: true },
+      ],
+    },
+  ],
   events: [
     {
       name: "project_created",
+      entity_id: "project",
       description: "User created a new project",
       properties: [
         { name: "project_id", type: "string", description: "ID of project" },
@@ -62,8 +73,10 @@ const mockMeasurementSpec: MeasurementSpec = {
     },
   ],
   total_events: 1,
-  activation_levels_covered: [2],
-  value_moments_covered: ["vm_1"],
+  coverage: {
+    activation_levels_covered: [2],
+    value_moments_covered: ["vm_1"],
+  },
   confidence: 0.8,
   sources: ["value_moments", "activation_levels"],
 };
@@ -219,10 +232,11 @@ describe("OrchestrationResult output validation", () => {
     };
 
     const spec = result.measurement_spec!;
+    expect(spec.entities).toHaveLength(1);
     expect(spec.events).toHaveLength(1);
     expect(spec.total_events).toBe(1);
-    expect(spec.activation_levels_covered).toContain(2);
-    expect(spec.value_moments_covered).toContain("vm_1");
+    expect(spec.coverage.activation_levels_covered).toContain(2);
+    expect(spec.coverage.value_moments_covered).toContain("vm_1");
   });
 });
 
@@ -304,9 +318,24 @@ describe("OrchestrationResult Linear fixture", () => {
         sources: ["activation_levels", "value_moments"],
       },
       measurement_spec: {
+        entities: [
+          {
+            id: "issue",
+            name: "Issue",
+            description: "A trackable work item",
+            properties: [{ name: "issue_id", type: "string", description: "ID of issue", isRequired: true }],
+          },
+          {
+            id: "cycle",
+            name: "Cycle",
+            description: "A sprint cycle",
+            properties: [{ name: "cycle_id", type: "string", description: "ID of cycle", isRequired: true }],
+          },
+        ],
         events: [
           {
             name: "issue_created",
+            entity_id: "issue",
             description: "User created a new issue",
             properties: [
               { name: "issue_id", type: "string", description: "ID of issue" },
@@ -319,6 +348,7 @@ describe("OrchestrationResult Linear fixture", () => {
           },
           {
             name: "cycle_completed",
+            entity_id: "cycle",
             description: "Team completed a sprint cycle",
             properties: [
               { name: "cycle_id", type: "string", description: "ID of cycle" },
@@ -330,8 +360,10 @@ describe("OrchestrationResult Linear fixture", () => {
           },
         ],
         total_events: 2,
-        activation_levels_covered: [2, 3],
-        value_moments_covered: ["issue_tracking", "cycle_planning"],
+        coverage: {
+          activation_levels_covered: [2, 3],
+          value_moments_covered: ["issue_tracking", "cycle_planning"],
+        },
         confidence: 0.82,
         sources: ["value_moments", "activation_levels", "icp_profiles"],
       },
