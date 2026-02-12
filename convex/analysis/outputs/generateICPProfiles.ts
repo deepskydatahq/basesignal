@@ -11,6 +11,8 @@ export interface RoleInput {
   name: string;
   occurrence_count: number;
   tier_1_count: number;
+  tier_2_count: number;
+  tier_3_plus_count: number;
   value_moments: Array<{
     id: string;
     name: string;
@@ -64,7 +66,7 @@ export function buildICPPrompt(
     parts.push("\n## Roles Summary");
     for (const role of roles) {
       parts.push(
-        `- ${role.name}: ${role.occurrence_count} occurrences, ${role.tier_1_count} Tier 1 value moments`,
+        `- ${role.name}: ${role.occurrence_count} occurrences (${role.tier_1_count} T1, ${role.tier_2_count} T2, ${role.tier_3_plus_count} T3+)`,
       );
     }
 
@@ -183,12 +185,16 @@ function aggregateRoles(valueMoments: ValueMoment[]): RoleInput[] {
           name: role,
           occurrence_count: 0,
           tier_1_count: 0,
+          tier_2_count: 0,
+          tier_3_plus_count: 0,
           value_moments: [],
         });
       }
       const entry = roleMap.get(role)!;
       entry.occurrence_count++;
       if (vm.tier === 1) entry.tier_1_count++;
+      else if (vm.tier === 2) entry.tier_2_count++;
+      else entry.tier_3_plus_count++;
       entry.value_moments.push({
         id: vm.id,
         name: vm.name,

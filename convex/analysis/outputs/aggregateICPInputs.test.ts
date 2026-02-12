@@ -99,6 +99,8 @@ describe("aggregateICPInputsCore", () => {
     expect(phantom!.occurrence_count).toBe(0);
     expect(phantom!.value_moments).toHaveLength(0);
     expect(phantom!.tier_1_moments).toBe(0);
+    expect(phantom!.tier_2_moments).toBe(0);
+    expect(phantom!.tier_3_plus_moments).toBe(0);
   });
 
   it("does NOT duplicate targetCustomer when already a role", () => {
@@ -115,7 +117,7 @@ describe("aggregateICPInputsCore", () => {
     expect(result.roles[0].occurrence_count).toBe(1);
   });
 
-  it("sorts by tier_1_moments desc, then occurrence_count desc", () => {
+  it("sorts by weighted score: tier_1*5 + tier_2*2 + occurrence_count", () => {
     const vm1 = makeValueMoment({
       id: "vm-1",
       name: "Moment A",
@@ -158,16 +160,50 @@ describe("aggregateICPInputsCore", () => {
       ""
     );
 
-    // PM: 2 moments, 2 tier-1
-    // Designer: 1 moment, 1 tier-1
-    // Engineer: 3 moments, 0 tier-1
+    // PM: 2 T1, 0 T2, 2 total → score = 2*5 + 0*2 + 2 = 12
+    // Engineer: 0 T1, 3 T2, 3 total → score = 0*5 + 3*2 + 3 = 9
+    // Designer: 1 T1, 0 T2, 1 total → score = 1*5 + 0*2 + 1 = 6
     expect(result.roles[0].name).toBe("PM");
     expect(result.roles[0].tier_1_moments).toBe(2);
-    expect(result.roles[1].name).toBe("Designer");
-    expect(result.roles[1].tier_1_moments).toBe(1);
-    expect(result.roles[2].name).toBe("Engineer");
-    expect(result.roles[2].tier_1_moments).toBe(0);
-    expect(result.roles[2].occurrence_count).toBe(3);
+    expect(result.roles[1].name).toBe("Engineer");
+    expect(result.roles[1].tier_2_moments).toBe(3);
+    expect(result.roles[2].name).toBe("Designer");
+    expect(result.roles[2].tier_1_moments).toBe(1);
+  });
+
+  it("2 T1 moments outranks 10 T3 moments", () => {
+    // Role with 2 T1: score = 2*5 + 0*2 + 2 = 12
+    // Role with 10 T3: score = 0*5 + 0*2 + 10 = 10
+    const t1Moments = Array.from({ length: 2 }, (_, i) =>
+      makeValueMoment({ id: `t1-${i}`, name: `T1 ${i}`, tier: 1, roles: ["Strategic PM"] })
+    );
+    const t3Moments = Array.from({ length: 10 }, (_, i) =>
+      makeValueMoment({ id: `t3-${i}`, name: `T3 ${i}`, tier: 3, roles: ["Analyst"] })
+    );
+
+    const result = aggregateICPInputsCore([...t1Moments, ...t3Moments], "");
+
+    expect(result.roles[0].name).toBe("Strategic PM");
+    expect(result.roles[0].tier_1_moments).toBe(2);
+    expect(result.roles[1].name).toBe("Analyst");
+    expect(result.roles[1].tier_3_plus_moments).toBe(10);
+  });
+
+  it("roles with only T3+ moments sort to the bottom", () => {
+    const vm1 = makeValueMoment({ id: "vm-1", name: "A", tier: 1, roles: ["Lead"] });
+    const vm2 = makeValueMoment({ id: "vm-2", name: "B", tier: 2, roles: ["Mid"] });
+    const vm3 = makeValueMoment({ id: "vm-3", name: "C", tier: 3, roles: ["Junior"] });
+    const vm4 = makeValueMoment({ id: "vm-4", name: "D", tier: 3, roles: ["Junior"] });
+
+    const result = aggregateICPInputsCore([vm1, vm2, vm3, vm4], "");
+
+    // Lead: 1 T1 → score = 5 + 0 + 1 = 6
+    // Mid: 1 T2 → score = 0 + 2 + 1 = 3
+    // Junior: 2 T3 → score = 0 + 0 + 2 = 2
+    expect(result.roles[0].name).toBe("Lead");
+    expect(result.roles[1].name).toBe("Mid");
+    expect(result.roles[2].name).toBe("Junior");
+    expect(result.roles[2].tier_3_plus_moments).toBe(2);
   });
 
   it("returns empty roles for empty value moments array", () => {
@@ -269,27 +305,37 @@ describe("aggregateICPInputsCore - Linear-like integration", () => {
     const engLead = result.roles.find((r) => r.name === "Engineering Lead")!;
     expect(engLead.occurrence_count).toBe(3);
     expect(engLead.tier_1_moments).toBe(3); // vm-1 (T1), vm-2 (T1), vm-4 (T1)
+    expect(engLead.tier_2_moments).toBe(0);
+    expect(engLead.tier_3_plus_moments).toBe(0);
 
     // Product Manager appears in vm-1, vm-3, vm-5
     const pm = result.roles.find((r) => r.name === "Product Manager")!;
     expect(pm.occurrence_count).toBe(3);
     expect(pm.tier_1_moments).toBe(1); // only vm-1 is tier 1
+    expect(pm.tier_2_moments).toBe(2); // vm-3 (T2), vm-5 (T2)
+    expect(pm.tier_3_plus_moments).toBe(0);
 
     // Team Lead: vm-2, vm-5, vm-6
     const teamLead = result.roles.find((r) => r.name === "Team Lead")!;
     expect(teamLead.occurrence_count).toBe(3);
     expect(teamLead.tier_1_moments).toBe(2); // vm-2 (T1), vm-6 (T1)
+    expect(teamLead.tier_2_moments).toBe(1); // vm-5 (T2)
+    expect(teamLead.tier_3_plus_moments).toBe(0);
 
     // Designer: vm-3, vm-4
     const designer = result.roles.find((r) => r.name === "Designer")!;
     expect(designer.occurrence_count).toBe(2);
     expect(designer.tier_1_moments).toBe(1); // vm-4 (T1)
+    expect(designer.tier_2_moments).toBe(1); // vm-3 (T2)
+    expect(designer.tier_3_plus_moments).toBe(0);
 
-    // Verify sort order: tier_1_moments desc, then occurrence_count desc
-    // Engineering Lead (3 T1, 3 total) > Team Lead (2 T1, 3 total) > PM (1 T1, 3 total) = Designer (1 T1, 2 total)
+    // Verify sort order by weighted score: tier_1*5 + tier_2*2 + occurrence_count
+    // Engineering Lead: 3*5 + 0*2 + 3 = 18
+    // Team Lead: 2*5 + 1*2 + 3 = 15
+    // Product Manager: 1*5 + 2*2 + 3 = 12
+    // Designer: 1*5 + 1*2 + 2 = 9
     expect(result.roles[0].name).toBe("Engineering Lead");
     expect(result.roles[1].name).toBe("Team Lead");
-    // PM and Designer both have 1 tier-1, PM has more occurrences
     expect(result.roles[2].name).toBe("Product Manager");
     expect(result.roles[3].name).toBe("Designer");
 

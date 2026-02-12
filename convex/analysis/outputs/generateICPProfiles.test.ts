@@ -12,6 +12,8 @@ function makeRoleInput(overrides: Record<string, unknown> = {}) {
     name: "Product Manager",
     occurrence_count: 5,
     tier_1_count: 3,
+    tier_2_count: 1,
+    tier_3_plus_count: 1,
     value_moments: [
       {
         id: "vm-001",
@@ -135,7 +137,12 @@ describe("buildICPPrompt", () => {
     expect(prompt).toContain("Track feature adoption");
   });
 
-  it("includes tier information for each moment", () => {
+  it("includes tier breakdown in roles summary", () => {
+    const prompt = buildICPPrompt([makeRoleInput()], "");
+    expect(prompt).toContain("3 T1, 1 T2, 1 T3+");
+  });
+
+  it("includes tier information for each value moment", () => {
     const prompt = buildICPPrompt([makeRoleInput()], "");
     expect(prompt).toContain("Tier 1");
     expect(prompt).toContain("Tier 2");

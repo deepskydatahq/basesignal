@@ -12,6 +12,26 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E002-S002: Add Value-Moment-Tier Weighting to ICP Input Aggregation
+
+**Files Changed:**
+- `convex/analysis/outputs/aggregateICPInputs.ts` - Added `tier_2_moments` and `tier_3_plus_moments` to `RoleAggregation`; replaced tier_1-then-occurrence sort with weighted score formula (tier_1*5 + tier_2*2 + occurrence_count)
+- `convex/analysis/outputs/aggregateICPInputs.test.ts` - Updated sort test for weighted formula, added "2 T1 outranks 10 T3" test, added "T3-only roles sort to bottom" test, added tier_2/tier_3_plus assertions on phantom role and integration test
+- `convex/analysis/outputs/generateICPProfiles.ts` - Added `tier_2_count` and `tier_3_plus_count` to `RoleInput`; updated `aggregateRoles` helper to compute tier counts; updated `buildICPPrompt` to compact format "(X T1, Y T2, Z T3+)"
+- `convex/analysis/outputs/generateICPProfiles.test.ts` - Updated `makeRoleInput` with tier_2/tier_3_plus fields; added tier breakdown format test for buildICPPrompt
+
+**Learnings:**
+- Weighted score formula (tier_1*5 + tier_2*2 + occurrence_count) is simple enough to compute inline in the sort comparator — no need to store as a field
+- Using `tier >= 3` for the tier_3_plus bucket is cleaner than `tier === 3` since tier 3 is the catch-all
+- Compact prompt format "(X T1, Y T2, Z T3+)" gives LLM tier signal without exposing the weighting formula
+
+**Patterns Discovered:**
+- Inline weighted score arrow function in sort comparator avoids storing derived state while keeping the formula readable
+- When adding fields to an interface, search for all test helpers (e.g., `makeRoleInput`) that construct that type — they need updating too
+
+**Gotchas:**
+- Pre-existing "Write outside of transaction" convex-test errors from scheduled functions still present — unrelated to this work
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
