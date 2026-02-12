@@ -21,6 +21,8 @@ import JourneysListPage from './routes/JourneysListPage'
 import JourneyEditorPage from './routes/JourneyEditorPage'
 import MetricCatalogPage from './routes/MetricCatalogPage'
 import MeasurementPlanPage from './routes/MeasurementPlanPage'
+import ProductsListPage from './routes/ProductsListPage'
+import ProductProfilePage from './routes/ProductProfilePage'
 import { SetupResumeScreen } from './components/setup/SetupResumeScreen'
 import { useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
@@ -132,7 +134,8 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Navigate to="/" replace />} />
       <Route path="/setup/*" element={<Navigate to="/" replace />} />
       <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<ProfilePage />} />
+        <Route index element={<ProductsListPage />} />
+        <Route path="products/:productId" element={<ProductProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="sources/amplitude/connect" element={<AmplitudeConnectPage />} />
         <Route path="sources/amplitude/:connectionId/events" element={<AmplitudeEventsPage />} />

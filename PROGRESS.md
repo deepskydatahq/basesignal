@@ -12,22 +12,23 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-11 - Story M005-E001-S001: Add products.listWithProfiles query
+### 2026-02-11 - Story M005-E001-S002: Create ProductsListPage and Wire Routing
 
 **Files Changed:**
-- `convex/products.ts` - Added `listWithProfiles` query that returns products joined with profile summary data
-- `convex/products.test.ts` - Added 4 tests in `describe("listWithProfiles")` block
+- `src/routes/ProductsListPage.tsx` - New component: renders product cards from `listWithProfiles` query with name, URL, completeness, and convergence/outputs badges
+- `src/routes/ProductsListPage.test.tsx` - 8 unit tests covering loading, empty state, card rendering, badges, links, and completeness display
+- `src/routes/ProductProfilePage.tsx` - Skeleton placeholder for `/products/:productId` route
+- `src/App.tsx` - Changed index route from ProfilePage to ProductsListPage, added `/products/:productId` route
+- `src/components/Sidebar.tsx` - Updated Home nav active state to match `/` and `/products/*`
 
 **Learnings:**
-- Dynamic fields (convergence, outputs) on productProfiles require casting to `Record<string, unknown>` since they're not in the strict schema
-- The `by_product` index on productProfiles gives O(1) profile lookup per product
+- Cherry-picked dependency commit (listWithProfiles query) from S001 branch since it wasn't yet merged to main
+- Followed established test mock pattern: mutable `let` variables + `vi.mock("convex/react")` with query string matching
+- Kept ProfilePage import in App.tsx since it's still used by the `/p/:shareToken` public share route
 
-**Patterns Discovered:**
-- Profile summary join pattern: fetch products via `by_user` index, then `Promise.all` to fetch each profile via `by_product` index, return `{ ...product, profile: summary | null }`
-- Reuse auth pattern from `products.list` (Clerk identity → user lookup by `by_clerk_id` → products by `by_user`)
-
-**Gotchas:**
-- Worktree needs `npm install` — node_modules not shared between worktrees
+**Patterns:**
+- Product card component extracted as local function within same file (matching JourneysListPage pattern)
+- Sidebar `isActive` check for home uses `||` with `/products` prefix to handle sub-routes
 
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
