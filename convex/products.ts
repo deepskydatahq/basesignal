@@ -46,6 +46,49 @@ export const list = query({
   },
 });
 
+export const listWithProfiles = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .first();
+    if (!user) return [];
+
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    return Promise.all(
+      products.map(async (product) => {
+        const profileDoc = await ctx.db
+          .query("productProfiles")
+          .withIndex("by_product", (q) => q.eq("productId", product._id))
+          .first();
+
+        if (!profileDoc) {
+          return { ...product, profile: null };
+        }
+
+        const profileAny = profileDoc as Record<string, unknown>;
+        return {
+          ...product,
+          profile: {
+            completeness: profileDoc.completeness,
+            overallConfidence: profileDoc.overallConfidence,
+            hasConvergence: !!profileAny.convergence,
+            hasOutputs: !!profileAny.outputs,
+          },
+        };
+      })
+    );
+  },
+});
+
 export const get = query({
   args: { id: v.id("products") },
   handler: async (ctx, args) => {
