@@ -63,6 +63,21 @@ export interface EventProperty {
   name: string;
   type: "string" | "number" | "boolean" | "array";
   description: string;
+  isRequired: boolean;
+}
+
+export interface EntityProperty {
+  name: string;
+  type: "string" | "number" | "boolean" | "array";
+  description: string;
+  isRequired: boolean;
+}
+
+export interface EntityDefinition {
+  id: string;
+  name: string;
+  description: string;
+  properties: EntityProperty[];
 }
 
 export type MapsTo =
@@ -77,15 +92,19 @@ export interface TrackingEvent {
   trigger_condition: string;
   maps_to: MapsTo;
   category: string;
+  entity_id?: string;
 }
 
 export interface MeasurementSpec {
   events: TrackingEvent[];
   total_events: number;
-  activation_levels_covered: number[];
-  value_moments_covered: string[];
+  coverage: {
+    activation_levels_covered: number[];
+    value_moments_covered: string[];
+  };
   confidence: number;
   sources: string[];
+  entities?: EntityDefinition[];
 }
 
 // --- Measurement Input Data ---

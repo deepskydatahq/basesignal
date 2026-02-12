@@ -53,8 +53,8 @@ const mockMeasurementSpec: MeasurementSpec = {
       name: "project_created",
       description: "User created a new project",
       properties: [
-        { name: "project_id", type: "string", description: "ID of project" },
-        { name: "user_id", type: "string", description: "ID of user" },
+        { name: "project_id", type: "string", description: "ID of project", isRequired: true },
+        { name: "user_id", type: "string", description: "ID of user", isRequired: true },
       ],
       trigger_condition: "When user clicks Create Project",
       maps_to: { type: "activation_level", activation_level: 2 },
@@ -62,8 +62,10 @@ const mockMeasurementSpec: MeasurementSpec = {
     },
   ],
   total_events: 1,
-  activation_levels_covered: [2],
-  value_moments_covered: ["vm_1"],
+  coverage: {
+    activation_levels_covered: [2],
+    value_moments_covered: ["vm_1"],
+  },
   confidence: 0.8,
   sources: ["value_moments", "activation_levels"],
 };
@@ -221,8 +223,8 @@ describe("OrchestrationResult output validation", () => {
     const spec = result.measurement_spec!;
     expect(spec.events).toHaveLength(1);
     expect(spec.total_events).toBe(1);
-    expect(spec.activation_levels_covered).toContain(2);
-    expect(spec.value_moments_covered).toContain("vm_1");
+    expect(spec.coverage.activation_levels_covered).toContain(2);
+    expect(spec.coverage.value_moments_covered).toContain("vm_1");
   });
 });
 
@@ -309,9 +311,9 @@ describe("OrchestrationResult Linear fixture", () => {
             name: "issue_created",
             description: "User created a new issue",
             properties: [
-              { name: "issue_id", type: "string", description: "ID of issue" },
-              { name: "project_id", type: "string", description: "Project context" },
-              { name: "user_id", type: "string", description: "Creator" },
+              { name: "issue_id", type: "string", description: "ID of issue", isRequired: true },
+              { name: "project_id", type: "string", description: "Project context", isRequired: true },
+              { name: "user_id", type: "string", description: "Creator", isRequired: true },
             ],
             trigger_condition: "When user creates an issue",
             maps_to: { type: "activation_level", activation_level: 2 },
@@ -321,8 +323,8 @@ describe("OrchestrationResult Linear fixture", () => {
             name: "cycle_completed",
             description: "Team completed a sprint cycle",
             properties: [
-              { name: "cycle_id", type: "string", description: "ID of cycle" },
-              { name: "velocity", type: "number", description: "Points completed" },
+              { name: "cycle_id", type: "string", description: "ID of cycle", isRequired: true },
+              { name: "velocity", type: "number", description: "Points completed", isRequired: true },
             ],
             trigger_condition: "When cycle is marked complete",
             maps_to: { type: "value_moment", moment_id: "cycle_planning" },
@@ -330,8 +332,10 @@ describe("OrchestrationResult Linear fixture", () => {
           },
         ],
         total_events: 2,
-        activation_levels_covered: [2, 3],
-        value_moments_covered: ["issue_tracking", "cycle_planning"],
+        coverage: {
+          activation_levels_covered: [2, 3],
+          value_moments_covered: ["issue_tracking", "cycle_planning"],
+        },
         confidence: 0.82,
         sources: ["value_moments", "activation_levels", "icp_profiles"],
       },

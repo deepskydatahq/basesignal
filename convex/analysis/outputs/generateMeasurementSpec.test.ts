@@ -752,3 +752,94 @@ describe("fixture integration", () => {
     expect(spec.confidence).toBeLessThanOrEqual(1);
   });
 });
+
+// --- isRequired, entities, entity_id Tests ---
+
+describe("EventProperty isRequired field", () => {
+  it("parsed properties have isRequired field instead of required", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].properties[0]).toHaveProperty("isRequired");
+    expect(spec.events[0].properties[0]).not.toHaveProperty("required");
+    expect(spec.events[0].properties[0].isRequired).toBe(true);
+  });
+
+  it("sets isRequired to false when raw required is false", () => {
+    const event = makeValidEvent({
+      properties: [
+        { name: "prop_a", type: "string", description: "A", required: true },
+        { name: "prop_b", type: "string", description: "B", required: false },
+      ],
+    });
+    const response = makeValidResponse({ events: [event] });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].properties[0].isRequired).toBe(true);
+    expect(spec.events[0].properties[1].isRequired).toBe(false);
+  });
+
+  it("sets isRequired to false when raw required is missing", () => {
+    const event = makeValidEvent({
+      properties: [
+        { name: "prop_a", type: "string", description: "A" },
+        { name: "prop_b", type: "string", description: "B" },
+      ],
+    });
+    const response = makeValidResponse({ events: [event] });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].properties[0].isRequired).toBe(false);
+    expect(spec.events[0].properties[1].isRequired).toBe(false);
+  });
+});
+
+describe("MeasurementSpec optional entities field", () => {
+  it("spec without entities field has entities as undefined", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.entities).toBeUndefined();
+  });
+
+  it("spec type-checks with entities present", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    // Manually assign entities to verify the type allows it
+    const specWithEntities = {
+      ...spec,
+      entities: [
+        {
+          id: "entity-1",
+          name: "User",
+          description: "A platform user",
+          properties: [
+            { name: "email", type: "string" as const, description: "User email", isRequired: true },
+          ],
+        },
+      ],
+    };
+
+    expect(specWithEntities.entities).toHaveLength(1);
+    expect(specWithEntities.entities[0].id).toBe("entity-1");
+    expect(specWithEntities.entities[0].properties[0].isRequired).toBe(true);
+  });
+});
+
+describe("TrackingEvent optional entity_id field", () => {
+  it("event without entity_id has entity_id as undefined", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].entity_id).toBeUndefined();
+  });
+
+  it("event with entity_id passes it through", () => {
+    const event = makeValidEvent({ entity_id: "entity-user" });
+    const response = makeValidResponse({ events: [event] });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].entity_id).toBe("entity-user");
+  });
+});
