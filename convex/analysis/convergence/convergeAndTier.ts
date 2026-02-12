@@ -7,6 +7,9 @@ import type {
   ValueMoment,
   ValueMomentTier,
   ConvergenceResult,
+  QualityStatus,
+  QualityCheck,
+  QualityReport,
 } from "./types";
 import { clusterCandidatesCore, clusterCandidatesLLM } from "./clusterCandidates";
 import type { ValidatedCandidate } from "./types";
@@ -124,6 +127,81 @@ export function capTierDistribution(moments: ValueMoment[]): ValueMoment[] {
   return result;
 }
 
+/**
+ * Validate convergence output quality. Non-blocking — returns a report
+ * with pass/warn/fail per check.
+ *
+ * Checks:
+ * - tier_distribution: T1 1-5, T2 2-10, T3 <=20
+ * - total_count: between 10 and 35 moments
+ * - empty_fields: no moments with empty name or description
+ */
+export function validateConvergenceQuality(result: ConvergenceResult): QualityReport {
+  const checks: QualityCheck[] = [];
+
+  // Check tier distribution: T1: 1-5, T2: 2-10, T3: <=20
+  const t1 = result.stats.tier_1_count;
+  const t2 = result.stats.tier_2_count;
+  const t3 = result.stats.tier_3_count;
+
+  let tierStatus: QualityStatus = "pass";
+  const tierIssues: string[] = [];
+  if (t1 < 1) { tierStatus = "fail"; tierIssues.push(`T1 count ${t1} below minimum 1`); }
+  else if (t1 > 5) { tierStatus = "warn"; tierIssues.push(`T1 count ${t1} above recommended 5`); }
+  if (t2 < 2) {
+    tierStatus = tierStatus === "fail" ? "fail" : "warn";
+    tierIssues.push(`T2 count ${t2} below minimum 2`);
+  } else if (t2 > 10) {
+    tierStatus = tierStatus === "fail" ? "fail" : "warn";
+    tierIssues.push(`T2 count ${t2} above recommended 10`);
+  }
+  if (t3 > 20) {
+    tierStatus = tierStatus === "fail" ? "fail" : "warn";
+    tierIssues.push(`T3 count ${t3} above maximum 20`);
+  }
+
+  checks.push({
+    name: "tier_distribution",
+    status: tierStatus,
+    message: tierIssues.length > 0 ? tierIssues.join("; ") : `T1: ${t1}, T2: ${t2}, T3: ${t3}`,
+  });
+
+  // Check total count: 10-35
+  const total = result.stats.total_moments;
+  let countStatus: QualityStatus = "pass";
+  let countMessage = `${total} moments`;
+  if (total < 10) { countStatus = "fail"; countMessage = `${total} moments below minimum 10`; }
+  else if (total > 35) { countStatus = "warn"; countMessage = `${total} moments above recommended 35`; }
+
+  checks.push({ name: "total_count", status: countStatus, message: countMessage });
+
+  // Check empty fields
+  const emptyNames = result.value_moments.filter((m) => !m.name.trim());
+  const emptyDescs = result.value_moments.filter((m) => !m.description.trim());
+  const emptyCount = emptyNames.length + emptyDescs.length;
+
+  let emptyStatus: QualityStatus = "pass";
+  let emptyMessage = "No empty fields";
+  if (emptyCount > 0) {
+    emptyStatus = "warn";
+    const parts: string[] = [];
+    if (emptyNames.length > 0) parts.push(`${emptyNames.length} empty name(s)`);
+    if (emptyDescs.length > 0) parts.push(`${emptyDescs.length} empty description(s)`);
+    emptyMessage = parts.join("; ");
+  }
+
+  checks.push({ name: "empty_fields", status: emptyStatus, message: emptyMessage });
+
+  // Overall: worst status across all checks (fail > warn > pass)
+  const statusPriority: Record<QualityStatus, number> = { pass: 0, warn: 1, fail: 2 };
+  const overall = checks.reduce<QualityStatus>(
+    (worst, check) => (statusPriority[check.status] > statusPriority[worst] ? check.status : worst),
+    "pass"
+  );
+
+  return { overall, checks };
+}
+
 // --- LLM merge ---
 
 const MERGE_SYSTEM_PROMPT = `You are a product analyst merging value moment candidates into a single named value moment.
@@ -226,7 +304,8 @@ export async function convergeAndTier(
  * 2. Merge clusters into value moments via LLM
  * 3. Cap tier distribution (max 3 T1, max 20 T3)
  * 4. Compute stats (reflects post-capping counts)
- * 5. Store result on product profile
+ * 5. Quality validation (non-blocking)
+ * 6. Store result on product profile
  */
 export const runConvergencePipeline = internalAction({
   args: {
@@ -276,7 +355,14 @@ export const runConvergencePipeline = internalAction({
       },
     };
 
-    // 5. Store on product profile
+    // 5. Quality validation (non-blocking)
+    try {
+      result.quality = validateConvergenceQuality(result);
+    } catch (e) {
+      console.warn("Quality validation failed:", e);
+    }
+
+    // 6. Store on product profile
     await ctx.runMutation(internal.productProfiles.updateSectionInternal, {
       productId: args.productId,
       section: "convergence",
@@ -284,10 +370,11 @@ export const runConvergencePipeline = internalAction({
     });
 
     const executionTimeMs = Date.now() - startTime;
+    const qualityLabel = result.quality ? ` quality: ${result.quality.overall}` : "";
     console.log(
       `Convergence pipeline complete: ${result.stats.total_moments} moments ` +
-        `(T1: ${result.stats.tier_1_count}, T2: ${result.stats.tier_2_count}, T3: ${result.stats.tier_3_count}) ` +
-        `in ${executionTimeMs}ms`
+        `(T1: ${result.stats.tier_1_count}, T2: ${result.stats.tier_2_count}, T3: ${result.stats.tier_3_count})` +
+        `${qualityLabel} in ${executionTimeMs}ms`
     );
 
     return result;
