@@ -109,6 +109,30 @@ describe("ICP_SYSTEM_PROMPT", () => {
   it("contains distinctness requirement", () => {
     expect(ICP_SYSTEM_PROMPT.toLowerCase()).toContain("distinct");
   });
+
+  it("distinguishes core daily users from evaluators/buyers", () => {
+    expect(ICP_SYSTEM_PROMPT.toLowerCase()).toContain("core daily user");
+    expect(ICP_SYSTEM_PROMPT.toLowerCase()).toContain("evaluator");
+    expect(ICP_SYSTEM_PROMPT.toLowerCase()).toContain("buyer");
+  });
+
+  it("instructs primary persona must be who uses the product daily", () => {
+    expect(ICP_SYSTEM_PROMPT).toContain(
+      "primary persona MUST represent who uses the product daily",
+    );
+  });
+
+  it("contains guidance to weight Tier 1 value moments", () => {
+    expect(ICP_SYSTEM_PROMPT).toContain("Tier 1 value moment count");
+    expect(ICP_SYSTEM_PROMPT).toContain(
+      "Tier 1 moments represent the highest-value product interactions",
+    );
+  });
+
+  it("instructs confidence to reflect product-usage data not marketing prominence", () => {
+    expect(ICP_SYSTEM_PROMPT).toContain("product-usage evidence");
+    expect(ICP_SYSTEM_PROMPT).toContain("marketing prominence");
+  });
 });
 
 // --- buildICPPrompt tests ---
@@ -145,6 +169,63 @@ describe("buildICPPrompt", () => {
     const prompt = buildICPPrompt([], "B2B SaaS");
     expect(prompt).toContain("B2B SaaS");
     expect(typeof prompt).toBe("string");
+  });
+
+  it("includes Prioritization Guidance section with top roles", () => {
+    const prompt = buildICPPrompt([makeRoleInput()], "");
+    expect(prompt).toContain("## Prioritization Guidance");
+    expect(prompt).toContain("Product Manager: 3 Tier 1 moments");
+  });
+
+  it("sorts top roles by tier_1_count descending", () => {
+    const roles = [
+      makeRoleInput({ name: "Low Role", tier_1_count: 1 }),
+      makeRoleInput({ name: "High Role", tier_1_count: 5 }),
+      makeRoleInput({ name: "Mid Role", tier_1_count: 3 }),
+    ];
+    const prompt = buildICPPrompt(roles, "");
+    const guidanceSection = prompt.slice(
+      prompt.indexOf("## Prioritization Guidance"),
+      prompt.indexOf("## Value Moments by Role"),
+    );
+    const highIdx = guidanceSection.indexOf("High Role");
+    const midIdx = guidanceSection.indexOf("Mid Role");
+    const lowIdx = guidanceSection.indexOf("Low Role");
+    expect(highIdx).toBeLessThan(midIdx);
+    expect(midIdx).toBeLessThan(lowIdx);
+  });
+
+  it("limits Prioritization Guidance to top 3 roles", () => {
+    const roles = [
+      makeRoleInput({ name: "Role A", tier_1_count: 5 }),
+      makeRoleInput({ name: "Role B", tier_1_count: 4 }),
+      makeRoleInput({ name: "Role C", tier_1_count: 3 }),
+      makeRoleInput({ name: "Role D", tier_1_count: 2 }),
+    ];
+    const prompt = buildICPPrompt(roles, "");
+    const guidanceSection = prompt.slice(
+      prompt.indexOf("## Prioritization Guidance"),
+      prompt.indexOf("## Value Moments by Role"),
+    );
+    expect(guidanceSection).toContain("Role A");
+    expect(guidanceSection).toContain("Role B");
+    expect(guidanceSection).toContain("Role C");
+    expect(guidanceSection).not.toContain("Role D");
+  });
+
+  it("omits Prioritization Guidance when roles are empty", () => {
+    const prompt = buildICPPrompt([], "B2B SaaS");
+    expect(prompt).not.toContain("Prioritization Guidance");
+  });
+
+  it("does not mutate input roles array", () => {
+    const roles = [
+      makeRoleInput({ name: "Z Role", tier_1_count: 1 }),
+      makeRoleInput({ name: "A Role", tier_1_count: 5 }),
+    ];
+    const originalOrder = roles.map((r) => r.name);
+    buildICPPrompt(roles, "");
+    expect(roles.map((r) => r.name)).toEqual(originalOrder);
   });
 });
 
