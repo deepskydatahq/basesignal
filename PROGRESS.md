@@ -12,6 +12,27 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E001-S001: Replace TF-IDF Clustering with LLM-Based Semantic Clustering
+
+**Files Changed:**
+- `convex/analysis/convergence/clusterCandidates.ts` - Added 4 new exports: CLUSTERING_SYSTEM_PROMPT, buildClusteringPrompt, parseClusteringResponse, clusterCandidatesLLM. LLM sends all candidates to Claude for semantic grouping with same-lens repair and orphan handling.
+- `convex/analysis/convergence/clusterCandidates.test.ts` - Added 22 new tests for LLM clustering: prompt construction, JSON parsing (code fences + raw), same-lens repair, orphan handling, duplicate assignment prevention, unknown ID handling.
+- `convex/analysis/convergence/convergeAndTier.ts` - Wired LLM clustering as default in runConvergencePipeline with try/catch fallback to TF-IDF. Moved Anthropic client creation earlier to share between clustering and merging.
+
+**Learnings:**
+- Reusing `extractJson` from `convex/analysis/lenses/shared.ts` avoids duplicating the code-fence JSON parsing pattern
+- Same-lens repair via "keep first, eject rest as singletons" is simpler and more resilient than retry loops
+- Passing the Anthropic client instance (rather than creating inside each function) allows reuse across clustering and merging stages
+- `type` import for Anthropic avoids bundling the SDK into the module — only used for type annotations
+
+**Patterns Discovered:**
+- LLM clustering with repair pattern: parse response → resolve candidates → same-lens repair (eject duplicates) → orphan handling (add singletons). Guarantees all candidates appear exactly once with no same-lens violations.
+- Client-sharing pattern: create Anthropic client at pipeline level, pass to sub-functions that need it
+
+**Gotchas:**
+- Pre-existing "Write outside of transaction" convex-test errors still present (unrelated)
+- Worktree needs `npm install` — node_modules not shared between worktrees
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
