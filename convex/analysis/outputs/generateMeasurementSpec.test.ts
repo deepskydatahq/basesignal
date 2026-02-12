@@ -1103,52 +1103,35 @@ describe("EventProperty isRequired field", () => {
   });
 });
 
-describe("MeasurementSpec optional entities field", () => {
-  it("spec without entities field has entities as undefined", () => {
+describe("MeasurementSpec entities field", () => {
+  it("spec includes entities from parsed response", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
 
-    expect(spec.entities).toBeUndefined();
+    expect(spec.entities).toBeDefined();
+    expect(spec.entities!.length).toBeGreaterThan(0);
   });
 
-  it("spec type-checks with entities present", () => {
+  it("entity has required fields", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
 
-    // Manually assign entities to verify the type allows it
-    const specWithEntities = {
-      ...spec,
-      entities: [
-        {
-          id: "entity-1",
-          name: "User",
-          description: "A platform user",
-          properties: [
-            { name: "email", type: "string" as const, description: "User email", isRequired: true },
-          ],
-        },
-      ],
-    };
-
-    expect(specWithEntities.entities).toHaveLength(1);
-    expect(specWithEntities.entities[0].id).toBe("entity-1");
-    expect(specWithEntities.entities[0].properties[0].isRequired).toBe(true);
+    const entity = spec.entities![0];
+    expect(entity.id).toBeDefined();
+    expect(entity.name).toBeDefined();
+    expect(entity.description).toBeDefined();
+    expect(entity.properties).toBeDefined();
+    expect(entity.properties[0].isRequired).toBeDefined();
   });
 });
 
-describe("TrackingEvent optional entity_id field", () => {
-  it("event without entity_id has entity_id as undefined", () => {
+describe("TrackingEvent entity_id field", () => {
+  it("event has entity_id referencing a defined entity", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
 
-    expect(spec.events[0].entity_id).toBeUndefined();
-  });
-
-  it("event with entity_id passes it through", () => {
-    const event = makeValidEvent({ entity_id: "entity-user" });
-    const response = makeValidResponse({ events: [event] });
-    const spec = parseMeasurementSpecResponse(response);
-
-    expect(spec.events[0].entity_id).toBe("entity-user");
+    expect(spec.events[0].entity_id).toBeDefined();
+    const entityIds = spec.entities!.map((e) => e.id);
+    expect(entityIds).toContain(spec.events[0].entity_id);
   });
 });

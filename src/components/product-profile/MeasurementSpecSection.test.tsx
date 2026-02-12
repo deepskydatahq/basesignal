@@ -212,7 +212,7 @@ function makeEntitySpec(): MeasurementSpec {
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 3 },
         properties: [],
-        // No entity_id — this is an ungrouped event
+        entity_id: undefined,
       }),
     ],
     total_events: 4,
@@ -249,7 +249,7 @@ test("renders empty state when measurement spec is undefined", () => {
 });
 
 test("summary shows total events, confidence score, and category breakdown counts", () => {
-  setup();
+  setup(makeSpec({ entities: undefined }));
 
   expect(screen.getByText("4 events")).toBeInTheDocument();
   expect(screen.getByText("85% confidence")).toBeInTheDocument();
@@ -259,7 +259,7 @@ test("summary shows total events, confidence score, and category breakdown count
 });
 
 test("events grouped by category with header and count badge", () => {
-  setup();
+  setup(makeSpec({ entities: undefined }));
 
   const section = screen.getByTestId("measurement-spec-section");
 
@@ -272,7 +272,7 @@ test("events grouped by category with header and count badge", () => {
 });
 
 test("table per category shows event name, description, trigger condition, maps_to badge", () => {
-  setup();
+  setup(makeSpec({ entities: undefined }));
 
   // Activation category events
   expect(screen.getByText("user_signed_up")).toBeInTheDocument();
@@ -293,7 +293,7 @@ test("table per category shows event name, description, trigger condition, maps_
 });
 
 test("collapsible row detail shows properties table when expanded", async () => {
-  const { user } = setup();
+  const { user } = setup(makeSpec({ entities: undefined }));
 
   // Properties should not be visible initially
   expect(screen.queryByText("plan_type")).not.toBeInTheDocument();
@@ -312,7 +312,7 @@ test("collapsible row detail shows properties table when expanded", async () => 
 });
 
 test("collapsible row shows no properties message when event has none", async () => {
-  const { user } = setup();
+  const { user } = setup(makeSpec({ entities: undefined }));
 
   // Click on the feature_value_delivered event (has no properties)
   const valueButton = screen.getByText("feature_value_delivered").closest("button")!;
@@ -322,7 +322,7 @@ test("collapsible row shows no properties message when event has none", async ()
 });
 
 test("legacy data without entities shows category view with toggle hidden", () => {
-  setup(); // makeSpec() has no entities
+  setup(makeSpec({ entities: undefined }));
 
   // Category view should be rendered
   expect(screen.getByText("activation")).toBeInTheDocument();
