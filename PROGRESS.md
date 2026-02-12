@@ -12,6 +12,27 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E004-S003: Update MeasurementSpecSection UI for Entity-Grouped Events
+
+**Files Changed:**
+- `convex/analysis/outputs/types.ts` - Cherry-picked from S001: EntityProperty, EntityDefinition, TrackingEvent.entity_id, MeasurementSpec.entities, EventProperty.isRequired, coverage nested object
+- `src/components/product-profile/MeasurementSpecSection.tsx` - Added entity-grouped view with EntityCard, property table, view toggle, ungrouped events section, entity count in summary bar
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - 9 new entity view tests (16 total), updated makeSpec for new type structure
+
+**Learnings:**
+- Cherry-picking types from dependency branches is the right approach when branches haven't been merged yet — keeps the UI branch self-contained
+- ViewMode state initialized from data presence (`hasEntities ? "entity" : "category"`) is clean for default view selection
+- IIFE pattern `{(() => { ... })()}` works for inline conditional sections with local variables in JSX
+
+**Patterns Discovered:**
+- Entity card pattern: entity name + description + always-visible property table + nested EventRows — reuses existing EventRow for visual consistency
+- Two-button toggle pattern: `bg-gray-100` container with `bg-white shadow-sm` for active state — simpler than Radix Tabs for perspective switching
+- Inline event filtering via `.filter(e => e.entity_id === entity.id)` keeps entity view logic simple without needing a Map-based helper
+
+**Gotchas:**
+- MeasurementSpec.coverage structure changed from flat fields to nested object in S001 — existing tests needed updating to match
+- EventProperty gained `isRequired: boolean` in S001 — test fixtures needed updating
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
