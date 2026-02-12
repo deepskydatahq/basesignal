@@ -10,6 +10,7 @@ import type {
 function makeEvent(overrides: Partial<TrackingEvent> = {}): TrackingEvent {
   return {
     name: "test_event",
+    entity_id: "test",
     description: "A test event",
     properties: [],
     trigger_condition: "When user does something",
@@ -21,9 +22,24 @@ function makeEvent(overrides: Partial<TrackingEvent> = {}): TrackingEvent {
 
 function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
   return {
+    entities: [
+      {
+        id: "user",
+        name: "User",
+        description: "A user account",
+        properties: [{ name: "user_id", type: "string", description: "User ID", isRequired: true }],
+      },
+      {
+        id: "feature",
+        name: "Feature",
+        description: "A product feature",
+        properties: [],
+      },
+    ],
     events: [
       makeEvent({
         name: "user_signed_up",
+        entity_id: "user",
         description: "User creates account",
         trigger_condition: "Form submission",
         category: "activation",
@@ -35,6 +51,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
       }),
       makeEvent({
         name: "feature_used",
+        entity_id: "feature",
         description: "Core feature adopted",
         trigger_condition: "First use of feature",
         category: "activation",
@@ -48,7 +65,8 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
         ],
       }),
       makeEvent({
-        name: "value_delivered",
+        name: "feature_value_delivered",
+        entity_id: "feature",
         description: "User receives value",
         trigger_condition: "Task completed",
         category: "value",
@@ -61,6 +79,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
       }),
       makeEvent({
         name: "user_returned",
+        entity_id: "user",
         description: "User comes back",
         trigger_condition: "Login after 24h",
         category: "retention",
@@ -145,7 +164,7 @@ test("table per category shows event name, description, trigger condition, maps_
   expect(screen.getByText("Activation L1")).toBeInTheDocument();
 
   // Value category event
-  expect(screen.getByText("value_delivered")).toBeInTheDocument();
+  expect(screen.getByText("feature_value_delivered")).toBeInTheDocument();
   expect(screen.getByText("Both (L2)")).toBeInTheDocument();
 
   // Retention category event
@@ -178,8 +197,8 @@ test("collapsible row detail shows properties table when expanded", async () => 
 test("collapsible row shows no properties message when event has none", async () => {
   const { user } = setup();
 
-  // Click on the value_delivered event (has no properties)
-  const valueButton = screen.getByText("value_delivered").closest("button")!;
+  // Click on the feature_value_delivered event (has no properties)
+  const valueButton = screen.getByText("feature_value_delivered").closest("button")!;
   await user.click(valueButton);
 
   expect(screen.getByText("No properties defined")).toBeInTheDocument();

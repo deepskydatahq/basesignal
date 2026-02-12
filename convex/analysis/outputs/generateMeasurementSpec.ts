@@ -7,38 +7,58 @@ import type {
   MeasurementSpec,
   TrackingEvent,
   EventProperty,
+  EntityDefinition,
+  EntityPropertyDef,
 } from "./types";
 
 // --- System Prompt ---
 
-export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification with trackable events.
+export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification. You MUST define entities first, then generate events that reference those entities.
 
-## Event Naming Rules
+## Step 1: Define Entities (5-10)
+Before generating events, define the key entities in the product domain. Each entity represents a core object that users interact with.
+
+Entity schema:
+- id: lowercase identifier matching /^[a-z][a-z0-9_]*$/ (e.g., "issue", "board", "cycle")
+- name: human-readable name (e.g., "Issue", "Board", "Cycle")
+- description: what this entity represents in the product
+- properties: array of entity properties, each with:
+  - name: snake_case property name
+  - type: one of "string", "number", "boolean", "array"
+  - description: what this property captures
+  - isRequired: true or false
+
+Generate 5-10 entities that represent the core objects users interact with.
+
+## Step 2: Generate Events
+Every event MUST reference a defined entity via entity_id.
+
+### Event Naming Rules
 Every event name MUST match this regex: /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/
 This means: entity_action format using lowercase letters, digits, and underscores.
 Examples: issue_created, cycle_completed, board_column_moved, feature_flag_toggled
 
-## Event Categories
+### Event Categories
 Each event must have exactly one category:
 - activation: User progresses toward activation (e.g., completes onboarding step, creates first item)
 - value: User experiences a value moment (e.g., shares dashboard, gets first insight)
 - retention: User returns or re-engages (e.g., opens app again, resumes workflow)
 - expansion: User deepens usage (e.g., invites team member, enables integration)
 
-## maps_to Requirement
+### maps_to Requirement
 Every event MUST map to a value moment, activation level, or both. Use this discriminated union format:
 - { "type": "value_moment", "moment_id": "<id>" } — maps to a specific value moment
 - { "type": "activation_level", "activation_level": <number> } — maps to an activation level
 - { "type": "both", "moment_id": "<id>", "activation_level": <number> } — maps to both
 
-## Property Requirements
+### Property Requirements
 Each event must include at least 2 properties. Each property has:
 - name: snake_case property name
 - type: one of "string", "number", "boolean", "array"
 - description: what this property captures
 - required: true or false
 
-## Target
+### Target
 Generate 15-25 events that cover:
 - All activation level criteria (at least one event per level)
 - Key value moments (especially Tier 1 and Tier 2)
@@ -48,9 +68,18 @@ Generate 15-25 events that cover:
 ## Output Format
 Return a JSON object matching this exact schema:
 {
+  "entities": [
+    {
+      "id": "issue",
+      "name": "Issue",
+      "description": "A trackable work item",
+      "properties": [{ "name": "issue_id", "type": "string", "description": "Unique identifier", "isRequired": true }]
+    }
+  ],
   "events": [
     {
-      "name": "entity_action",
+      "name": "issue_created",
+      "entity_id": "issue",
       "description": "What this event tracks",
       "properties": [{ "name": "prop_name", "type": "string", "description": "...", "required": true }],
       "trigger_condition": "When this event should fire",
@@ -64,6 +93,7 @@ Return a JSON object matching this exact schema:
 Rules:
 - Return ONLY valid JSON, no commentary before or after
 - confidence must be a number between 0 and 1
+- Every event.entity_id MUST reference a defined entity.id
 - Do NOT include total_events or coverage fields — they will be computed`;
 
 // --- Prompt Builder ---
@@ -159,6 +189,7 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
 // --- Response Parser ---
 
 const ENTITY_ACTION_REGEX = /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/;
+const ENTITY_ID_REGEX = /^[a-z][a-z0-9_]*$/;
 const VALID_CATEGORIES = [
   "activation",
   "value",
@@ -167,6 +198,89 @@ const VALID_CATEGORIES = [
 ] as const;
 const VALID_PROPERTY_TYPES = ["string", "number", "boolean", "array"] as const;
 
+function parseEntities(
+  rawEntities: unknown[],
+): EntityDefinition[] {
+  if (rawEntities.length < 3 || rawEntities.length > 15) {
+    throw new Error(
+      `Expected 3-15 entities, got ${rawEntities.length}`,
+    );
+  }
+
+  const entities: EntityDefinition[] = [];
+  const seenIds = new Set<string>();
+
+  for (let i = 0; i < rawEntities.length; i++) {
+    const raw = rawEntities[i] as Record<string, unknown>;
+    const label = `Entity ${i}`;
+
+    // Validate id
+    if (typeof raw.id !== "string" || !raw.id) {
+      throw new Error(`${label}: missing id`);
+    }
+    if (!ENTITY_ID_REGEX.test(raw.id)) {
+      throw new Error(
+        `${label}: id '${raw.id}' does not match format /^[a-z][a-z0-9_]*$/`,
+      );
+    }
+    if (seenIds.has(raw.id)) {
+      throw new Error(`${label}: duplicate entity id '${raw.id}'`);
+    }
+    seenIds.add(raw.id);
+
+    // Validate name
+    if (typeof raw.name !== "string" || !raw.name) {
+      throw new Error(`${label}: missing name`);
+    }
+
+    // Validate description
+    if (typeof raw.description !== "string" || !raw.description) {
+      throw new Error(`${label}: missing description`);
+    }
+
+    // Validate properties
+    if (!Array.isArray(raw.properties)) {
+      throw new Error(`${label}: missing properties array`);
+    }
+
+    const properties: EntityPropertyDef[] = [];
+    for (const prop of raw.properties as Array<Record<string, unknown>>) {
+      if (typeof prop.name !== "string" || !prop.name) {
+        throw new Error(`${label}: property missing name`);
+      }
+      if (
+        !VALID_PROPERTY_TYPES.includes(
+          prop.type as (typeof VALID_PROPERTY_TYPES)[number],
+        )
+      ) {
+        throw new Error(
+          `${label}: property '${prop.name}' has invalid type '${prop.type}'`,
+        );
+      }
+      if (typeof prop.description !== "string" || !prop.description) {
+        throw new Error(
+          `${label}: property '${prop.name}' missing description`,
+        );
+      }
+      properties.push({
+        name: prop.name,
+        type: prop.type as EntityPropertyDef["type"],
+        description: prop.description,
+        isRequired: prop.isRequired === true,
+      });
+    }
+
+    entities.push({
+      id: raw.id,
+      name: raw.name,
+      description: raw.description,
+      properties,
+    });
+  }
+
+  return entities;
+}
+
 export function parseMeasurementSpecResponse(
   responseText: string,
 ): MeasurementSpec {
@@ -174,7 +288,11 @@ export function parseMeasurementSpecResponse(
 
   // Validate top-level
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Expected JSON object with events array");
+    throw new Error("Expected JSON object with entities and events arrays");
+  }
+
+  if (!Array.isArray(parsed.entities)) {
+    throw new Error("Missing required field: entities (must be array)");
   }
 
   if (!Array.isArray(parsed.events)) {
@@ -191,6 +309,10 @@ export function parseMeasurementSpecResponse(
     );
   }
 
+  // Parse and validate entities first
+  const entities = parseEntities(parsed.entities as unknown[]);
+  const entityIds = new Set(entities.map((e) => e.id));
+
   const events: TrackingEvent[] = [];
 
   for (let i = 0; i < parsed.events.length; i++) {
@@ -204,6 +326,16 @@ export function parseMeasurementSpecResponse(
     if (!ENTITY_ACTION_REGEX.test(raw.name)) {
       throw new Error(
         `${eventLabel}: name '${raw.name}' does not match entity_action format`,
+      );
+    }
+
+    // Validate entity_id
+    if (typeof raw.entity_id !== "string" || !raw.entity_id) {
+      throw new Error(`${eventLabel}: missing entity_id`);
+    }
+    if (!entityIds.has(raw.entity_id)) {
+      throw new Error(
+        `${eventLabel}: entity_id '${raw.entity_id}' does not reference a defined entity`,
       );
     }
 
@@ -302,6 +434,7 @@ export function parseMeasurementSpecResponse(
 
     const event: TrackingEvent = {
       name: raw.name,
+      entity_id: raw.entity_id,
       description: raw.description,
       properties,
       trigger_condition: raw.trigger_condition,
@@ -341,6 +474,7 @@ export function parseMeasurementSpecResponse(
   ];
 
   return {
+    entities,
     events,
     total_events: events.length,
     coverage: {

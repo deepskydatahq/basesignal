@@ -16,6 +16,8 @@ import type {
   ValueMomentTier,
   ActivationLevel,
   SignalStrength,
+  EntityDefinition,
+  EntityPropertyDef,
 } from "./types";
 
 describe("ValueMomentPriority", () => {
@@ -257,10 +259,39 @@ describe("MapsTo discriminated union", () => {
   });
 });
 
+describe("EntityDefinition", () => {
+  it("includes id, name, description, properties", () => {
+    const entity: EntityDefinition = {
+      id: "issue",
+      name: "Issue",
+      description: "A trackable work item",
+      properties: [
+        { name: "issue_id", type: "string", description: "Unique identifier", isRequired: true },
+      ],
+    };
+    expect(entity.id).toBe("issue");
+    expect(entity.name).toBe("Issue");
+    expect(entity.description).toContain("trackable work item");
+    expect(entity.properties).toHaveLength(1);
+  });
+
+  it("EntityPropertyDef includes isRequired flag", () => {
+    const prop: EntityPropertyDef = {
+      name: "status",
+      type: "string",
+      description: "Current status",
+      isRequired: false,
+    };
+    expect(prop.isRequired).toBe(false);
+    expect(prop.type).toBe("string");
+  });
+});
+
 describe("TrackingEvent", () => {
-  it("includes name, description, properties, trigger_condition, maps_to, category", () => {
+  it("includes name, entity_id, description, properties, trigger_condition, maps_to, category", () => {
     const event: TrackingEvent = {
       name: "dashboard_created",
+      entity_id: "dashboard",
       description: "User creates their first analytics dashboard",
       properties: [
         { name: "dashboard_id", type: "string", description: "Dashboard identifier", isRequired: true },
@@ -271,6 +302,7 @@ describe("TrackingEvent", () => {
       category: "activation",
     };
     expect(event.name).toBe("dashboard_created");
+    expect(event.entity_id).toBe("dashboard");
     expect(event.description).toContain("first analytics dashboard");
     expect(event.properties).toHaveLength(2);
     expect(event.trigger_condition).toContain("Create Dashboard");
@@ -281,6 +313,7 @@ describe("TrackingEvent", () => {
   it("works with each MapsTo variant", () => {
     const vmEvent: TrackingEvent = {
       name: "feature_used",
+      entity_id: "feature",
       description: "Core feature usage",
       properties: [],
       trigger_condition: "Feature invoked",
@@ -291,6 +324,7 @@ describe("TrackingEvent", () => {
 
     const alEvent: TrackingEvent = {
       name: "tutorial_completed",
+      entity_id: "tutorial",
       description: "Onboarding tutorial finished",
       properties: [],
       trigger_condition: "Last step completed",
@@ -301,6 +335,7 @@ describe("TrackingEvent", () => {
 
     const bothEvent: TrackingEvent = {
       name: "team_invited",
+      entity_id: "team",
       description: "User invites team members",
       properties: [{ name: "invitee_count", type: "number", description: "Number invited", isRequired: true }],
       trigger_condition: "Invite sent successfully",
@@ -337,11 +372,20 @@ describe("TrackingEvent", () => {
 });
 
 describe("MeasurementSpec", () => {
-  it("includes events, total_events, coverage, confidence, sources", () => {
+  it("includes entities, events, total_events, coverage, confidence, sources", () => {
     const spec: MeasurementSpec = {
+      entities: [
+        {
+          id: "signup",
+          name: "Signup",
+          description: "A user signup",
+          properties: [{ name: "signup_id", type: "string", description: "Signup ID", isRequired: true }],
+        },
+      ],
       events: [
         {
           name: "signup_completed",
+          entity_id: "signup",
           description: "User completes signup flow",
           properties: [{ name: "method", type: "string", description: "Auth method used", isRequired: true }],
           trigger_condition: "Signup form submitted successfully",
@@ -357,6 +401,7 @@ describe("MeasurementSpec", () => {
       confidence: 0.8,
       sources: ["https://example.com/docs"],
     };
+    expect(spec.entities).toHaveLength(1);
     expect(spec.events).toHaveLength(1);
     expect(spec.total_events).toBe(1);
     expect(spec.coverage.activation_levels_covered).toEqual([1, 2, 3]);
@@ -430,6 +475,7 @@ describe("confidence and sources on all output types", () => {
 
   it("MeasurementSpec has confidence and sources", () => {
     const spec: MeasurementSpec = {
+      entities: [],
       events: [],
       total_events: 0,
       coverage: {
@@ -478,6 +524,7 @@ describe("OutputGenerationResult", () => {
         sources: ["https://example.com"],
       },
       measurement_spec: {
+        entities: [],
         events: [],
         total_events: 0,
         coverage: {
