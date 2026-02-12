@@ -12,24 +12,26 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-11 - Story M005-E002-S001: Create ProductProfilePage with tabs
+### 2026-02-11 - Story M005-E002-S002: Build ValueMomentsSection Component
 
 **Files Changed:**
-- `src/routes/ProductProfilePage.tsx` - New: tabbed profile page with header (name, URL, completeness %, confidence score), back link, and four tab placeholders (Value Moments, ICP Profiles, Activation Map, Measurement Spec)
-- `src/routes/ProductProfilePage.test.tsx` - New: 6 tests covering all acceptance criteria (data fetching, header display, back link, tabs, loading state, empty/null profile state)
-- `src/App.tsx` - Added `products/:productId` route and ProductProfilePage import
+- `src/components/product-profile/types.ts` - New: Frontend type definitions mirroring `convex/analysis/convergence/types.ts` (LensType, ValueMomentTier, ValueMoment)
+- `src/components/product-profile/ValueMomentsSection.tsx` - New: Pure presentational component with StatsBar, TierSection, MomentCard, and EmptyState subcomponents
+- `src/components/product-profile/ValueMomentsSection.test.tsx` - New: 14 RTL tests covering all 5 acceptance criteria (stats bar, tier grouping, card content, color coding, empty state)
 
 **Learnings:**
-- Convex "skip" pattern for conditional queries works cleanly: pass `"skip"` as args when params aren't available yet
-- Profile can be null when product exists but no profile created — default to 0% stats rather than showing error
-- Badge component uses variant="secondary" for filled style and variant="outline" for bordered style
+- RTL `testing-library/no-node-access` lint rule forbids `.closest()` — use `data-testid` with `getByTestId` instead for tier section verification
+- When stats bar labels duplicate tier section headings (e.g., "Core" in both), use `getAllByText` to avoid RTL duplicate match errors
+- `toHaveClass` is cleaner than `.className.toMatch()` for verifying Tailwind color classes
 
 **Patterns Discovered:**
-- Page component pattern: useParams → useQuery with skip → loading/not-found/loaded states → render
-- Test mocking pattern: mock useParams separately from useQuery, use mockImplementation with query string matching for multiple queries
+- Pure presentational component pattern: accept typed data as props, no Convex hooks, purely renders what it receives — enables simple RTL testing without mocking
+- `makeMoment()` factory function with `Partial<ValueMoment>` overrides provides clean test data setup
+- Tier config map (`tierConfig`) centralizes per-tier styling (colors, labels) to avoid scattered conditionals
 
 **Gotchas:**
-- The products/:productId route was not added by the dependency task (basesignal-hkn) on this branch — needed to add it here
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- Pre-existing UI test timeouts still present — unrelated to this work
 
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
