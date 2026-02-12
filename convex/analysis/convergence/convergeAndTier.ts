@@ -15,12 +15,12 @@ import type { ValidatedCandidate } from "./types";
 
 /**
  * Assign a tier based on lens count.
- * 5+ lenses = Tier 1, 3-4 = Tier 2, 1-2 = Tier 3.
+ * 4+ lenses = Tier 1, 2-3 = Tier 2, 1 = Tier 3.
  */
 export function assignTier(lensCount: number): ValueMomentTier {
-  if (lensCount >= 5) return 1;
-  if (lensCount >= 3) return 2;
-  return 3;
+  if (lensCount >= 4) return 1; // 4+ lenses = T1
+  if (lensCount >= 2) return 2; // 2-3 lenses = T2
+  return 3; // 1 lens = T3
 }
 
 /**
@@ -84,6 +84,44 @@ export function directMerge(cluster: CandidateCluster): ValueMoment {
     product_surfaces: productSurfaces,
     contributing_candidates: cluster.candidates.map((c) => c.id),
   };
+}
+
+/**
+ * Cap tier distribution to produce a useful tiered set.
+ * - Max 3 T1 moments: demote excess to T2 (lowest contributing_candidates count first)
+ * - Max 20 T3 moments: drop excess (lowest contributing_candidates count first)
+ * Ranking: more contributing_candidates = higher priority to keep.
+ */
+export function capTierDistribution(moments: ValueMoment[]): ValueMoment[] {
+  const maxT1 = 3;
+  const maxT3 = 20;
+
+  let result = [...moments];
+
+  // Cap T1: demote excess to T2
+  const t1 = result.filter((m) => m.tier === 1);
+  if (t1.length > maxT1) {
+    // Sort ascending by contributing_candidates count — demote from the front (fewest candidates)
+    const sorted = [...t1].sort(
+      (a, b) => a.contributing_candidates.length - b.contributing_candidates.length
+    );
+    const toDemote = new Set(sorted.slice(0, t1.length - maxT1).map((m) => m.id));
+    result = result.map((m) =>
+      toDemote.has(m.id) ? { ...m, tier: 2 as ValueMomentTier } : m
+    );
+  }
+
+  // Cap T3: drop excess
+  const t3 = result.filter((m) => m.tier === 3);
+  if (t3.length > maxT3) {
+    const sorted = [...t3].sort(
+      (a, b) => a.contributing_candidates.length - b.contributing_candidates.length
+    );
+    const toDrop = new Set(sorted.slice(0, t3.length - maxT3).map((m) => m.id));
+    result = result.filter((m) => !toDrop.has(m.id));
+  }
+
+  return result;
 }
 
 // --- LLM merge ---
@@ -186,8 +224,9 @@ export async function convergeAndTier(
  * Run the full convergence pipeline:
  * 1. Cluster validated candidates
  * 2. Merge clusters into value moments via LLM
- * 3. Assign tiers
- * 4. Store result on product profile
+ * 3. Cap tier distribution (max 3 T1, max 20 T3)
+ * 4. Compute stats (reflects post-capping counts)
+ * 5. Store result on product profile
  */
 export const runConvergencePipeline = internalAction({
   args: {
@@ -218,9 +257,12 @@ export const runConvergencePipeline = internalAction({
     }
 
     // 2. Converge and tier via LLM
-    const valueMoments = await convergeAndTier(clusters, client);
+    const rawMoments = await convergeAndTier(clusters, client);
 
-    // 3. Build result
+    // 3. Cap tier distribution
+    const valueMoments = capTierDistribution(rawMoments);
+
+    // 4. Build result (stats reflect post-capping counts)
     const result: ConvergenceResult = {
       value_moments: valueMoments,
       clusters,
@@ -234,7 +276,7 @@ export const runConvergencePipeline = internalAction({
       },
     };
 
-    // 4. Store on product profile
+    // 5. Store on product profile
     await ctx.runMutation(internal.productProfiles.updateSectionInternal, {
       productId: args.productId,
       section: "convergence",
