@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E003-S001: Redesign ActivationMapSection with Card-Based Grid Layout
+
+**Files Changed:**
+- `src/components/product-profile/ActivationMapSection.tsx` - Rewrote from horizontal scroll strip to responsive 2-column card grid with Card/CardHeader/CardContent, Badge, and collapsible sections for trigger events and value moments
+- `src/components/product-profile/ActivationMapSection.test.tsx` - Rewrote 7 tests: removed transition connector tests and normalizeDropOffRisk object test, added collapsible section toggle tests with counts, used setup function pattern
+
+**Learnings:**
+- ICPProfilesSection serves as a reliable reference pattern for card-grid sections with collapsible content
+- Deleting `normalizeDropOffRisk` was safe since the ActivationStage type already constrains `drop_off_risk` to `"low" | "medium" | "high"` — the defensive handling was unnecessary
+- Empty state changed from Card wrapping to dashed border div to match ICPProfilesSection pattern
+
+**Patterns Discovered:**
+- Card-grid section pattern: responsive `grid grid-cols-1 md:grid-cols-2`, Card/CardHeader/CardContent per item, Badge for labels, Collapsible for detail lists
+- Collapsible state lifted to parent via `openSections` Record and `toggle` function, keyed by `${stage.level}-triggers`/`${stage.level}-moments`
+
+**Gotchas:**
+- Badge component uses `className` override for custom colors (signal strength, risk level) rather than variants — this works because Badge passes className through `cn()`
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**

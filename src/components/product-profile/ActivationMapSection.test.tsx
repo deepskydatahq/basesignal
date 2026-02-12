@@ -1,5 +1,6 @@
-import { expect, test } from "vitest";
+import { expect, test, describe } from "vitest";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ActivationMapSection } from "./ActivationMapSection";
 import type { ActivationMap } from "./types";
 
@@ -52,105 +53,118 @@ function makeMap(overrides: Partial<ActivationMap> = {}): ActivationMap {
   };
 }
 
-test("stages render sorted by level as horizontal progression cards", () => {
-  render(<ActivationMapSection activationMap={makeMap()} />);
+function setup(activationMap: ActivationMap | null = makeMap()) {
+  const user = userEvent.setup();
+  render(<ActivationMapSection activationMap={activationMap} />);
+  return { user };
+}
 
-  const cards = screen.getAllByTestId("stage-card");
-  expect(cards).toHaveLength(3);
-  expect(cards[0]).toHaveTextContent("Signed Up");
-  expect(cards[1]).toHaveTextContent("Engaged");
-  expect(cards[2]).toHaveTextContent("Activated");
-});
+describe("ActivationMapSection", () => {
+  test("renders stages sorted by level in a responsive grid", () => {
+    setup();
 
-test("each stage shows level + name and signal strength badge with correct color", () => {
-  render(<ActivationMapSection activationMap={makeMap()} />);
+    const cards = screen.getAllByTestId("stage-card");
+    expect(cards).toHaveLength(3);
+    expect(cards[0]).toHaveTextContent("Signed Up");
+    expect(cards[1]).toHaveTextContent("Engaged");
+    expect(cards[2]).toHaveTextContent("Activated");
+  });
 
-  const cards = screen.getAllByTestId("stage-card");
+  test("each stage card shows level badge, name, and signal strength badge", () => {
+    setup();
 
-  // Level 1 - weak signal → gray
-  expect(within(cards[0]).getByText("L1")).toBeInTheDocument();
-  expect(within(cards[0]).getByText("Signed Up")).toBeInTheDocument();
-  const weakBadge = within(cards[0]).getByText("weak");
-  expect(weakBadge.className).toMatch(/gray/);
+    const cards = screen.getAllByTestId("stage-card");
 
-  // Level 3 - very_strong signal → indigo
-  const strongBadge = within(cards[2]).getByText("very_strong");
-  expect(strongBadge.className).toMatch(/indigo/);
-});
+    // Level 1 - weak signal → gray
+    expect(within(cards[0]).getByText("L1")).toBeInTheDocument();
+    expect(within(cards[0]).getByText("Signed Up")).toBeInTheDocument();
+    const weakBadge = within(cards[0]).getByText("weak");
+    expect(weakBadge.className).toMatch(/gray/);
 
-test("trigger events and value moments render on each stage", () => {
-  render(<ActivationMapSection activationMap={makeMap()} />);
+    // Level 3 - very_strong signal → indigo
+    const strongBadge = within(cards[2]).getByText("very_strong");
+    expect(strongBadge.className).toMatch(/indigo/);
+  });
 
-  const cards = screen.getAllByTestId("stage-card");
+  test("drop-off risk badge renders with correct colors", () => {
+    setup();
 
-  expect(within(cards[0]).getByText("Account created")).toBeInTheDocument();
-  expect(within(cards[0]).getByText("Access granted")).toBeInTheDocument();
+    const cards = screen.getAllByTestId("stage-card");
 
-  expect(within(cards[1]).getByText("Completed onboarding")).toBeInTheDocument();
-  expect(within(cards[1]).getByText("First dashboard")).toBeInTheDocument();
-});
+    // Level 1 = high risk → red
+    const highRisk = within(cards[0]).getByText("high");
+    expect(highRisk.className).toMatch(/red/);
 
-test("drop-off risk badge renders green/amber/red", () => {
-  render(<ActivationMapSection activationMap={makeMap()} />);
+    // Level 2 = medium risk → amber
+    const mediumRisk = within(cards[1]).getByText("medium");
+    expect(mediumRisk.className).toMatch(/amber/);
 
-  const cards = screen.getAllByTestId("stage-card");
+    // Level 3 = low risk → green
+    const lowRisk = within(cards[2]).getByText("low");
+    expect(lowRisk.className).toMatch(/green/);
+  });
 
-  // Level 1 = high risk → red
-  const highRisk = within(cards[0]).getByText("high");
-  expect(highRisk.className).toMatch(/red/);
+  test("collapsible trigger events section toggles to show items with count", async () => {
+    const { user } = setup();
 
-  // Level 2 = medium risk → amber
-  const mediumRisk = within(cards[1]).getByText("medium");
-  expect(mediumRisk.className).toMatch(/amber/);
+    const cards = screen.getAllByTestId("stage-card");
 
-  // Level 3 = low risk → green
-  const lowRisk = within(cards[2]).getByText("low");
-  expect(lowRisk.className).toMatch(/green/);
-});
+    // Trigger events hidden by default
+    expect(
+      within(cards[0]).queryByText("Account created")
+    ).not.toBeInTheDocument();
 
-test("transition connectors show trigger events and timeframe", () => {
-  render(<ActivationMapSection activationMap={makeMap()} />);
+    // Click to expand Trigger Events on first card
+    await user.click(
+      within(cards[0]).getByRole("button", { name: /trigger events/i })
+    );
+    expect(within(cards[0]).getByText("Account created")).toBeInTheDocument();
 
-  const connectors = screen.getAllByTestId("transition-connector");
-  expect(connectors).toHaveLength(2);
+    // Count is shown in the button label
+    expect(
+      within(cards[0]).getByRole("button", { name: /trigger events \(1\)/i })
+    ).toBeInTheDocument();
+  });
 
-  expect(within(connectors[0]).getByText("Completed onboarding")).toBeInTheDocument();
-  expect(within(connectors[0]).getByText("1-3 days")).toBeInTheDocument();
+  test("collapsible value moments section toggles to show items with count", async () => {
+    const { user } = setup();
 
-  expect(within(connectors[1]).getByText("Created first report")).toBeInTheDocument();
-  expect(within(connectors[1]).getByText("3-7 days")).toBeInTheDocument();
-});
+    const cards = screen.getAllByTestId("stage-card");
 
-test("primary activation level highlighted with distinct border/background", () => {
-  render(<ActivationMapSection activationMap={makeMap()} />);
+    // Value moments hidden by default
+    expect(
+      within(cards[1]).queryByText("First dashboard")
+    ).not.toBeInTheDocument();
 
-  const cards = screen.getAllByTestId("stage-card");
+    // Click to expand Value Moments on second card
+    await user.click(
+      within(cards[1]).getByRole("button", { name: /value moments/i })
+    );
+    expect(within(cards[1]).getByText("First dashboard")).toBeInTheDocument();
 
-  // Level 3 is primary
-  expect(cards[2].className).toMatch(/ring-indigo-500/);
-  expect(cards[2].className).toMatch(/bg-indigo-50/);
+    // Count is shown in the button label
+    expect(
+      within(cards[1]).getByRole("button", { name: /value moments \(1\)/i })
+    ).toBeInTheDocument();
+  });
 
-  // Others should NOT have ring-indigo-500
-  expect(cards[0].className).not.toMatch(/ring-indigo-500/);
-  expect(cards[1].className).not.toMatch(/ring-indigo-500/);
-});
+  test("primary activation level highlighted with indigo ring/border", () => {
+    setup();
 
-test("handles drop_off_risk as { level, reason } object defensively", () => {
-  const map = makeMap();
-  // Force an object-shaped drop_off_risk (defensive handling)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (map.stages[0] as any).drop_off_risk = { level: "high", reason: "Poor onboarding" };
+    const cards = screen.getAllByTestId("stage-card");
 
-  render(<ActivationMapSection activationMap={map} />);
+    // Level 3 is primary
+    expect(cards[2].className).toMatch(/ring-indigo-500/);
 
-  const cards = screen.getAllByTestId("stage-card");
-  const riskBadge = within(cards[0]).getByText("high");
-  expect(riskBadge.className).toMatch(/red/);
-});
+    // Others should NOT have ring-indigo-500
+    expect(cards[0].className).not.toMatch(/ring-indigo-500/);
+    expect(cards[1].className).not.toMatch(/ring-indigo-500/);
+  });
 
-test("empty state renders when activationMap is null", () => {
-  render(<ActivationMapSection activationMap={null} />);
+  test("empty state renders when activationMap is null", () => {
+    setup(null);
 
-  expect(screen.getByText(/no activation map/i)).toBeInTheDocument();
-  expect(screen.queryAllByTestId("stage-card")).toHaveLength(0);
+    expect(screen.getByText(/no activation map/i)).toBeInTheDocument();
+    expect(screen.queryAllByTestId("stage-card")).toHaveLength(0);
+  });
 });
