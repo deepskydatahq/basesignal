@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E001-S002: Refine Tier Assignment to Produce Target Distribution
+
+**Files Changed:**
+- `convex/analysis/convergence/convergeAndTier.ts` - Lowered assignTier thresholds (4+=T1, 2-3=T2, 1=T3), added `capTierDistribution` pure function (max 3 T1, max 20 T3), integrated capping into `runConvergencePipeline` between converge and stats computation
+- `convex/analysis/convergence/convergeAndTier.test.ts` - Updated 3 assignTier boundary tests for new thresholds, added 5 capTierDistribution tests (pass-through, T1 demotion, T3 dropping, combined capping, empty input)
+
+**Learnings:**
+- Consistent ranking philosophy (contributing_candidates.length) for both T1 demotion and T3 dropping keeps the logic simple and predictable
+- Capping should happen after converge but before stats computation so ConvergenceResult stats reflect the final tier counts
+- Using `Set` of IDs to mark which moments to demote/drop avoids mutating the original array
+
+**Patterns Discovered:**
+- Distribution capping pattern: filter → sort by ranking signal → slice excess → apply (demote or drop) via Set-based ID lookup
+- Pipeline ordering matters: converge → cap → stats ensures stats are always accurate post-capping
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
