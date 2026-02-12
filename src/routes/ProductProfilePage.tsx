@@ -4,8 +4,14 @@ import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
+import { ValueMomentsSection } from "@/components/product-profile/ValueMomentsSection"
+import { ICPProfilesSection } from "@/components/product-profile/ICPProfilesSection"
+import { ActivationMapSection } from "@/components/product-profile/ActivationMapSection"
+import { MeasurementSpecSection } from "@/components/product-profile/MeasurementSpecSection"
+import type { ValueMoment } from "@/components/product-profile/types"
+import type { ActivationMap } from "@/components/product-profile/types"
+import type { ICPProfile, MeasurementSpec } from "../../convex/analysis/outputs/types"
 
 export default function ProductProfilePage() {
   const { productId } = useParams<{ productId: string }>()
@@ -16,6 +22,10 @@ export default function ProductProfilePage() {
   )
   const profile = useQuery(
     api.productProfiles.get,
+    productId ? { productId: productId as Id<"products"> } : "skip"
+  )
+  const outputs = useQuery(
+    api.productProfiles.getOutputs,
     productId ? { productId: productId as Id<"products"> } : "skip"
   )
 
@@ -80,35 +90,27 @@ export default function ProductProfilePage() {
         </TabsList>
 
         <TabsContent value="value-moments">
-          <Card>
-            <CardContent className="flex items-center justify-center h-48 text-gray-400">
-              Value Moments content will appear here
-            </CardContent>
-          </Card>
+          <ValueMomentsSection
+            moments={((profile as Record<string, unknown>)?.convergence as { value_moments?: ValueMoment[] } | undefined)?.value_moments ?? []}
+          />
         </TabsContent>
 
         <TabsContent value="icp-profiles">
-          <Card>
-            <CardContent className="flex items-center justify-center h-48 text-gray-400">
-              ICP Profiles content will appear here
-            </CardContent>
-          </Card>
+          <ICPProfilesSection
+            profiles={(outputs?.icpProfiles ?? []) as ICPProfile[]}
+          />
         </TabsContent>
 
         <TabsContent value="activation-map">
-          <Card>
-            <CardContent className="flex items-center justify-center h-48 text-gray-400">
-              Activation Map content will appear here
-            </CardContent>
-          </Card>
+          <ActivationMapSection
+            activationMap={(outputs?.activationMap as ActivationMap | null) ?? null}
+          />
         </TabsContent>
 
         <TabsContent value="measurement-spec">
-          <Card>
-            <CardContent className="flex items-center justify-center h-48 text-gray-400">
-              Measurement Spec content will appear here
-            </CardContent>
-          </Card>
+          <MeasurementSpecSection
+            measurementSpec={(outputs?.measurementSpec as MeasurementSpec | null) ?? null}
+          />
         </TabsContent>
       </Tabs>
     </div>
