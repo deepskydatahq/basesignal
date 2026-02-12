@@ -75,8 +75,10 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
       }),
     ],
     total_events: 4,
-    activation_levels_covered: [1, 2, 3],
-    value_moments_covered: ["vm-1", "vm-2"],
+    coverage: {
+      activation_levels_covered: [1, 2, 3],
+      value_moments_covered: ["vm-1", "vm-2"],
+    },
     confidence: 0.85,
     sources: ["source-1"],
     ...overrides,

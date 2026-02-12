@@ -12,23 +12,28 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-12 - Story M006-E003-S001: Redesign ActivationMapSection with Card-Based Grid Layout
+### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**
-- `src/components/product-profile/ActivationMapSection.tsx` - Rewrote from horizontal scroll strip to responsive 2-column card grid with Card/CardHeader/CardContent, Badge, and collapsible sections for trigger events and value moments
-- `src/components/product-profile/ActivationMapSection.test.tsx` - Rewrote 7 tests: removed transition connector tests and normalizeDropOffRisk object test, added collapsible section toggle tests with counts, used setup function pattern
+- `convex/analysis/outputs/types.ts` - Added `EntityProperty`, `EntityDefinition` interfaces; added `isRequired` to `EventProperty`; added optional `entity_id` to `TrackingEvent`; restructured `MeasurementSpec` with nested `coverage` object and optional `entities` field
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Fixed parser to use `isRequired` instead of `required` on EventProperty; added `entity_id` pass-through on parsed events
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - Added 7 tests: isRequired field parsing (3), optional entities (2), optional entity_id (2)
+- `convex/analysis/outputs/types.test.ts` - Updated existing tests for new `isRequired` field and nested `coverage`; added 7 new tests for EntityProperty, EntityDefinition, TrackingEvent entity_id, MeasurementSpec entities
+- `convex/analysis/outputs/orchestrate.test.ts` - Updated mock MeasurementSpec to use nested `coverage` and `isRequired` on EventProperty
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - Updated mock MeasurementSpec to use nested `coverage`
 
 **Learnings:**
-- ICPProfilesSection serves as a reliable reference pattern for card-grid sections with collapsible content
-- Deleting `normalizeDropOffRisk` was safe since the ActivationStage type already constrains `drop_off_risk` to `"low" | "medium" | "high"` — the defensive handling was unnecessary
-- Empty state changed from Card wrapping to dashed border div to match ICPProfilesSection pattern
+- Pre-existing type drift: the parser already returned `coverage: { ... }` (nested object) while the type had flat fields — the type was the one out of sync, not the parser
+- Pre-existing field name drift: parser was producing `required` on EventProperty while schema uses `isRequired` — both the type and parser needed alignment
+- When fixing type drift, downstream test files need updating too — grep for the old field names across the whole codebase
 
 **Patterns Discovered:**
-- Card-grid section pattern: responsive `grid grid-cols-1 md:grid-cols-2`, Card/CardHeader/CardContent per item, Badge for labels, Collapsible for detail lists
-- Collapsible state lifted to parent via `openSections` Record and `toggle` function, keyed by `${stage.level}-triggers`/`${stage.level}-moments`
+- Entity types (EntityProperty vs EventProperty) are separate interfaces even though they share the same shape — they model different domain concepts (entity schema vs event payload)
+- Optional fields (`entities?: EntityDefinition[]`, `entity_id?: string`) maintain backward compatibility — existing specs without entities continue to type-check
 
 **Gotchas:**
-- Badge component uses `className` override for custom colors (signal strength, risk level) rather than variants — this works because Badge passes className through `cn()`
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- MeasurementSpecSection component doesn't reference `coverage` or `isRequired` directly (only uses `total_events`, `confidence`, event names/categories), but its test fixture needed updating
 
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 

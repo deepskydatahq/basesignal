@@ -6,6 +6,8 @@ import type {
   StageTransition,
   ActivationMap,
   EventProperty,
+  EntityProperty,
+  EntityDefinition,
   MapsTo,
   TrackingEvent,
   MeasurementSpec,
@@ -169,20 +171,62 @@ describe("ActivationMap", () => {
 });
 
 describe("EventProperty", () => {
-  it("includes name, type, description", () => {
+  it("includes name, type, description, isRequired", () => {
     const prop: EventProperty = {
       name: "dashboard_id",
       type: "string",
       description: "Unique identifier of the dashboard created",
+      isRequired: true,
     };
     expect(prop.name).toBe("dashboard_id");
     expect(prop.type).toBe("string");
     expect(prop.description).toContain("dashboard");
+    expect(prop.isRequired).toBe(true);
   });
 
   it("supports all property types: string, number, boolean, array", () => {
     const types: EventProperty["type"][] = ["string", "number", "boolean", "array"];
     expect(types).toHaveLength(4);
+  });
+});
+
+describe("EntityProperty", () => {
+  it("includes name, type, description, isRequired", () => {
+    const prop: EntityProperty = {
+      name: "email",
+      type: "string",
+      description: "User email address",
+      isRequired: true,
+    };
+    expect(prop.name).toBe("email");
+    expect(prop.type).toBe("string");
+    expect(prop.description).toContain("email");
+    expect(prop.isRequired).toBe(true);
+  });
+
+  it("supports all property types: string, number, boolean, array", () => {
+    const types: EntityProperty["type"][] = ["string", "number", "boolean", "array"];
+    expect(types).toHaveLength(4);
+  });
+});
+
+describe("EntityDefinition", () => {
+  it("includes id, name, description, properties", () => {
+    const entity: EntityDefinition = {
+      id: "entity-user",
+      name: "User",
+      description: "A platform user account",
+      properties: [
+        { name: "email", type: "string", description: "Email address", isRequired: true },
+        { name: "plan", type: "string", description: "Subscription plan", isRequired: false },
+      ],
+    };
+    expect(entity.id).toBe("entity-user");
+    expect(entity.name).toBe("User");
+    expect(entity.description).toContain("platform user");
+    expect(entity.properties).toHaveLength(2);
+    expect(entity.properties[0].isRequired).toBe(true);
+    expect(entity.properties[1].isRequired).toBe(false);
   });
 });
 
@@ -219,8 +263,8 @@ describe("TrackingEvent", () => {
       name: "dashboard_created",
       description: "User creates their first analytics dashboard",
       properties: [
-        { name: "dashboard_id", type: "string", description: "Dashboard identifier" },
-        { name: "template_used", type: "boolean", description: "Whether a template was used" },
+        { name: "dashboard_id", type: "string", description: "Dashboard identifier", isRequired: true },
+        { name: "template_used", type: "boolean", description: "Whether a template was used", isRequired: false },
       ],
       trigger_condition: "User clicks 'Create Dashboard' and saves",
       maps_to: { type: "value_moment", moment_id: "vm-001" },
@@ -258,40 +302,100 @@ describe("TrackingEvent", () => {
     const bothEvent: TrackingEvent = {
       name: "team_invited",
       description: "User invites team members",
-      properties: [{ name: "invitee_count", type: "number", description: "Number invited" }],
+      properties: [{ name: "invitee_count", type: "number", description: "Number invited", isRequired: true }],
       trigger_condition: "Invite sent successfully",
       maps_to: { type: "both", moment_id: "vm-003", activation_level: 3 },
       category: "collaboration",
     };
     expect(bothEvent.maps_to.type).toBe("both");
   });
+
+  it("supports optional entity_id", () => {
+    const eventWithEntityId: TrackingEvent = {
+      name: "issue_created",
+      description: "New issue created",
+      properties: [],
+      trigger_condition: "Form submitted",
+      maps_to: { type: "activation_level", activation_level: 1 },
+      category: "activation",
+      entity_id: "entity-issue",
+    };
+    expect(eventWithEntityId.entity_id).toBe("entity-issue");
+  });
+
+  it("has undefined entity_id when not set", () => {
+    const eventWithout: TrackingEvent = {
+      name: "issue_created",
+      description: "New issue created",
+      properties: [],
+      trigger_condition: "Form submitted",
+      maps_to: { type: "activation_level", activation_level: 1 },
+      category: "activation",
+    };
+    expect(eventWithout.entity_id).toBeUndefined();
+  });
 });
 
 describe("MeasurementSpec", () => {
-  it("includes events, total_events, activation_levels_covered, value_moments_covered, confidence, sources", () => {
+  it("includes events, total_events, coverage, confidence, sources", () => {
     const spec: MeasurementSpec = {
       events: [
         {
           name: "signup_completed",
           description: "User completes signup flow",
-          properties: [{ name: "method", type: "string", description: "Auth method used" }],
+          properties: [{ name: "method", type: "string", description: "Auth method used", isRequired: true }],
           trigger_condition: "Signup form submitted successfully",
           maps_to: { type: "activation_level", activation_level: 1 },
           category: "acquisition",
         },
       ],
       total_events: 1,
-      activation_levels_covered: [1, 2, 3],
-      value_moments_covered: ["vm-001", "vm-002"],
+      coverage: {
+        activation_levels_covered: [1, 2, 3],
+        value_moments_covered: ["vm-001", "vm-002"],
+      },
       confidence: 0.8,
       sources: ["https://example.com/docs"],
     };
     expect(spec.events).toHaveLength(1);
     expect(spec.total_events).toBe(1);
-    expect(spec.activation_levels_covered).toEqual([1, 2, 3]);
-    expect(spec.value_moments_covered).toEqual(["vm-001", "vm-002"]);
+    expect(spec.coverage.activation_levels_covered).toEqual([1, 2, 3]);
+    expect(spec.coverage.value_moments_covered).toEqual(["vm-001", "vm-002"]);
     expect(spec.confidence).toBe(0.8);
     expect(spec.sources).toHaveLength(1);
+  });
+
+  it("supports optional entities field", () => {
+    const specWithEntities: MeasurementSpec = {
+      events: [],
+      total_events: 0,
+      coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      confidence: 0.7,
+      sources: [],
+      entities: [
+        {
+          id: "entity-user",
+          name: "User",
+          description: "A platform user",
+          properties: [
+            { name: "email", type: "string", description: "Email", isRequired: true },
+          ],
+        },
+      ],
+    };
+    expect(specWithEntities.entities).toHaveLength(1);
+    expect(specWithEntities.entities![0].name).toBe("User");
+  });
+
+  it("has undefined entities when not set", () => {
+    const specWithout: MeasurementSpec = {
+      events: [],
+      total_events: 0,
+      coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      confidence: 0.7,
+      sources: [],
+    };
+    expect(specWithout.entities).toBeUndefined();
   });
 });
 
@@ -328,8 +432,10 @@ describe("confidence and sources on all output types", () => {
     const spec: MeasurementSpec = {
       events: [],
       total_events: 0,
-      activation_levels_covered: [],
-      value_moments_covered: [],
+      coverage: {
+        activation_levels_covered: [],
+        value_moments_covered: [],
+      },
       confidence: 0.6,
       sources: ["source3"],
     };
@@ -374,8 +480,10 @@ describe("OutputGenerationResult", () => {
       measurement_spec: {
         events: [],
         total_events: 0,
-        activation_levels_covered: [1],
-        value_moments_covered: [],
+        coverage: {
+          activation_levels_covered: [1],
+          value_moments_covered: [],
+        },
         confidence: 0.7,
         sources: ["https://example.com"],
       },

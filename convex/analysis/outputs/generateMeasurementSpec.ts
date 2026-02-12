@@ -250,7 +250,7 @@ export function parseMeasurementSpecResponse(
         name: prop.name,
         type: prop.type as EventProperty["type"],
         description: prop.description,
-        required: prop.required === true,
+        isRequired: prop.required === true,
       });
     }
 
@@ -300,14 +300,18 @@ export function parseMeasurementSpecResponse(
       );
     }
 
-    events.push({
+    const event: TrackingEvent = {
       name: raw.name,
       description: raw.description,
       properties,
       trigger_condition: raw.trigger_condition,
       maps_to: mapsTo as TrackingEvent["maps_to"],
       category: raw.category as TrackingEvent["category"],
-    });
+    };
+    if (typeof raw.entity_id === "string" && raw.entity_id) {
+      event.entity_id = raw.entity_id;
+    }
+    events.push(event);
   }
 
   // Compute coverage from events
