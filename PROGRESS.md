@@ -12,6 +12,25 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E001-S003: Add Post-Convergence Quality Validation
+
+**Files Changed:**
+- `convex/analysis/convergence/types.ts` - Added `QualityStatus`, `QualityCheck`, `QualityReport` types; added optional `quality` field to `ConvergenceResult`
+- `convex/analysis/convergence/convergeAndTier.ts` - Added `validateConvergenceQuality` pure function with 3 checks (tier_distribution, total_count, empty_fields); wired into `runConvergencePipeline` as non-blocking step
+- `convex/analysis/convergence/convergeAndTier.test.ts` - Added 8 tests for quality validation (42 total, all pass)
+
+**Learnings:**
+- Cherry-picking from dependency branch (S002 tier refinement) via `git checkout <commit> -- <paths>` works cleanly for getting prerequisite changes
+- Quality validation as a non-blocking try/catch step keeps the pipeline robust — validation failures don't block convergence storage
+- Using `statusPriority` record pattern for "worst of" status aggregation is cleaner than nested ternaries
+
+**Patterns Discovered:**
+- Non-blocking validation pattern: try/catch around pure function call, assign to optional field, warn on failure — pipeline never blocks on validation
+- `QualityReport` with overall + checks array pattern enables both quick status checks and detailed drill-down
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees (consistent with prior sessions)
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
