@@ -43,6 +43,19 @@ export interface ValueMoment {
   contributing_candidates: string[];
 }
 
+export type QualityStatus = "pass" | "warn" | "fail";
+
+export interface QualityCheck {
+  name: string;
+  status: QualityStatus;
+  message: string;
+}
+
+export interface QualityReport {
+  overall: QualityStatus;
+  checks: QualityCheck[];
+}
+
 export interface ConvergenceResult {
   value_moments: ValueMoment[];
   clusters: CandidateCluster[];
@@ -54,4 +67,5 @@ export interface ConvergenceResult {
     tier_2_count: number;
     tier_3_count: number;
   };
+  quality?: QualityReport;
 }

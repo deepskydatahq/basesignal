@@ -11,6 +11,8 @@ export interface RoleInput {
   name: string;
   occurrence_count: number;
   tier_1_count: number;
+  tier_2_count: number;
+  tier_3_plus_count: number;
   value_moments: Array<{
     id: string;
     name: string;
@@ -42,6 +44,15 @@ Each profile must include:
 - success_metrics: Array of measurable outcomes indicating success
 - confidence: Number 0-1 reflecting how well-supported this persona is by the data
 
+## Persona Prioritization
+Distinguish between core daily users and evaluators/buyers:
+- Core daily users: People who use the product as part of their regular workflow. The primary persona MUST represent who uses the product daily, not who the website promotes or who signs the purchase order.
+- Evaluators/buyers: People who assess, purchase, or champion the product but do not use it daily (e.g., VPs evaluating tools, procurement teams, marketing personas featured on the website).
+
+Rank roles by their Tier 1 value moment count. Roles with more Tier 1 moments are stronger candidates for the primary persona — Tier 1 moments represent the highest-value product interactions.
+
+Confidence scores must reflect product-usage evidence, not marketing prominence. A role mentioned heavily on the website but with few Tier 1 value moments should receive lower confidence than a role with strong Tier 1 signal but less marketing visibility.
+
 ## Distinctness Requirement
 Each persona MUST have distinct value_moment_priorities — they cannot share the same set of moment_ids. Personas should represent genuinely different user types with different needs.
 
@@ -64,8 +75,22 @@ export function buildICPPrompt(
     parts.push("\n## Roles Summary");
     for (const role of roles) {
       parts.push(
-        `- ${role.name}: ${role.occurrence_count} occurrences, ${role.tier_1_count} Tier 1 value moments`,
+        `- ${role.name}: ${role.occurrence_count} occurrences (${role.tier_1_count} T1, ${role.tier_2_count} T2, ${role.tier_3_plus_count} T3+)`,
       );
+    }
+
+    // Prioritization Guidance: top roles by Tier 1 count
+    const topRoles = [...roles]
+      .sort((a, b) => b.tier_1_count - a.tier_1_count)
+      .slice(0, 3);
+    if (topRoles.length > 0) {
+      parts.push("\n## Prioritization Guidance");
+      parts.push(
+        "Top roles by Tier 1 value moment count (strongest daily-user signal):",
+      );
+      for (const role of topRoles) {
+        parts.push(`- ${role.name}: ${role.tier_1_count} Tier 1 moments`);
+      }
     }
 
     parts.push("\n## Value Moments by Role");
@@ -183,12 +208,16 @@ function aggregateRoles(valueMoments: ValueMoment[]): RoleInput[] {
           name: role,
           occurrence_count: 0,
           tier_1_count: 0,
+          tier_2_count: 0,
+          tier_3_plus_count: 0,
           value_moments: [],
         });
       }
       const entry = roleMap.get(role)!;
       entry.occurrence_count++;
       if (vm.tier === 1) entry.tier_1_count++;
+      else if (vm.tier === 2) entry.tier_2_count++;
+      else entry.tier_3_plus_count++;
       entry.value_moments.push({
         id: vm.id,
         name: vm.name,

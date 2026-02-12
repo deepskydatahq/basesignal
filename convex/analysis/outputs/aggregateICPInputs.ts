@@ -9,6 +9,8 @@ export interface RoleAggregation {
   occurrence_count: number;
   value_moments: ValueMoment[];
   tier_1_moments: number;
+  tier_2_moments: number;
+  tier_3_plus_moments: number;
 }
 
 export interface ICPInputData {
@@ -25,7 +27,7 @@ export interface ICPInputData {
  * Fan-out: each value moment appears under ALL its roles, preserving
  * multi-role signals for buying committee dynamics.
  *
- * Sorted by tier_1_moments desc, then occurrence_count desc.
+ * Sorted by weighted score: tier_1 * 5 + tier_2 * 2 + occurrence_count.
  */
 export function aggregateICPInputsCore(
   valueMoments: ValueMoment[],
@@ -61,16 +63,15 @@ export function aggregateICPInputsCore(
       occurrence_count: moments.length,
       value_moments: moments,
       tier_1_moments: moments.filter((vm) => vm.tier === 1).length,
+      tier_2_moments: moments.filter((vm) => vm.tier === 2).length,
+      tier_3_plus_moments: moments.filter((vm) => vm.tier >= 3).length,
     });
   }
 
-  // Sort: tier_1_moments desc, then occurrence_count desc
-  roles.sort((a, b) => {
-    if (b.tier_1_moments !== a.tier_1_moments) {
-      return b.tier_1_moments - a.tier_1_moments;
-    }
-    return b.occurrence_count - a.occurrence_count;
-  });
+  // Sort by weighted score: tier_1 * 5 + tier_2 * 2 + occurrence_count
+  const weightedScore = (r: RoleAggregation) =>
+    r.tier_1_moments * 5 + r.tier_2_moments * 2 + r.occurrence_count;
+  roles.sort((a, b) => weightedScore(b) - weightedScore(a));
 
   return {
     roles,

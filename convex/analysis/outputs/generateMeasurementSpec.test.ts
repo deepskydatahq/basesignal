@@ -129,9 +129,35 @@ function makeMeasurementInputData(
   };
 }
 
+function makeValidEntity(overrides?: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id: "issue",
+    name: "Issue",
+    description: "A trackable work item in the project",
+    properties: [
+      {
+        name: "issue_id",
+        type: "string",
+        description: "Unique identifier for the issue",
+        isRequired: true,
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function makeMinimalEntitySet(): Record<string, unknown>[] {
+  return [
+    makeValidEntity({ id: "issue", name: "Issue", description: "A work item" }),
+    makeValidEntity({ id: "project", name: "Project", description: "A project container" }),
+    makeValidEntity({ id: "board", name: "Board", description: "A kanban board" }),
+  ];
+}
+
 function makeValidEvent(overrides?: Record<string, unknown>): Record<string, unknown> {
   return {
     name: "issue_created",
+    entity_id: "issue",
     description: "User creates a new issue",
     properties: [
       {
@@ -155,9 +181,10 @@ function makeValidEvent(overrides?: Record<string, unknown>): Record<string, unk
 }
 
 function makeValidResponse(
-  overrides?: Partial<{ events: unknown[]; confidence: number }>,
+  overrides?: Partial<{ entities: unknown[]; events: unknown[]; confidence: number }>,
 ): string {
   const data = {
+    entities: overrides?.entities ?? makeMinimalEntitySet(),
     events: overrides?.events ?? [makeValidEvent()],
     confidence: overrides?.confidence ?? 0.75,
   };
@@ -167,6 +194,16 @@ function makeValidResponse(
 // --- System Prompt Tests ---
 
 describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
+  it("contains entity-first generation instructions", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Define Entities (5-10)");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("entity_id");
+  });
+
+  it("contains entity schema definition", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("isRequired");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("/^[a-z][a-z0-9_]*$/");
+  });
+
   it("contains entity_action naming regex", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
       "/^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/",
@@ -198,6 +235,11 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
   it("requires confidence field", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("confidence");
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("between 0 and 1");
+  });
+
+  it("includes entities in output format example", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entities"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entity_id": "issue"');
   });
 });
 
@@ -277,15 +319,230 @@ describe("buildMeasurementSpecPrompt", () => {
   });
 });
 
-// --- parseMeasurementSpecResponse Tests ---
+// --- parseMeasurementSpecResponse: Entity Validation ---
+
+describe("parseMeasurementSpecResponse entity validation", () => {
+  it("parses valid entities with correct fields", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.entities).toHaveLength(3);
+    expect(spec.entities[0].id).toBe("issue");
+    expect(spec.entities[0].name).toBe("Issue");
+    expect(spec.entities[0].description).toBe("A work item");
+    expect(spec.entities[0].properties).toHaveLength(1);
+  });
+
+  it("validates entity property fields", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    const prop = spec.entities[0].properties[0];
+    expect(prop.name).toBe("issue_id");
+    expect(prop.type).toBe("string");
+    expect(prop.description).toBe("Unique identifier for the issue");
+    expect(prop.isRequired).toBe(true);
+  });
+
+  describe("entity count bounds", () => {
+    it("rejects fewer than 3 entities", () => {
+      const response = makeValidResponse({
+        entities: [
+          makeValidEntity({ id: "a" }),
+          makeValidEntity({ id: "b" }),
+        ],
+      });
+      expect(() => parseMeasurementSpecResponse(response)).toThrow(
+        "Expected 3-15 entities, got 2",
+      );
+    });
+
+    it("rejects more than 15 entities", () => {
+      const entities = Array.from({ length: 16 }, (_, i) =>
+        makeValidEntity({ id: `entity${i}`, name: `Entity ${i}`, description: `Entity ${i} desc` }),
+      );
+      const response = makeValidResponse({ entities });
+      expect(() => parseMeasurementSpecResponse(response)).toThrow(
+        "Expected 3-15 entities, got 16",
+      );
+    });
+
+    it("accepts exactly 3 entities (lower bound)", () => {
+      const response = makeValidResponse();
+      expect(() => parseMeasurementSpecResponse(response)).not.toThrow();
+    });
+
+    it("accepts exactly 15 entities (upper bound)", () => {
+      const entities = Array.from({ length: 15 }, (_, i) =>
+        makeValidEntity({ id: `entity${i}`, name: `Entity ${i}`, description: `Entity ${i} desc` }),
+      );
+      const events = [makeValidEvent({ entity_id: "entity0" })];
+      const response = makeValidResponse({ entities, events });
+      expect(() => parseMeasurementSpecResponse(response)).not.toThrow();
+    });
+  });
+
+  describe("entity ID format", () => {
+    it("accepts valid entity IDs", () => {
+      const validIds = ["widget", "feature_flag", "a1", "my_entity_2"];
+      for (const id of validIds) {
+        const entities = [
+          ...makeMinimalEntitySet().slice(0, 2),
+          makeValidEntity({ id, name: "Test", description: "Test entity" }),
+        ];
+        const events = [makeValidEvent({ entity_id: "issue" })];
+        const response = makeValidResponse({ entities, events });
+        expect(() => parseMeasurementSpecResponse(response)).not.toThrow();
+      }
+    });
+
+    it("rejects entity IDs starting with uppercase", () => {
+      const entities = [
+        ...makeMinimalEntitySet().slice(0, 2),
+        makeValidEntity({ id: "Issue", name: "Issue", description: "Test" }),
+      ];
+      const response = makeValidResponse({ entities });
+      expect(() => parseMeasurementSpecResponse(response)).toThrow(
+        "does not match format",
+      );
+    });
+
+    it("rejects entity IDs starting with digit", () => {
+      const entities = [
+        ...makeMinimalEntitySet().slice(0, 2),
+        makeValidEntity({ id: "1issue", name: "Issue", description: "Test" }),
+      ];
+      const response = makeValidResponse({ entities });
+      expect(() => parseMeasurementSpecResponse(response)).toThrow(
+        "does not match format",
+      );
+    });
+  });
+
+  it("rejects duplicate entity IDs", () => {
+    const entities = [
+      makeValidEntity({ id: "issue" }),
+      makeValidEntity({ id: "project", name: "Project", description: "A project" }),
+      makeValidEntity({ id: "issue", name: "Duplicate", description: "Duplicate" }),
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "duplicate entity id 'issue'",
+    );
+  });
+
+  it("rejects entity missing id", () => {
+    const entities = [
+      ...makeMinimalEntitySet().slice(0, 2),
+      { name: "NoId", description: "Missing id", properties: [] },
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Entity 2: missing id",
+    );
+  });
+
+  it("rejects entity missing name", () => {
+    const entities = [
+      ...makeMinimalEntitySet().slice(0, 2),
+      { id: "noname", description: "Missing name", properties: [] },
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Entity 2: missing name",
+    );
+  });
+
+  it("rejects entity missing description", () => {
+    const entities = [
+      ...makeMinimalEntitySet().slice(0, 2),
+      { id: "nodesc", name: "NoDesc", properties: [] },
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Entity 2: missing description",
+    );
+  });
+
+  it("rejects entity missing properties array", () => {
+    const entities = [
+      ...makeMinimalEntitySet().slice(0, 2),
+      { id: "noprops", name: "NoProps", description: "Missing properties" },
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Entity 2: missing properties array",
+    );
+  });
+
+  it("rejects entity property with invalid type", () => {
+    const entities = [
+      ...makeMinimalEntitySet().slice(0, 2),
+      makeValidEntity({
+        id: "badprop",
+        name: "BadProp",
+        description: "Bad prop type",
+        properties: [{ name: "x", type: "date", description: "bad", isRequired: false }],
+      }),
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Entity 2: property 'x' has invalid type 'date'",
+    );
+  });
+});
+
+// --- parseMeasurementSpecResponse: Entity-Event Linkage ---
+
+describe("parseMeasurementSpecResponse entity_id validation", () => {
+  it("accepts event with entity_id referencing a defined entity", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.events[0].entity_id).toBe("issue");
+  });
+
+  it("rejects event missing entity_id", () => {
+    const { entity_id: _, ...eventWithoutEntityId } = makeValidEvent() as Record<string, unknown>;
+    const response = makeValidResponse({
+      events: [eventWithoutEntityId],
+    });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Event 0: missing entity_id",
+    );
+  });
+
+  it("rejects event with entity_id not referencing any defined entity", () => {
+    const response = makeValidResponse({
+      events: [makeValidEvent({ entity_id: "nonexistent" })],
+    });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Event 0: entity_id 'nonexistent' does not reference a defined entity",
+    );
+  });
+
+  it("allows events to reference different entities", () => {
+    const events = [
+      makeValidEvent({ name: "issue_created", entity_id: "issue" }),
+      makeValidEvent({ name: "project_archived", entity_id: "project" }),
+      makeValidEvent({ name: "board_updated", entity_id: "board" }),
+    ];
+    const response = makeValidResponse({ events });
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.events[0].entity_id).toBe("issue");
+    expect(spec.events[1].entity_id).toBe("project");
+    expect(spec.events[2].entity_id).toBe("board");
+  });
+});
+
+// --- parseMeasurementSpecResponse: Structure Tests ---
 
 describe("parseMeasurementSpecResponse", () => {
-  it("parses valid JSON into MeasurementSpec with correct fields", () => {
+  it("parses valid JSON into MeasurementSpec with entities and events", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
 
+    expect(spec.entities).toHaveLength(3);
     expect(spec.events).toHaveLength(1);
     expect(spec.events[0].name).toBe("issue_created");
+    expect(spec.events[0].entity_id).toBe("issue");
     expect(spec.total_events).toBe(1);
     expect(spec.confidence).toBe(0.75);
     expect(spec.coverage.activation_levels_covered).toEqual([2]);
@@ -302,14 +559,15 @@ describe("parseMeasurementSpecResponse", () => {
 
   it("computes total_events from events.length, ignoring LLM total_events", () => {
     const events = [
-      makeValidEvent({ name: "issue_created" }),
+      makeValidEvent({ name: "issue_created", entity_id: "issue" }),
       makeValidEvent({
         name: "board_updated",
+        entity_id: "board",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
     ];
-    // Include a wrong total_events to verify it's ignored
     const data = JSON.stringify({
+      entities: makeMinimalEntitySet(),
       events,
       confidence: 0.8,
       total_events: 999,
@@ -550,12 +808,19 @@ describe("parseMeasurementSpecResponse", () => {
 
   it("rejects non-object top-level", () => {
     expect(() => parseMeasurementSpecResponse("[1,2,3]")).toThrow(
-      "Expected JSON object with events array",
+      "Expected JSON object with entities and events arrays",
+    );
+  });
+
+  it("rejects missing entities field", () => {
+    const response = JSON.stringify({ events: [], confidence: 0.5 });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Missing required field: entities",
     );
   });
 
   it("rejects missing events field", () => {
-    const response = JSON.stringify({ confidence: 0.5 });
+    const response = JSON.stringify({ entities: [], confidence: 0.5 });
     expect(() => parseMeasurementSpecResponse(response)).toThrow(
       "Missing required field: events",
     );
@@ -563,6 +828,7 @@ describe("parseMeasurementSpecResponse", () => {
 
   it("rejects non-numeric confidence", () => {
     const response = JSON.stringify({
+      entities: [],
       events: [],
       confidence: "high",
     });
@@ -573,6 +839,7 @@ describe("parseMeasurementSpecResponse", () => {
 
   it("rejects confidence outside 0-1 range", () => {
     const response = JSON.stringify({
+      entities: [],
       events: [],
       confidence: 1.5,
     });
@@ -585,35 +852,53 @@ describe("parseMeasurementSpecResponse", () => {
 // --- Fixture-based Integration Test ---
 
 describe("fixture integration", () => {
-  it("parses a realistic Linear-like response with 20 events", () => {
+  it("parses a realistic Linear-like response with entities and 20 events", () => {
+    const entities = [
+      makeValidEntity({ id: "project", name: "Project", description: "A project workspace" }),
+      makeValidEntity({ id: "issue", name: "Issue", description: "A trackable work item" }),
+      makeValidEntity({ id: "cycle", name: "Cycle", description: "A sprint cycle" }),
+      makeValidEntity({ id: "board", name: "Board", description: "A kanban board" }),
+      makeValidEntity({ id: "workflow", name: "Workflow", description: "A custom workflow" }),
+      makeValidEntity({ id: "label", name: "Label", description: "A categorization label" }),
+      makeValidEntity({ id: "roadmap", name: "Roadmap", description: "A product roadmap" }),
+      makeValidEntity({ id: "insight", name: "Insight", description: "An analytics insight" }),
+      makeValidEntity({ id: "report", name: "Report", description: "A progress report" }),
+      makeValidEntity({ id: "session", name: "Session", description: "A user session" }),
+    ];
+
     const events = [
       // Activation events (5)
       makeValidEvent({
         name: "project_created",
+        entity_id: "project",
         description: "User creates their first project",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 1 },
       }),
       makeValidEvent({
         name: "issue_created",
+        entity_id: "issue",
         description: "User creates a new issue in a project",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
       makeValidEvent({
         name: "issue_assigned",
+        entity_id: "issue",
         description: "User assigns an issue to a team member",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
       makeValidEvent({
         name: "workflow_configured",
+        entity_id: "workflow",
         description: "User sets up a custom workflow",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
       makeValidEvent({
         name: "label_created",
+        entity_id: "label",
         description: "User creates a label for categorization",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 1 },
@@ -622,36 +907,42 @@ describe("fixture integration", () => {
       // Value events (6)
       makeValidEvent({
         name: "cycle_completed",
+        entity_id: "cycle",
         description: "A sprint cycle is completed",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
       makeValidEvent({
         name: "roadmap_viewed",
+        entity_id: "roadmap",
         description: "User views the team roadmap",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
       makeValidEvent({
         name: "insight_generated",
+        entity_id: "insight",
         description: "Analytics insight delivered to user",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
       makeValidEvent({
         name: "report_exported",
+        entity_id: "report",
         description: "User exports a progress report",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-2" },
       }),
       makeValidEvent({
-        name: "triage_completed",
+        name: "issue_triaged",
+        entity_id: "issue",
         description: "User triages incoming issues",
         category: "value",
         maps_to: { type: "both", moment_id: "vm-2", activation_level: 2 },
       }),
       makeValidEvent({
         name: "board_column_moved",
+        entity_id: "board",
         description: "Issue moved to a new column on the board",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
@@ -660,64 +951,76 @@ describe("fixture integration", () => {
       // Retention events (5)
       makeValidEvent({
         name: "session_started",
+        entity_id: "session",
         description: "User opens the app for a new session",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 1 },
       }),
       makeValidEvent({
-        name: "inbox_checked",
-        description: "User checks notification inbox",
-        category: "retention",
-        maps_to: { type: "activation_level", activation_level: 2 },
-      }),
-      makeValidEvent({
         name: "issue_commented",
+        entity_id: "issue",
         description: "User comments on an issue",
         category: "retention",
         maps_to: { type: "value_moment", moment_id: "vm-2" },
       }),
       makeValidEvent({
-        name: "filter_saved",
+        name: "board_filtered",
+        entity_id: "board",
         description: "User saves a custom filter view",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
       makeValidEvent({
-        name: "shortcut_used",
-        description: "User uses a keyboard shortcut",
+        name: "issue_updated",
+        entity_id: "issue",
+        description: "User updates issue status",
+        category: "retention",
+        maps_to: { type: "activation_level", activation_level: 2 },
+      }),
+      makeValidEvent({
+        name: "session_resumed",
+        entity_id: "session",
+        description: "User returns to continue work",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
 
       // Expansion events (4)
       makeValidEvent({
-        name: "team_member_invited",
+        name: "project_member_invited",
+        entity_id: "project",
         description: "User invites a new team member",
         category: "expansion",
         maps_to: { type: "both", moment_id: "vm-2", activation_level: 3 },
       }),
       makeValidEvent({
-        name: "integration_connected",
+        name: "project_integration_connected",
+        entity_id: "project",
         description: "User connects an external integration",
         category: "expansion",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
       makeValidEvent({
-        name: "workspace_created",
+        name: "project_workspace_created",
+        entity_id: "project",
         description: "User creates an additional workspace",
         category: "expansion",
         maps_to: { type: "value_moment", moment_id: "vm-2" },
       }),
       makeValidEvent({
-        name: "api_key_generated",
+        name: "project_api_key_generated",
+        entity_id: "project",
         description: "User generates an API key for automation",
         category: "expansion",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
     ];
 
-    const response = makeValidResponse({ events, confidence: 0.72 });
+    const response = makeValidResponse({ entities, events, confidence: 0.72 });
     const spec = parseMeasurementSpecResponse(response);
+
+    // entities are present
+    expect(spec.entities).toHaveLength(10);
 
     // total_events equals events.length
     expect(spec.total_events).toBe(20);
@@ -727,6 +1030,12 @@ describe("fixture integration", () => {
     const entityActionRegex = /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/;
     for (const event of spec.events) {
       expect(event.name).toMatch(entityActionRegex);
+    }
+
+    // All events have entity_id referencing a defined entity
+    const entityIdSet = new Set(spec.entities.map((e) => e.id));
+    for (const event of spec.events) {
+      expect(entityIdSet.has(event.entity_id)).toBe(true);
     }
 
     // All events have 2+ properties
@@ -750,5 +1059,79 @@ describe("fixture integration", () => {
     expect(spec.confidence).toBe(0.72);
     expect(spec.confidence).toBeGreaterThanOrEqual(0);
     expect(spec.confidence).toBeLessThanOrEqual(1);
+  });
+});
+
+// --- isRequired, entities, entity_id Tests ---
+
+describe("EventProperty isRequired field", () => {
+  it("parsed properties have isRequired field instead of required", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].properties[0]).toHaveProperty("isRequired");
+    expect(spec.events[0].properties[0]).not.toHaveProperty("required");
+    expect(spec.events[0].properties[0].isRequired).toBe(true);
+  });
+
+  it("sets isRequired to false when raw required is false", () => {
+    const event = makeValidEvent({
+      properties: [
+        { name: "prop_a", type: "string", description: "A", required: true },
+        { name: "prop_b", type: "string", description: "B", required: false },
+      ],
+    });
+    const response = makeValidResponse({ events: [event] });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].properties[0].isRequired).toBe(true);
+    expect(spec.events[0].properties[1].isRequired).toBe(false);
+  });
+
+  it("sets isRequired to false when raw required is missing", () => {
+    const event = makeValidEvent({
+      properties: [
+        { name: "prop_a", type: "string", description: "A" },
+        { name: "prop_b", type: "string", description: "B" },
+      ],
+    });
+    const response = makeValidResponse({ events: [event] });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].properties[0].isRequired).toBe(false);
+    expect(spec.events[0].properties[1].isRequired).toBe(false);
+  });
+});
+
+describe("MeasurementSpec entities field", () => {
+  it("spec includes entities from parsed response", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.entities).toBeDefined();
+    expect(spec.entities!.length).toBeGreaterThan(0);
+  });
+
+  it("entity has required fields", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    const entity = spec.entities![0];
+    expect(entity.id).toBeDefined();
+    expect(entity.name).toBeDefined();
+    expect(entity.description).toBeDefined();
+    expect(entity.properties).toBeDefined();
+    expect(entity.properties[0].isRequired).toBeDefined();
+  });
+});
+
+describe("TrackingEvent entity_id field", () => {
+  it("event has entity_id referencing a defined entity", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].entity_id).toBeDefined();
+    const entityIds = spec.entities!.map((e) => e.id);
+    expect(entityIds).toContain(spec.events[0].entity_id);
   });
 });

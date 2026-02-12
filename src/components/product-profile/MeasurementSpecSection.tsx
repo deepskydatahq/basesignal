@@ -18,7 +18,10 @@ import type {
   MeasurementSpec,
   TrackingEvent,
   MapsTo,
+  EntityDefinition,
 } from "../../../convex/analysis/outputs/types";
+
+type ViewMode = "entity" | "category";
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   activation: { bg: "bg-indigo-100", text: "text-indigo-700" },
@@ -53,6 +56,18 @@ function groupEventsByCategory(
     acc[cat].push(event);
     return acc;
   }, {});
+}
+
+function EventColumnHeaders() {
+  return (
+    <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
+      <span>Event</span>
+      <span>Description</span>
+      <span>Trigger</span>
+      <span>Maps To</span>
+      <span className="w-4" />
+    </div>
+  );
 }
 
 interface EventRowProps {
@@ -122,6 +137,72 @@ function EventRow({ event }: EventRowProps) {
   );
 }
 
+function EntityCard({
+  entity,
+  events,
+}: {
+  entity: EntityDefinition;
+  events: TrackingEvent[];
+}) {
+  return (
+    <div className="mb-6 last:mb-0" data-testid={`entity-card-${entity.id}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <h3 className="text-sm font-semibold text-gray-900">{entity.name}</h3>
+        <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">
+          {events.length} {events.length === 1 ? "event" : "events"}
+        </Badge>
+      </div>
+      <p className="text-sm text-gray-600 mb-3">{entity.description}</p>
+
+      {/* Entity property table */}
+      {entity.properties.length > 0 && (
+        <div className="mb-3">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Property</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Required</TableHead>
+                <TableHead>Description</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {entity.properties.map((prop) => (
+                <TableRow key={prop.name}>
+                  <TableCell className="font-mono text-xs">
+                    {prop.name}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-xs">
+                      {prop.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-gray-600">
+                    {prop.isRequired ? "Yes" : "No"}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {prop.description}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Nested events */}
+      {events.length > 0 && (
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <EventColumnHeaders />
+          {events.map((event) => (
+            <EventRow key={event.name} event={event} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface MeasurementSpecSectionProps {
   measurementSpec: MeasurementSpec | null | undefined;
 }
@@ -129,6 +210,12 @@ interface MeasurementSpecSectionProps {
 export function MeasurementSpecSection({
   measurementSpec,
 }: MeasurementSpecSectionProps) {
+  const hasEntities =
+    !!measurementSpec?.entities && measurementSpec.entities.length > 0;
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    hasEntities ? "entity" : "category"
+  );
+
   if (!measurementSpec) {
     return (
       <div data-testid="measurement-spec-empty">
@@ -153,52 +240,128 @@ export function MeasurementSpecSection({
         <span className="text-sm font-medium text-gray-700">
           {measurementSpec.total_events} events
         </span>
+        {hasEntities && (
+          <span className="text-sm font-medium text-gray-700">
+            {measurementSpec.entities!.length}{" "}
+            {measurementSpec.entities!.length === 1 ? "entity" : "entities"}
+          </span>
+        )}
         <span className="text-sm text-gray-500">
           {Math.round(measurementSpec.confidence * 100)}% confidence
         </span>
-        {categories.map((cat) => {
-          const color = getCategoryColor(cat);
-          return (
-            <Badge
-              key={cat}
-              className={`${color.bg} ${color.text} border-0`}
+        {viewMode === "category" &&
+          categories.map((cat) => {
+            const color = getCategoryColor(cat);
+            return (
+              <Badge
+                key={cat}
+                className={`${color.bg} ${color.text} border-0`}
+              >
+                {cat} ({grouped[cat].length})
+              </Badge>
+            );
+          })}
+
+        {/* View toggle — only shown when entities exist */}
+        {hasEntities && (
+          <div className="ml-auto flex rounded-md bg-gray-100 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("entity")}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                viewMode === "entity"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
-              {cat} ({grouped[cat].length})
-            </Badge>
-          );
-        })}
+              By Entity
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("category")}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                viewMode === "category"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              By Category
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Category sections */}
-      {categories.map((cat) => {
-        const events = grouped[cat];
-        const color = getCategoryColor(cat);
-        return (
-          <div key={cat} className="mb-6 last:mb-0">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-sm font-semibold text-gray-900 capitalize">
-                {cat}
-              </h3>
-              <Badge className={`${color.bg} ${color.text} border-0 text-xs`}>
-                {events.length}
-              </Badge>
-            </div>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              {/* Column headers */}
-              <div className="grid grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide bg-gray-50 border-b border-gray-200">
-                <span>Event</span>
-                <span>Description</span>
-                <span>Trigger</span>
-                <span>Maps To</span>
-                <span className="w-4" />
+      {/* Entity view */}
+      {viewMode === "entity" && hasEntities && (
+        <>
+          {measurementSpec.entities!.map((entity) => {
+            const entityEvents = measurementSpec.events.filter(
+              (e) => e.entity_id === entity.id
+            );
+            return (
+              <EntityCard
+                key={entity.id}
+                entity={entity}
+                events={entityEvents}
+              />
+            );
+          })}
+
+          {/* Ungrouped events — events without entity_id */}
+          {(() => {
+            const ungrouped = measurementSpec.events.filter(
+              (e) => !e.entity_id
+            );
+            if (ungrouped.length === 0) return null;
+            return (
+              <div className="mb-6 last:mb-0" data-testid="ungrouped-events">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-semibold text-gray-500">
+                    Ungrouped
+                  </h3>
+                  <Badge className="bg-gray-100 text-gray-700 border-0 text-xs">
+                    {ungrouped.length}{" "}
+                    {ungrouped.length === 1 ? "event" : "events"}
+                  </Badge>
+                </div>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <EventColumnHeaders />
+                  {ungrouped.map((event) => (
+                    <EventRow key={event.name} event={event} />
+                  ))}
+                </div>
               </div>
-              {events.map((event) => (
-                <EventRow key={event.name} event={event} />
-              ))}
+            );
+          })()}
+        </>
+      )}
+
+      {/* Category view */}
+      {viewMode === "category" &&
+        categories.map((cat) => {
+          const events = grouped[cat];
+          const color = getCategoryColor(cat);
+          return (
+            <div key={cat} className="mb-6 last:mb-0">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-gray-900 capitalize">
+                  {cat}
+                </h3>
+                <Badge
+                  className={`${color.bg} ${color.text} border-0 text-xs`}
+                >
+                  {events.length}
+                </Badge>
+              </div>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <EventColumnHeaders />
+                {events.map((event) => (
+                  <EventRow key={event.name} event={event} />
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
     </div>
   );
 }

@@ -5,8 +5,10 @@ import {
   directMerge,
   convergeAndTier,
   buildMergePrompt,
+  capTierDistribution,
+  validateConvergenceQuality,
 } from "./convergeAndTier";
-import type { CandidateCluster, ValidatedCandidate, LensType } from "./types";
+import type { CandidateCluster, ValidatedCandidate, LensType, ConvergenceResult } from "./types";
 
 // --- Test helpers ---
 
@@ -72,6 +74,10 @@ function makeMockClient(responses: Array<Record<string, unknown>>): {
 // --- assignTier tests ---
 
 describe("assignTier", () => {
+  it("assigns Tier 1 for 4 lenses", () => {
+    expect(assignTier(4)).toBe(1);
+  });
+
   it("assigns Tier 1 for 5 lenses", () => {
     expect(assignTier(5)).toBe(1);
   });
@@ -80,20 +86,16 @@ describe("assignTier", () => {
     expect(assignTier(7)).toBe(1);
   });
 
+  it("assigns Tier 2 for 2 lenses", () => {
+    expect(assignTier(2)).toBe(2);
+  });
+
   it("assigns Tier 2 for 3 lenses", () => {
     expect(assignTier(3)).toBe(2);
   });
 
-  it("assigns Tier 2 for 4 lenses", () => {
-    expect(assignTier(4)).toBe(2);
-  });
-
   it("assigns Tier 3 for 1 lens", () => {
     expect(assignTier(1)).toBe(3);
-  });
-
-  it("assigns Tier 3 for 2 lenses", () => {
-    expect(assignTier(2)).toBe(3);
   });
 
   it("assigns Tier 1 for very high lens count", () => {
@@ -323,7 +325,7 @@ describe("convergeAndTier", () => {
 
     const moments = await convergeAndTier([cluster5, cluster2], mockClient as any);
     expect(moments[0].tier).toBe(1); // 5 lenses → Tier 1
-    expect(moments[1].tier).toBe(3); // 2 lenses → Tier 3
+    expect(moments[1].tier).toBe(2); // 2 lenses → Tier 2
   });
 
   it("includes contributing_candidates from cluster (AC10)", async () => {
@@ -427,5 +429,268 @@ describe("convergeAndTier", () => {
     const mockClient = makeMockClient([]);
     const moments = await convergeAndTier([], mockClient as any);
     expect(moments).toEqual([]);
+  });
+});
+
+// --- capTierDistribution tests ---
+
+import type { ValueMoment, ValueMomentTier } from "./types";
+
+function makeMoment(
+  overrides: Partial<ValueMoment> & { id: string; tier: ValueMomentTier }
+): ValueMoment {
+  return {
+    name: `Moment ${overrides.id}`,
+    description: "desc",
+    lenses: ["jtbd"],
+    lens_count: 1,
+    roles: [],
+    product_surfaces: [],
+    contributing_candidates: ["c1"],
+    ...overrides,
+  };
+}
+
+describe("capTierDistribution", () => {
+  it("passes through when within limits", () => {
+    const moments = [
+      makeMoment({ id: "m1", tier: 1, contributing_candidates: ["a", "b", "c", "d"] }),
+      makeMoment({ id: "m2", tier: 2, contributing_candidates: ["e", "f"] }),
+      makeMoment({ id: "m3", tier: 3, contributing_candidates: ["g"] }),
+    ];
+    const result = capTierDistribution(moments);
+    expect(result).toHaveLength(3);
+    expect(result.map((m) => m.tier)).toEqual([1, 2, 3]);
+  });
+
+  it("demotes excess T1 to T2 (lowest contributing_candidates first)", () => {
+    const moments = [
+      makeMoment({ id: "m1", tier: 1, contributing_candidates: ["a", "b", "c", "d", "e"] }), // 5 candidates — keep
+      makeMoment({ id: "m2", tier: 1, contributing_candidates: ["a", "b", "c", "d"] }), // 4 — keep
+      makeMoment({ id: "m3", tier: 1, contributing_candidates: ["a", "b", "c"] }), // 3 — keep
+      makeMoment({ id: "m4", tier: 1, contributing_candidates: ["a", "b"] }), // 2 — demote
+      makeMoment({ id: "m5", tier: 1, contributing_candidates: ["a"] }), // 1 — demote
+    ];
+    const result = capTierDistribution(moments);
+    expect(result).toHaveLength(5); // all still present
+    const t1 = result.filter((m) => m.tier === 1);
+    const t2 = result.filter((m) => m.tier === 2);
+    expect(t1).toHaveLength(3);
+    expect(t2).toHaveLength(2);
+    // m4 and m5 should be demoted (fewest candidates)
+    expect(t2.map((m) => m.id).sort()).toEqual(["m4", "m5"]);
+  });
+
+  it("drops excess T3 (lowest contributing_candidates first)", () => {
+    // Create 22 T3 moments with varying candidate counts
+    const moments: ValueMoment[] = [];
+    for (let i = 0; i < 22; i++) {
+      const candidateCount = i + 1; // 1 to 22 candidates
+      moments.push(
+        makeMoment({
+          id: `m${i}`,
+          tier: 3,
+          contributing_candidates: Array.from({ length: candidateCount }, (_, j) => `c${j}`),
+        })
+      );
+    }
+    const result = capTierDistribution(moments);
+    expect(result).toHaveLength(20); // dropped 2
+    // The two with fewest candidates (m0=1, m1=2) should be dropped
+    const ids = result.map((m) => m.id);
+    expect(ids).not.toContain("m0");
+    expect(ids).not.toContain("m1");
+    expect(ids).toContain("m2"); // kept (3 candidates)
+  });
+
+  it("applies both T1 demotion and T3 dropping together", () => {
+    const moments = [
+      // 5 T1 moments
+      makeMoment({ id: "t1-a", tier: 1, contributing_candidates: ["a", "b", "c", "d", "e"] }),
+      makeMoment({ id: "t1-b", tier: 1, contributing_candidates: ["a", "b", "c", "d"] }),
+      makeMoment({ id: "t1-c", tier: 1, contributing_candidates: ["a", "b", "c"] }),
+      makeMoment({ id: "t1-d", tier: 1, contributing_candidates: ["a", "b"] }),
+      makeMoment({ id: "t1-e", tier: 1, contributing_candidates: ["a"] }),
+      // 21 T3 moments
+      ...Array.from({ length: 21 }, (_, i) =>
+        makeMoment({
+          id: `t3-${i}`,
+          tier: 3,
+          contributing_candidates: Array.from({ length: i + 1 }, (_, j) => `c${j}`),
+        })
+      ),
+    ];
+    const result = capTierDistribution(moments);
+    const t1 = result.filter((m) => m.tier === 1);
+    const t3 = result.filter((m) => m.tier === 3);
+    expect(t1).toHaveLength(3); // 2 demoted
+    expect(t3).toHaveLength(20); // 1 dropped
+  });
+
+  it("handles empty input", () => {
+    expect(capTierDistribution([])).toEqual([]);
+  });
+});
+
+// --- validateConvergenceQuality tests ---
+
+function makeConvergenceResult(overrides: Partial<ConvergenceResult> = {}): ConvergenceResult {
+  const defaultMoments = [
+    ...Array.from({ length: 3 }, (_, i) =>
+      makeMoment({ id: `t1-${i}`, tier: 1, contributing_candidates: ["a", "b", "c", "d"] })
+    ),
+    ...Array.from({ length: 5 }, (_, i) =>
+      makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+    ),
+    ...Array.from({ length: 7 }, (_, i) =>
+      makeMoment({ id: `t3-${i}`, tier: 3, contributing_candidates: ["a"] })
+    ),
+  ];
+  const moments = overrides.value_moments ?? defaultMoments;
+  return {
+    value_moments: moments,
+    clusters: [],
+    stats: overrides.stats ?? {
+      total_candidates: 50,
+      total_clusters: 15,
+      total_moments: moments.length,
+      tier_1_count: moments.filter((m) => m.tier === 1).length,
+      tier_2_count: moments.filter((m) => m.tier === 2).length,
+      tier_3_count: moments.filter((m) => m.tier === 3).length,
+    },
+    ...overrides,
+  };
+}
+
+describe("validateConvergenceQuality", () => {
+  it("returns pass for a healthy result", () => {
+    const result = makeConvergenceResult();
+    const report = validateConvergenceQuality(result);
+    expect(report.overall).toBe("pass");
+    expect(report.checks).toHaveLength(3);
+    expect(report.checks.every((c) => c.status === "pass")).toBe(true);
+  });
+
+  it("fails when T1 count is 0", () => {
+    const moments = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 7 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, contributing_candidates: ["a"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    expect(report.overall).toBe("fail");
+    const tierCheck = report.checks.find((c) => c.name === "tier_distribution");
+    expect(tierCheck?.status).toBe("fail");
+    expect(tierCheck?.message).toContain("T1 count 0 below minimum 1");
+  });
+
+  it("warns when T1 count exceeds 5", () => {
+    const moments = [
+      ...Array.from({ length: 6 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const tierCheck = report.checks.find((c) => c.name === "tier_distribution");
+    expect(tierCheck?.status).toBe("warn");
+    expect(tierCheck?.message).toContain("T1 count 6 above recommended 5");
+  });
+
+  it("warns when T2 count is below 2", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      makeMoment({ id: "t2-0", tier: 2, contributing_candidates: ["a", "b"] }),
+      ...Array.from({ length: 7 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, contributing_candidates: ["a"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const tierCheck = report.checks.find((c) => c.name === "tier_distribution");
+    expect(tierCheck?.status).toBe("warn");
+    expect(tierCheck?.message).toContain("T2 count 1 below minimum 2");
+  });
+
+  it("fails when total moments below 10", () => {
+    const moments = [
+      makeMoment({ id: "t1-0", tier: 1, contributing_candidates: ["a", "b", "c", "d"] }),
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 2 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, contributing_candidates: ["a"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    expect(report.overall).toBe("fail");
+    const countCheck = report.checks.find((c) => c.name === "total_count");
+    expect(countCheck?.status).toBe("fail");
+    expect(countCheck?.message).toContain("6 moments below minimum 10");
+  });
+
+  it("warns when total moments above 35", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 10 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 25 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, contributing_candidates: ["a"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const countCheck = report.checks.find((c) => c.name === "total_count");
+    expect(countCheck?.status).toBe("warn");
+    expect(countCheck?.message).toContain("38 moments above recommended 35");
+  });
+
+  it("warns when moments have empty names or descriptions", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 4 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, contributing_candidates: ["a"] })
+      ),
+      makeMoment({ id: "empty-name", tier: 3, name: "", contributing_candidates: ["a"] }),
+      makeMoment({ id: "empty-desc", tier: 3, description: "  ", contributing_candidates: ["a"] }),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const emptyCheck = report.checks.find((c) => c.name === "empty_fields");
+    expect(emptyCheck?.status).toBe("warn");
+    expect(emptyCheck?.message).toContain("1 empty name(s)");
+    expect(emptyCheck?.message).toContain("1 empty description(s)");
+  });
+
+  it("overall is worst status across all checks", () => {
+    // 0 T1 → fail, <10 total → fail, no empty → pass
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, contributing_candidates: ["a", "b"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    expect(report.overall).toBe("fail");
+    // Should have at least one fail check
+    expect(report.checks.some((c) => c.status === "fail")).toBe(true);
   });
 });
