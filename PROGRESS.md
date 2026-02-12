@@ -12,24 +12,23 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-11 - Story M005-E003-S001: Build ICPProfilesSection Component
+### 2026-02-11 - Story M005-E003-S002: Build ActivationMapSection Component
 
-**Files Changed:**
-- `src/components/product-profile/ICPProfilesSection.tsx` - New: ICPProfilesSection component displaying persona cards in responsive grid with confidence badges, value moment priorities, and collapsible subsections
-- `src/components/product-profile/ICPProfilesSection.test.tsx` - New: 8 tests covering empty state, persona rendering, confidence badge variants, value moment priorities, collapsible toggle behavior, and multiple profile rendering
+**Files Created:**
+- `src/components/product-profile/types.ts` - Re-exports ActivationMap, ActivationStage, StageTransition, SignalStrength from convex output types
+- `src/components/product-profile/ActivationMapSection.tsx` - Pure presentation component displaying activation stages as horizontal progression cards
+- `src/components/product-profile/ActivationMapSection.test.tsx` - 8 unit tests covering all acceptance criteria
+
+**Patterns:**
+- Pure presentation components take data as props (no Convex hooks) — easy to test without mocking
+- Defensive type normalization: `normalizeDropOffRisk()` handles both string and `{ level, reason }` shapes with a simple type guard
+- Signal strength and risk level colors mapped via `Record<string, string>` lookup tables
+- `data-testid` attributes on stage cards and transition connectors for reliable test targeting with RTL `within()`
+- TDD approach: wrote all 8 tests first, then implemented component to pass them
 
 **Learnings:**
-- `Record<string, boolean>` state pattern works cleanly for managing multiple collapsible sections across multiple cards without extracting per-card components
-- Badge component accepts className override for custom color schemes (green/amber/gray for confidence levels)
-- Radix Collapsible with controlled open/onOpenChange pattern matches ActivityTimeline precedent
-
-**Patterns Discovered:**
-- Collapsible state map: `useState<Record<string, boolean>>({})` with `toggle(key)` helper avoids N separate useState hooks when multiple collapsibles exist across multiple items
-- Inline helper component (CollapsibleSection) within the same file keeps the flat-file approach while reducing repetition for the 3 collapsible sections per card
-
-**Gotchas:**
-- Worktree needs `npm install` before running tests — node_modules not shared between worktrees
-- `src/components/product-profile/` directory didn't exist yet — created as part of this story (dependency basesignal-ohe not yet merged)
+- The `product-profile/` component directory is new — this is the first component in the Product Profile View feature (M005)
+- Badge component from `ui/badge.tsx` uses CVA variants but for inline color-coded badges, plain Tailwind classes on `<span>` work better since the color mapping is domain-specific
 
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 

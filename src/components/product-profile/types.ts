@@ -23,3 +23,10 @@ export interface ValueMoment {
   product_surfaces: string[];
   contributing_candidates: string[];
 }
+
+export type {
+  ActivationMap,
+  ActivationStage,
+  StageTransition,
+  SignalStrength,
+} from "../../../convex/analysis/outputs/types";
