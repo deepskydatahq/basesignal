@@ -12,6 +12,23 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E002-S001: Improve ICP Generation Prompt to Prioritize Daily Users
+
+**Files Changed:**
+- `convex/analysis/outputs/generateICPProfiles.ts` - Added 'Persona Prioritization' section to ICP_SYSTEM_PROMPT (core daily user vs evaluator/buyer distinction, Tier 1 ranking, usage-based confidence); added 'Prioritization Guidance' section to buildICPPrompt (top 3 roles sorted by tier_1_count desc, spread copy for immutability)
+- `convex/analysis/outputs/generateICPProfiles.test.ts` - Added 11 new tests: 4 for ICP_SYSTEM_PROMPT prioritization acceptance criteria, 5 for buildICPPrompt Prioritization Guidance (presence, sort order, top-3 limit, omission, immutability), plus 2 implicit in existing structure
+
+**Learnings:**
+- LLM prompt engineering benefits from both system-level instruction and data-level reinforcement — the system prompt tells the LLM *what* to prioritize, the data section shows *which* roles have the strongest signal
+- Spread copy `[...roles]` before `.sort()` is essential to avoid mutating the input array, which would be a subtle bug in a pure function
+
+**Patterns Discovered:**
+- Dual-layer prompt guidance pattern: system prompt defines the framework (core daily user vs evaluator/buyer), user prompt provides concrete data (top 3 roles by Tier 1 count) — avoids relying solely on either layer
+- Additive prompt changes: extending an existing prompt with new sections is less risky than restructuring — existing tests pass unchanged
+
+**Gotchas:**
+- Worktree needs `npm install` before running tests — node_modules not shared between worktrees
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
