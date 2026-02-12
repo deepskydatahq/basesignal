@@ -12,23 +12,24 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-11 - Story M005-E001-S002: Create ProductsListPage and Wire Routing
+### 2026-02-11 - Story M005-E002-S001: Create ProductProfilePage with tabs
 
 **Files Changed:**
-- `src/routes/ProductsListPage.tsx` - New component: renders product cards from `listWithProfiles` query with name, URL, completeness, and convergence/outputs badges
-- `src/routes/ProductsListPage.test.tsx` - 8 unit tests covering loading, empty state, card rendering, badges, links, and completeness display
-- `src/routes/ProductProfilePage.tsx` - Skeleton placeholder for `/products/:productId` route
-- `src/App.tsx` - Changed index route from ProfilePage to ProductsListPage, added `/products/:productId` route
-- `src/components/Sidebar.tsx` - Updated Home nav active state to match `/` and `/products/*`
+- `src/routes/ProductProfilePage.tsx` - New: tabbed profile page with header (name, URL, completeness %, confidence score), back link, and four tab placeholders (Value Moments, ICP Profiles, Activation Map, Measurement Spec)
+- `src/routes/ProductProfilePage.test.tsx` - New: 6 tests covering all acceptance criteria (data fetching, header display, back link, tabs, loading state, empty/null profile state)
+- `src/App.tsx` - Added `products/:productId` route and ProductProfilePage import
 
 **Learnings:**
-- Cherry-picked dependency commit (listWithProfiles query) from S001 branch since it wasn't yet merged to main
-- Followed established test mock pattern: mutable `let` variables + `vi.mock("convex/react")` with query string matching
-- Kept ProfilePage import in App.tsx since it's still used by the `/p/:shareToken` public share route
+- Convex "skip" pattern for conditional queries works cleanly: pass `"skip"` as args when params aren't available yet
+- Profile can be null when product exists but no profile created — default to 0% stats rather than showing error
+- Badge component uses variant="secondary" for filled style and variant="outline" for bordered style
 
-**Patterns:**
-- Product card component extracted as local function within same file (matching JourneysListPage pattern)
-- Sidebar `isActive` check for home uses `||` with `/products` prefix to handle sub-routes
+**Patterns Discovered:**
+- Page component pattern: useParams → useQuery with skip → loading/not-found/loaded states → render
+- Test mocking pattern: mock useParams separately from useQuery, use mockImplementation with query string matching for multiple queries
+
+**Gotchas:**
+- The products/:productId route was not added by the dependency task (basesignal-hkn) on this branch — needed to add it here
 
 ### 2026-02-08 - Story M004-E004-S003: Measurement Spec Test Action
 
