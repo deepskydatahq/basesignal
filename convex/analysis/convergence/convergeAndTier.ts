@@ -8,7 +8,7 @@ import type {
   ValueMomentTier,
   ConvergenceResult,
 } from "./types";
-import { clusterCandidatesCore } from "./clusterCandidates";
+import { clusterCandidatesCore, clusterCandidatesLLM } from "./clusterCandidates";
 import type { ValidatedCandidate } from "./types";
 
 // --- Pure functions ---
@@ -199,16 +199,25 @@ export const runConvergencePipeline = internalAction({
     const startTime = Date.now();
     const candidates = args.validatedCandidates as ValidatedCandidate[];
 
-    // 1. Cluster candidates
-    const active = candidates.filter((c) => c.validation_status !== "removed");
-    const clusters = clusterCandidatesCore(active, args.threshold ?? 0.7);
-
-    // 2. Converge and tier via LLM
+    // Create Anthropic client early — used for both clustering and merging
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       throw new Error("ANTHROPIC_API_KEY environment variable is not set");
     }
     const client = new Anthropic({ apiKey });
+
+    // 1. Cluster candidates (LLM first, TF-IDF fallback)
+    const active = candidates.filter((c) => c.validation_status !== "removed");
+    let clusters: CandidateCluster[];
+    try {
+      clusters = await clusterCandidatesLLM(active, client);
+      console.log(`LLM clustering produced ${clusters.length} clusters`);
+    } catch (error) {
+      console.warn("LLM clustering failed, falling back to TF-IDF:", error);
+      clusters = clusterCandidatesCore(active, args.threshold ?? 0.7);
+    }
+
+    // 2. Converge and tier via LLM
     const valueMoments = await convergeAndTier(clusters, client);
 
     // 3. Build result

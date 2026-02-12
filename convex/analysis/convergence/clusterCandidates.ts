@@ -5,6 +5,8 @@ import {
   computeTfIdfVectors,
   cosineSimilarity,
 } from "../../lib/similarity";
+import { extractJson } from "../lenses/shared";
+import type Anthropic from "@anthropic-ai/sdk";
 import type {
   ValidatedCandidate,
   CandidateCluster,
@@ -187,3 +189,146 @@ export const clusterCandidates = internalAction({
     return clusterCandidatesCore(active, threshold);
   },
 });
+
+// --- LLM-based clustering ---
+
+export const CLUSTERING_SYSTEM_PROMPT = `You are a product analyst grouping value moment candidates into semantic clusters.
+
+You will receive a numbered list of candidates from different analytical lenses (jtbd, outcomes, pains, gains, alternatives, workflows, emotions). Each candidate describes a value moment a product provides.
+
+Your job: group candidates that describe the SAME underlying value moment into clusters.
+
+Rules:
+1. NEVER place two candidates from the SAME lens in the same cluster. Each cluster must have at most one candidate per lens.
+2. Target 15-30 clusters total. Prefer more granular clusters over overly broad ones.
+3. Candidates that don't clearly belong with others should be singleton clusters.
+4. Group by semantic meaning, not surface-level keyword overlap.
+
+Return a JSON array of clusters. Each cluster is an object with:
+- "label": a short (3-8 word) descriptive label for the cluster
+- "candidate_ids": array of candidate ID strings that belong to this cluster
+
+Example:
+\`\`\`json
+[
+  { "label": "Reduce deployment time", "candidate_ids": ["c1", "c5", "c12"] },
+  { "label": "Team collaboration visibility", "candidate_ids": ["c3", "c8"] },
+  { "label": "Billing transparency", "candidate_ids": ["c7"] }
+]
+\`\`\`
+
+Return ONLY the JSON array, no commentary.`;
+
+/**
+ * Build the user prompt listing all candidates for LLM clustering.
+ */
+export function buildClusteringPrompt(candidates: ValidatedCandidate[]): string {
+  const lines = candidates.map(
+    (c, i) =>
+      `[${c.id}] (${c.lens}) ${c.name}: ${c.description}`
+  );
+  return `Group these ${candidates.length} candidates into semantic clusters:\n\n${lines.join("\n")}`;
+}
+
+/**
+ * Parse LLM clustering response into CandidateCluster[].
+ * Handles JSON in code fences and raw JSON.
+ * Repairs same-lens violations by ejecting violators as singletons.
+ * Adds orphaned candidates (not mentioned by LLM) as singleton clusters.
+ */
+export function parseClusteringResponse(
+  responseText: string,
+  candidates: ValidatedCandidate[]
+): CandidateCluster[] {
+  const parsed = extractJson(responseText);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Expected array of clusters, got ${typeof parsed}`);
+  }
+
+  // Build lookup map: id -> candidate
+  const candidateMap = new Map<string, ValidatedCandidate>();
+  for (const c of candidates) {
+    candidateMap.set(c.id, c);
+  }
+
+  const assignedIds = new Set<string>();
+  const clusters: CandidateCluster[] = [];
+  let clusterIndex = 0;
+
+  for (const item of parsed) {
+    const ids: string[] = Array.isArray(item.candidate_ids)
+      ? item.candidate_ids.map(String)
+      : [];
+
+    // Resolve candidates and filter out unknown IDs
+    const resolved: ValidatedCandidate[] = [];
+    for (const id of ids) {
+      const candidate = candidateMap.get(id);
+      if (candidate && !assignedIds.has(id)) {
+        resolved.push(candidate);
+        assignedIds.add(id);
+      }
+    }
+
+    if (resolved.length === 0) continue;
+
+    // Same-lens repair: keep first candidate per lens, eject duplicates
+    const seenLenses = new Set<LensType>();
+    const kept: ValidatedCandidate[] = [];
+    const ejected: ValidatedCandidate[] = [];
+
+    for (const c of resolved) {
+      if (seenLenses.has(c.lens)) {
+        ejected.push(c);
+      } else {
+        seenLenses.add(c.lens);
+        kept.push(c);
+      }
+    }
+
+    if (kept.length > 0) {
+      clusters.push(buildCluster(`cluster-${clusterIndex++}`, kept));
+    }
+
+    // Ejected candidates become singleton clusters
+    for (const c of ejected) {
+      clusters.push(buildCluster(`cluster-${clusterIndex++}`, [c]));
+    }
+  }
+
+  // Orphan handling: candidates not assigned by LLM become singletons
+  for (const c of candidates) {
+    if (!assignedIds.has(c.id)) {
+      clusters.push(buildCluster(`cluster-${clusterIndex++}`, [c]));
+    }
+  }
+
+  return clusters;
+}
+
+/**
+ * Cluster candidates using an LLM call for semantic grouping.
+ * Requires an Anthropic client instance.
+ */
+export async function clusterCandidatesLLM(
+  candidates: ValidatedCandidate[],
+  client: Anthropic
+): Promise<CandidateCluster[]> {
+  if (candidates.length === 0) return [];
+
+  const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    temperature: 0.2,
+    system: CLUSTERING_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildClusteringPrompt(candidates) }],
+  });
+
+  const text = response.content
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+
+  return parseClusteringResponse(text, candidates);
+}
