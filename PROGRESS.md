@@ -12,6 +12,30 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-12 - Story M006-E004-S002: Update Spec Generator for Entity-First Generation
+
+**Files Changed:**
+- `convex/analysis/outputs/types.ts` - Added `EntityDefinition`, `EntityPropertyDef` types; added `entities` array and `entity_id` to `TrackingEvent`; restructured `MeasurementSpec` with `coverage` nested object
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Updated system prompt with entity-first section (5-10 entities before events); added `parseEntities()` validation (3-15 count, ID format, no duplicates, property types); added `entity_id` reference validation in event loop; updated return to include entities
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - Added `makeValidEntity`, `makeMinimalEntitySet` fixtures; 64 total tests covering entity validation (count bounds, ID format, duplicates, required fields, property types), entity_id linkage, and integration
+- `convex/analysis/outputs/types.test.ts` - Updated `TrackingEvent` and `MeasurementSpec` type tests for new shape; added `EntityDefinition` tests
+- `convex/analysis/outputs/orchestrate.test.ts` - Updated mock `MeasurementSpec` fixtures with entities and coverage object
+- `convex/analysis/outputs/guards.ts` - Added `Array.isArray(v.entities)` check to `isMeasurementSpec`
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - Updated mock fixtures with `entity_id` and `coverage` shape
+
+**Learnings:**
+- Entity properties (`isRequired`) and event properties (`required`) are intentionally separate types — EntityPropertyDef vs EventProperty
+- Entity ID regex `/^[a-z][a-z0-9_]*$/` is looser than event name regex `/^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/` — entities are single identifiers, events are entity_action pairs
+- MeasurementSpec type had an inconsistency (flat vs nested coverage) — the parser was already producing nested `coverage` but the type had flat fields. Fixed both to use nested `coverage`
+
+**Patterns Discovered:**
+- Entity validation extracted to separate `parseEntities()` function keeps the main parser clean
+- Using `Set<string>` for entity IDs enables O(1) lookup during event entity_id reference validation
+- Fixture factory pattern: `makeMinimalEntitySet()` returns exactly 3 entities (lower bound) for most tests
+
+**Gotchas:**
+- Test fixtures using `makeMinimalEntitySet().slice(0, 2)` plus adding a third entity with an ID already in the set causes duplicate ID validation errors — use unique IDs not present in the base set
+
 ### 2026-02-11 - Story M005-E004-S001: Build MeasurementSpecSection Component
 
 **Files Changed:**
