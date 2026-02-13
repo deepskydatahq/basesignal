@@ -32,9 +32,9 @@ function makeValidResponse(
 }
 
 describe("TIME_COMPRESSION_SYSTEM_PROMPT", () => {
-  it("asks the core question about time compression", () => {
+  it("asks the core question about specific user actions", () => {
     expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain(
-      "What workflows become fast enough to change behavior"
+      "What specific user actions became instant or near-instant"
     );
   });
 
@@ -50,6 +50,32 @@ describe("TIME_COMPRESSION_SYSTEM_PROMPT", () => {
 
   it("requests 8-20 candidates", () => {
     expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("8-20");
+  });
+
+  it("includes banned marketing words list", () => {
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("automate");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("streamline");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("optimize");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("leverage");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("enhance");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("empower");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("BANNED WORDS");
+  });
+
+  it("includes GOOD vs BAD example pairs", () => {
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("GOOD");
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain("BAD");
+    // At least 2 GOOD/BAD pairs
+    const goodCount = (TIME_COMPRESSION_SYSTEM_PROMPT.match(/GOOD:/g) || []).length;
+    const badCount = (TIME_COMPRESSION_SYSTEM_PROMPT.match(/BAD:/g) || []).length;
+    expect(goodCount).toBeGreaterThanOrEqual(2);
+    expect(badCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("requires specific screen, UI element, or user action", () => {
+    expect(TIME_COMPRESSION_SYSTEM_PROMPT).toContain(
+      "Every candidate must reference a specific screen, UI element, or user action"
+    );
   });
 });
 

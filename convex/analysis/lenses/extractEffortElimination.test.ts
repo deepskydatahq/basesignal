@@ -32,9 +32,9 @@ function makeValidResponse(
 }
 
 describe("EFFORT_ELIMINATION_SYSTEM_PROMPT", () => {
-  it("asks the core question about effort elimination", () => {
+  it("asks the core question about specific steps users skip", () => {
     expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain(
-      "What repetitive or tedious work vanishes entirely"
+      "What specific steps does a user SKIP entirely"
     );
   });
 
@@ -50,6 +50,31 @@ describe("EFFORT_ELIMINATION_SYSTEM_PROMPT", () => {
 
   it("requests 8-20 candidates", () => {
     expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("8-20");
+  });
+
+  it("includes banned marketing words list", () => {
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("automate");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("streamline");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("optimize");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("leverage");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("enhance");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("empower");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("BANNED WORDS");
+  });
+
+  it("includes GOOD vs BAD example pairs", () => {
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("GOOD");
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain("BAD");
+    const goodCount = (EFFORT_ELIMINATION_SYSTEM_PROMPT.match(/GOOD:/g) || []).length;
+    const badCount = (EFFORT_ELIMINATION_SYSTEM_PROMPT.match(/BAD:/g) || []).length;
+    expect(goodCount).toBeGreaterThanOrEqual(2);
+    expect(badCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("requires specific screen, UI element, or user action", () => {
+    expect(EFFORT_ELIMINATION_SYSTEM_PROMPT).toContain(
+      "Every candidate must reference a specific screen, UI element, or user action"
+    );
   });
 });
 
