@@ -4,8 +4,9 @@ import {
   buildMeasurementSpecPrompt,
   parseMeasurementSpecResponse,
   parseUserStateModel,
+  computePerspectiveDistribution,
 } from "./generateMeasurementSpec";
-import type { MeasurementInputData } from "./types";
+import type { MeasurementInputData, TrackingEvent } from "./types";
 
 // --- Fixture Factories ---
 
@@ -183,13 +184,24 @@ function makeValidEvent(overrides?: Record<string, unknown>): Record<string, unk
   };
 }
 
-function makeValidUserStateModel(): Record<string, unknown>[] {
+function makeValidUserStateModel(eventNames?: { newEvent?: string; activatedEvent?: string; activeEvent?: string }): Record<string, unknown>[] {
+  const n = eventNames?.newEvent ?? "issue_created";
+  const a = eventNames?.activatedEvent ?? "issue_created";
+  const s = eventNames?.activeEvent ?? "issue_created";
   return [
-    { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
-    { name: "activated", definition: "Reached activation", criteria: [{ event_name: "activation_reached", condition: "completed onboarding" }] },
-    { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "session_started", condition: "3+ sessions in 7 days" }] },
-    { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "session_started", condition: "no session in 14 days" }] },
-    { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "session_started", condition: "no session in 30 days" }] },
+    { name: "new", definition: "Just signed up", criteria: [{ event_name: n, condition: "within 7 days" }] },
+    { name: "activated", definition: "Reached activation", criteria: [{ event_name: a, condition: "completed onboarding" }] },
+    { name: "active", definition: "Regularly engaged", criteria: [{ event_name: s, condition: "3+ sessions in 7 days" }] },
+    { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: s, condition: "no session in 14 days" }] },
+    { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: s, condition: "no session in 30 days" }] },
+  ];
+}
+
+function makeThreePerspectiveEvents(): Record<string, unknown>[] {
+  return [
+    makeValidEvent({ name: "issue_created", entity_id: "issue", perspective: "customer", maps_to: { type: "activation_level", activation_level: 2 } }),
+    makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+    makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction", maps_to: { type: "activation_level", activation_level: 1 } }),
   ];
 }
 
@@ -198,7 +210,7 @@ function makeValidResponse(
 ): string {
   const data = {
     entities: overrides?.entities ?? makeMinimalEntitySet(),
-    events: overrides?.events ?? [makeValidEvent()],
+    events: overrides?.events ?? makeThreePerspectiveEvents(),
     userStateModel: overrides?.userStateModel ?? makeValidUserStateModel(),
     confidence: overrides?.confidence ?? 0.75,
   };
@@ -636,18 +648,20 @@ describe("parseMeasurementSpecResponse property duplication warnings", () => {
     ];
     const events = [
       makeValidEvent({
-        entity_id: "issue",
+        name: "issue_created", entity_id: "issue", perspective: "customer",
         properties: [
           { name: "issue_id", type: "string", description: "Duplicated!", required: true },
           { name: "assignee", type: "string", description: "New prop", required: true },
         ],
       }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+      makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction", maps_to: { type: "activation_level", activation_level: 1 } }),
     ];
     const response = makeValidResponse({ entities, events });
     const spec = parseMeasurementSpecResponse(response);
-    expect(spec.warnings).toBeDefined();
-    expect(spec.warnings).toHaveLength(1);
-    expect(spec.warnings![0]).toContain("property 'issue_id' duplicates a property on entity 'issue'");
+    const dupWarnings = spec.warnings?.filter((w) => w.includes("duplicates")) ?? [];
+    expect(dupWarnings).toHaveLength(1);
+    expect(dupWarnings[0]).toContain("property 'issue_id' duplicates a property on entity 'issue'");
   });
 
   it("does not warn when event properties are unique", () => {
@@ -673,18 +687,21 @@ describe("parseMeasurementSpecResponse property duplication warnings", () => {
     ];
     const events = [
       makeValidEvent({
-        entity_id: "issue",
+        name: "issue_created", entity_id: "issue", perspective: "customer",
         properties: [
           { name: "issue_id", type: "string", description: "Dup 1", required: true },
           { name: "status", type: "string", description: "Dup 2", required: true },
         ],
       }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+      makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction", maps_to: { type: "activation_level", activation_level: 1 } }),
     ];
     const response = makeValidResponse({ entities, events });
     const spec = parseMeasurementSpecResponse(response);
-    expect(spec.warnings).toHaveLength(2);
-    expect(spec.warnings![0]).toContain("issue_id");
-    expect(spec.warnings![1]).toContain("status");
+    const dupWarnings = spec.warnings?.filter((w) => w.includes("duplicates")) ?? [];
+    expect(dupWarnings).toHaveLength(2);
+    expect(dupWarnings[0]).toContain("issue_id");
+    expect(dupWarnings[1]).toContain("status");
   });
 });
 
@@ -738,14 +755,17 @@ describe("parseMeasurementSpecResponse", () => {
     const spec = parseMeasurementSpecResponse(response);
 
     expect(spec.entities).toHaveLength(3);
-    expect(spec.events).toHaveLength(1);
+    expect(spec.events).toHaveLength(3);
     expect(spec.events[0].name).toBe("issue_created");
     expect(spec.events[0].entity_id).toBe("issue");
     expect(spec.events[0].perspective).toBe("customer");
-    expect(spec.total_events).toBe(1);
+    expect(spec.events[1].perspective).toBe("product");
+    expect(spec.events[2].perspective).toBe("interaction");
+    expect(spec.total_events).toBe(3);
     expect(spec.confidence).toBe(0.75);
-    expect(spec.coverage.activation_levels_covered).toEqual([2]);
-    expect(spec.coverage.value_moments_covered).toEqual([]);
+    expect(spec.coverage.activation_levels_covered).toEqual([1, 2]);
+    expect(spec.coverage.value_moments_covered).toEqual(["vm-1"]);
+    expect(spec.coverage.perspective_distribution).toEqual({ customer: 1, product: 1, interaction: 1 });
     expect(spec.userStateModel).toHaveLength(5);
   });
 
@@ -753,7 +773,7 @@ describe("parseMeasurementSpecResponse", () => {
     const response =
       "```json\n" + makeValidResponse() + "\n```";
     const spec = parseMeasurementSpecResponse(response);
-    expect(spec.events).toHaveLength(1);
+    expect(spec.events).toHaveLength(3);
     expect(spec.events[0].name).toBe("issue_created");
   });
 
@@ -1450,5 +1470,187 @@ describe("TrackingEvent entity_id field", () => {
     expect(spec.events[0].entity_id).toBeDefined();
     const entityIds = spec.entities.map((e) => e.id);
     expect(entityIds).toContain(spec.events[0].entity_id);
+  });
+});
+
+// --- computePerspectiveDistribution Tests ---
+
+describe("computePerspectiveDistribution", () => {
+  function makeTypedEvent(perspective: "customer" | "product" | "interaction"): TrackingEvent {
+    return {
+      name: "test_event",
+      entity_id: "test",
+      description: "test",
+      perspective,
+      properties: [],
+      trigger_condition: "test",
+      maps_to: { type: "activation_level", activation_level: 1 },
+      category: "activation",
+    };
+  }
+
+  it("counts events by perspective", () => {
+    const events = [
+      makeTypedEvent("customer"),
+      makeTypedEvent("customer"),
+      makeTypedEvent("product"),
+      makeTypedEvent("interaction"),
+      makeTypedEvent("interaction"),
+      makeTypedEvent("interaction"),
+    ];
+    const dist = computePerspectiveDistribution(events);
+    expect(dist).toEqual({ customer: 2, product: 1, interaction: 3 });
+  });
+
+  it("returns all zeros for empty events", () => {
+    const dist = computePerspectiveDistribution([]);
+    expect(dist).toEqual({ customer: 0, product: 0, interaction: 0 });
+  });
+
+  it("handles single-perspective events", () => {
+    const events = [makeTypedEvent("product"), makeTypedEvent("product")];
+    const dist = computePerspectiveDistribution(events);
+    expect(dist).toEqual({ customer: 0, product: 2, interaction: 0 });
+  });
+});
+
+// --- Perspective Coverage Warning Tests ---
+
+describe("parseMeasurementSpecResponse perspective coverage warnings", () => {
+  it("warns when a perspective has zero events", () => {
+    const events = [
+      makeValidEvent({ name: "issue_created", entity_id: "issue", perspective: "customer" }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "customer" }),
+    ];
+    const response = makeValidResponse({ events });
+    const spec = parseMeasurementSpecResponse(response);
+    const perspWarnings = spec.warnings?.filter((w) => w.includes("perspective")) ?? [];
+    expect(perspWarnings.length).toBeGreaterThanOrEqual(2);
+    expect(perspWarnings.some((w) => w.includes("'product' perspective"))).toBe(true);
+    expect(perspWarnings.some((w) => w.includes("'interaction' perspective"))).toBe(true);
+  });
+
+  it("warns when product perspective has fewer events than others", () => {
+    const events = [
+      makeValidEvent({ name: "issue_created", entity_id: "issue", perspective: "customer" }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "customer" }),
+      makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction" }),
+      makeValidEvent({ name: "project_archived", entity_id: "project", perspective: "interaction" }),
+      makeValidEvent({ name: "issue_generated", entity_id: "issue", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+    ];
+    const response = makeValidResponse({ events });
+    const spec = parseMeasurementSpecResponse(response);
+    const productWarnings = spec.warnings?.filter((w) => w.includes("Product perspective has fewer events")) ?? [];
+    expect(productWarnings).toHaveLength(1);
+    expect(productWarnings[0]).toContain("(1)");
+  });
+
+  it("does not warn when all perspectives are balanced", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    const perspWarnings = spec.warnings?.filter((w) => w.includes("perspective")) ?? [];
+    expect(perspWarnings).toHaveLength(0);
+  });
+
+  it("includes perspective_distribution in coverage", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.coverage.perspective_distribution).toEqual({
+      customer: 1,
+      product: 1,
+      interaction: 1,
+    });
+  });
+});
+
+// --- User State Model Event Name Validation Tests ---
+
+describe("parseMeasurementSpecResponse user state model event validation", () => {
+  it("warns when user state criterion references non-existent event", () => {
+    const userStateModel = makeValidUserStateModel({
+      newEvent: "nonexistent_event",
+    });
+    const response = makeValidResponse({ userStateModel });
+    const spec = parseMeasurementSpecResponse(response);
+    const stateWarnings = spec.warnings?.filter((w) => w.includes("UserState")) ?? [];
+    expect(stateWarnings.some((w) => w.includes("'nonexistent_event'") && w.includes("not defined"))).toBe(true);
+  });
+
+  it("does not warn when all user state criteria reference existing events", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    const stateWarnings = spec.warnings?.filter((w) => w.includes("UserState")) ?? [];
+    expect(stateWarnings).toHaveLength(0);
+  });
+
+  it("warns for each non-existent event reference across all states", () => {
+    const userStateModel = [
+      { name: "new", definition: "Just signed up", criteria: [{ event_name: "missing_event_a", condition: "within 7 days" }] },
+      { name: "activated", definition: "Reached activation", criteria: [{ event_name: "missing_event_b", condition: "completed onboarding" }] },
+      { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "issue_created", condition: "3+ sessions in 7 days" }] },
+      { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "issue_created", condition: "no session in 14 days" }] },
+      { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "issue_created", condition: "no session in 30 days" }] },
+    ];
+    const response = makeValidResponse({ userStateModel });
+    const spec = parseMeasurementSpecResponse(response);
+    const stateWarnings = spec.warnings?.filter((w) => w.includes("not defined in events")) ?? [];
+    expect(stateWarnings).toHaveLength(2);
+    expect(stateWarnings[0]).toContain("missing_event_a");
+    expect(stateWarnings[1]).toContain("missing_event_b");
+  });
+});
+
+// --- Activated State Criteria Validation Tests ---
+
+describe("parseMeasurementSpecResponse activated state activation-level validation", () => {
+  it("warns when activated state references event that does not map to activation level", () => {
+    const events = [
+      makeValidEvent({ name: "issue_created", entity_id: "issue", perspective: "customer", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+      makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction", maps_to: { type: "activation_level", activation_level: 1 } }),
+    ];
+    const userStateModel = makeValidUserStateModel({ activatedEvent: "issue_created" });
+    const response = makeValidResponse({ events, userStateModel });
+    const spec = parseMeasurementSpecResponse(response);
+    const activatedWarnings = spec.warnings?.filter((w) => w.includes("activated") && w.includes("activation level")) ?? [];
+    expect(activatedWarnings).toHaveLength(1);
+    expect(activatedWarnings[0]).toContain("issue_created");
+  });
+
+  it("does not warn when activated state references activation-level event", () => {
+    const events = [
+      makeValidEvent({ name: "issue_created", entity_id: "issue", perspective: "customer", maps_to: { type: "activation_level", activation_level: 2 } }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+      makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction", maps_to: { type: "activation_level", activation_level: 1 } }),
+    ];
+    const userStateModel = makeValidUserStateModel({ activatedEvent: "issue_created" });
+    const response = makeValidResponse({ events, userStateModel });
+    const spec = parseMeasurementSpecResponse(response);
+    const activatedWarnings = spec.warnings?.filter((w) => w.includes("activated") && w.includes("activation level")) ?? [];
+    expect(activatedWarnings).toHaveLength(0);
+  });
+
+  it("does not warn when activated state references event with maps_to type both", () => {
+    const events = [
+      makeValidEvent({ name: "issue_created", entity_id: "issue", perspective: "customer", maps_to: { type: "both", moment_id: "vm-1", activation_level: 2 } }),
+      makeValidEvent({ name: "board_updated", entity_id: "board", perspective: "product", maps_to: { type: "value_moment", moment_id: "vm-1" } }),
+      makeValidEvent({ name: "project_viewed", entity_id: "project", perspective: "interaction", maps_to: { type: "activation_level", activation_level: 1 } }),
+    ];
+    const userStateModel = makeValidUserStateModel({ activatedEvent: "issue_created" });
+    const response = makeValidResponse({ events, userStateModel });
+    const spec = parseMeasurementSpecResponse(response);
+    const activatedWarnings = spec.warnings?.filter((w) => w.includes("activated") && w.includes("activation level")) ?? [];
+    expect(activatedWarnings).toHaveLength(0);
+  });
+
+  it("does not warn for activated state when event does not exist (covered by event existence check)", () => {
+    const userStateModel = makeValidUserStateModel({ activatedEvent: "nonexistent_event" });
+    const response = makeValidResponse({ userStateModel });
+    const spec = parseMeasurementSpecResponse(response);
+    const activatedWarnings = spec.warnings?.filter((w) => w.includes("activated") && w.includes("activation level")) ?? [];
+    expect(activatedWarnings).toHaveLength(0);
+    // But should have an event-existence warning
+    const existWarnings = spec.warnings?.filter((w) => w.includes("not defined in events")) ?? [];
+    expect(existWarnings.some((w) => w.includes("nonexistent_event"))).toBe(true);
   });
 });

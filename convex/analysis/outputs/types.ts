@@ -100,6 +100,12 @@ export type EntityProperty = EntityPropertyDef;
 
 export type Perspective = "customer" | "product" | "interaction";
 
+export interface PerspectiveDistribution {
+  customer: number;
+  product: number;
+  interaction: number;
+}
+
 export type MapsTo =
   | { type: "value_moment"; moment_id: string }
   | { type: "activation_level"; activation_level: number }
@@ -123,6 +129,7 @@ export interface MeasurementSpec {
   coverage: {
     activation_levels_covered: number[];
     value_moments_covered: string[];
+    perspective_distribution: PerspectiveDistribution;
   };
   userStateModel: UserState[];
   confidence: number;

@@ -10,6 +10,7 @@ import type {
   EntityDefinition,
   EntityPropertyDef,
   Perspective,
+  PerspectiveDistribution,
   UserState,
   UserStateCriterion,
 } from "./types";
@@ -392,6 +393,16 @@ export function parseUserStateModel(rawStates: unknown[]): UserState[] {
   return states;
 }
 
+export function computePerspectiveDistribution(
+  events: TrackingEvent[],
+): PerspectiveDistribution {
+  const dist: PerspectiveDistribution = { customer: 0, product: 0, interaction: 0 };
+  for (const e of events) {
+    dist[e.perspective]++;
+  }
+  return dist;
+}
+
 export function parseMeasurementSpecResponse(
   responseText: string,
 ): MeasurementSpec {
@@ -622,12 +633,64 @@ export function parseMeasurementSpecResponse(
     ),
   ];
 
+  // Compute perspective distribution
+  const perspectiveDistribution = computePerspectiveDistribution(events);
+
+  // Perspective coverage warnings
+  for (const p of VALID_PERSPECTIVES) {
+    if (perspectiveDistribution[p] === 0) {
+      warnings.push(`No events with '${p}' perspective — all three perspectives should be represented`);
+    }
+  }
+  if (
+    perspectiveDistribution.product > 0 &&
+    (perspectiveDistribution.product < perspectiveDistribution.customer ||
+      perspectiveDistribution.product < perspectiveDistribution.interaction)
+  ) {
+    warnings.push(
+      `Product perspective has fewer events (${perspectiveDistribution.product}) than other perspectives — consider adding more system-generated events`,
+    );
+  }
+
   // Parse userStateModel
   const userStateModel = Array.isArray(parsed.userStateModel)
     ? parseUserStateModel(parsed.userStateModel as unknown[])
     : (() => {
         throw new Error("Missing required field: userStateModel (must be array)");
       })();
+
+  // Validate user state model criteria against existing event names
+  const eventNames = new Set(events.map((e) => e.name));
+  for (const state of userStateModel) {
+    for (const criterion of state.criteria) {
+      if (!eventNames.has(criterion.event_name)) {
+        warnings.push(
+          `UserState '${state.name}': criterion references event '${criterion.event_name}' which is not defined in events`,
+        );
+      }
+    }
+  }
+
+  // Validate activated state criteria against activation-level events
+  const activationEventNames = new Set(
+    events
+      .filter(
+        (e) =>
+          e.maps_to.type === "activation_level" ||
+          e.maps_to.type === "both",
+      )
+      .map((e) => e.name),
+  );
+  const activatedState = userStateModel.find((s) => s.name === "activated");
+  if (activatedState) {
+    for (const criterion of activatedState.criteria) {
+      if (eventNames.has(criterion.event_name) && !activationEventNames.has(criterion.event_name)) {
+        warnings.push(
+          `UserState 'activated': criterion event '${criterion.event_name}' exists but does not map to an activation level`,
+        );
+      }
+    }
+  }
 
   return {
     entities,
@@ -636,6 +699,7 @@ export function parseMeasurementSpecResponse(
     coverage: {
       activation_levels_covered: activationLevelsCovered,
       value_moments_covered: valueMomentsCovered,
+      perspective_distribution: perspectiveDistribution,
     },
     userStateModel,
     confidence: parsed.confidence,

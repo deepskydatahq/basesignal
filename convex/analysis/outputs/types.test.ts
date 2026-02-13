@@ -11,6 +11,7 @@ import type {
   EntityPropertyDef,
   MapsTo,
   Perspective,
+  PerspectiveDistribution,
   TrackingEvent,
   MeasurementSpec,
   UserState,
@@ -431,8 +432,24 @@ describe("UserState", () => {
   });
 });
 
+describe("PerspectiveDistribution", () => {
+  it("includes customer, product, interaction counts", () => {
+    const dist: PerspectiveDistribution = { customer: 5, product: 3, interaction: 7 };
+    expect(dist.customer).toBe(5);
+    expect(dist.product).toBe(3);
+    expect(dist.interaction).toBe(7);
+  });
+
+  it("supports zero values", () => {
+    const dist: PerspectiveDistribution = { customer: 0, product: 0, interaction: 0 };
+    expect(dist.customer).toBe(0);
+    expect(dist.product).toBe(0);
+    expect(dist.interaction).toBe(0);
+  });
+});
+
 describe("MeasurementSpec", () => {
-  it("includes entities, events, total_events, coverage, userStateModel, confidence, sources", () => {
+  it("includes entities, events, total_events, coverage with perspective_distribution, userStateModel, confidence, sources", () => {
     const spec: MeasurementSpec = {
       entities: [
         {
@@ -459,6 +476,7 @@ describe("MeasurementSpec", () => {
       coverage: {
         activation_levels_covered: [1, 2, 3],
         value_moments_covered: ["vm-001", "vm-002"],
+        perspective_distribution: { customer: 1, product: 0, interaction: 0 },
       },
       userStateModel: makeUserStateModel(),
       confidence: 0.8,
@@ -471,6 +489,7 @@ describe("MeasurementSpec", () => {
     expect(spec.total_events).toBe(1);
     expect(spec.coverage.activation_levels_covered).toEqual([1, 2, 3]);
     expect(spec.coverage.value_moments_covered).toEqual(["vm-001", "vm-002"]);
+    expect(spec.coverage.perspective_distribution).toEqual({ customer: 1, product: 0, interaction: 0 });
     expect(spec.userStateModel).toHaveLength(5);
     expect(spec.confidence).toBe(0.8);
     expect(spec.sources).toHaveLength(1);
@@ -483,7 +502,7 @@ describe("MeasurementSpec", () => {
       ],
       events: [],
       total_events: 0,
-      coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      coverage: { activation_levels_covered: [], value_moments_covered: [], perspective_distribution: { customer: 0, product: 0, interaction: 0 } },
       userStateModel: makeUserStateModel(),
       confidence: 0.7,
       sources: [],
@@ -500,7 +519,7 @@ describe("MeasurementSpec", () => {
       ],
       events: [],
       total_events: 0,
-      coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      coverage: { activation_levels_covered: [], value_moments_covered: [], perspective_distribution: { customer: 0, product: 0, interaction: 0 } },
       userStateModel: makeUserStateModel(),
       confidence: 0.7,
       sources: [],
@@ -548,6 +567,7 @@ describe("confidence and sources on all output types", () => {
       coverage: {
         activation_levels_covered: [],
         value_moments_covered: [],
+        perspective_distribution: { customer: 0, product: 0, interaction: 0 },
       },
       userStateModel: makeUserStateModel(),
       confidence: 0.6,
@@ -600,6 +620,7 @@ describe("OutputGenerationResult", () => {
         coverage: {
           activation_levels_covered: [1],
           value_moments_covered: [],
+          perspective_distribution: { customer: 0, product: 0, interaction: 0 },
         },
         userStateModel: makeUserStateModel(),
         confidence: 0.7,
