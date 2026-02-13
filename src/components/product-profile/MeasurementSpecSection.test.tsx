@@ -128,6 +128,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
     coverage: {
       activation_levels_covered: [1, 2, 3],
       value_moments_covered: ["vm-1", "vm-2"],
+      perspective_distribution: { customer: 2, product: 1, interaction: 1 },
     },
     userStateModel: makeUserStateModel(),
     confidence: 0.85,

@@ -78,6 +78,7 @@ const mockMeasurementSpec: MeasurementSpec = {
   coverage: {
     activation_levels_covered: [2],
     value_moments_covered: ["vm_1"],
+    perspective_distribution: { customer: 1, product: 0, interaction: 0 },
   },
   userStateModel: [
     { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
@@ -376,6 +377,7 @@ describe("OrchestrationResult Linear fixture", () => {
         coverage: {
           activation_levels_covered: [2, 3],
           value_moments_covered: ["issue_tracking", "cycle_planning"],
+          perspective_distribution: { customer: 1, product: 0, interaction: 1 },
         },
         userStateModel: [
           { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
