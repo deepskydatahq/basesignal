@@ -194,9 +194,20 @@ function makeValidResponse(
 // --- System Prompt Tests ---
 
 describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
-  it("contains entity-first generation instructions", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Define Entities (5-10)");
+  it("contains Double Three-Layer Framework entity instructions (3-7)", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Define Entities (3-7)");
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("entity_id");
+  });
+
+  it("contains isHeartbeat entity field instruction", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("isHeartbeat");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Mark exactly one");
+  });
+
+  it("contains reusable property inheritance instruction", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
+      "3-7 reusable properties per entity, inherited by ALL events",
+    );
   });
 
   it("contains entity schema definition", () => {
@@ -204,9 +215,18 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("/^[a-z][a-z0-9_]*$/");
   });
 
-  it("contains entity_action naming regex", () => {
+  it("contains entity_action naming regex with past-tense examples", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
       "/^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/",
+    );
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("board_created");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("board_shared");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("past-tense");
+  });
+
+  it("contains anti-pattern instruction against inventing properties per event", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
+      "Do NOT invent properties per event",
     );
   });
 
@@ -224,8 +244,27 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("both");
   });
 
-  it("contains property count requirement", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("at least 2 properties");
+  it("contains perspective field instruction with three values", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("perspective");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("customer");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("product");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("interaction");
+  });
+
+  it("contains User State Model with 5 states", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("User State Model");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("new");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("activated");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("active");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("at_risk");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("dormant");
+  });
+
+  it("contains Miro example with Account, Board (heartbeat), Asset entities", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Miro");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Account");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Board");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Asset");
   });
 
   it("contains target event range", () => {
@@ -237,9 +276,13 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("between 0 and 1");
   });
 
-  it("includes entities in output format example", () => {
+  it("includes entities and events in output format example", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entities"');
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entity_id": "issue"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entity_id"');
+  });
+
+  it("does NOT contain old min-2 property requirement", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain("at least 2 properties");
   });
 });
 
@@ -639,24 +682,16 @@ describe("parseMeasurementSpecResponse", () => {
     });
   });
 
-  it("rejects events with fewer than 2 properties", () => {
+  it("accepts events with 0 additional properties (entity properties inherited)", () => {
     const response = makeValidResponse({
       events: [
         makeValidEvent({
-          properties: [
-            {
-              name: "only_one",
-              type: "string",
-              description: "Only property",
-              required: true,
-            },
-          ],
+          properties: [],
         }),
       ],
     });
-    expect(() => parseMeasurementSpecResponse(response)).toThrow(
-      "Event 0: must have at least 2 properties, got 1",
-    );
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.events[0].properties).toHaveLength(0);
   });
 
   describe("category validation", () => {
@@ -1038,9 +1073,9 @@ describe("fixture integration", () => {
       expect(entityIdSet.has(event.entity_id)).toBe(true);
     }
 
-    // All events have 2+ properties
+    // All events have properties array (0+ is valid with inheritance)
     for (const event of spec.events) {
-      expect(event.properties.length).toBeGreaterThanOrEqual(2);
+      expect(Array.isArray(event.properties)).toBe(true);
     }
 
     // All four categories represented
@@ -1059,6 +1094,76 @@ describe("fixture integration", () => {
     expect(spec.confidence).toBe(0.72);
     expect(spec.confidence).toBeGreaterThanOrEqual(0);
     expect(spec.confidence).toBeLessThanOrEqual(1);
+  });
+});
+
+// --- Double Three-Layer Framework Parser Tests ---
+
+describe("parseMeasurementSpecResponse isHeartbeat passthrough", () => {
+  it("parser accepts entities with isHeartbeat: true", () => {
+    const entities = [
+      makeValidEntity({ id: "account", name: "Account", description: "An org", isHeartbeat: false }),
+      makeValidEntity({ id: "board", name: "Board", description: "Primary canvas", isHeartbeat: true }),
+      makeValidEntity({ id: "asset", name: "Asset", description: "Board items" }),
+    ];
+    const events = [makeValidEvent({ entity_id: "board" })];
+    const response = makeValidResponse({ entities, events });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.entities[1].isHeartbeat).toBe(true);
+  });
+
+  it("parser omits isHeartbeat when not present in raw", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.entities[0].isHeartbeat).toBeUndefined();
+  });
+});
+
+describe("parseMeasurementSpecResponse perspective passthrough", () => {
+  it("parser accepts events with perspective field", () => {
+    const events = [makeValidEvent({ perspective: "product" })];
+    const response = makeValidResponse({ events });
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].perspective).toBe("product");
+  });
+
+  it("parser omits perspective when not present in raw", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.events[0].perspective).toBeUndefined();
+  });
+});
+
+describe("parseMeasurementSpecResponse userStateModel passthrough", () => {
+  it("parser accepts top-level userStateModel array", () => {
+    const data = {
+      entities: makeMinimalEntitySet(),
+      events: [makeValidEvent()],
+      confidence: 0.75,
+      userStateModel: [
+        { state: "new", criteria: "Just signed up" },
+        { state: "activated", criteria: "Completed onboarding" },
+        { state: "active", criteria: "Regular usage" },
+        { state: "at_risk", criteria: "Declining engagement" },
+        { state: "dormant", criteria: "No activity 30+ days" },
+      ],
+    };
+    const response = JSON.stringify(data);
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.userStateModel).toHaveLength(5);
+    expect((spec.userStateModel![0] as Record<string, string>).state).toBe("new");
+  });
+
+  it("parser omits userStateModel when not present", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+
+    expect(spec.userStateModel).toBeUndefined();
   });
 });
 

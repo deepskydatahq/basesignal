@@ -285,6 +285,25 @@ describe("EntityDefinition", () => {
     expect(prop.isRequired).toBe(false);
     expect(prop.type).toBe("string");
   });
+
+  it("supports optional isHeartbeat field", () => {
+    const heartbeat: EntityDefinition = {
+      id: "board",
+      name: "Board",
+      description: "Primary collaboration canvas",
+      properties: [{ name: "board_id", type: "string", description: "ID", isRequired: true }],
+      isHeartbeat: true,
+    };
+    expect(heartbeat.isHeartbeat).toBe(true);
+
+    const nonHeartbeat: EntityDefinition = {
+      id: "account",
+      name: "Account",
+      description: "An organization",
+      properties: [],
+    };
+    expect(nonHeartbeat.isHeartbeat).toBeUndefined();
+  });
 });
 
 describe("TrackingEvent", () => {
@@ -369,6 +388,31 @@ describe("TrackingEvent", () => {
     };
     expect(eventWithout.entity_id).toBeUndefined();
   });
+
+  it("supports optional perspective field", () => {
+    const eventWithPerspective: TrackingEvent = {
+      name: "board_created",
+      entity_id: "board",
+      description: "User creates a board",
+      properties: [],
+      trigger_condition: "Board created",
+      maps_to: { type: "activation_level", activation_level: 1 },
+      category: "activation",
+      perspective: "customer",
+    };
+    expect(eventWithPerspective.perspective).toBe("customer");
+
+    const eventWithout: TrackingEvent = {
+      name: "board_opened",
+      entity_id: "board",
+      description: "User opens a board",
+      properties: [],
+      trigger_condition: "Board opened",
+      maps_to: { type: "activation_level", activation_level: 1 },
+      category: "retention",
+    };
+    expect(eventWithout.perspective).toBeUndefined();
+  });
 });
 
 describe("MeasurementSpec", () => {
@@ -441,6 +485,35 @@ describe("MeasurementSpec", () => {
       sources: [],
     };
     expect(specWithout.entities).toBeUndefined();
+  });
+
+  it("supports optional userStateModel field", () => {
+    const specWithModel: MeasurementSpec = {
+      entities: [],
+      events: [],
+      total_events: 0,
+      coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      confidence: 0.7,
+      sources: [],
+      userStateModel: [
+        { state: "new", criteria: "Just signed up" },
+        { state: "activated", criteria: "Completed onboarding" },
+        { state: "active", criteria: "Regular usage" },
+        { state: "at_risk", criteria: "Declining engagement" },
+        { state: "dormant", criteria: "No activity 30+ days" },
+      ],
+    };
+    expect(specWithModel.userStateModel).toHaveLength(5);
+
+    const specWithout: MeasurementSpec = {
+      entities: [],
+      events: [],
+      total_events: 0,
+      coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      confidence: 0.7,
+      sources: [],
+    };
+    expect(specWithout.userStateModel).toBeUndefined();
   });
 });
 

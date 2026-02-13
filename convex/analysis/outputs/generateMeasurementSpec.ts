@@ -13,79 +13,115 @@ import type {
 
 // --- System Prompt ---
 
-export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification. You MUST define entities first, then generate events that reference those entities.
+export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification using the Double Three-Layer Framework. Entities define reusable properties (designed once), events (activities) inherit all parent entity properties, and every activity uses a past-tense verb name.
 
-## Step 1: Define Entities (5-10)
-Before generating events, define the key entities in the product domain. Each entity represents a core object that users interact with.
+## Step 1: Define Entities (3-7)
+Define 3-7 core entities that represent the objects users interact with. Design 3-7 reusable properties per entity, inherited by ALL events that reference the entity. Mark exactly one entity as the heartbeat — the primary unit of work or value delivery.
 
 Entity schema:
-- id: lowercase identifier matching /^[a-z][a-z0-9_]*$/ (e.g., "issue", "board", "cycle")
-- name: human-readable name (e.g., "Issue", "Board", "Cycle")
+- id: lowercase identifier matching /^[a-z][a-z0-9_]*$/ (e.g., "account", "board", "asset")
+- name: human-readable name (e.g., "Account", "Board", "Asset")
 - description: what this entity represents in the product
-- properties: array of entity properties, each with:
+- isHeartbeat: true for exactly one entity (the primary unit of work), false for all others
+- properties: array of 3-7 reusable entity properties, each with:
   - name: snake_case property name
   - type: one of "string", "number", "boolean", "array"
   - description: what this property captures
   - isRequired: true or false
 
-Generate 5-10 entities that represent the core objects users interact with.
+### Miro Example
+For a product like Miro:
+- Account (id: "account") — the organization/workspace
+- Board (id: "board", isHeartbeat: true) — the primary unit of work
+- Asset (id: "asset") — items placed on boards (sticky notes, shapes, images)
 
-## Step 2: Generate Events
-Every event MUST reference a defined entity via entity_id.
+## Step 2: Define Activities (Events)
+Every activity MUST reference a defined entity via entity_id. Each event inherits ALL parent entity properties. Only specify ADDITIONAL event-specific properties (0 or more).
 
-### Event Naming Rules
-Every event name MUST match this regex: /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/
+### Activity Naming Rules
+Activity names use past-tense verbs. Every name MUST match this regex: /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/
 This means: entity_action format using lowercase letters, digits, and underscores.
-Examples: issue_created, cycle_completed, board_column_moved, feature_flag_toggled
+Examples: board_created, board_shared, asset_added, account_upgraded
+Do NOT use present tense (board_create) — always use past tense (board_created).
 
-### Event Categories
-Each event must have exactly one category:
+### Activity Categories
+Each activity must have exactly one category:
 - activation: User progresses toward activation (e.g., completes onboarding step, creates first item)
 - value: User experiences a value moment (e.g., shares dashboard, gets first insight)
 - retention: User returns or re-engages (e.g., opens app again, resumes workflow)
 - expansion: User deepens usage (e.g., invites team member, enables integration)
 
 ### maps_to Requirement
-Every event MUST map to a value moment, activation level, or both. Use this discriminated union format:
+Every activity MUST map to a value moment, activation level, or both. Use this discriminated union format:
 - { "type": "value_moment", "moment_id": "<id>" } — maps to a specific value moment
 - { "type": "activation_level", "activation_level": <number> } — maps to an activation level
 - { "type": "both", "moment_id": "<id>", "activation_level": <number> } — maps to both
 
 ### Property Requirements
-Each event must include at least 2 properties. Each property has:
+Each event inherits ALL parent entity properties. Only specify ADDITIONAL event-specific properties. Each additional property has:
 - name: snake_case property name
 - type: one of "string", "number", "boolean", "array"
 - description: what this property captures
 - required: true or false
 
+Do NOT invent properties per event. Entity properties are inherited automatically.
+
+## Step 3: Assign Perspective
+Each activity must have a perspective field indicating which viewpoint it captures:
+- customer: how the user experiences the product (e.g., account_created, board_shared)
+- product: what the product delivers (e.g., insight_generated, report_exported)
+- interaction: how the user interacts with the product (e.g., asset_moved, board_filtered)
+
+## Step 4: Define User State Model
+Define a user state model with 5 states. Each state has event-based criteria that determine when a user transitions into that state:
+- new: just signed up, no meaningful activity yet
+- activated: completed key activation actions
+- active: regular ongoing usage of the product
+- at_risk: declining engagement signals
+- dormant: no activity for an extended period
+
 ### Target
-Generate 15-25 events that cover:
-- All activation level criteria (at least one event per level)
+Generate 15-25 activities that cover:
+- All activation level criteria (at least one activity per level)
 - Key value moments (especially Tier 1 and Tier 2)
 - Retention signals (returning users, repeated engagement)
 - Expansion signals (team growth, feature adoption)
+- All three perspectives (customer, product, interaction)
 
 ## Output Format
 Return a JSON object matching this exact schema:
 {
   "entities": [
     {
-      "id": "issue",
-      "name": "Issue",
-      "description": "A trackable work item",
-      "properties": [{ "name": "issue_id", "type": "string", "description": "Unique identifier", "isRequired": true }]
+      "id": "board",
+      "name": "Board",
+      "description": "The primary collaboration canvas",
+      "isHeartbeat": true,
+      "properties": [
+        { "name": "board_id", "type": "string", "description": "Unique identifier", "isRequired": true },
+        { "name": "board_type", "type": "string", "description": "Template or blank", "isRequired": false },
+        { "name": "member_count", "type": "number", "description": "Number of collaborators", "isRequired": false }
+      ]
     }
   ],
   "events": [
     {
-      "name": "issue_created",
-      "entity_id": "issue",
-      "description": "What this event tracks",
-      "properties": [{ "name": "prop_name", "type": "string", "description": "...", "required": true }],
-      "trigger_condition": "When this event should fire",
-      "maps_to": { "type": "value_moment", "moment_id": "..." },
-      "category": "activation"
+      "name": "board_created",
+      "entity_id": "board",
+      "description": "User creates a new board",
+      "properties": [{ "name": "template_id", "type": "string", "description": "Template used if any", "required": false }],
+      "trigger_condition": "When a user creates a new board",
+      "maps_to": { "type": "activation_level", "activation_level": 1 },
+      "category": "activation",
+      "perspective": "customer"
     }
+  ],
+  "userStateModel": [
+    { "state": "new", "criteria": "User has signed up but not created any boards" },
+    { "state": "activated", "criteria": "User has created at least 1 board and added 3+ assets" },
+    { "state": "active", "criteria": "User has board_opened events in 3+ of the last 7 days" },
+    { "state": "at_risk", "criteria": "No board_opened events in 7+ days after being active" },
+    { "state": "dormant", "criteria": "No activity of any kind in 30+ days" }
   ],
   "confidence": 0.7
 }
@@ -94,6 +130,9 @@ Rules:
 - Return ONLY valid JSON, no commentary before or after
 - confidence must be a number between 0 and 1
 - Every event.entity_id MUST reference a defined entity.id
+- Exactly one entity must have isHeartbeat: true
+- Every event must have a perspective: "customer", "product", or "interaction"
+- Activity names must use past-tense verbs (board_created, not board_create)
 - Do NOT include total_events or coverage fields — they will be computed`;
 
 // --- Prompt Builder ---
@@ -275,6 +314,7 @@ function parseEntities(
       name: raw.name,
       description: raw.description,
       properties,
+      ...(raw.isHeartbeat === true ? { isHeartbeat: true } : {}),
     });
   }
 
@@ -352,11 +392,6 @@ export function parseMeasurementSpecResponse(
     // Validate properties
     if (!Array.isArray(raw.properties)) {
       throw new Error(`${eventLabel}: missing properties array`);
-    }
-    if (raw.properties.length < 2) {
-      throw new Error(
-        `${eventLabel}: must have at least 2 properties, got ${raw.properties.length}`,
-      );
     }
 
     const properties: EventProperty[] = [];
@@ -440,6 +475,9 @@ export function parseMeasurementSpecResponse(
       trigger_condition: raw.trigger_condition,
       maps_to: mapsTo as TrackingEvent["maps_to"],
       category: raw.category as TrackingEvent["category"],
+      ...(typeof raw.perspective === "string" && raw.perspective
+        ? { perspective: raw.perspective }
+        : {}),
     };
     if (typeof raw.entity_id === "string" && raw.entity_id) {
       event.entity_id = raw.entity_id;
@@ -483,6 +521,9 @@ export function parseMeasurementSpecResponse(
     },
     confidence: parsed.confidence,
     sources: [],
+    ...(Array.isArray(parsed.userStateModel)
+      ? { userStateModel: parsed.userStateModel as unknown[] }
+      : {}),
   };
 }
 

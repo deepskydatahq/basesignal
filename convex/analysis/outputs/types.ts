@@ -71,6 +71,7 @@ export interface EntityDefinition {
   name: string;
   description: string;
   properties: EntityPropertyDef[];
+  isHeartbeat?: boolean;
 }
 
 // --- Measurement Spec Types ---
@@ -94,6 +95,7 @@ export interface EntityDefinition {
   name: string;
   description: string;
   properties: EntityProperty[];
+  isHeartbeat?: boolean;
 }
 
 export type MapsTo =
@@ -109,6 +111,7 @@ export interface TrackingEvent {
   trigger_condition: string;
   maps_to: MapsTo;
   category: string;
+  perspective?: string;
   entity_id?: string;
 }
 
@@ -122,6 +125,7 @@ export interface MeasurementSpec {
   };
   confidence: number;
   sources: string[];
+  userStateModel?: unknown[];
   entities?: EntityDefinition[];
 }
 
