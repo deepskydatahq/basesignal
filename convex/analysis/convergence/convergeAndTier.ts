@@ -210,15 +210,26 @@ You will receive a cluster of candidates from different analytical lenses that d
 
 Your job:
 1. Merge them into ONE cohesive value moment
-2. The name MUST start with a verb (e.g., "Gain visibility into...", "Reduce time spent on...", "Accelerate delivery of...")
-3. Combine insights from ALL contributing lenses into the description
-4. Identify roles (user types) who benefit
-5. Identify product surfaces (features/areas) involved
+2. The name MUST start with a user-action verb (e.g., "Create a dashboard from...", "Share report with...", "Export data to...", "Build workflow in...")
+3. Describe what happens on the user's screen, not what the business achieves
+4. Combine insights from ALL contributing lenses into the description
+5. Identify roles (user types) who benefit
+6. Identify product surfaces (features/areas) involved
+
+Name format: "Verb + what the user does + where in the product"
+
+Good names vs bad names:
+- GOOD: "Drag tasks between columns on the board" — describes a user action with an observable result
+- BAD: "Gain visibility into project status" — describes a business outcome, not a user action
+- GOOD: "Invite teammates to a shared workspace" — specific screen action
+- BAD: "Accelerate team onboarding" — abstract business goal
+- GOOD: "View real-time deployment status in the pipeline dashboard" — observable screen state
+- BAD: "Reduce deployment risk" — unmeasurable business aspiration
 
 Return JSON in code fences:
 \`\`\`json
 {
-  "name": "Verb + what the user gets",
+  "name": "Verb + what the user does + where in the product",
   "description": "Combined description synthesizing all lens insights",
   "roles": ["role1", "role2"],
   "product_surfaces": ["feature1", "area2"],
@@ -227,7 +238,7 @@ Return JSON in code fences:
 \`\`\`
 
 Rules:
-- name MUST start with a capitalized verb (Gain, Reduce, Accelerate, Eliminate, Enable, etc.)
+- name MUST start with a capitalized user-action verb (Create, Share, Export, Build, Drag, Invite, Comment, View, Filter, Configure, etc.)
 - description should reference the specific insights from each lens, not just generic summary
 - Set is_coherent to false ONLY if the candidates seem unrelated despite clustering
 - Return ONLY the JSON, no commentary`;

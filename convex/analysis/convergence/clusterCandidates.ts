@@ -196,24 +196,24 @@ export const CLUSTERING_SYSTEM_PROMPT = `You are a product analyst grouping valu
 
 You will receive a numbered list of candidates from different analytical lenses (jtbd, outcomes, pains, gains, alternatives, workflows, emotions). Each candidate describes a value moment a product provides.
 
-Your job: group candidates that describe the SAME underlying value moment into clusters.
+Your job: group candidates that describe the SAME user action or in-product experience into clusters.
 
 Rules:
 1. NEVER place two candidates from the SAME lens in the same cluster. Each cluster must have at most one candidate per lens.
 2. Target 15-30 clusters total. Prefer more granular clusters over overly broad ones.
 3. Candidates that don't clearly belong with others should be singleton clusters.
-4. Group by semantic meaning, not surface-level keyword overlap.
+4. Group by shared user action, not abstract theme or surface-level keyword overlap.
 
 Return a JSON array of clusters. Each cluster is an object with:
-- "label": a short (3-8 word) descriptive label for the cluster
+- "label": a short (3-8 word) descriptive label for the cluster, describing a user action
 - "candidate_ids": array of candidate ID strings that belong to this cluster
 
 Example:
 \`\`\`json
 [
-  { "label": "Reduce deployment time", "candidate_ids": ["c1", "c5", "c12"] },
-  { "label": "Team collaboration visibility", "candidate_ids": ["c3", "c8"] },
-  { "label": "Billing transparency", "candidate_ids": ["c7"] }
+  { "label": "Configure deployment pipeline steps", "candidate_ids": ["c1", "c5", "c12"] },
+  { "label": "Comment on shared documents", "candidate_ids": ["c3", "c8"] },
+  { "label": "View invoice breakdown details", "candidate_ids": ["c7"] }
 ]
 \`\`\`
 
