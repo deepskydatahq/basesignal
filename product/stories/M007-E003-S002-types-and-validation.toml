@@ -1,0 +1,147 @@
+# Story: Update types and parser validation for property inheritance and heartbeat
+# The TypeScript types and response parser must enforce the new framework rules
+
+id = "M007-E003-S002"
+parent = "M007-E003"
+title = "Update types and validation for property inheritance and heartbeat"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+TypeScript types and parser validation enforce the Double Three-Layer Framework:
+EntityDefinition has isHeartbeat, TrackingEvent has perspective, event properties
+are validated as event-specific additions (not duplicates of entity properties),
+and exactly one heartbeat entity must exist.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "EntityDefinition interface gains isHeartbeat: boolean field"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TrackingEvent interface gains perspective: 'customer' | 'product' | 'interaction' field"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "New UserState interface added: { name: string, definition: string, criteria: { event_name: string, condition: string }[] }"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MeasurementSpec interface gains userStateModel: UserState[] field"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates exactly one entity has isHeartbeat: true — error if zero or more than one"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates each event has a valid perspective field ('customer' | 'product' | 'interaction')"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates event properties do NOT duplicate parent entity property names — warns if event repeats an entity property"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates userStateModel has exactly 5 states with expected names (new, activated, active, at_risk, dormant)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TrackingEvent property field renamed from 'required' to 'isRequired' for consistency with EntityPropertyDef (or both formats accepted)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing measurement spec tests updated and passing with new type fields"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.test.ts",
+    "convex/analysis/outputs/generateMeasurementSpec.test.ts"
+]
+
+input_fixtures = [
+    "LLM response JSON with heartbeat entity, perspectives, and user state model",
+    "LLM response with duplicate entity properties in events (should warn)"
+]
+
+depends_on = ["M007-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Type changes in types.ts:
+
+```typescript
+export interface EntityDefinition {
+  id: string;
+  name: string;
+  description: string;
+  properties: EntityPropertyDef[];
+  isHeartbeat: boolean;  // NEW
+}
+
+export interface TrackingEvent {
+  name: string;
+  entity_id: string;
+  description: string;
+  properties: EventProperty[];  // event-specific only, entity props inherited
+  trigger_condition: string;
+  maps_to: MapsTo;
+  category: string;
+  perspective: "customer" | "product" | "interaction";  // NEW
+}
+
+export interface UserState {
+  name: string;
+  definition: string;
+  criteria: { event_name: string; condition: string }[];
+}
+
+export interface MeasurementSpec {
+  entities: EntityDefinition[];
+  events: TrackingEvent[];
+  total_events: number;
+  coverage: {
+    activation_levels_covered: number[];
+    value_moments_covered: string[];
+  };
+  confidence: number;
+  sources: string[];
+  userStateModel: UserState[];  // NEW
+}
+```
+
+Parser validation changes in generateMeasurementSpec.ts:
+
+1. Entity heartbeat check:
+   const heartbeats = entities.filter(e => e.isHeartbeat);
+   if (heartbeats.length !== 1) throw error or default first entity
+
+2. Event perspective check:
+   const validPerspectives = ["customer", "product", "interaction"];
+   if (!validPerspectives.includes(event.perspective)) default to "product"
+
+3. Property inheritance check (warn, not error):
+   For each event, get parent entity properties.
+   If event.properties includes a name that matches entity property, log warning.
+
+4. User state model check:
+   Validate 5 states, each with name and criteria array.
+   Gracefully default if LLM omits (generate placeholder states).
+
+The frontend MeasurementSpecSection.tsx will need updates in a later story
+to display the new perspective and user state model fields.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.test.ts",
+    "convex/analysis/outputs/generateMeasurementSpec.test.ts"
+]

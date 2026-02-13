@@ -1,0 +1,96 @@
+# Story: Replace TF-IDF clustering with LLM-based semantic clustering
+# Use Claude to group candidates by meaning, not lexical overlap
+
+id = "M006-E001-S001"
+parent = "M006-E001"
+title = "Replace TF-IDF clustering with LLM-based semantic clustering"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+clusterCandidatesCore is replaced with an LLM-based clustering function that sends
+all validated candidates to Claude and asks it to group semantically related ones.
+The same-lens constraint is enforced in the prompt. The function returns
+CandidateCluster[] with the same interface as before, so downstream merge/tier
+logic is unaffected.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "New clusterCandidatesLLM function accepts ValidatedCandidate[] and returns CandidateCluster[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "No cluster contains two candidates from the same lens (same-lens constraint preserved)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parsing handles JSON in code fences and raw JSON"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Fallback to TF-IDF clustering if LLM call fails"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes same-lens constraint as explicit rule"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt requests 15-30 clusters as target range"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "runConvergencePipeline uses LLM clustering instead of TF-IDF by default"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/clusterCandidates.test.ts",
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/types.ts",
+    "convex/lib/similarity.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create a new function alongside the existing one (don't delete TF-IDF — keep as fallback):
+
+```typescript
+// New file or add to clusterCandidates.ts
+export async function clusterCandidatesLLM(
+  candidates: ValidatedCandidate[],
+  client: Anthropic,
+  targetClusters?: { min: number; max: number }
+): Promise<CandidateCluster[]>
+```
+
+System prompt should:
+1. List all candidates with id, lens, name, description
+2. Ask Claude to group them into 15-30 semantic clusters
+3. Rule: "No cluster may contain two candidates from the same lens"
+4. Return JSON: `{ clusters: [{ cluster_id, candidate_ids: string[] }] }`
+
+Parse response, validate same-lens constraint, build CandidateCluster[] using
+existing buildCluster(). If LLM fails, fall back to clusterCandidatesCore().
+
+Update runConvergencePipeline in convergeAndTier.ts to call clusterCandidatesLLM
+instead of clusterCandidatesCore. The Anthropic client is already available there.
+
+Keep clusterCandidatesCore and all its tests — it becomes the fallback.
+Keep UnionFind, canMerge, etc. — they remain tested utility code.
+"""
+
+reference_files = [
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/types.ts"
+]

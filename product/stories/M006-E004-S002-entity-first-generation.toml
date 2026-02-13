@@ -1,0 +1,149 @@
+# Story: Update spec generator prompt and parser for entity-first generation
+# Two-step generation: entities with properties first, then activities/events per entity
+
+id = "M006-E004-S002"
+parent = "M006-E004"
+title = "Update spec generator prompt and parser for entity-first generation"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The measurement spec generator produces entities first (5-10 product entities
+derived from value moments and activation levels), then generates activities/events
+per entity. The system prompt instructs Claude to define entities with their
+properties before generating events, and the parser validates entity definitions
+and ensures every event's entity_id references a valid entity. Event names continue
+to follow entity_action format, with the entity prefix matching an EntityDefinition.id.
+Properties are defined at the entity level (shared across activities) rather than
+duplicated per-event.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt requests 5-10 entity definitions before events"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt specifies entity schema: id, name, description, properties[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt specifies entity property schema: name, type, description, isRequired"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Output JSON schema includes top-level 'entities' array alongside 'events' array"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser extracts EntityDefinition[] from response and validates required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates that every event.entity_id references a defined entity.id"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser validates that event name prefix matches its entity_id (e.g., 'board_created' must have entity_id 'board')"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Parser rejects response with fewer than 3 entities or more than 15 entities"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Events still retain per-event properties for trigger-specific context, but entity-level properties define the shared schema"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "generateMeasurementSpec action returns a MeasurementSpec with populated entities field"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/aggregateMeasurementInputs.ts",
+    "convex/measurementPlan.ts",
+    "convex/schema.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M006-E004-S001"]
+
+[handoff]
+implementation_hints = """
+Update MEASUREMENT_SPEC_SYSTEM_PROMPT in generateMeasurementSpec.ts to request a
+two-part output:
+
+1. Entities section in the prompt:
+```
+## Entity Definitions
+Before generating events, define the core entities in this product.
+An entity is a noun — a thing users create, manage, or interact with.
+Generate 5-10 entities derived from the value moments and activation criteria.
+
+Each entity must have:
+- id: lowercase_snake_case identifier (this becomes the event name prefix)
+- name: Human-readable name (e.g., "Board", "User Account")
+- description: What this entity represents
+- properties: Array of properties that describe this entity
+  - name: snake_case property name
+  - type: "string" | "number" | "boolean" | "array"
+  - description: What this property captures
+  - isRequired: true or false
+```
+
+2. Updated output format in the prompt:
+```json
+{
+  "entities": [
+    {
+      "id": "board",
+      "name": "Board",
+      "description": "A collaborative workspace...",
+      "properties": [
+        { "name": "board_name", "type": "string", "description": "...", "isRequired": true }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "entity_id": "board",
+      "name": "board_created",
+      "description": "...",
+      "properties": [...],
+      "trigger_condition": "...",
+      "maps_to": { "type": "activation_level", "activation_level": 1 },
+      "category": "activation"
+    }
+  ],
+  "confidence": 0.8
+}
+```
+
+Update parseMeasurementSpecResponse:
+- Parse entities array first, build a Set of valid entity IDs
+- For each entity, validate id/name/description/properties
+- For each event, validate entity_id exists in the entity Set
+- Validate event name starts with entity_id prefix (before first underscore)
+- Reject if entity count < 3 or > 15
+- Populate spec.entities on the returned MeasurementSpec
+
+The prompt should guide Claude to think entity-first:
+"First, identify the key entities in this product from the value moments and activation
+criteria. Then, for each entity, define what activities/events happen to it."
+
+Keep the existing event validation logic (name regex, category, maps_to, properties)
+unchanged — just add entity_id validation on top.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/aggregateMeasurementInputs.ts"
+]

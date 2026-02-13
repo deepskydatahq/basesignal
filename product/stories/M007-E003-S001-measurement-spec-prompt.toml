@@ -1,0 +1,114 @@
+# Story: Rewrite measurement spec prompt to follow the Double Three-Layer Framework
+# The prompt must enforce entity-level property design, property inheritance, and
+# past-tense activity naming
+
+id = "M007-E003-S001"
+parent = "M007-E003"
+title = "Rewrite measurement spec prompt for Double Three-Layer Framework"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The measurement spec system prompt follows the Double Three-Layer Framework:
+entities define reusable properties (designed once), events inherit all parent entity
+properties plus event-specific additions, activity names use past-tense verbs,
+one entity is marked as the heartbeat, and the spec covers three analytical
+perspectives (Customer, Product, Interaction).
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MEASUREMENT_SPEC_SYSTEM_PROMPT Step 1 (entities) reduced from 5-10 to 3-7 entities, with instruction to identify one as the 'heartbeat entity' (most central to product value)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Entity properties instruction changed to: 'Design 3-7 reusable properties per entity. These properties will be inherited by ALL events that reference this entity. Think of entity properties as the columns in a database table for this object.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Entity schema includes new field: isHeartbeat (boolean, exactly one entity must be true)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Step 2 (events) renamed to 'Activities' with instruction: 'Each activity describes something that happened to an entity. Use past-tense verbs: board_created, board_shared, asset_exported — NOT board_create, board_share'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Event property instruction changed to: 'Each event automatically inherits ALL properties from its parent entity. You only need to specify ADDITIONAL event-specific properties (e.g., share_method for board_shared). Do NOT repeat entity properties in the event.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "New Step 3 added: 'Assign Perspective' — each event gets a perspective field: 'customer' (journey/lifecycle state), 'product' (entity lifecycle actions), or 'interaction' (specific UI-level actions)'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "New Step 4 added: 'Define User State Model' — generate 5 user states (new, activated, active, at_risk, dormant) each with event-based criteria that determine the state"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes Miro-style example: entities (Account, Board as heartbeat, Asset), activities (board_created, board_shared, board_exported), Board properties (board_id, board_template_used, board_created_from) inherited by all board events"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt includes explicit anti-pattern: 'Do NOT invent properties per event. If an event relates to a board, it gets ALL board properties automatically. Only add event-specific properties like share_method or export_format.'"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts"
+]
+
+input_fixtures = [
+    "MeasurementInputData with Miro value moments, activation levels, ICP profiles, activation map"
+]
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+The system prompt is MEASUREMENT_SPEC_SYSTEM_PROMPT in generateMeasurementSpec.ts
+(lines 16-97). This is the primary change — rewrite the entire prompt.
+
+The new prompt structure should be:
+
+## Step 1: Define Entities (3-7)
+- Keep to 3-7 core objects (tighter than current 5-10)
+- Mark exactly one as isHeartbeat: true
+- Design 3-7 reusable properties PER entity (these are inherited)
+- Properties are like database columns: account_id, account_plan_type, etc.
+
+## Step 2: Define Activities (Events)
+- entity_action format with PAST-TENSE verb: board_created, not board_create
+- Each activity inherits ALL parent entity properties automatically
+- Only specify ADDITIONAL event-specific properties
+- Categories: activation, value, retention, expansion (keep existing)
+
+## Step 3: Assign Perspective
+- customer: Journey/lifecycle events (account_created, account_upgraded)
+- product: Entity lifecycle events (board_created, board_shared, board_deleted)
+- interaction: UI-level events (asset_dragged, canvas_zoomed)
+
+## Step 4: Define User State Model
+- new: account_created within last 30 days
+- activated: new + meets activation criteria (from activation levels input)
+- active: high-value event in rolling 30 days
+- at_risk: was active 31-60 days ago, nothing in last 30
+- dormant: no high-value events for 61+ days
+
+The output JSON schema changes:
+- Entity gains: isHeartbeat boolean
+- Event gains: perspective field ("customer" | "product" | "interaction")
+- Event properties: only event-specific additions (entity props are inherited)
+- New top-level: userStateModel array with state definitions
+
+Reference: https://timo.space/blog/the-double-three-layer-framework-for-tracking-setups/
+"""
+
+reference_files = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/measurementPlan.ts"
+]

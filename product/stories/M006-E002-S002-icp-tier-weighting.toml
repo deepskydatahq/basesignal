@@ -1,0 +1,167 @@
+# Story: Add value-moment-tier weighting to ICP input aggregation
+# Weight roles by tier-1 moment density so core-user roles rank above marketing-heavy roles
+
+id = "M006-E002-S002"
+parent = "M006-E002"
+title = "Add value-moment-tier weighting to ICP input aggregation"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+aggregateICPInputsCore in aggregateICPInputs.ts uses a weighted scoring formula
+that heavily favors Tier 1 value moments when ranking roles. Roles that only
+appear in low-tier (Tier 3+) marketing/security content are down-weighted
+relative to roles with strong Tier 1 presence. The sort order uses
+a composite score (tier_1_count * weight + occurrence_count) so that a role
+with few but high-tier moments outranks a role with many low-tier moments.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "RoleAggregation type includes tier_2_moments and tier_3_plus_moments count fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "aggregateICPInputsCore correctly counts tier_2_moments and tier_3_plus_moments per role"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Sorting uses weighted score: tier_1_moments * 5 + tier_2_moments * 2 + occurrence_count, descending"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "A role with 2 Tier 1 moments outranks a role with 10 Tier 3 moments and 0 Tier 1 moments"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Roles with only Tier 3+ moments sort to the bottom of the list"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Phantom targetCustomer role still sorts last (score 0)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "RoleInput type in generateICPProfiles.ts includes tier_2_count and tier_3_plus_count fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildICPPrompt includes tier breakdown per role (Tier 1, Tier 2, Tier 3+ counts)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing aggregateICPInputsCore tests updated to reflect new sort order and fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing buildICPPrompt tests continue to pass"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/aggregateICPInputs.ts",
+    "convex/analysis/outputs/aggregateICPInputs.test.ts",
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/generateICPProfiles.test.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/convergence/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M006-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Two files need changes: aggregateICPInputs.ts (primary) and generateICPProfiles.ts (consumer).
+
+1. **Update RoleAggregation type** in aggregateICPInputs.ts:
+
+```typescript
+export interface RoleAggregation {
+  name: string;
+  occurrence_count: number;
+  value_moments: ValueMoment[];
+  tier_1_moments: number;
+  tier_2_moments: number;        // NEW
+  tier_3_plus_moments: number;   // NEW
+  weighted_score: number;        // NEW: computed during aggregation
+}
+```
+
+2. **Update aggregateICPInputsCore** — add tier counting and weighted scoring:
+
+```typescript
+// In the role-building loop:
+roles.push({
+  name,
+  occurrence_count: moments.length,
+  value_moments: moments,
+  tier_1_moments: moments.filter((vm) => vm.tier === 1).length,
+  tier_2_moments: moments.filter((vm) => vm.tier === 2).length,
+  tier_3_plus_moments: moments.filter((vm) => vm.tier >= 3).length,
+  weighted_score: 0, // computed below
+});
+
+// After building roles array, compute weighted scores:
+for (const role of roles) {
+  role.weighted_score = role.tier_1_moments * 5
+    + role.tier_2_moments * 2
+    + role.occurrence_count;
+}
+
+// Replace existing sort with weighted_score sort:
+roles.sort((a, b) => b.weighted_score - a.weighted_score);
+```
+
+The weight constants (5, 2, 1) ensure:
+- 2 Tier 1 moments (score 10+) beats 10 Tier 3 moments (score 0 + 10 occurrence = ~10)
+- Tier 1 is the dominant signal, Tier 2 is secondary, raw count is tiebreaker
+
+3. **Update RoleInput type** in generateICPProfiles.ts to include new fields:
+
+```typescript
+export interface RoleInput {
+  name: string;
+  occurrence_count: number;
+  tier_1_count: number;
+  tier_2_count: number;          // NEW
+  tier_3_plus_count: number;     // NEW
+  value_moments: Array<{...}>;
+}
+```
+
+4. **Update buildICPPrompt** — show tier breakdown in Roles Summary:
+
+```typescript
+parts.push(
+  `- ${role.name}: ${role.occurrence_count} occurrences, ` +
+  `${role.tier_1_count} Tier 1, ${role.tier_2_count} Tier 2, ` +
+  `${role.tier_3_plus_count} Tier 3+ value moments`
+);
+```
+
+5. **Update inline aggregateRoles** in generateICPProfiles.ts (the TODO function)
+   to also compute the new fields, keeping it consistent until it is replaced
+   by aggregateICPInputs.
+
+6. **Update tests** in aggregateICPInputs.test.ts:
+   - Add assertions for tier_2_moments and tier_3_plus_moments counts
+   - Update sort-order tests to verify weighted_score ordering
+   - Add explicit test: role with 2 T1 moments outranks role with 10 T3 moments
+   - Add test: roles with only T3+ moments sort to bottom
+
+7. **Update tests** in generateICPProfiles.test.ts:
+   - Update makeRoleInput to include tier_2_count and tier_3_plus_count
+   - Add test for tier breakdown in buildICPPrompt output
+"""
+
+reference_files = [
+    "convex/analysis/outputs/aggregateICPInputs.ts",
+    "convex/analysis/outputs/aggregateICPInputs.test.ts",
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/generateICPProfiles.test.ts"
+]

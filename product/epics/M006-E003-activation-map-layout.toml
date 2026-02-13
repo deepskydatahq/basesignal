@@ -1,0 +1,70 @@
+# Epic: Activation Map Layout
+# Redesign activation map display as readable cards instead of overlapping vertical layout
+
+id = "M006-E003"
+parent = "M006"
+title = "Activation Map Layout"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+The activation map displays as a clear, non-overlapping card-based layout similar
+to the ICP profile section. Each stage is a distinct card with level, triggers,
+value moments, and risk indicators clearly visible.
+"""
+
+job_story = """
+When I view the activation map for a product,
+I want to see each stage as a clear, readable card,
+so that I can understand the progression without content overlapping.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Activation map renders as distinct cards without overlapping content",
+    "Stage progression is visually clear (level ordering)",
+    "Each card shows: level, name, signal strength, triggers, value moments, drop-off risk",
+    "Transitions between stages are visible with trigger events and timeframe",
+    "Primary activation level is visually highlighted",
+    "Layout works on both desktop and mobile viewports"
+]
+
+validator_context = [
+    "src/components/product-profile/ActivationMapSection.tsx"
+]
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/ActivationMapSection.tsx",
+    "src/components/product-profile/ICPProfilesSection.tsx",
+    "src/components/product-profile/types.ts"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+Current state: ActivationMapSection uses a horizontal scrolling layout with 240px
+min-width cards connected by arrows. The user reports overlapping content and
+difficulty reading.
+
+The ICP section uses a responsive grid (1→2→3 columns) with collapsible detail
+sections inside each card. This pattern works well and should be adapted.
+
+Approach:
+- Switch from horizontal scroll to vertical card grid (like ICPProfilesSection)
+- Each stage as a full-width or half-width card
+- Collapsible sections for triggers, value moments, transitions
+- Signal strength and drop-off risk as badges
+- Primary activation level highlighted with distinct border
+- Transitions shown as connectors or summary between cards
+
+This is a pure UI epic with no backend changes needed.
+
+Stories:
+1. Redesign ActivationMapSection with card-based grid layout
+"""
+
+estimated_stories = 1

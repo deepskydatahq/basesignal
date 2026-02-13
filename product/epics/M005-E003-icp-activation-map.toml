@@ -1,0 +1,76 @@
+# Epic: ICP Profiles & Activation Map
+# Persona cards and activation stage progression display
+
+id = "M005-E003"
+parent = "M005"
+title = "ICP Profiles & Activation Map"
+status = "active"
+created = 2026-02-11
+
+[outcome]
+description = """
+The ICP Profiles tab renders 2-3 persona cards with value moment priorities,
+activation triggers, pain points, and success metrics. The Activation Map tab
+shows horizontal stage progression with signal strength badges, trigger events,
+value moments unlocked, and drop-off risk indicators.
+"""
+
+job_story = """
+When I view my product's ICP profiles and activation map,
+I want to see who my key personas are and how users progress through activation,
+so that I can align product and marketing efforts to the right users and stages.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "ICP persona cards show name, description, confidence badge",
+    "Value moment priorities display with priority level and relevance reason",
+    "Collapsible subsections for activation triggers, pain points, success metrics",
+    "Activation stages render as horizontal progression sorted by level",
+    "Each stage shows signal strength badge (color-coded), trigger events, value moments unlocked",
+    "Drop-off risk indicator renders as green/amber/red",
+    "Transitions between stages show trigger events and timeframe",
+    "Primary activation level highlighted with distinct styling",
+    "Empty states render when ICP or activation data is missing"
+]
+
+validator_context = [
+    "src/components/product-profile/ICPProfilesSection.tsx",
+    "src/components/product-profile/ActivationMapSection.tsx"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/extractActivationLevels.ts",
+    "src/components/ui/card.tsx",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/collapsible.tsx"
+]
+
+dependencies = ["M005-E002"]
+
+[notes]
+considerations = """
+Stories:
+
+1. **S001: Build ICPProfilesSection** — Responsive grid of persona cards. Each
+   card: name, description, confidence badge, value moment priorities with
+   priority level + relevance reason. Collapsible subsections for triggers,
+   pain points, success metrics.
+
+2. **S002: Build ActivationMapSection** — Horizontal stage progression cards
+   sorted by level. Signal strength badge (color-coded by strength). Trigger
+   events, value moments unlocked, drop-off risk (green/amber/red). Transition
+   connectors between stages. Primary activation level highlighted.
+
+Handle drop_off_risk defensively as both { level, reason } object (actual runtime)
+and string (type definition).
+
+Type sources:
+- convex/analysis/outputs/types.ts — ICPProfile, ActivationMap
+- convex/analysis/extractActivationLevels.ts — ActivationLevel, SignalStrength
+"""
+
+estimated_stories = 2

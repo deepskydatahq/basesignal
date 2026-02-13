@@ -1,0 +1,86 @@
+# Epic: Measurement Spec Entity-Activity Framework
+# Align generated measurement specs with the entity-activity-properties model
+
+id = "M006-E004"
+parent = "M006"
+title = "Measurement Spec Entity-Activity Framework"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+The measurement spec generator produces events structured around entities and
+activities, aligned with the existing measurementPlan.ts entity-activity-properties
+model. Output defines a small set of entities (5-10) first, then activities per
+entity, then derives events with proper properties.
+"""
+
+job_story = """
+When I review the generated measurement spec,
+I want to see events organized by entity (e.g., Board, User, Team),
+so that I can map them directly to my tracking implementation.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Spec output includes explicit entity definitions (5-10 entities)",
+    "Each event maps to an entity + activity combination",
+    "Entity count is small and recognizable (board, user, team, etc.)",
+    "Properties are defined at entity level, not just per-event",
+    "Output structure is compatible with measurementPlan.ts entity/activity/property tables",
+    "UI displays events grouped by entity with entity-level properties",
+    "Miro test produces coherent entity set (not 23 unrelated flat events)"
+]
+
+validator_context = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/measurementPlan.ts",
+    "src/components/product-profile/MeasurementSpecSection.tsx"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/aggregateMeasurementInputs.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/measurementPlan.ts",
+    "convex/schema.ts",
+    "src/components/product-profile/MeasurementSpecSection.tsx"
+]
+
+dependencies = ["M006-E001"]
+
+[notes]
+considerations = """
+Current state: The spec generator produces a flat list of TrackingEvent[] grouped
+by category (activation/value/retention/expansion). Event names follow entity_action
+format (e.g., board_created, template_selected) but entities are not explicitly defined.
+
+The existing measurementPlan.ts already has a complete entity-activity-properties model:
+- measurementEntities: name, description (e.g., "Board", "User")
+- measurementActivities: entityId, name, action, lifecycleSlot, isFirstValue
+- measurementProperties: entityId, name, dataType, isRequired
+
+Gap: Properties in generated spec are per-event, but in the entity model they're
+per-entity. The spec needs a two-step generation:
+
+Step 1: Define entities (extract from value moments, activation levels)
+Step 2: Define activities per entity (what happens to each entity)
+Step 3: Map activities to events with category + maps_to
+Step 4: Define properties per entity (shared across activities)
+
+This aligns with the user's three-level framework:
+Entity → Activity → Properties
+
+The output types need to be extended to include entity definitions, and the UI
+needs to group events by entity instead of (or in addition to) category.
+
+Stories:
+1. Extend measurement spec types to include entity definitions
+2. Update spec generator prompt and parser for entity-first generation
+3. Update MeasurementSpecSection UI to display entity-grouped events
+"""
+
+estimated_stories = 3

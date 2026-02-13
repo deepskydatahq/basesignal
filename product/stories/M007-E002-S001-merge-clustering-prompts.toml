@@ -1,0 +1,97 @@
+# Story: Rewrite merge and clustering prompts for experiential value moments
+# The merge prompt currently suggests business verbs (Gain, Reduce, Accelerate)
+# and the clustering prompt groups by abstract theme instead of shared user action
+
+id = "M007-E002-S001"
+parent = "M007-E002"
+title = "Rewrite merge and clustering prompts for experiential framing"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The convergence merge prompt produces value moment names that describe user actions
+with observable results. The clustering prompt groups candidates by shared user action,
+not abstract business theme. A PM reading the merged moments would recognize each one
+as something their users actually do in the product.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MERGE_SYSTEM_PROMPT (convergeAndTier.ts:219-245) verb examples changed from business verbs (Gain, Reduce, Accelerate, Eliminate, Enable) to user-action verbs (Create, Share, Export, Build, Drag, Invite, Comment, View, Configure, Set, Open, Filter)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MERGE_SYSTEM_PROMPT includes instruction: 'Describe what happens on the user's screen, not what the business achieves. The user should be able to point to a screen in the product where this moment happens.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MERGE_SYSTEM_PROMPT includes 2-3 good/bad example pairs: BAD 'Gain visibility into team workload distribution' → GOOD 'View a heatmap showing who is overloaded this sprint'; BAD 'Accelerate cross-functional alignment' → GOOD 'Share a board link so marketing can comment on the wireframe'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MERGE_SYSTEM_PROMPT name format changed from 'Verb + what the user gets' to 'Verb + what the user does + where in the product'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLUSTERING_SYSTEM_PROMPT (clusterCandidates.ts:195-221) grouping instruction changed from 'group candidates that describe the SAME underlying value moment' to 'group candidates that describe the SAME user action or in-product experience'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLUSTERING_SYSTEM_PROMPT example labels changed from business themes ('Reduce deployment time', 'Team collaboration visibility') to user actions ('Share a board with teammates', 'Export diagrams for presentations')"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing convergence tests pass with updated prompts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseMergeResponse validation still enforces name starts with capital letter (user-action verbs are still capitalized)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/clusterCandidates.ts"
+]
+
+input_fixtures = [
+    "Cluster of 3 candidates from different lenses about Miro board sharing",
+    "Cluster of 2 candidates about security/permissions"
+]
+
+depends_on = ["M007-E001-S001", "M007-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Two prompt constants to update:
+
+1. MERGE_SYSTEM_PROMPT in convergeAndTier.ts (lines 219-245)
+   - Replace the verb examples list
+   - Add experiential framing instruction
+   - Add good/bad example pairs
+   - Change the JSON example from "Verb + what the user gets" to
+     "Verb + what the user does + where in the product"
+   - Keep all other JSON schema requirements, is_coherent logic, and rules
+
+2. CLUSTERING_SYSTEM_PROMPT in clusterCandidates.ts (lines 195-221)
+   - Change "SAME underlying value moment" → "SAME user action or in-product experience"
+   - Update example cluster labels to be experiential
+   - Keep all other rules (same-lens constraint, 15-30 target, singleton handling)
+
+The buildMergePrompt function (lines 250-259) doesn't need changes — it just
+formats candidate names and descriptions which will already be experiential
+after E001 lens prompt rewrites.
+
+Key insight: The merge prompt has the biggest impact on final moment naming.
+Even if lens candidates are somewhat abstract, a well-framed merge prompt can
+synthesize them into experiential moments. But the best results come from
+experiential candidates + experiential merge prompt together.
+"""
+
+reference_files = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/clusterCandidates.ts"
+]

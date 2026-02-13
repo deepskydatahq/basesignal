@@ -1,0 +1,115 @@
+# Story: Rewrite Batch 1 lens prompts to extract user-experienced moments
+# These 4 lenses run independently and form the foundation for Batch 2
+
+id = "M007-E001-S001"
+parent = "M007-E001"
+title = "Rewrite Batch 1 lens prompts for experiential extraction"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The four Batch 1 lenses (time_compression, effort_elimination, capability_mapping,
+artifact_creation) produce candidates grounded in what users DO inside the product.
+Each prompt asks about specific user actions, screens, and visible results — not
+abstract business outcomes. Anti-patterns reject marketing language, and good/bad
+examples guide the LLM toward experiential framing.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TIME_COMPRESSION_SYSTEM_PROMPT core question reframed from 'What workflows become fast enough to change behavior?' to asking about specific user actions that became instant/near-instant (what screen, what click, what result)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "EFFORT_ELIMINATION_SYSTEM_PROMPT core question reframed from 'What repetitive work vanishes entirely?' to asking about specific steps users SKIP — with before/after workflow description"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CAPABILITY_MAPPING_SYSTEM_PROMPT core question reframed from 'What new capacities does this product unlock?' to asking about specific actions a user takes in the product that they couldn't do before"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ARTIFACT_CREATION_SYSTEM_PROMPT core question reframed from 'What tangible, shareable outputs do users create?' to asking about specific things users BUILD/EXPORT and how they share them"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each prompt includes anti-patterns for marketing language: 'automate', 'streamline', 'optimize', 'leverage', 'enhance', 'empower' when not tied to a specific in-app action"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each prompt includes 2-3 GOOD vs BAD example pairs — BAD shows abstract outcome, GOOD shows same idea as user-experienced moment with product surface"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each prompt includes instruction: 'Every candidate must reference a specific screen, UI element, or user action in the product. If you can't point to where in the product this happens, don't include it.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing lens tests pass with updated prompts (parsers unchanged, only prompt text changes)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/extractTimeCompression.ts",
+    "convex/analysis/lenses/extractEffortElimination.ts",
+    "convex/analysis/lenses/extractCapabilityMapping.ts",
+    "convex/analysis/lenses/extractArtifactCreation.ts"
+]
+
+input_fixtures = [
+    "Miro marketing page content (features, homepage, customers pages)"
+]
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+The system prompts are string constants in each file:
+- TIME_COMPRESSION_SYSTEM_PROMPT (extractTimeCompression.ts:102-141)
+- EFFORT_ELIMINATION_SYSTEM_PROMPT (extractEffortElimination.ts:106-145)
+- CAPABILITY_MAPPING_SYSTEM_PROMPT (extractCapabilityMapping.ts:111-150)
+- ARTIFACT_CREATION_SYSTEM_PROMPT (extractArtifactCreation.ts:101-140)
+
+Each prompt follows the same structure:
+1. Core question (rewrite this)
+2. Definition of what qualifies (rewrite toward experiential)
+3. Required JSON fields (keep as-is)
+4. Anti-patterns (add marketing language patterns)
+5. Good examples (replace with experiential examples)
+6. Output format (keep as-is)
+
+Key reframing principle: Instead of "What value does this unlock?" ask
+"What does a user SEE and DO when using this product?"
+
+Example rewrites for anti-patterns section:
+```
+Anti-patterns (DO NOT include):
+- Marketing language without a specific user action ("streamline workflows", "enhance collaboration")
+- Outcomes that could describe any product in the category ("improve productivity")
+- Statements with no specific screen, button, or UI element mentioned
+- Business outcomes instead of user experiences ("reduce operational costs")
+```
+
+Example good/bad pairs for capability_mapping:
+```
+BAD: "Enable real-time visual collaboration at enterprise scale"
+GOOD: "Open a board and see teammates' cursors moving as they add sticky notes"
+
+BAD: "Automate protection of sensitive business information"
+GOOD: "Set board permissions so only specific team members can edit"
+```
+
+Do NOT change the JSON output schema, field names, or parsing logic.
+Only rewrite the prompt text that guides the LLM's extraction behavior.
+"""
+
+reference_files = [
+    "convex/analysis/lenses/extractTimeCompression.ts",
+    "convex/analysis/lenses/extractEffortElimination.ts",
+    "convex/analysis/lenses/extractCapabilityMapping.ts",
+    "convex/analysis/lenses/extractArtifactCreation.ts",
+    "convex/analysis/lenses/shared.ts"
+]

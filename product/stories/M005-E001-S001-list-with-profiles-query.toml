@@ -1,0 +1,75 @@
+# Story: Add listWithProfiles query
+# Query that joins products with profile summary data
+
+id = "M005-E001-S001"
+parent = "M005-E001"
+title = "Add products.listWithProfiles query"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+A new query in convex/products.ts returns all user products joined with profile
+summary data (completeness, confidence, hasConvergence, hasOutputs) to avoid
+N+1 queries on the product list page.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "listWithProfiles query returns products for the authenticated user"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each product includes profile summary: completeness, overallConfidence, hasConvergence, hasOutputs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Products without a profile return profile: null"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Query reuses existing auth pattern from products.list"
+
+[context]
+relevant_paths = [
+    "convex/products.ts",
+    "convex/productProfiles.ts",
+    "convex/schema.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add to convex/products.ts:
+
+```typescript
+export const listWithProfiles = query({
+  args: {},
+  handler: async (ctx) => {
+    // 1. Auth check (same as products.list)
+    // 2. Fetch all user products
+    // 3. For each product, fetch productProfile via by_product index
+    // 4. Return products with summary:
+    //    { ...product, profile: {
+    //        completeness, overallConfidence,
+    //        hasConvergence: !!convergence,
+    //        hasOutputs: !!outputs
+    //    } | null }
+  }
+});
+```
+
+Use ctx.db.query("productProfiles").withIndex("by_product", q => q.eq("productId", product._id)).unique()
+to fetch each profile.
+"""
+
+reference_files = [
+    "convex/products.ts",
+    "convex/productProfiles.ts"
+]

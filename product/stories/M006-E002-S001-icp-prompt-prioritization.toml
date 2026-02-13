@@ -1,0 +1,121 @@
+# Story: Improve ICP generation prompt to prioritize daily users over marketing personas
+# Update system prompt to distinguish core product users from buyers/evaluators/marketing personas
+
+id = "M006-E002-S001"
+parent = "M006-E002"
+title = "Improve ICP generation prompt to prioritize daily users over marketing personas"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The ICP_SYSTEM_PROMPT in generateICPProfiles.ts explicitly instructs Claude to
+distinguish "core daily users" (who use the product every day) from "evaluators,
+buyers, and marketing personas" (who the website talks about). The primary persona
+must represent who the product is built for, not who appears most in marketing
+content. Confidence scores reflect product-usage evidence, not content volume.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT contains instruction to distinguish 'core daily users' from 'evaluators' or 'buyers'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT instructs that the primary persona (highest confidence) must be who uses the product daily, not who the website promotes"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT contains guidance to weight Tier 1 value moments over content volume when ranking personas"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT instructs confidence scores to reflect product-usage data support, not marketing content prominence"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildICPPrompt includes a 'Prioritization Guidance' section when roles are present, reminding the LLM to rank by tier-1 relevance"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing parseICPProfiles tests continue to pass unchanged"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing buildICPPrompt tests continue to pass (backward compatible additions only)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/generateICPProfiles.test.ts",
+    "convex/analysis/outputs/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+This is a prompt engineering change. Modify ICP_SYSTEM_PROMPT and buildICPPrompt
+in generateICPProfiles.ts. Do NOT change parseICPProfiles or the output schema.
+
+1. **Update ICP_SYSTEM_PROMPT** — add a new section after "## Distinctness Requirement":
+
+```
+## Persona Prioritization
+Your PRIMARY persona must represent who uses this product every day — the core
+daily user — not who the website markets to or who evaluates/buys the product.
+
+Key distinction:
+- "Core daily user": the person whose daily workflow depends on this product
+- "Evaluator/buyer": the person who discovers, evaluates, or purchases the product
+- "Marketing persona": a role the website promotes heavily but who may not be a daily user
+
+If the input data is dominated by marketing/security/compliance content, that
+likely reflects website copy, NOT actual product usage. Down-weight roles that
+only appear in low-tier (Tier 3+) or marketing-heavy content.
+
+Rank personas by:
+1. Number of Tier 1 value moments associated with that role (strongest signal)
+2. Whether the role implies daily product usage (activation-level signal)
+3. Total occurrence count (weakest signal — high count from marketing copy is noise)
+
+Set confidence scores based on product-usage evidence, not content volume.
+A role with 2 Tier 1 moments deserves higher confidence than a role with 10 Tier 3 moments.
+```
+
+2. **Update buildICPPrompt** — after the "## Value Moments by Role" section, add:
+
+```typescript
+if (roles.length > 0) {
+  // Existing code...
+
+  // Add prioritization guidance
+  const tier1Roles = roles.filter(r => r.tier_1_count > 0);
+  if (tier1Roles.length > 0) {
+    parts.push("\\n## Prioritization Guidance");
+    parts.push("Roles with the most Tier 1 value moments are most likely core daily users:");
+    for (const role of tier1Roles.slice(0, 3)) {
+      parts.push(`- ${role.name}: ${role.tier_1_count} Tier 1 moments`);
+    }
+    parts.push("The primary persona should come from this group.");
+  }
+}
+```
+
+3. **Add new tests** for prompt content assertions (ICP_SYSTEM_PROMPT contains
+   "daily user", "evaluator", "buyer", "Tier 1", etc.) and for buildICPPrompt
+   including the prioritization guidance section.
+
+4. **Run existing tests** — all parseICPProfiles and buildICPPrompt tests must pass.
+   The changes are additive only; no output format changes.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/generateICPProfiles.test.ts"
+]

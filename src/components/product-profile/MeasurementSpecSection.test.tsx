@@ -6,13 +6,25 @@ import type {
   MeasurementSpec,
   TrackingEvent,
   EntityDefinition,
+  UserState,
 } from "../../../convex/analysis/outputs/types";
+
+function makeUserStateModel(): UserState[] {
+  return [
+    { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
+    { name: "activated", definition: "Reached activation", criteria: [{ event_name: "activation_reached", condition: "completed onboarding" }] },
+    { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "session_started", condition: "3+ sessions in 7 days" }] },
+    { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "session_started", condition: "no session in 14 days" }] },
+    { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "session_started", condition: "no session in 30 days" }] },
+  ];
+}
 
 function makeEvent(overrides: Partial<TrackingEvent> = {}): TrackingEvent {
   return {
     name: "test_event",
     entity_id: "test",
     description: "A test event",
+    perspective: "customer",
     properties: [],
     trigger_condition: "When user does something",
     maps_to: { type: "value_moment", moment_id: "vm-1" },
@@ -28,12 +40,14 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
         id: "user",
         name: "User",
         description: "A user account",
+        isHeartbeat: true,
         properties: [{ name: "user_id", type: "string", description: "User ID", isRequired: true }],
       },
       {
         id: "feature",
         name: "Feature",
         description: "A product feature",
+        isHeartbeat: false,
         properties: [],
       },
     ],
@@ -42,6 +56,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
         name: "user_signed_up",
         entity_id: "user",
         description: "User creates account",
+        perspective: "customer",
         trigger_condition: "Form submission",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 1 },
@@ -64,6 +79,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
         name: "feature_used",
         entity_id: "feature",
         description: "Core feature adopted",
+        perspective: "interaction",
         trigger_condition: "First use of feature",
         category: "activation",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
@@ -80,6 +96,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
         name: "feature_value_delivered",
         entity_id: "feature",
         description: "User receives value",
+        perspective: "product",
         trigger_condition: "Task completed",
         category: "value",
         maps_to: {
@@ -93,6 +110,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
         name: "user_returned",
         entity_id: "user",
         description: "User comes back",
+        perspective: "customer",
         trigger_condition: "Login after 24h",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 3 },
@@ -111,6 +129,7 @@ function makeSpec(overrides: Partial<MeasurementSpec> = {}): MeasurementSpec {
       activation_levels_covered: [1, 2, 3],
       value_moments_covered: ["vm-1", "vm-2"],
     },
+    userStateModel: makeUserStateModel(),
     confidence: 0.85,
     sources: ["source-1"],
     ...overrides,
@@ -122,6 +141,7 @@ function makeEntity(overrides: Partial<EntityDefinition> = {}): EntityDefinition
     id: "entity_user",
     name: "User",
     description: "A registered user of the platform",
+    isHeartbeat: false,
     properties: [
       {
         name: "user_id",
@@ -147,7 +167,7 @@ function makeEntity(overrides: Partial<EntityDefinition> = {}): EntityDefinition
 }
 
 function makeEntitySpec(): MeasurementSpec {
-  const userEntity = makeEntity();
+  const userEntity = makeEntity({ isHeartbeat: true });
   const projectEntity = makeEntity({
     id: "entity_project",
     name: "Project",
@@ -174,6 +194,7 @@ function makeEntitySpec(): MeasurementSpec {
       makeEvent({
         name: "user_signed_up",
         description: "User creates account",
+        perspective: "customer",
         trigger_condition: "Form submission",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 1 },
@@ -190,6 +211,7 @@ function makeEntitySpec(): MeasurementSpec {
       makeEvent({
         name: "user_activated",
         description: "User reaches activation",
+        perspective: "interaction",
         trigger_condition: "Completes onboarding",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 2 },
@@ -199,6 +221,7 @@ function makeEntitySpec(): MeasurementSpec {
       makeEvent({
         name: "project_created",
         description: "New project created",
+        perspective: "customer",
         trigger_condition: "User creates project",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
@@ -208,11 +231,12 @@ function makeEntitySpec(): MeasurementSpec {
       makeEvent({
         name: "system_health_check",
         description: "Periodic health check",
+        perspective: "product",
         trigger_condition: "Every 24h",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 3 },
         properties: [],
-        entity_id: undefined,
+        entity_id: "entity_user",
       }),
     ],
     total_events: 4,
@@ -356,7 +380,7 @@ test("entity card renders name, description, and event count badge", () => {
   expect(
     within(userCard).getByText("A registered user of the platform")
   ).toBeInTheDocument();
-  expect(within(userCard).getByText("2 events")).toBeInTheDocument();
+  expect(within(userCard).getByText("3 events")).toBeInTheDocument();
 
   const projectCard = screen.getByTestId("entity-card-entity_project");
   expect(within(projectCard).getByText("Project")).toBeInTheDocument();
@@ -392,6 +416,7 @@ test("events nested under parent entity using EventRow", () => {
   const userCard = screen.getByTestId("entity-card-entity_user");
   expect(within(userCard).getByText("user_signed_up")).toBeInTheDocument();
   expect(within(userCard).getByText("user_activated")).toBeInTheDocument();
+  expect(within(userCard).getByText("system_health_check")).toBeInTheDocument();
 
   const projectCard = screen.getByTestId("entity-card-entity_project");
   expect(within(projectCard).getByText("project_created")).toBeInTheDocument();
@@ -429,15 +454,15 @@ test("summary bar shows entity count alongside event count", () => {
   expect(screen.getByText("85% confidence")).toBeInTheDocument();
 });
 
-test("events without entity_id shown in Ungrouped section", () => {
+test("all events grouped under their entities", () => {
   setup(makeEntitySpec());
 
-  const ungrouped = screen.getByTestId("ungrouped-events");
-  expect(within(ungrouped).getByText("Ungrouped")).toBeInTheDocument();
-  expect(within(ungrouped).getByText("1 event")).toBeInTheDocument();
-  expect(
-    within(ungrouped).getByText("system_health_check")
-  ).toBeInTheDocument();
+  // system_health_check should be under entity_user
+  const userCard = screen.getByTestId("entity-card-entity_user");
+  expect(within(userCard).getByText("system_health_check")).toBeInTheDocument();
+
+  // No ungrouped section since all events have entity_id
+  expect(screen.queryByTestId("ungrouped-events")).not.toBeInTheDocument();
 });
 
 test("single entity shows singular entity label in summary", () => {

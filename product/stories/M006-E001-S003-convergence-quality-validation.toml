@@ -1,0 +1,105 @@
+# Story: Add post-convergence quality validation
+# Validate that convergence output meets distribution targets before storing
+
+id = "M006-E001-S003"
+parent = "M006-E001"
+title = "Add post-convergence quality validation"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+After convergence completes, a validation step checks that the output meets quality
+targets (tier distribution, total count, no empty names). Warnings are logged for
+near-misses. The pipeline continues regardless but quality metadata is stored
+alongside the result for inspection.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateConvergenceQuality function checks tier distribution (T1: 1-5, T2: 2-10, T3: <=20)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateConvergenceQuality checks total moment count is between 10 and 35"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateConvergenceQuality flags moments with empty names or descriptions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Returns quality report with pass/warn/fail per check and overall score"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Quality report is included in ConvergenceResult (new optional quality field)"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "runConvergencePipeline stores quality report alongside convergence data"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M006-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Add a pure function and extend ConvergenceResult:
+
+```typescript
+// In types.ts
+export interface QualityCheck {
+  name: string;
+  status: "pass" | "warn" | "fail";
+  message: string;
+}
+
+export interface QualityReport {
+  checks: QualityCheck[];
+  overall: "pass" | "warn" | "fail";
+}
+
+// Extend ConvergenceResult
+export interface ConvergenceResult {
+  // ...existing fields...
+  quality?: QualityReport;
+}
+```
+
+```typescript
+// In convergeAndTier.ts or new file
+export function validateConvergenceQuality(moments: ValueMoment[]): QualityReport {
+  const checks: QualityCheck[] = [];
+
+  const t1 = moments.filter(m => m.tier === 1).length;
+  const t2 = moments.filter(m => m.tier === 2).length;
+  const t3 = moments.filter(m => m.tier === 3).length;
+
+  // Check T1 count (target: 2-3)
+  // Check T2 count (target: 5-6)
+  // Check T3 count (target: <=20)
+  // Check total (target: 15-30)
+  // Check no empty names/descriptions
+
+  return { checks, overall: ... };
+}
+```
+
+Call in runConvergencePipeline after building moments, include in result.
+This is non-blocking — pipeline always continues. Quality report is for inspection.
+"""
+
+reference_files = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/types.ts"
+]

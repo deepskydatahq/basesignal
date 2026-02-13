@@ -1,0 +1,147 @@
+# Story: Add three-perspective coverage validation and user state model checks
+# Ensure the generated spec covers Customer, Product, and Interaction perspectives
+# and that the user state model is derivable from generated events
+
+id = "M007-E003-S003"
+parent = "M007-E003"
+title = "Add perspective coverage and user state model validation"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The measurement spec validation ensures all three perspectives (Customer, Product,
+Interaction) are represented in the generated events, and that the user state model
+references events that actually exist in the spec. Coverage reporting includes
+perspective distribution alongside existing activation-level and value-moment coverage.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Coverage computation includes perspective_distribution: { customer: number, product: number, interaction: number } showing event count per perspective"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Validation warns if any perspective has zero events (all three should have at least one)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Validation warns if 'product' perspective has fewer events than other perspectives (it should typically be the largest)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "User state model validation checks that each state's criteria reference event_names that exist in the spec's events array"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "User state model validation checks that 'activated' state criteria align with activation level input data (at least one overlapping event)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Coverage object in MeasurementSpec extended with perspective_distribution field"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All tests pass including new coverage validation tests"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Full measurement spec generation on test data produces spec with all three perspectives covered and valid user state model"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts"
+]
+
+input_fixtures = [
+    "Generated MeasurementSpec with events tagged by perspective",
+    "User state model referencing event names from the spec"
+]
+
+depends_on = ["M007-E003-S002"]
+
+[handoff]
+implementation_hints = """
+The coverage computation happens after parsing in generateMeasurementSpec.ts.
+Currently it computes activation_levels_covered and value_moments_covered.
+
+Add perspective distribution:
+
+```typescript
+const perspectiveDist = {
+  customer: events.filter(e => e.perspective === "customer").length,
+  product: events.filter(e => e.perspective === "product").length,
+  interaction: events.filter(e => e.perspective === "interaction").length,
+};
+```
+
+Add to the coverage object in the MeasurementSpec return value.
+
+Update the MeasurementSpec.coverage type:
+
+```typescript
+coverage: {
+  activation_levels_covered: number[];
+  value_moments_covered: string[];
+  perspective_distribution: {
+    customer: number;
+    product: number;
+    interaction: number;
+  };
+};
+```
+
+User state model validation:
+
+```typescript
+function validateUserStateModel(
+  states: UserState[],
+  events: TrackingEvent[],
+  activationLevels: ActivationLevel[]
+): string[] {
+  const warnings: string[] = [];
+  const eventNames = new Set(events.map(e => e.name));
+
+  for (const state of states) {
+    for (const criterion of state.criteria) {
+      if (!eventNames.has(criterion.event_name)) {
+        warnings.push(
+          `User state "${state.name}" references non-existent event "${criterion.event_name}"`
+        );
+      }
+    }
+  }
+
+  // Check activated state aligns with activation levels
+  const activatedState = states.find(s => s.name === "activated");
+  if (activatedState) {
+    // At least one criterion event should map to an activation level
+    const activationEvents = events.filter(
+      e => e.maps_to.type === "activation_level" || e.maps_to.type === "both"
+    );
+    const activationEventNames = new Set(activationEvents.map(e => e.name));
+    const hasOverlap = activatedState.criteria.some(
+      c => activationEventNames.has(c.event_name)
+    );
+    if (!hasOverlap) {
+      warnings.push("Activated state criteria don't reference any activation-level events");
+    }
+  }
+
+  return warnings;
+}
+```
+
+Log warnings but don't fail — the LLM may not perfectly match event names
+in the state model, and graceful degradation is better than hard failure.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/outputs/generateMeasurementSpec.test.ts"
+]

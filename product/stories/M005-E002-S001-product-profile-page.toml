@@ -1,0 +1,80 @@
+# Story: Create ProductProfilePage with tabs
+# Tabbed shell page for viewing a single product's analysis profile
+
+id = "M005-E002-S001"
+parent = "M005-E002"
+title = "Create ProductProfilePage with tabs"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+A tabbed profile page at /products/:productId shows the product header (name,
+URL, completeness, confidence) and four tabs for Value Moments, ICP Profiles,
+Activation Map, and Measurement Spec. Loading and empty states are handled.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ProductProfilePage reads productId from useParams and fetches product + profile data"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Header displays product name, URL, completeness %, and confidence score"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Back link navigates to /"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Four tabs render: Value Moments, ICP Profiles, Activation Map, Measurement Spec"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Loading state renders while data is being fetched"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state renders when profile has no data"
+
+[context]
+relevant_paths = [
+    "src/routes/ProductProfilePage.tsx",
+    "convex/products.ts",
+    "convex/productProfiles.ts",
+    "src/components/ui/tabs.tsx"
+]
+
+input_fixtures = []
+
+depends_on = ["M005-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Create src/routes/ProductProfilePage.tsx:
+
+```typescript
+export function ProductProfilePage() {
+  const { productId } = useParams<{ productId: string }>()
+  const product = useQuery(api.products.get, productId ? { id: productId as Id<"products"> } : "skip")
+  const profile = useQuery(api.productProfiles.get, productId ? { productId: productId as Id<"products"> } : "skip")
+
+  // Loading state
+  // Header: product.name, product.url, profile.completeness, profile.overallConfidence
+  // Tabs: Value Moments | ICP Profiles | Activation Map | Measurement Spec
+  // Each tab renders its section component (placeholder until built)
+}
+```
+
+Use existing Tabs, Card components from src/components/ui/.
+"""
+
+reference_files = [
+    "src/components/ui/tabs.tsx",
+    "src/components/ui/card.tsx",
+    "convex/productProfiles.ts"
+]

@@ -1,0 +1,94 @@
+# Story: Add quality validation for experiential moment names
+# Catch merged moments that still use business verbs or abstract framing
+
+id = "M007-E002-S002"
+parent = "M007-E002"
+title = "Add quality validation for experiential moment names"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The quality validation in convergeAndTier.ts checks that merged value moment names
+use user-action verbs, not business verbs. Moments starting with business verbs
+(Gain, Reduce, Accelerate, Optimize, Streamline, Automate) produce quality warnings.
+This catches any remaining abstract framing that slips through the updated prompts.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "BUSINESS_VERBS constant added to convergeAndTier.ts containing: Gain, Reduce, Accelerate, Optimize, Streamline, Automate, Leverage, Enable, Enhance, Empower, Transform, Revolutionize"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "USER_ACTION_VERBS constant added containing: Create, Share, Export, Build, Drag, Invite, Comment, Vote, Upload, Filter, Tag, Open, View, Configure, Set, Move, Edit, Delete, Copy, Pin, Search, Browse, Arrange, Draw, Connect, Assign, Schedule"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateConvergenceQuality() includes new 'experiential_names' check that warns when any moment name starts with a business verb"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Quality check reports which specific moments have business-verb names and suggests user-action alternatives"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: moment named 'Gain visibility into workload' produces quality warning"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: moment named 'View a heatmap of team workload' passes quality check"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: moment named 'Automate protection of sensitive data' produces quality warning"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Quality check is non-blocking (warn, not fail) — same pattern as existing tier_distribution and empty_fields checks"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/convergeAndTier.ts"
+]
+
+input_fixtures = [
+    "ConvergenceResult with mix of experiential and business-verb moment names"
+]
+
+depends_on = ["M007-E002-S001"]
+
+[handoff]
+implementation_hints = """
+The quality validation function is validateConvergenceQuality() in convergeAndTier.ts
+(lines 151-215). It already checks tier_distribution, total_count, and empty_fields.
+
+Add a fourth check following the same pattern:
+
+```typescript
+// Check experiential names
+const businessVerbPattern = /^(Gain|Reduce|Accelerate|Optimize|Streamline|Automate|Leverage|Enable|Enhance|Empower|Transform|Revolutionize)\b/;
+const businessVerbMoments = result.value_moments.filter(m => businessVerbPattern.test(m.name));
+
+let nameStatus: QualityStatus = "pass";
+let nameMessage = "All moment names use user-action verbs";
+if (businessVerbMoments.length > 0) {
+  nameStatus = "warn";
+  nameMessage = `${businessVerbMoments.length} moment(s) use business verbs: ${businessVerbMoments.map(m => m.name).join("; ")}`;
+}
+
+checks.push({ name: "experiential_names", status: nameStatus, message: nameMessage });
+```
+
+This is intentionally non-blocking (warn, not fail) because:
+1. Some business verbs may occasionally be appropriate
+2. The fix is in the prompts (E002-S001), not in hard validation
+3. This serves as a monitoring signal for prompt quality
+"""
+
+reference_files = [
+    "convex/analysis/convergence/convergeAndTier.ts"
+]

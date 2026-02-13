@@ -1,0 +1,84 @@
+# Story: Build MeasurementSpecSection
+# Display event tracking spec grouped by category with expandable details
+
+id = "M005-E004-S001"
+parent = "M005-E004"
+title = "Build MeasurementSpecSection component"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+A MeasurementSpecSection component displays the generated measurement spec.
+A summary bar shows total events, confidence, and category breakdown. Events
+are grouped by category (activation, value, retention, expansion). Each
+category has a table of events with expandable rows revealing property details.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Summary shows total events, confidence score, and category breakdown counts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Events grouped by category with header and count badge"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Table per category: event name, description, trigger condition, maps_to badge"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Collapsible row detail shows properties table (name, type, description)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state renders when no measurement spec exists"
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/MeasurementSpecSection.tsx",
+    "src/components/product-profile/types.ts",
+    "convex/analysis/outputs/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M005-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Create src/components/product-profile/MeasurementSpecSection.tsx:
+
+```typescript
+interface Props {
+  measurementSpec: MeasurementSpec
+}
+
+const CATEGORIES = ['activation', 'value', 'retention', 'expansion'] as const
+
+export function MeasurementSpecSection({ measurementSpec }: Props) {
+  const grouped = groupBy(measurementSpec.events, e => e.category)
+
+  // Summary bar: total_events, confidence, category counts
+  // Per category section:
+  //   - Header with category name + count Badge
+  //   - Table: name | description | trigger_condition | maps_to badge
+  //   - Each row expandable (Collapsible) to show properties:
+  //     - Sub-table: property name | type | description
+}
+```
+
+Use Table, Badge, Collapsible from ui/. Category colors:
+activation=indigo, value=emerald, retention=amber, expansion=purple.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/table.tsx",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/collapsible.tsx"
+]

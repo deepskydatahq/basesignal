@@ -1,0 +1,102 @@
+# Story: Rewrite Batch 2 lens prompts to extract user-experienced moments
+# These 3 lenses receive Batch 1 context and build on it
+
+id = "M007-E001-S002"
+parent = "M007-E001"
+title = "Rewrite Batch 2 lens prompts for experiential extraction"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The three Batch 2 lenses (info_asymmetry, decision_enablement, state_transitions)
+produce candidates describing what users experience — not abstract information gains,
+business decisions, or state changes. Each candidate references a specific screen,
+dashboard, notification, or interaction in the product where the user gains insight,
+makes a decision, or changes their workflow.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "info_asymmetry SYSTEM_PROMPT reframed from 'What information gaps does the product fill?' to 'What does a user SEE in this product that they couldn't see before? Describe the screen, dashboard, or notification.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "decision_enablement SYSTEM_PROMPT reframed from 'What decisions become possible?' to 'What specific choice does a user make INSIDE the product? What screen shows them the data they need?'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "state_transitions SYSTEM_PROMPT reframed from 'What user state changes occur?' to 'What changes in a user's workflow after using a specific feature? Describe the before/after in terms of what they do on screen.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each Batch 2 prompt includes anti-patterns for marketing language matching Batch 1 patterns"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each prompt includes 2-3 GOOD vs BAD example pairs specific to the lens type"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Batch 2 context summary from Batch 1 is used but does not override the experiential framing instruction"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing lens tests pass with updated prompts"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/extractInfoAsymmetry.ts",
+    "convex/analysis/lenses/extractDecisionEnablement.ts",
+    "convex/analysis/lenses/extractStateTransitions.ts"
+]
+
+input_fixtures = [
+    "Miro marketing page content",
+    "Batch 1 context summary (top 5 candidates per lens)"
+]
+
+depends_on = ["M007-E001-S001"]
+
+[handoff]
+implementation_hints = """
+The Batch 2 system prompts are local constants:
+- SYSTEM_PROMPT in extractInfoAsymmetry.ts (lines 88-121)
+- SYSTEM_PROMPT in extractDecisionEnablement.ts (lines 84-117)
+- SYSTEM_PROMPT in extractStateTransitions.ts (lines 96-129)
+
+These lenses receive Batch 1 results as context via the orchestrator. The context
+summary shows the top 5 candidates from each Batch 1 lens. This is useful but
+shouldn't override the experiential framing.
+
+Key reframing examples:
+
+**info_asymmetry:**
+BAD: "Gain visibility into team workload distribution across projects"
+GOOD: "Open the workload view and see a heatmap of who has too many tasks this week"
+
+**decision_enablement:**
+BAD: "Decide optimal resource allocation based on capacity data"
+GOOD: "Look at the sprint board's capacity bar and decide whether to move a story to next sprint"
+
+**state_transitions:**
+BAD: "From manual tracker → automated reporter"
+GOOD: "From copying task counts into a spreadsheet → opening a dashboard that updates live"
+
+The state_transitions lens uses a "From X → To Y" naming pattern. Keep this pattern
+but make both sides experiential:
+BAD: "From fragmented communication → unified collaboration"
+GOOD: "From switching between email/Slack/docs → commenting directly on the board"
+
+Do NOT change JSON output schemas or parsing logic — only prompt text.
+"""
+
+reference_files = [
+    "convex/analysis/lenses/extractInfoAsymmetry.ts",
+    "convex/analysis/lenses/extractDecisionEnablement.ts",
+    "convex/analysis/lenses/extractStateTransitions.ts",
+    "convex/analysis/lenses/orchestrate.ts"
+]

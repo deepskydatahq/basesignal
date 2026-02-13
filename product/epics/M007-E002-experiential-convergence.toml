@@ -1,0 +1,100 @@
+# Epic: Update convergence pipeline to produce user-experienced value moments
+# Problem: Merge prompt produces abstract business outcomes ("Automate protection of...")
+# Solution: Rewrite merge prompt to synthesize experiential moments
+
+id = "M007-E002"
+parent = "M007"
+title = "Experiential Convergence"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+The convergence pipeline (clustering + merge + tier) produces value moments that
+describe what users actually experience. A product manager reading the value moments
+would say "yes, that's exactly what our users do" — not "that sounds like our marketing
+page." Moment names describe user actions with observable results, not abstract business
+outcomes.
+"""
+
+job_story = """
+When lens candidates are clustered and merged into value moments,
+I want the resulting moments to describe user-experienced actions with visible outcomes,
+so that a PM can immediately recognize each moment as something their users actually do.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Merge system prompt instructs LLM to produce experiential moments, not business outcomes",
+    "Merge prompt includes good/bad examples: 'Create a shared whiteboard for brainstorming' (good) vs 'Optimize visual collaboration workflows' (bad)",
+    "Moment names start with a user-action verb (Create, Share, Export, Drag, Build) not a business verb (Automate, Streamline, Optimize, Leverage)",
+    "Moment descriptions reference specific product surfaces and UI elements",
+    "Clustering prompt encourages grouping by shared user action, not by abstract theme",
+    "Quality validation checks that moments are experiential (not just non-empty)",
+    "All convergence tests still pass",
+    "Miro test produces moments like 'Build a collaborative mood board' not 'Enable visual ideation workflows'"
+]
+
+validator_context = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/validateCandidates.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/types.ts"
+]
+
+dependencies = ["M007-E001"]
+
+[notes]
+considerations = """
+**Root Cause Analysis**
+
+The merge system prompt (convergeAndTier.ts:219-245) says:
+  "Your job: Merge them into ONE cohesive value moment"
+  "The name MUST start with a verb (Gain, Reduce, Accelerate, Eliminate, Enable)"
+
+The suggested verbs are all BUSINESS verbs. "Gain visibility", "Reduce time",
+"Accelerate delivery" — these frame moments as business outcomes. The user doesn't
+"Gain visibility into project status" — they "Open the dashboard and see which tasks
+are blocked."
+
+**Fix Approach**
+
+1. **Merge prompt rewrite** (convergeAndTier.ts):
+   - Replace business verb examples with user-action verbs:
+     "The name MUST start with a user-action verb (Create, Share, Export, Drag, Build,
+      Invite, Comment, Vote, Upload, Arrange, Filter, Tag)"
+   - Add explicit instruction: "Describe what happens on the user's screen, not what
+     the business achieves"
+   - Add paired examples:
+     BAD: "Gain visibility into team workload distribution"
+     GOOD: "View a heatmap showing who's overloaded this sprint"
+     BAD: "Accelerate cross-functional alignment"
+     GOOD: "Share a board link so marketing can comment on the wireframe"
+   - Add rule: "The user should be able to point to a screen in the product where this
+     moment happens"
+
+2. **Clustering prompt update** (clusterCandidates.ts):
+   - Current: "group candidates that describe the SAME underlying value moment"
+   - Updated: "group candidates that describe the SAME user action or experience"
+   - This shifts clustering from thematic grouping to action-based grouping
+
+3. **Quality validation update** (convergeAndTier.ts quality checks):
+   - Add check: does the moment name start with a user-action verb?
+   - Business verbs (Gain, Reduce, Accelerate, Optimize, Streamline, Automate, Leverage,
+     Enable, Enhance) → quality warning
+   - User-action verbs (Create, Share, Export, Build, Drag, Invite, Comment, Vote,
+     Upload, Filter, Tag, Open, View, Configure, Set, Move) → pass
+
+**Estimated stories: 2**
+- S001: Rewrite merge and clustering prompts for experiential framing
+- S002: Add quality validation for experiential moment names
+"""
+
+estimated_stories = 2

@@ -1,0 +1,110 @@
+# Epic: Rewrite lens extraction prompts to ground candidates in user experience
+# Problem: Lenses extract from marketing pages and produce abstract business outcomes
+# Solution: Reframe every lens question as "What does a user DO in this product?"
+
+id = "M007-E001"
+parent = "M007"
+title = "Experiential Lens Extraction"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+All 7 analytical lenses produce candidates grounded in what users actually experience
+inside the product, not abstract business outcomes from marketing copy. Each candidate
+describes a concrete user action or moment that happens while using the product.
+Candidates like "Automate protection of sensitive business information" are impossible
+to produce — they would be caught by anti-patterns or never generated.
+"""
+
+job_story = """
+When I run the analysis pipeline on a product website,
+I want lens candidates to describe things users DO inside the product,
+so that the resulting value moments feel accurate to someone who actually uses the product.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Each lens system prompt explicitly asks about user actions/experiences inside the product, not business outcomes",
+    "Anti-patterns include marketing language like 'automate', 'streamline', 'enhance', 'leverage' when not tied to a specific user action",
+    "Each lens prompt includes 2-3 examples of GOOD (experiential) vs BAD (abstract) candidates",
+    "Candidates from Miro test run describe recognizable in-app moments (e.g., 'drag sticky notes to group ideas' not 'optimize visual collaboration workflows')",
+    "Validation catches candidates that describe business outcomes rather than user experiences",
+    "All existing lens tests still pass with updated prompts",
+    "Each lens still produces 8-20 candidates per run"
+]
+
+validator_context = [
+    "convex/analysis/lenses/extractTimeCompression.ts",
+    "convex/analysis/lenses/extractEffortElimination.ts",
+    "convex/analysis/lenses/extractCapabilityMapping.ts",
+    "convex/analysis/lenses/extractArtifactCreation.ts",
+    "convex/analysis/lenses/extractInfoAsymmetry.ts",
+    "convex/analysis/lenses/extractDecisionEnablement.ts",
+    "convex/analysis/lenses/extractStateTransitions.ts",
+    "convex/analysis/convergence/validateCandidates.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/",
+    "convex/analysis/convergence/validateCandidates.ts",
+    "convex/analysis/lenses/shared.ts"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+**Root Cause Analysis**
+
+The 7 lenses ask questions like:
+- "What new capacities does this product unlock?" (capability_mapping)
+- "What repetitive work vanishes entirely?" (effort_elimination)
+- "What information gaps does the product fill?" (info_asymmetry)
+
+These questions pull toward BUSINESS LANGUAGE because the source material is marketing
+pages. The LLM reads "Miro enables real-time visual collaboration at scale" and produces
+"Enable real-time visual collaboration at enterprise scale" — which is marketing, not
+a user experience.
+
+**Fix Approach**
+
+Each lens needs a two-part reframe:
+
+1. **Core question reframe**: Instead of asking about abstract value, ask about what
+   happens on screen. Examples:
+   - capability_mapping: "What can a user DO in this product that they couldn't before?"
+     → "What specific actions does a user take in this product? Describe the screen, the
+        click, the result they see."
+   - effort_elimination: "What work vanishes?" → "What step does the user SKIP that they
+     used to do manually? Be specific about the before/after workflow."
+
+2. **Anti-pattern expansion**: Current anti-patterns catch "saves a click" and "better
+   visibility" but NOT marketing language. Add patterns like:
+   - "Sounds like it belongs on a landing page, not in a user story"
+   - "Could describe any product in the category" (non-specific)
+   - "No specific UI element, screen, or action is mentioned"
+   - "Uses words like 'leverage', 'streamline', 'optimize', 'empower'"
+
+3. **Good/bad examples per lens**: Each lens should show 2-3 paired examples:
+   - BAD: "Automate protection of sensitive business information"
+   - GOOD: "Set board-level permissions to restrict who can edit sensitive content"
+   - BAD: "Enhance cross-functional collaboration capabilities"
+   - GOOD: "@ mention a teammate on a sticky note to get their input"
+
+**Validation Enhancement**
+
+In validateCandidates.ts, add a new check:
+- MARKETING_LANGUAGE_PATTERNS: detect abstract outcomes without specific user actions
+- Words like "automate", "streamline", "leverage", "optimize", "enhance" (when standalone)
+- Flag these for LLM review with rewrite guidance toward experiential framing
+
+**Estimated stories: 3**
+- S001: Rewrite Batch 1 lens prompts (time_compression, effort_elimination, capability_mapping, artifact_creation)
+- S002: Rewrite Batch 2 lens prompts (info_asymmetry, decision_enablement, state_transitions)
+- S003: Enhance candidate validation with marketing-language detection
+"""
+
+estimated_stories = 3

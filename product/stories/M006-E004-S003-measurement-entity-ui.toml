@@ -1,0 +1,148 @@
+# Story: Update MeasurementSpecSection UI to display entity-grouped events
+# Add entity view with entity cards, property tables, and nested events
+
+id = "M006-E004-S003"
+parent = "M006-E004"
+title = "Update MeasurementSpecSection UI to display entity-grouped events"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The MeasurementSpecSection component can display events grouped by entity in
+addition to the existing category view. When entities are present in the
+measurement spec, the default view shows entity cards — each card displays the
+entity name, description, a property table, and nested events belonging to that
+entity. A toggle allows switching between entity view and category view. The
+category view remains the fallback when no entities are defined (backwards compat).
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "When spec has entities, the entity view is rendered by default"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each entity renders as a card with name, description, and event count badge"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Entity card includes a property table showing name, type, description, and required badge"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Events are nested under their parent entity card using the existing EventRow component"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Toggle button switches between 'By Entity' and 'By Category' views"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Category view continues to work identically to current implementation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "When spec has no entities (legacy data), category view is shown and toggle is hidden"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Summary bar shows entity count alongside event count when entities are present"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Events without an entity_id are shown in an 'Ungrouped' section in entity view"
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/MeasurementSpecSection.tsx",
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/collapsible.tsx",
+    "src/components/ui/table.tsx"
+]
+
+input_fixtures = []
+
+depends_on = ["M006-E004-S002"]
+
+[handoff]
+implementation_hints = """
+Update MeasurementSpecSection.tsx to add entity-grouped view:
+
+1. Add a groupEventsByEntity helper:
+```typescript
+function groupEventsByEntity(
+  events: TrackingEvent[],
+  entities: EntityDefinition[]
+): Map<string, { entity: EntityDefinition; events: TrackingEvent[] }> {
+  const map = new Map();
+  for (const entity of entities) {
+    map.set(entity.id, { entity, events: [] });
+  }
+  // Ungrouped bucket for events without entity_id
+  map.set("__ungrouped", { entity: null, events: [] });
+  for (const event of events) {
+    const bucket = event.entity_id && map.has(event.entity_id)
+      ? event.entity_id
+      : "__ungrouped";
+    map.get(bucket)!.events.push(event);
+  }
+  return map;
+}
+```
+
+2. Add an EntityCard component:
+```typescript
+function EntityCard({ entity, events }: { entity: EntityDefinition; events: TrackingEvent[] }) {
+  // Render entity name + description
+  // Render property table (entity.properties) with columns: Property, Type, Required, Description
+  // Render events using existing EventRow component
+}
+```
+
+3. Add view toggle state:
+```typescript
+const [viewMode, setViewMode] = useState<"entity" | "category">(
+  measurementSpec.entities?.length ? "entity" : "category"
+);
+```
+
+4. Render toggle buttons in the summary bar area — use simple button group or
+   tab-like styling consistent with the existing Tailwind approach. Example:
+```tsx
+{measurementSpec.entities?.length && (
+  <div className="flex rounded-md border border-gray-200 overflow-hidden">
+    <button
+      className={`px-3 py-1 text-xs ${viewMode === "entity" ? "bg-gray-100 font-medium" : ""}`}
+      onClick={() => setViewMode("entity")}
+    >By Entity</button>
+    <button
+      className={`px-3 py-1 text-xs ${viewMode === "category" ? "bg-gray-100 font-medium" : ""}`}
+      onClick={() => setViewMode("category")}
+    >By Category</button>
+  </div>
+)}
+```
+
+5. Import the new types (EntityDefinition, EntityProperty) from types.ts.
+
+6. The existing category view code (groupEventsByCategory, category sections) should
+   remain unchanged — just conditionally rendered when viewMode === "category".
+
+7. For the entity property table, reuse the existing Table/TableRow/TableCell components
+   already imported. Add a "Required" column with a small badge.
+
+8. Update the summary bar to show entity count: "{entities.length} entities, {total_events} events"
+   when entities are present.
+"""
+
+reference_files = [
+    "src/components/product-profile/MeasurementSpecSection.tsx",
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/table.tsx"
+]
