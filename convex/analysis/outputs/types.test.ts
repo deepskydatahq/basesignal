@@ -8,17 +8,31 @@ import type {
   EventProperty,
   EntityProperty,
   EntityDefinition,
+  EntityPropertyDef,
   MapsTo,
+  Perspective,
   TrackingEvent,
   MeasurementSpec,
+  UserState,
+  UserStateCriterion,
   OutputGenerationResult,
   ValueMoment,
   ValueMomentTier,
   ActivationLevel,
   SignalStrength,
-  EntityDefinition,
-  EntityPropertyDef,
 } from "./types";
+
+// --- Helper: valid UserState model ---
+
+function makeUserStateModel(): UserState[] {
+  return [
+    { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
+    { name: "activated", definition: "Reached activation", criteria: [{ event_name: "activation_reached", condition: "completed onboarding" }] },
+    { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "session_started", condition: "3+ sessions in 7 days" }] },
+    { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "session_started", condition: "no session in 14 days" }] },
+    { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "session_started", condition: "no session in 30 days" }] },
+  ];
+}
 
 describe("ValueMomentPriority", () => {
   it("includes moment_id, priority (1-3), relevance_reason", () => {
@@ -213,22 +227,46 @@ describe("EntityProperty", () => {
 });
 
 describe("EntityDefinition", () => {
-  it("includes id, name, description, properties", () => {
+  it("includes id, name, description, isHeartbeat, properties", () => {
     const entity: EntityDefinition = {
-      id: "entity-user",
-      name: "User",
-      description: "A platform user account",
+      id: "issue",
+      name: "Issue",
+      description: "A trackable work item in the project",
+      isHeartbeat: true,
       properties: [
-        { name: "email", type: "string", description: "Email address", isRequired: true },
-        { name: "plan", type: "string", description: "Subscription plan", isRequired: false },
+        { name: "issue_id", type: "string", description: "Unique identifier", isRequired: true },
+        { name: "status", type: "string", description: "Current status", isRequired: false },
       ],
     };
-    expect(entity.id).toBe("entity-user");
-    expect(entity.name).toBe("User");
-    expect(entity.description).toContain("platform user");
+    expect(entity.id).toBe("issue");
+    expect(entity.name).toBe("Issue");
+    expect(entity.description).toContain("trackable work item");
+    expect(entity.isHeartbeat).toBe(true);
     expect(entity.properties).toHaveLength(2);
     expect(entity.properties[0].isRequired).toBe(true);
     expect(entity.properties[1].isRequired).toBe(false);
+  });
+
+  it("isHeartbeat defaults to false for non-heartbeat entities", () => {
+    const entity: EntityDefinition = {
+      id: "board",
+      name: "Board",
+      description: "A kanban board",
+      isHeartbeat: false,
+      properties: [],
+    };
+    expect(entity.isHeartbeat).toBe(false);
+  });
+
+  it("EntityPropertyDef includes isRequired flag", () => {
+    const prop: EntityPropertyDef = {
+      name: "status",
+      type: "string",
+      description: "Current status",
+      isRequired: false,
+    };
+    expect(prop.isRequired).toBe(false);
+    expect(prop.type).toBe("string");
   });
 });
 
@@ -259,40 +297,30 @@ describe("MapsTo discriminated union", () => {
   });
 });
 
-describe("EntityDefinition", () => {
-  it("includes id, name, description, properties", () => {
-    const entity: EntityDefinition = {
-      id: "issue",
-      name: "Issue",
-      description: "A trackable work item",
-      properties: [
-        { name: "issue_id", type: "string", description: "Unique identifier", isRequired: true },
-      ],
-    };
-    expect(entity.id).toBe("issue");
-    expect(entity.name).toBe("Issue");
-    expect(entity.description).toContain("trackable work item");
-    expect(entity.properties).toHaveLength(1);
+describe("Perspective", () => {
+  it("supports customer perspective", () => {
+    const p: Perspective = "customer";
+    expect(p).toBe("customer");
   });
 
-  it("EntityPropertyDef includes isRequired flag", () => {
-    const prop: EntityPropertyDef = {
-      name: "status",
-      type: "string",
-      description: "Current status",
-      isRequired: false,
-    };
-    expect(prop.isRequired).toBe(false);
-    expect(prop.type).toBe("string");
+  it("supports product perspective", () => {
+    const p: Perspective = "product";
+    expect(p).toBe("product");
+  });
+
+  it("supports interaction perspective", () => {
+    const p: Perspective = "interaction";
+    expect(p).toBe("interaction");
   });
 });
 
 describe("TrackingEvent", () => {
-  it("includes name, entity_id, description, properties, trigger_condition, maps_to, category", () => {
+  it("includes name, entity_id, description, perspective, properties, trigger_condition, maps_to, category", () => {
     const event: TrackingEvent = {
       name: "dashboard_created",
       entity_id: "dashboard",
       description: "User creates their first analytics dashboard",
+      perspective: "customer",
       properties: [
         { name: "dashboard_id", type: "string", description: "Dashboard identifier", isRequired: true },
         { name: "template_used", type: "boolean", description: "Whether a template was used", isRequired: false },
@@ -304,32 +332,36 @@ describe("TrackingEvent", () => {
     expect(event.name).toBe("dashboard_created");
     expect(event.entity_id).toBe("dashboard");
     expect(event.description).toContain("first analytics dashboard");
+    expect(event.perspective).toBe("customer");
     expect(event.properties).toHaveLength(2);
     expect(event.trigger_condition).toContain("Create Dashboard");
     expect(event.maps_to.type).toBe("value_moment");
     expect(event.category).toBe("activation");
   });
 
-  it("works with each MapsTo variant", () => {
+  it("works with each MapsTo variant and perspective", () => {
     const vmEvent: TrackingEvent = {
       name: "feature_used",
       entity_id: "feature",
       description: "Core feature usage",
+      perspective: "interaction",
       properties: [],
       trigger_condition: "Feature invoked",
       maps_to: { type: "value_moment", moment_id: "vm-002" },
-      category: "engagement",
+      category: "value",
     };
     expect(vmEvent.maps_to.type).toBe("value_moment");
+    expect(vmEvent.perspective).toBe("interaction");
 
     const alEvent: TrackingEvent = {
       name: "tutorial_completed",
       entity_id: "tutorial",
       description: "Onboarding tutorial finished",
+      perspective: "customer",
       properties: [],
       trigger_condition: "Last step completed",
       maps_to: { type: "activation_level", activation_level: 2 },
-      category: "onboarding",
+      category: "activation",
     };
     expect(alEvent.maps_to.type).toBe("activation_level");
 
@@ -337,48 +369,77 @@ describe("TrackingEvent", () => {
       name: "team_invited",
       entity_id: "team",
       description: "User invites team members",
+      perspective: "customer",
       properties: [{ name: "invitee_count", type: "number", description: "Number invited", isRequired: true }],
       trigger_condition: "Invite sent successfully",
       maps_to: { type: "both", moment_id: "vm-003", activation_level: 3 },
-      category: "collaboration",
+      category: "expansion",
     };
     expect(bothEvent.maps_to.type).toBe("both");
   });
 
-  it("supports optional entity_id", () => {
-    const eventWithEntityId: TrackingEvent = {
-      name: "issue_created",
-      description: "New issue created",
-      properties: [],
-      trigger_condition: "Form submitted",
-      maps_to: { type: "activation_level", activation_level: 1 },
-      category: "activation",
-      entity_id: "entity-issue",
+  it("supports product perspective for system-generated events", () => {
+    const event: TrackingEvent = {
+      name: "insight_delivered",
+      entity_id: "insight",
+      description: "System delivers an analytics insight",
+      perspective: "product",
+      properties: [{ name: "insight_type", type: "string", description: "Type of insight", isRequired: true }],
+      trigger_condition: "Insight generation pipeline completes",
+      maps_to: { type: "value_moment", moment_id: "vm-001" },
+      category: "value",
     };
-    expect(eventWithEntityId.entity_id).toBe("entity-issue");
+    expect(event.perspective).toBe("product");
+  });
+});
+
+describe("UserStateCriterion", () => {
+  it("includes event_name and condition", () => {
+    const criterion: UserStateCriterion = {
+      event_name: "user_signed_up",
+      condition: "within last 7 days, no activation events",
+    };
+    expect(criterion.event_name).toBe("user_signed_up");
+    expect(criterion.condition).toContain("7 days");
+  });
+});
+
+describe("UserState", () => {
+  it("includes name, definition, and criteria array", () => {
+    const state: UserState = {
+      name: "new",
+      definition: "Users who signed up but haven't activated",
+      criteria: [
+        { event_name: "user_signed_up", condition: "within last 7 days" },
+        { event_name: "activation_reached", condition: "has not occurred" },
+      ],
+    };
+    expect(state.name).toBe("new");
+    expect(state.definition).toContain("signed up");
+    expect(state.criteria).toHaveLength(2);
   });
 
-  it("has undefined entity_id when not set", () => {
-    const eventWithout: TrackingEvent = {
-      name: "issue_created",
-      description: "New issue created",
-      properties: [],
-      trigger_condition: "Form submitted",
-      maps_to: { type: "activation_level", activation_level: 1 },
-      category: "activation",
-    };
-    expect(eventWithout.entity_id).toBeUndefined();
+  it("supports all 5 required state names", () => {
+    const names = ["new", "activated", "active", "at_risk", "dormant"];
+    const states: UserState[] = names.map((name) => ({
+      name,
+      definition: `Definition for ${name}`,
+      criteria: [{ event_name: "test_event", condition: "test condition" }],
+    }));
+    expect(states).toHaveLength(5);
+    expect(states.map((s) => s.name)).toEqual(names);
   });
 });
 
 describe("MeasurementSpec", () => {
-  it("includes entities, events, total_events, coverage, confidence, sources", () => {
+  it("includes entities, events, total_events, coverage, userStateModel, confidence, sources", () => {
     const spec: MeasurementSpec = {
       entities: [
         {
           id: "signup",
           name: "Signup",
           description: "A user signup",
+          isHeartbeat: true,
           properties: [{ name: "signup_id", type: "string", description: "Signup ID", isRequired: true }],
         },
       ],
@@ -387,10 +448,11 @@ describe("MeasurementSpec", () => {
           name: "signup_completed",
           entity_id: "signup",
           description: "User completes signup flow",
+          perspective: "customer",
           properties: [{ name: "method", type: "string", description: "Auth method used", isRequired: true }],
           trigger_condition: "Signup form submitted successfully",
           maps_to: { type: "activation_level", activation_level: 1 },
-          category: "acquisition",
+          category: "activation",
         },
       ],
       total_events: 1,
@@ -398,49 +460,52 @@ describe("MeasurementSpec", () => {
         activation_levels_covered: [1, 2, 3],
         value_moments_covered: ["vm-001", "vm-002"],
       },
+      userStateModel: makeUserStateModel(),
       confidence: 0.8,
       sources: ["https://example.com/docs"],
     };
     expect(spec.entities).toHaveLength(1);
+    expect(spec.entities[0].isHeartbeat).toBe(true);
     expect(spec.events).toHaveLength(1);
+    expect(spec.events[0].perspective).toBe("customer");
     expect(spec.total_events).toBe(1);
     expect(spec.coverage.activation_levels_covered).toEqual([1, 2, 3]);
     expect(spec.coverage.value_moments_covered).toEqual(["vm-001", "vm-002"]);
+    expect(spec.userStateModel).toHaveLength(5);
     expect(spec.confidence).toBe(0.8);
     expect(spec.sources).toHaveLength(1);
   });
 
-  it("supports optional entities field", () => {
-    const specWithEntities: MeasurementSpec = {
+  it("supports optional warnings field", () => {
+    const spec: MeasurementSpec = {
+      entities: [
+        { id: "item", name: "Item", description: "An item", isHeartbeat: true, properties: [] },
+      ],
       events: [],
       total_events: 0,
       coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      userStateModel: makeUserStateModel(),
       confidence: 0.7,
       sources: [],
-      entities: [
-        {
-          id: "entity-user",
-          name: "User",
-          description: "A platform user",
-          properties: [
-            { name: "email", type: "string", description: "Email", isRequired: true },
-          ],
-        },
-      ],
+      warnings: ["Event 0 'item_created': property 'item_id' duplicates a property on entity 'item'"],
     };
-    expect(specWithEntities.entities).toHaveLength(1);
-    expect(specWithEntities.entities![0].name).toBe("User");
+    expect(spec.warnings).toHaveLength(1);
+    expect(spec.warnings![0]).toContain("duplicates");
   });
 
-  it("has undefined entities when not set", () => {
-    const specWithout: MeasurementSpec = {
+  it("has undefined warnings when not set", () => {
+    const spec: MeasurementSpec = {
+      entities: [
+        { id: "item", name: "Item", description: "An item", isHeartbeat: true, properties: [] },
+      ],
       events: [],
       total_events: 0,
       coverage: { activation_levels_covered: [], value_moments_covered: [] },
+      userStateModel: makeUserStateModel(),
       confidence: 0.7,
       sources: [],
     };
-    expect(specWithout.entities).toBeUndefined();
+    expect(spec.warnings).toBeUndefined();
   });
 });
 
@@ -475,13 +540,16 @@ describe("confidence and sources on all output types", () => {
 
   it("MeasurementSpec has confidence and sources", () => {
     const spec: MeasurementSpec = {
-      entities: [],
+      entities: [
+        { id: "item", name: "Item", description: "An item", isHeartbeat: true, properties: [] },
+      ],
       events: [],
       total_events: 0,
       coverage: {
         activation_levels_covered: [],
         value_moments_covered: [],
       },
+      userStateModel: makeUserStateModel(),
       confidence: 0.6,
       sources: ["source3"],
     };
@@ -524,13 +592,16 @@ describe("OutputGenerationResult", () => {
         sources: ["https://example.com"],
       },
       measurement_spec: {
-        entities: [],
+        entities: [
+          { id: "item", name: "Item", description: "An item", isHeartbeat: true, properties: [] },
+        ],
         events: [],
         total_events: 0,
         coverage: {
           activation_levels_covered: [1],
           value_moments_covered: [],
         },
+        userStateModel: makeUserStateModel(),
         confidence: 0.7,
         sources: ["https://example.com"],
       },

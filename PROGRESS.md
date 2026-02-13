@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
+
+**Files Changed:**
+- `convex/analysis/outputs/types.ts` - Added `isHeartbeat: boolean` to EntityDefinition; added `Perspective` type ("customer" | "product" | "interaction") and `perspective` field to TrackingEvent; added `UserStateCriterion` and `UserState` interfaces; added `userStateModel: UserState[]` and `warnings?: string[]` to MeasurementSpec; made `entity_id` required on TrackingEvent; made `entities` required on MeasurementSpec; consolidated duplicate interface definitions
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Updated system prompt for isHeartbeat, perspective, userStateModel; added heartbeat count validation (exactly 1); added perspective validation on events; added property duplication warning logic; added `parseUserStateModel()` for validating 5 required user states (new, activated, active, at_risk, dormant); parser now returns warnings array
+- `convex/analysis/outputs/types.test.ts` - Added tests for Perspective, UserStateCriterion, UserState, isHeartbeat, perspective on TrackingEvent, userStateModel and warnings on MeasurementSpec; removed obsolete tests for optional entity_id/entities
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - Added heartbeat validation tests (4), perspective validation tests (4), property duplication warning tests (3), parseUserStateModel tests (8), missing userStateModel test; updated all fixtures with isHeartbeat, perspective, userStateModel
+- `convex/analysis/outputs/orchestrate.test.ts` - Updated fixtures with isHeartbeat, perspective, userStateModel
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - Updated fixtures with isHeartbeat, perspective, userStateModel; reassigned ungrouped events to entities
+
+**Learnings:**
+- Pre-existing duplicate interface definitions in types.ts (EntityDefinition defined twice, entity_id both required and optional, entities both required and optional) — consolidating them is necessary when making fields required
+- Property duplication warnings (event props sharing names with parent entity props) are intentionally non-blocking — stored in `warnings?: string[]` rather than throwing
+- `isHeartbeat === true` pattern handles backward compatibility when field may be missing from older LLM responses
+
+**Patterns Discovered:**
+- Warning vs error distinction: validation errors (wrong heartbeat count, invalid perspective, bad user state model) throw immediately; warnings (property name duplication) collect into an array and are returned alongside the parsed result
+- Required user state names as a constant set enables both validation and clear error messages about which names are expected
+
+**Gotchas:**
+- Making entity_id required on TrackingEvent broke "ungrouped events" test in MeasurementSpecSection — resolved by assigning all test events to entities
+- Pre-existing "Write outside of transaction" convex-test errors from scheduled functions still present — unrelated to this work
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**

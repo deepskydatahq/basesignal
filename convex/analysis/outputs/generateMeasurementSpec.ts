@@ -9,6 +9,9 @@ import type {
   EventProperty,
   EntityDefinition,
   EntityPropertyDef,
+  Perspective,
+  UserState,
+  UserStateCriterion,
 } from "./types";
 
 // --- System Prompt ---
@@ -22,13 +25,14 @@ Entity schema:
 - id: lowercase identifier matching /^[a-z][a-z0-9_]*$/ (e.g., "issue", "board", "cycle")
 - name: human-readable name (e.g., "Issue", "Board", "Cycle")
 - description: what this entity represents in the product
+- isHeartbeat: true for exactly ONE entity that represents the core unit of value (e.g., "issue" for a project tracker)
 - properties: array of entity properties, each with:
   - name: snake_case property name
   - type: one of "string", "number", "boolean", "array"
   - description: what this property captures
   - isRequired: true or false
 
-Generate 5-10 entities that represent the core objects users interact with.
+Generate 5-10 entities that represent the core objects users interact with. Exactly one entity must have isHeartbeat: true.
 
 ## Step 2: Generate Events
 Every event MUST reference a defined entity via entity_id.
@@ -37,6 +41,12 @@ Every event MUST reference a defined entity via entity_id.
 Every event name MUST match this regex: /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/
 This means: entity_action format using lowercase letters, digits, and underscores.
 Examples: issue_created, cycle_completed, board_column_moved, feature_flag_toggled
+
+### Event Perspective
+Each event must specify a perspective indicating the viewpoint:
+- "customer": tracks user-initiated actions (e.g., user creates issue, user invites team)
+- "product": tracks system/product-generated events (e.g., insight delivered, report generated)
+- "interaction": tracks the interaction between customer and product (e.g., feature adopted, workflow completed)
 
 ### Event Categories
 Each event must have exactly one category:
@@ -58,12 +68,27 @@ Each event must include at least 2 properties. Each property has:
 - description: what this property captures
 - required: true or false
 
+Event properties should be event-specific additions. Avoid duplicating property names from the parent entity.
+
 ### Target
 Generate 15-25 events that cover:
 - All activation level criteria (at least one event per level)
 - Key value moments (especially Tier 1 and Tier 2)
 - Retention signals (returning users, repeated engagement)
 - Expansion signals (team growth, feature adoption)
+
+## Step 3: User State Model
+Define a user state model with exactly 5 states representing the user lifecycle:
+- new: Users who just signed up
+- activated: Users who reached activation criteria
+- active: Users who are regularly engaged
+- at_risk: Users showing declining engagement
+- dormant: Users who have stopped engaging
+
+Each state has:
+- name: one of "new", "activated", "active", "at_risk", "dormant"
+- definition: human-readable description of what this state means
+- criteria: array of { event_name, condition } pairs that define transitions into this state
 
 ## Output Format
 Return a JSON object matching this exact schema:
@@ -73,6 +98,7 @@ Return a JSON object matching this exact schema:
       "id": "issue",
       "name": "Issue",
       "description": "A trackable work item",
+      "isHeartbeat": true,
       "properties": [{ "name": "issue_id", "type": "string", "description": "Unique identifier", "isRequired": true }]
     }
   ],
@@ -81,10 +107,18 @@ Return a JSON object matching this exact schema:
       "name": "issue_created",
       "entity_id": "issue",
       "description": "What this event tracks",
+      "perspective": "customer",
       "properties": [{ "name": "prop_name", "type": "string", "description": "...", "required": true }],
       "trigger_condition": "When this event should fire",
       "maps_to": { "type": "value_moment", "moment_id": "..." },
       "category": "activation"
+    }
+  ],
+  "userStateModel": [
+    {
+      "name": "new",
+      "definition": "Users who signed up but haven't activated",
+      "criteria": [{ "event_name": "user_signed_up", "condition": "within last 7 days, no activation events" }]
     }
   ],
   "confidence": 0.7
@@ -197,6 +231,8 @@ const VALID_CATEGORIES = [
   "expansion",
 ] as const;
 const VALID_PROPERTY_TYPES = ["string", "number", "boolean", "array"] as const;
+const VALID_PERSPECTIVES = ["customer", "product", "interaction"] as const;
+const REQUIRED_USER_STATE_NAMES = ["new", "activated", "active", "at_risk", "dormant"] as const;
 
 function parseEntities(
   rawEntities: unknown[],
@@ -274,11 +310,86 @@ function parseEntities(
       id: raw.id,
       name: raw.name,
       description: raw.description,
+      isHeartbeat: raw.isHeartbeat === true,
       properties,
     });
   }
 
   return entities;
+}
+
+export function parseUserStateModel(rawStates: unknown[]): UserState[] {
+  if (!Array.isArray(rawStates) || rawStates.length !== 5) {
+    throw new Error(
+      `userStateModel must have exactly 5 states, got ${Array.isArray(rawStates) ? rawStates.length : 0}`,
+    );
+  }
+
+  const states: UserState[] = [];
+  const seenNames = new Set<string>();
+
+  for (let i = 0; i < rawStates.length; i++) {
+    const raw = rawStates[i] as Record<string, unknown>;
+    const label = `UserState ${i}`;
+
+    if (typeof raw.name !== "string" || !raw.name) {
+      throw new Error(`${label}: missing name`);
+    }
+
+    if (
+      !REQUIRED_USER_STATE_NAMES.includes(
+        raw.name as (typeof REQUIRED_USER_STATE_NAMES)[number],
+      )
+    ) {
+      throw new Error(
+        `${label}: invalid name '${raw.name}'. Must be one of: ${REQUIRED_USER_STATE_NAMES.join(", ")}`,
+      );
+    }
+
+    if (seenNames.has(raw.name)) {
+      throw new Error(`${label}: duplicate state name '${raw.name}'`);
+    }
+    seenNames.add(raw.name);
+
+    if (typeof raw.definition !== "string" || !raw.definition) {
+      throw new Error(`${label}: missing definition`);
+    }
+
+    if (!Array.isArray(raw.criteria) || raw.criteria.length === 0) {
+      throw new Error(`${label}: must have at least one criterion`);
+    }
+
+    const criteria: UserStateCriterion[] = [];
+    for (const c of raw.criteria as Array<Record<string, unknown>>) {
+      if (typeof c.event_name !== "string" || !c.event_name) {
+        throw new Error(`${label}: criterion missing event_name`);
+      }
+      if (typeof c.condition !== "string" || !c.condition) {
+        throw new Error(`${label}: criterion missing condition`);
+      }
+      criteria.push({
+        event_name: c.event_name,
+        condition: c.condition,
+      });
+    }
+
+    states.push({
+      name: raw.name,
+      definition: raw.definition,
+      criteria,
+    });
+  }
+
+  // Verify all 5 required states are present
+  for (const requiredName of REQUIRED_USER_STATE_NAMES) {
+    if (!seenNames.has(requiredName)) {
+      throw new Error(
+        `userStateModel missing required state: '${requiredName}'`,
+      );
+    }
+  }
+
+  return states;
 }
 
 export function parseMeasurementSpecResponse(
@@ -313,6 +424,24 @@ export function parseMeasurementSpecResponse(
   const entities = parseEntities(parsed.entities as unknown[]);
   const entityIds = new Set(entities.map((e) => e.id));
 
+  // Validate exactly one heartbeat entity
+  const heartbeatCount = entities.filter((e) => e.isHeartbeat).length;
+  if (heartbeatCount !== 1) {
+    throw new Error(
+      `Expected exactly 1 heartbeat entity, got ${heartbeatCount}`,
+    );
+  }
+
+  // Build entity property name lookup for duplication warnings
+  const entityPropertyNames = new Map<string, Set<string>>();
+  for (const entity of entities) {
+    entityPropertyNames.set(
+      entity.id,
+      new Set(entity.properties.map((p) => p.name)),
+    );
+  }
+
+  const warnings: string[] = [];
   const events: TrackingEvent[] = [];
 
   for (let i = 0; i < parsed.events.length; i++) {
@@ -342,6 +471,17 @@ export function parseMeasurementSpecResponse(
     // Validate description
     if (typeof raw.description !== "string" || !raw.description) {
       throw new Error(`${eventLabel}: missing description`);
+    }
+
+    // Validate perspective
+    if (
+      !VALID_PERSPECTIVES.includes(
+        raw.perspective as (typeof VALID_PERSPECTIVES)[number],
+      )
+    ) {
+      throw new Error(
+        `${eventLabel}: invalid perspective '${raw.perspective}'. Must be one of: ${VALID_PERSPECTIVES.join(", ")}`,
+      );
     }
 
     // Validate trigger_condition
@@ -384,6 +524,18 @@ export function parseMeasurementSpecResponse(
         description: prop.description,
         isRequired: prop.required === true,
       });
+    }
+
+    // Check for property name duplication with parent entity
+    const parentEntityProps = entityPropertyNames.get(raw.entity_id as string);
+    if (parentEntityProps) {
+      for (const prop of properties) {
+        if (parentEntityProps.has(prop.name)) {
+          warnings.push(
+            `${eventLabel} '${raw.name}': property '${prop.name}' duplicates a property on entity '${raw.entity_id}'`,
+          );
+        }
+      }
     }
 
     // Validate category
@@ -432,19 +584,16 @@ export function parseMeasurementSpecResponse(
       );
     }
 
-    const event: TrackingEvent = {
+    events.push({
       name: raw.name,
       entity_id: raw.entity_id,
       description: raw.description,
+      perspective: raw.perspective as Perspective,
       properties,
       trigger_condition: raw.trigger_condition,
       maps_to: mapsTo as TrackingEvent["maps_to"],
       category: raw.category as TrackingEvent["category"],
-    };
-    if (typeof raw.entity_id === "string" && raw.entity_id) {
-      event.entity_id = raw.entity_id;
-    }
-    events.push(event);
+    });
   }
 
   // Compute coverage from events
@@ -473,6 +622,13 @@ export function parseMeasurementSpecResponse(
     ),
   ];
 
+  // Parse userStateModel
+  const userStateModel = Array.isArray(parsed.userStateModel)
+    ? parseUserStateModel(parsed.userStateModel as unknown[])
+    : (() => {
+        throw new Error("Missing required field: userStateModel (must be array)");
+      })();
+
   return {
     entities,
     events,
@@ -481,8 +637,10 @@ export function parseMeasurementSpecResponse(
       activation_levels_covered: activationLevelsCovered,
       value_moments_covered: valueMomentsCovered,
     },
+    userStateModel,
     confidence: parsed.confidence,
     sources: [],
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
 
