@@ -12,6 +12,21 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E002-S001: Rewrite merge and clustering prompts for experiential framing
+
+**Files Changed:**
+- `convex/analysis/convergence/convergeAndTier.ts` - Rewrote `MERGE_SYSTEM_PROMPT`: changed verb examples from business verbs (Gain, Reduce, Accelerate) to user-action verbs (Create, Share, Export, Build, Drag, Invite, Comment, View); added "Describe what happens on the user's screen" instruction; added 3 good/bad example pairs; changed name format to "Verb + what the user does + where in the product"
+- `convex/analysis/convergence/clusterCandidates.ts` - Rewrote `CLUSTERING_SYSTEM_PROMPT`: changed grouping criterion from "SAME underlying value moment" to "SAME user action or in-product experience"; changed grouping rule from "semantic meaning" to "shared user action"; updated example labels from abstract themes to user-action descriptions
+
+**Learnings:**
+- Prompt-only changes that don't alter the output schema or parsing logic require zero test changes — all 132 convergence tests passed without modification
+- The test suite validates structural behavior (parsing, clustering logic, tier assignment) not prompt content, making prompt rewrites safe
+
+**Patterns:**
+- When rewriting LLM prompts, check whether tests assert on prompt content vs output structure — prompt content assertions need updating, structure tests don't
+
+---
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**
