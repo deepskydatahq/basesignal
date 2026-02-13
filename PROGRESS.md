@@ -12,6 +12,31 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E001-S001: Rewrite Batch 1 Lens Prompts for Experiential Extraction
+
+**Files Changed:**
+- `convex/analysis/lenses/extractTimeCompression.ts` - Rewrote TIME_COMPRESSION_SYSTEM_PROMPT: core question reframed to "What specific user actions became instant or near-instant", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
+- `convex/analysis/lenses/extractTimeCompression.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
+- `convex/analysis/lenses/extractEffortElimination.ts` - Rewrote EFFORT_ELIMINATION_SYSTEM_PROMPT: core question reframed to "What specific steps does a user SKIP entirely", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
+- `convex/analysis/lenses/extractEffortElimination.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
+- `convex/analysis/lenses/extractCapabilityMapping.ts` - Rewrote CAPABILITY_MAPPING_SYSTEM_PROMPT: core question reframed to "What specific actions can a user take that they could not do before", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
+- `convex/analysis/lenses/extractCapabilityMapping.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
+- `convex/analysis/lenses/extractArtifactCreation.ts` - Rewrote ARTIFACT_CREATION_SYSTEM_PROMPT: core question reframed to "What specific things does a user BUILD or EXPORT", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
+- `convex/analysis/lenses/extractArtifactCreation.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
+
+**Learnings:**
+- Prompt-only changes are safe to make — JSON output schema, field names, and parsing logic remain untouched, so all existing parser tests continue to pass
+- The GOOD/BAD example pairs pattern is more effective than listing good examples alone — showing the contrast between marketing fluff and concrete user actions makes the intent unambiguous
+- Banned words list (automate, streamline, optimize, leverage, enhance, empower) serves as a concrete "do not" constraint that's easy to test for
+
+**Patterns Discovered:**
+- Experiential extraction pattern: reframe every lens question from "what value does this deliver?" to "what does a user SEE and DO?" — always specify screen, button, or action
+- Anti-pattern contrast pairs: BAD example uses banned marketing words, GOOD example describes the same concept in concrete user-action terms
+- Prompt test pattern for constraints: test for specific string presence (BANNED WORDS, GOOD/BAD counts, screen reference instruction) to ensure prompts maintain quality guardrails
+
+**Gotchas:**
+- None — this was a prompt-text-only change with no structural modifications
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**

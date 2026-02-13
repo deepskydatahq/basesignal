@@ -31,9 +31,9 @@ function makeValidResponse(
 }
 
 describe("ARTIFACT_CREATION_SYSTEM_PROMPT", () => {
-  it("asks the core question about artifact creation", () => {
+  it("asks the core question about specific things users build or export", () => {
     expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain(
-      "What tangible, shareable outputs do users create with value beyond the tool"
+      "What specific things does a user BUILD or EXPORT"
     );
   });
 
@@ -49,6 +49,31 @@ describe("ARTIFACT_CREATION_SYSTEM_PROMPT", () => {
 
   it("requests 8-20 candidates", () => {
     expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("8-20");
+  });
+
+  it("includes banned marketing words list", () => {
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("automate");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("streamline");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("optimize");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("leverage");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("enhance");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("empower");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("BANNED WORDS");
+  });
+
+  it("includes GOOD vs BAD example pairs", () => {
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("GOOD");
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain("BAD");
+    const goodCount = (ARTIFACT_CREATION_SYSTEM_PROMPT.match(/GOOD:/g) || []).length;
+    const badCount = (ARTIFACT_CREATION_SYSTEM_PROMPT.match(/BAD:/g) || []).length;
+    expect(goodCount).toBeGreaterThanOrEqual(2);
+    expect(badCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("requires specific screen, UI element, or user action", () => {
+    expect(ARTIFACT_CREATION_SYSTEM_PROMPT).toContain(
+      "Every candidate must reference a specific screen, UI element, or user action"
+    );
   });
 });
 

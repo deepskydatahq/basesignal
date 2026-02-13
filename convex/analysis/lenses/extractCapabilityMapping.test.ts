@@ -31,9 +31,9 @@ function makeValidResponse(
 }
 
 describe("CAPABILITY_MAPPING_SYSTEM_PROMPT", () => {
-  it("asks the core question about capabilities", () => {
+  it("asks the core question about specific user actions", () => {
     expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain(
-      "What new capacities does this product unlock"
+      "What specific actions can a user take in this product that they could not do before"
     );
   });
 
@@ -49,6 +49,31 @@ describe("CAPABILITY_MAPPING_SYSTEM_PROMPT", () => {
 
   it("requests 8-20 candidates", () => {
     expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("8-20");
+  });
+
+  it("includes banned marketing words list", () => {
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("automate");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("streamline");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("optimize");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("leverage");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("enhance");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("empower");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("BANNED WORDS");
+  });
+
+  it("includes GOOD vs BAD example pairs", () => {
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("GOOD");
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain("BAD");
+    const goodCount = (CAPABILITY_MAPPING_SYSTEM_PROMPT.match(/GOOD:/g) || []).length;
+    const badCount = (CAPABILITY_MAPPING_SYSTEM_PROMPT.match(/BAD:/g) || []).length;
+    expect(goodCount).toBeGreaterThanOrEqual(2);
+    expect(badCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("requires specific screen, UI element, or user action", () => {
+    expect(CAPABILITY_MAPPING_SYSTEM_PROMPT).toContain(
+      "Every candidate must reference a specific screen, UI element, or user action"
+    );
   });
 });
 
