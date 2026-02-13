@@ -81,40 +81,51 @@ export function buildBatch1Context(
     : "";
 }
 
-const SYSTEM_PROMPT = `You are a product analyst identifying decisions that a product enables users to make.
+const SYSTEM_PROMPT = `You are a product analyst identifying value moments through the Decision Enablement lens.
 
-A decision enablement is a specific decision that becomes possible (or dramatically better) because of the product. Before the product, users couldn't make this decision well. With the product, they can.
+Core question: "What specific choice does a user make INSIDE the product?"
 
-For each candidate, identify:
-- What specific decision becomes possible
-- What role/persona benefits most
-- How confident you are based on the evidence
+A decision enablement is a concrete choice a user makes while using the product — clicking a button, selecting an option, configuring a setting, approving/rejecting something. The decision happens IN the product, not as a downstream business outcome.
 
-Return a JSON array of candidates:
+For each value moment candidate, identify:
+- name: Short descriptive name for the value moment
+- description: 1-2 sentences describing the in-product choice and what it affects
+- role: Which user role benefits most
+- confidence: "high", "medium", or "low"
+- source_urls: URLs from the crawled pages that informed this candidate
+- decision_enabled: The specific in-product choice the user makes
 
+Anti-patterns (REJECT these):
+- Business decisions: "decide whether to expand into new markets" happens outside the product
+- Strategic outcomes: "make better hiring decisions" is too abstract and downstream
+- Marketing language: "empowers teams to choose wisely" is a tagline, not an in-product action
+
+Good examples:
+- BAD: "Enables better resource allocation decisions" (abstract business outcome)
+  GOOD: "Manager clicks 'reassign' on overloaded team members in the workload view, moving tasks to engineers with capacity shown in green" (in-product action)
+- BAD: "Helps decide which features to build next" (strategic, outside the product)
+  GOOD: "PM drags feature cards into 'Next Sprint' column based on the impact/effort scores displayed on each card" (concrete in-product choice)
+- BAD: "Improves decision-making around customer retention" (vague improvement)
+  GOOD: "Success manager selects 'at-risk' accounts from a filtered list and assigns them to a re-engagement workflow with one click" (specific product interaction)
+
+Return a JSON array of 8-20 candidates:
 [
   {
-    "name": "Sprint Scope Decision",
-    "description": "Engineering managers can decide what to include in the next sprint based on team velocity and capacity data",
-    "role": "Engineering Manager",
-    "decision_enabled": "Whether to add or remove scope from the upcoming sprint based on real velocity trends",
-    "confidence": "high",
-    "source_urls": ["https://example.com/features/sprints"]
+    "name": "...",
+    "description": "...",
+    "role": "...",
+    "confidence": "high|medium|low",
+    "source_urls": ["..."],
+    "decision_enabled": "the specific in-product choice the user makes"
   }
 ]
 
-Confidence levels:
-- "high": Direct evidence from help docs, case studies, or feature descriptions
-- "medium": Inferred from feature descriptions or marketing copy
-- "low": Speculative based on product category
-
 Rules:
 - Return ONLY valid JSON array, no commentary
-- 8-20 candidates per product
-- Each candidate must have: name, description, role, decision_enabled, confidence, source_urls
-- decision_enabled must describe the specific decision that becomes possible
-- Be product-specific, not generic (no "make better decisions" or "improve outcomes")
-- source_urls must reference actual crawled page URLs`;
+- Each candidate MUST have decision_enabled as a non-empty string
+- decision_enabled must describe a choice made INSIDE the product — not a downstream business decision
+- confidence should be "high" if supported by case studies or detailed docs, "medium" if from feature descriptions, "low" if inferred from marketing
+- source_urls must reference actual URLs from the provided pages`;
 
 export const extractDecisionEnablement = internalAction({
   args: {
