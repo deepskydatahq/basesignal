@@ -70,7 +70,21 @@ export interface EntityDefinition {
   id: string;
   name: string;
   description: string;
+  isHeartbeat: boolean;
   properties: EntityPropertyDef[];
+}
+
+// --- User State Model Types ---
+
+export interface UserStateCriterion {
+  event_name: string;
+  condition: string;
+}
+
+export interface UserState {
+  name: string;
+  definition: string;
+  criteria: UserStateCriterion[];
 }
 
 // --- Measurement Spec Types ---
@@ -82,19 +96,9 @@ export interface EventProperty {
   isRequired: boolean;
 }
 
-export interface EntityProperty {
-  name: string;
-  type: "string" | "number" | "boolean" | "array";
-  description: string;
-  isRequired: boolean;
-}
+export type EntityProperty = EntityPropertyDef;
 
-export interface EntityDefinition {
-  id: string;
-  name: string;
-  description: string;
-  properties: EntityProperty[];
-}
+export type Perspective = "customer" | "product" | "interaction";
 
 export type MapsTo =
   | { type: "value_moment"; moment_id: string }
@@ -105,11 +109,11 @@ export interface TrackingEvent {
   name: string;
   entity_id: string;
   description: string;
+  perspective: Perspective;
   properties: EventProperty[];
   trigger_condition: string;
   maps_to: MapsTo;
   category: string;
-  entity_id?: string;
 }
 
 export interface MeasurementSpec {
@@ -120,9 +124,10 @@ export interface MeasurementSpec {
     activation_levels_covered: number[];
     value_moments_covered: string[];
   };
+  userStateModel: UserState[];
   confidence: number;
   sources: string[];
-  entities?: EntityDefinition[];
+  warnings?: string[];
 }
 
 // --- Measurement Input Data ---

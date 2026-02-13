@@ -3,6 +3,7 @@ import {
   MEASUREMENT_SPEC_SYSTEM_PROMPT,
   buildMeasurementSpecPrompt,
   parseMeasurementSpecResponse,
+  parseUserStateModel,
 } from "./generateMeasurementSpec";
 import type { MeasurementInputData } from "./types";
 
@@ -134,6 +135,7 @@ function makeValidEntity(overrides?: Record<string, unknown>): Record<string, un
     id: "issue",
     name: "Issue",
     description: "A trackable work item in the project",
+    isHeartbeat: false,
     properties: [
       {
         name: "issue_id",
@@ -148,7 +150,7 @@ function makeValidEntity(overrides?: Record<string, unknown>): Record<string, un
 
 function makeMinimalEntitySet(): Record<string, unknown>[] {
   return [
-    makeValidEntity({ id: "issue", name: "Issue", description: "A work item" }),
+    makeValidEntity({ id: "issue", name: "Issue", description: "A work item", isHeartbeat: true }),
     makeValidEntity({ id: "project", name: "Project", description: "A project container" }),
     makeValidEntity({ id: "board", name: "Board", description: "A kanban board" }),
   ];
@@ -159,11 +161,12 @@ function makeValidEvent(overrides?: Record<string, unknown>): Record<string, unk
     name: "issue_created",
     entity_id: "issue",
     description: "User creates a new issue",
+    perspective: "customer",
     properties: [
       {
-        name: "issue_id",
+        name: "title",
         type: "string",
-        description: "Unique identifier for the issue",
+        description: "Title of the issue",
         required: true,
       },
       {
@@ -180,12 +183,23 @@ function makeValidEvent(overrides?: Record<string, unknown>): Record<string, unk
   };
 }
 
+function makeValidUserStateModel(): Record<string, unknown>[] {
+  return [
+    { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
+    { name: "activated", definition: "Reached activation", criteria: [{ event_name: "activation_reached", condition: "completed onboarding" }] },
+    { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "session_started", condition: "3+ sessions in 7 days" }] },
+    { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "session_started", condition: "no session in 14 days" }] },
+    { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "session_started", condition: "no session in 30 days" }] },
+  ];
+}
+
 function makeValidResponse(
-  overrides?: Partial<{ entities: unknown[]; events: unknown[]; confidence: number }>,
+  overrides?: Partial<{ entities: unknown[]; events: unknown[]; confidence: number; userStateModel: unknown[] }>,
 ): string {
   const data = {
     entities: overrides?.entities ?? makeMinimalEntitySet(),
     events: overrides?.events ?? [makeValidEvent()],
+    userStateModel: overrides?.userStateModel ?? makeValidUserStateModel(),
     confidence: overrides?.confidence ?? 0.75,
   };
   return JSON.stringify(data);
@@ -199,9 +213,10 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("entity_id");
   });
 
-  it("contains entity schema definition", () => {
+  it("contains entity schema definition with isHeartbeat", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("isRequired");
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("/^[a-z][a-z0-9_]*$/");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("isHeartbeat");
   });
 
   it("contains entity_action naming regex", () => {
@@ -240,6 +255,26 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
   it("includes entities in output format example", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entities"');
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"entity_id": "issue"');
+  });
+
+  it("contains perspective requirement", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("perspective");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"customer"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"product"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"interaction"');
+  });
+
+  it("contains user state model requirement with 5 states", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("User State Model");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("new");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("activated");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("active");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("at_risk");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("dormant");
+  });
+
+  it("warns about event property duplication", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Avoid duplicating property names");
   });
 });
 
@@ -322,14 +357,17 @@ describe("buildMeasurementSpecPrompt", () => {
 // --- parseMeasurementSpecResponse: Entity Validation ---
 
 describe("parseMeasurementSpecResponse entity validation", () => {
-  it("parses valid entities with correct fields", () => {
+  it("parses valid entities with correct fields including isHeartbeat", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
     expect(spec.entities).toHaveLength(3);
     expect(spec.entities[0].id).toBe("issue");
     expect(spec.entities[0].name).toBe("Issue");
     expect(spec.entities[0].description).toBe("A work item");
+    expect(spec.entities[0].isHeartbeat).toBe(true);
     expect(spec.entities[0].properties).toHaveLength(1);
+    expect(spec.entities[1].isHeartbeat).toBe(false);
+    expect(spec.entities[2].isHeartbeat).toBe(false);
   });
 
   it("validates entity property fields", () => {
@@ -346,7 +384,7 @@ describe("parseMeasurementSpecResponse entity validation", () => {
     it("rejects fewer than 3 entities", () => {
       const response = makeValidResponse({
         entities: [
-          makeValidEntity({ id: "a" }),
+          makeValidEntity({ id: "a", isHeartbeat: true }),
           makeValidEntity({ id: "b" }),
         ],
       });
@@ -357,7 +395,7 @@ describe("parseMeasurementSpecResponse entity validation", () => {
 
     it("rejects more than 15 entities", () => {
       const entities = Array.from({ length: 16 }, (_, i) =>
-        makeValidEntity({ id: `entity${i}`, name: `Entity ${i}`, description: `Entity ${i} desc` }),
+        makeValidEntity({ id: `entity${i}`, name: `Entity ${i}`, description: `Entity ${i} desc`, isHeartbeat: i === 0 }),
       );
       const response = makeValidResponse({ entities });
       expect(() => parseMeasurementSpecResponse(response)).toThrow(
@@ -372,7 +410,7 @@ describe("parseMeasurementSpecResponse entity validation", () => {
 
     it("accepts exactly 15 entities (upper bound)", () => {
       const entities = Array.from({ length: 15 }, (_, i) =>
-        makeValidEntity({ id: `entity${i}`, name: `Entity ${i}`, description: `Entity ${i} desc` }),
+        makeValidEntity({ id: `entity${i}`, name: `Entity ${i}`, description: `Entity ${i} desc`, isHeartbeat: i === 0 }),
       );
       const events = [makeValidEvent({ entity_id: "entity0" })];
       const response = makeValidResponse({ entities, events });
@@ -419,7 +457,7 @@ describe("parseMeasurementSpecResponse entity validation", () => {
 
   it("rejects duplicate entity IDs", () => {
     const entities = [
-      makeValidEntity({ id: "issue" }),
+      makeValidEntity({ id: "issue", isHeartbeat: true }),
       makeValidEntity({ id: "project", name: "Project", description: "A project" }),
       makeValidEntity({ id: "issue", name: "Duplicate", description: "Duplicate" }),
     ];
@@ -490,6 +528,166 @@ describe("parseMeasurementSpecResponse entity validation", () => {
   });
 });
 
+// --- parseMeasurementSpecResponse: Heartbeat Validation ---
+
+describe("parseMeasurementSpecResponse heartbeat validation", () => {
+  it("accepts exactly one heartbeat entity", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    const heartbeats = spec.entities.filter((e) => e.isHeartbeat);
+    expect(heartbeats).toHaveLength(1);
+    expect(heartbeats[0].id).toBe("issue");
+  });
+
+  it("rejects zero heartbeat entities", () => {
+    const entities = [
+      makeValidEntity({ id: "issue", name: "Issue", description: "A work item", isHeartbeat: false }),
+      makeValidEntity({ id: "project", name: "Project", description: "A project" }),
+      makeValidEntity({ id: "board", name: "Board", description: "A board" }),
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Expected exactly 1 heartbeat entity, got 0",
+    );
+  });
+
+  it("rejects multiple heartbeat entities", () => {
+    const entities = [
+      makeValidEntity({ id: "issue", name: "Issue", description: "A work item", isHeartbeat: true }),
+      makeValidEntity({ id: "project", name: "Project", description: "A project", isHeartbeat: true }),
+      makeValidEntity({ id: "board", name: "Board", description: "A board" }),
+    ];
+    const response = makeValidResponse({ entities });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Expected exactly 1 heartbeat entity, got 2",
+    );
+  });
+
+  it("defaults isHeartbeat to false when not provided", () => {
+    const entities = [
+      makeValidEntity({ id: "issue", name: "Issue", description: "A work item", isHeartbeat: true }),
+      { id: "project", name: "Project", description: "A project", properties: [] },
+      { id: "board", name: "Board", description: "A board", properties: [] },
+    ];
+    const response = makeValidResponse({ entities });
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.entities[1].isHeartbeat).toBe(false);
+    expect(spec.entities[2].isHeartbeat).toBe(false);
+  });
+});
+
+// --- parseMeasurementSpecResponse: Perspective Validation ---
+
+describe("parseMeasurementSpecResponse perspective validation", () => {
+  it("accepts all three valid perspectives", () => {
+    for (const perspective of ["customer", "product", "interaction"]) {
+      const response = makeValidResponse({
+        events: [makeValidEvent({ perspective })],
+      });
+      expect(() => parseMeasurementSpecResponse(response)).not.toThrow();
+    }
+  });
+
+  it("parses perspective field on events", () => {
+    const response = makeValidResponse({
+      events: [makeValidEvent({ perspective: "product" })],
+    });
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.events[0].perspective).toBe("product");
+  });
+
+  it("rejects missing perspective", () => {
+    const { perspective: _, ...eventNoPerspective } = makeValidEvent() as Record<string, unknown>;
+    const response = makeValidResponse({
+      events: [eventNoPerspective],
+    });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Event 0: invalid perspective 'undefined'",
+    );
+  });
+
+  it("rejects invalid perspective value", () => {
+    const response = makeValidResponse({
+      events: [makeValidEvent({ perspective: "observer" })],
+    });
+    expect(() => parseMeasurementSpecResponse(response)).toThrow(
+      "Event 0: invalid perspective 'observer'. Must be one of: customer, product, interaction",
+    );
+  });
+});
+
+// --- parseMeasurementSpecResponse: Property Duplication Warnings ---
+
+describe("parseMeasurementSpecResponse property duplication warnings", () => {
+  it("warns when event property duplicates parent entity property name", () => {
+    const entities = [
+      makeValidEntity({
+        id: "issue",
+        name: "Issue",
+        description: "A work item",
+        isHeartbeat: true,
+        properties: [
+          { name: "issue_id", type: "string", description: "ID", isRequired: true },
+          { name: "status", type: "string", description: "Status", isRequired: true },
+        ],
+      }),
+      makeValidEntity({ id: "project", name: "Project", description: "A project" }),
+      makeValidEntity({ id: "board", name: "Board", description: "A board" }),
+    ];
+    const events = [
+      makeValidEvent({
+        entity_id: "issue",
+        properties: [
+          { name: "issue_id", type: "string", description: "Duplicated!", required: true },
+          { name: "assignee", type: "string", description: "New prop", required: true },
+        ],
+      }),
+    ];
+    const response = makeValidResponse({ entities, events });
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.warnings).toBeDefined();
+    expect(spec.warnings).toHaveLength(1);
+    expect(spec.warnings![0]).toContain("property 'issue_id' duplicates a property on entity 'issue'");
+  });
+
+  it("does not warn when event properties are unique", () => {
+    const response = makeValidResponse();
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.warnings).toBeUndefined();
+  });
+
+  it("generates multiple warnings for multiple duplications", () => {
+    const entities = [
+      makeValidEntity({
+        id: "issue",
+        name: "Issue",
+        description: "A work item",
+        isHeartbeat: true,
+        properties: [
+          { name: "issue_id", type: "string", description: "ID", isRequired: true },
+          { name: "status", type: "string", description: "Status", isRequired: true },
+        ],
+      }),
+      makeValidEntity({ id: "project", name: "Project", description: "A project" }),
+      makeValidEntity({ id: "board", name: "Board", description: "A board" }),
+    ];
+    const events = [
+      makeValidEvent({
+        entity_id: "issue",
+        properties: [
+          { name: "issue_id", type: "string", description: "Dup 1", required: true },
+          { name: "status", type: "string", description: "Dup 2", required: true },
+        ],
+      }),
+    ];
+    const response = makeValidResponse({ entities, events });
+    const spec = parseMeasurementSpecResponse(response);
+    expect(spec.warnings).toHaveLength(2);
+    expect(spec.warnings![0]).toContain("issue_id");
+    expect(spec.warnings![1]).toContain("status");
+  });
+});
+
 // --- parseMeasurementSpecResponse: Entity-Event Linkage ---
 
 describe("parseMeasurementSpecResponse entity_id validation", () => {
@@ -535,7 +733,7 @@ describe("parseMeasurementSpecResponse entity_id validation", () => {
 // --- parseMeasurementSpecResponse: Structure Tests ---
 
 describe("parseMeasurementSpecResponse", () => {
-  it("parses valid JSON into MeasurementSpec with entities and events", () => {
+  it("parses valid JSON into MeasurementSpec with entities, events, and userStateModel", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
 
@@ -543,10 +741,12 @@ describe("parseMeasurementSpecResponse", () => {
     expect(spec.events).toHaveLength(1);
     expect(spec.events[0].name).toBe("issue_created");
     expect(spec.events[0].entity_id).toBe("issue");
+    expect(spec.events[0].perspective).toBe("customer");
     expect(spec.total_events).toBe(1);
     expect(spec.confidence).toBe(0.75);
     expect(spec.coverage.activation_levels_covered).toEqual([2]);
     expect(spec.coverage.value_moments_covered).toEqual([]);
+    expect(spec.userStateModel).toHaveLength(5);
   });
 
   it("extracts JSON from markdown code fences", () => {
@@ -569,6 +769,7 @@ describe("parseMeasurementSpecResponse", () => {
     const data = JSON.stringify({
       entities: makeMinimalEntitySet(),
       events,
+      userStateModel: makeValidUserStateModel(),
       confidence: 0.8,
       total_events: 999,
     });
@@ -847,14 +1048,100 @@ describe("parseMeasurementSpecResponse", () => {
       "confidence must be between 0 and 1",
     );
   });
+
+  it("rejects missing userStateModel field", () => {
+    const data = {
+      entities: makeMinimalEntitySet(),
+      events: [makeValidEvent()],
+      confidence: 0.75,
+    };
+    expect(() => parseMeasurementSpecResponse(JSON.stringify(data))).toThrow(
+      "Missing required field: userStateModel (must be array)",
+    );
+  });
+});
+
+// --- parseUserStateModel Tests ---
+
+describe("parseUserStateModel", () => {
+  it("parses valid 5-state model", () => {
+    const states = parseUserStateModel(makeValidUserStateModel());
+    expect(states).toHaveLength(5);
+    expect(states.map((s) => s.name)).toEqual(["new", "activated", "active", "at_risk", "dormant"]);
+  });
+
+  it("rejects fewer than 5 states", () => {
+    const states = makeValidUserStateModel().slice(0, 3);
+    expect(() => parseUserStateModel(states)).toThrow(
+      "userStateModel must have exactly 5 states, got 3",
+    );
+  });
+
+  it("rejects more than 5 states", () => {
+    const states = [
+      ...makeValidUserStateModel(),
+      { name: "extra", definition: "Extra", criteria: [{ event_name: "e", condition: "c" }] },
+    ];
+    expect(() => parseUserStateModel(states)).toThrow(
+      "userStateModel must have exactly 5 states, got 6",
+    );
+  });
+
+  it("rejects invalid state name", () => {
+    const states = makeValidUserStateModel();
+    states[0] = { ...states[0], name: "invalid_name" };
+    expect(() => parseUserStateModel(states)).toThrow(
+      "UserState 0: invalid name 'invalid_name'",
+    );
+  });
+
+  it("rejects duplicate state names", () => {
+    const states = makeValidUserStateModel();
+    states[1] = { ...states[1], name: "new" };
+    expect(() => parseUserStateModel(states)).toThrow(
+      "UserState 1: duplicate state name 'new'",
+    );
+  });
+
+  it("rejects state missing definition", () => {
+    const states = makeValidUserStateModel();
+    states[0] = { name: "new", criteria: [{ event_name: "e", condition: "c" }] };
+    expect(() => parseUserStateModel(states)).toThrow(
+      "UserState 0: missing definition",
+    );
+  });
+
+  it("rejects state with empty criteria", () => {
+    const states = makeValidUserStateModel();
+    states[0] = { name: "new", definition: "New users", criteria: [] };
+    expect(() => parseUserStateModel(states)).toThrow(
+      "UserState 0: must have at least one criterion",
+    );
+  });
+
+  it("rejects criterion missing event_name", () => {
+    const states = makeValidUserStateModel();
+    states[0] = { name: "new", definition: "New users", criteria: [{ condition: "some condition" }] };
+    expect(() => parseUserStateModel(states)).toThrow(
+      "UserState 0: criterion missing event_name",
+    );
+  });
+
+  it("rejects criterion missing condition", () => {
+    const states = makeValidUserStateModel();
+    states[0] = { name: "new", definition: "New users", criteria: [{ event_name: "user_signed_up" }] };
+    expect(() => parseUserStateModel(states)).toThrow(
+      "UserState 0: criterion missing condition",
+    );
+  });
 });
 
 // --- Fixture-based Integration Test ---
 
 describe("fixture integration", () => {
-  it("parses a realistic Linear-like response with entities and 20 events", () => {
+  it("parses a realistic Linear-like response with entities, 20 events, and user state model", () => {
     const entities = [
-      makeValidEntity({ id: "project", name: "Project", description: "A project workspace" }),
+      makeValidEntity({ id: "project", name: "Project", description: "A project workspace", isHeartbeat: true }),
       makeValidEntity({ id: "issue", name: "Issue", description: "A trackable work item" }),
       makeValidEntity({ id: "cycle", name: "Cycle", description: "A sprint cycle" }),
       makeValidEntity({ id: "board", name: "Board", description: "A kanban board" }),
@@ -872,6 +1159,7 @@ describe("fixture integration", () => {
         name: "project_created",
         entity_id: "project",
         description: "User creates their first project",
+        perspective: "customer",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 1 },
       }),
@@ -879,6 +1167,7 @@ describe("fixture integration", () => {
         name: "issue_created",
         entity_id: "issue",
         description: "User creates a new issue in a project",
+        perspective: "customer",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
@@ -886,6 +1175,7 @@ describe("fixture integration", () => {
         name: "issue_assigned",
         entity_id: "issue",
         description: "User assigns an issue to a team member",
+        perspective: "customer",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
@@ -893,6 +1183,7 @@ describe("fixture integration", () => {
         name: "workflow_configured",
         entity_id: "workflow",
         description: "User sets up a custom workflow",
+        perspective: "customer",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
@@ -900,6 +1191,7 @@ describe("fixture integration", () => {
         name: "label_created",
         entity_id: "label",
         description: "User creates a label for categorization",
+        perspective: "customer",
         category: "activation",
         maps_to: { type: "activation_level", activation_level: 1 },
       }),
@@ -909,6 +1201,7 @@ describe("fixture integration", () => {
         name: "cycle_completed",
         entity_id: "cycle",
         description: "A sprint cycle is completed",
+        perspective: "interaction",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
@@ -916,6 +1209,7 @@ describe("fixture integration", () => {
         name: "roadmap_viewed",
         entity_id: "roadmap",
         description: "User views the team roadmap",
+        perspective: "customer",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
@@ -923,6 +1217,7 @@ describe("fixture integration", () => {
         name: "insight_generated",
         entity_id: "insight",
         description: "Analytics insight delivered to user",
+        perspective: "product",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
@@ -930,6 +1225,7 @@ describe("fixture integration", () => {
         name: "report_exported",
         entity_id: "report",
         description: "User exports a progress report",
+        perspective: "customer",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-2" },
       }),
@@ -937,6 +1233,7 @@ describe("fixture integration", () => {
         name: "issue_triaged",
         entity_id: "issue",
         description: "User triages incoming issues",
+        perspective: "interaction",
         category: "value",
         maps_to: { type: "both", moment_id: "vm-2", activation_level: 2 },
       }),
@@ -944,6 +1241,7 @@ describe("fixture integration", () => {
         name: "board_column_moved",
         entity_id: "board",
         description: "Issue moved to a new column on the board",
+        perspective: "interaction",
         category: "value",
         maps_to: { type: "value_moment", moment_id: "vm-1" },
       }),
@@ -953,6 +1251,7 @@ describe("fixture integration", () => {
         name: "session_started",
         entity_id: "session",
         description: "User opens the app for a new session",
+        perspective: "customer",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 1 },
       }),
@@ -960,6 +1259,7 @@ describe("fixture integration", () => {
         name: "issue_commented",
         entity_id: "issue",
         description: "User comments on an issue",
+        perspective: "customer",
         category: "retention",
         maps_to: { type: "value_moment", moment_id: "vm-2" },
       }),
@@ -967,6 +1267,7 @@ describe("fixture integration", () => {
         name: "board_filtered",
         entity_id: "board",
         description: "User saves a custom filter view",
+        perspective: "customer",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
@@ -974,6 +1275,7 @@ describe("fixture integration", () => {
         name: "issue_updated",
         entity_id: "issue",
         description: "User updates issue status",
+        perspective: "customer",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
@@ -981,6 +1283,7 @@ describe("fixture integration", () => {
         name: "session_resumed",
         entity_id: "session",
         description: "User returns to continue work",
+        perspective: "customer",
         category: "retention",
         maps_to: { type: "activation_level", activation_level: 2 },
       }),
@@ -990,6 +1293,7 @@ describe("fixture integration", () => {
         name: "project_member_invited",
         entity_id: "project",
         description: "User invites a new team member",
+        perspective: "customer",
         category: "expansion",
         maps_to: { type: "both", moment_id: "vm-2", activation_level: 3 },
       }),
@@ -997,6 +1301,7 @@ describe("fixture integration", () => {
         name: "project_integration_connected",
         entity_id: "project",
         description: "User connects an external integration",
+        perspective: "customer",
         category: "expansion",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
@@ -1004,6 +1309,7 @@ describe("fixture integration", () => {
         name: "project_workspace_created",
         entity_id: "project",
         description: "User creates an additional workspace",
+        perspective: "customer",
         category: "expansion",
         maps_to: { type: "value_moment", moment_id: "vm-2" },
       }),
@@ -1011,6 +1317,7 @@ describe("fixture integration", () => {
         name: "project_api_key_generated",
         entity_id: "project",
         description: "User generates an API key for automation",
+        perspective: "customer",
         category: "expansion",
         maps_to: { type: "activation_level", activation_level: 3 },
       }),
@@ -1019,8 +1326,9 @@ describe("fixture integration", () => {
     const response = makeValidResponse({ entities, events, confidence: 0.72 });
     const spec = parseMeasurementSpecResponse(response);
 
-    // entities are present
+    // entities are present with heartbeat
     expect(spec.entities).toHaveLength(10);
+    expect(spec.entities.filter((e) => e.isHeartbeat)).toHaveLength(1);
 
     // total_events equals events.length
     expect(spec.total_events).toBe(20);
@@ -1036,6 +1344,11 @@ describe("fixture integration", () => {
     const entityIdSet = new Set(spec.entities.map((e) => e.id));
     for (const event of spec.events) {
       expect(entityIdSet.has(event.entity_id)).toBe(true);
+    }
+
+    // All events have a valid perspective
+    for (const event of spec.events) {
+      expect(["customer", "product", "interaction"]).toContain(event.perspective);
     }
 
     // All events have 2+ properties
@@ -1054,6 +1367,9 @@ describe("fixture integration", () => {
     expect(spec.coverage.activation_levels_covered).toEqual([1, 2, 3]);
     expect(spec.coverage.value_moments_covered).toContain("vm-1");
     expect(spec.coverage.value_moments_covered).toContain("vm-2");
+
+    // User state model present
+    expect(spec.userStateModel).toHaveLength(5);
 
     // Confidence is a number 0-1
     expect(spec.confidence).toBe(0.72);
@@ -1109,17 +1425,18 @@ describe("MeasurementSpec entities field", () => {
     const spec = parseMeasurementSpecResponse(response);
 
     expect(spec.entities).toBeDefined();
-    expect(spec.entities!.length).toBeGreaterThan(0);
+    expect(spec.entities.length).toBeGreaterThan(0);
   });
 
-  it("entity has required fields", () => {
+  it("entity has required fields including isHeartbeat", () => {
     const response = makeValidResponse();
     const spec = parseMeasurementSpecResponse(response);
 
-    const entity = spec.entities![0];
+    const entity = spec.entities[0];
     expect(entity.id).toBeDefined();
     expect(entity.name).toBeDefined();
     expect(entity.description).toBeDefined();
+    expect(entity.isHeartbeat).toBeDefined();
     expect(entity.properties).toBeDefined();
     expect(entity.properties[0].isRequired).toBeDefined();
   });
@@ -1131,7 +1448,7 @@ describe("TrackingEvent entity_id field", () => {
     const spec = parseMeasurementSpecResponse(response);
 
     expect(spec.events[0].entity_id).toBeDefined();
-    const entityIds = spec.entities!.map((e) => e.id);
+    const entityIds = spec.entities.map((e) => e.id);
     expect(entityIds).toContain(spec.events[0].entity_id);
   });
 });
