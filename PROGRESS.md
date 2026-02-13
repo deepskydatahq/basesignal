@@ -12,6 +12,22 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E002-S002: Add Quality Validation for Experiential Moment Names
+
+**Files Changed:**
+- `convex/analysis/convergence/convergeAndTier.ts` - Added `BUSINESS_VERBS` and `USER_ACTION_VERBS` constants, `isBusinessVerb()` helper, and `experiential_names` quality check in `validateConvergenceQuality()`
+- `convex/analysis/convergence/convergeAndTier.test.ts` - Added 11 tests: isBusinessVerb (4), verb constants (3), experiential_names quality check (4)
+
+**Learnings:**
+- Quality checks in `validateConvergenceQuality` follow a consistent pattern: compute status + message, push to `checks[]`, overall is worst-of-all
+- The `as const` pattern on verb arrays gives type safety while keeping them runtime-accessible
+
+**Patterns Discovered:**
+- Non-blocking quality checks always use `warn` level, never `fail` - this is a deliberate design for monitoring prompt quality without blocking the pipeline
+
+**Gotchas:**
+- The existing test for "healthy result" asserts exact check count (`toHaveLength(3)`) - adding a new check requires updating this assertion
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**
