@@ -12,6 +12,31 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E003-S003: Add Perspective Coverage and User State Model Validation
+
+**Files Changed:**
+- `convex/analysis/outputs/types.ts` - Added `PerspectiveDistribution` interface; added `perspective_distribution` to `MeasurementSpec.coverage`
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Added `computePerspectiveDistribution` helper; added perspective coverage warnings (zero events, product fewer than others); added user state model event name validation; added activated state activation-level validation
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - Updated default fixtures to use three-perspective events; added 14 new tests for perspective distribution, perspective warnings, user state event validation, activated state validation
+- `convex/analysis/outputs/types.test.ts` - Added `PerspectiveDistribution` type tests; updated `MeasurementSpec` coverage fixtures with `perspective_distribution`
+- `convex/analysis/outputs/orchestrate.test.ts` - Updated mock MeasurementSpec fixtures with `perspective_distribution`
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - Updated mock MeasurementSpec fixtures with `perspective_distribution`
+
+**Learnings:**
+- When adding computed warnings to a parser, existing tests that assert exact warning counts or "no warnings" will break — need to update fixtures or filter for specific warning types
+- Default test fixtures should represent valid, warning-free scenarios — when new validations are added, the default fixtures must be updated to satisfy all validations
+- Parameterizing fixture factories (e.g., `makeValidUserStateModel({ activatedEvent: "..." })`) keeps tests readable while allowing customization
+
+**Patterns Discovered:**
+- Perspective distribution pattern: `{ customer: N, product: N, interaction: N }` computed from events as a pure function — enables both coverage reporting and warning generation
+- Cross-validation pattern: user state model criteria checked against event names, then activated state criteria specifically checked against activation-level events — layered validation where each check is independent
+- Warning filtering in tests: `spec.warnings?.filter((w) => w.includes("duplicates"))` isolates one type of warning when multiple warning types coexist
+
+**Gotchas:**
+- Cherry-picking S002 files is required since S002 hasn't merged to main — same pattern as prior stories
+- Changing default `makeValidResponse` to include three-perspective events cascades to tests that assert `spec.events.length === 1` — must update those assertions too
+- Pre-existing "Write outside of transaction" convex-test errors still present — unrelated to this work
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**
