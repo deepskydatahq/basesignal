@@ -128,6 +128,35 @@ export function capTierDistribution(moments: ValueMoment[]): ValueMoment[] {
 }
 
 /**
+ * Business-oriented verbs that indicate non-experiential naming.
+ * Names starting with these verbs describe business outcomes, not user actions.
+ */
+export const BUSINESS_VERBS = [
+  "Gain", "Reduce", "Accelerate", "Optimize", "Streamline",
+  "Automate", "Leverage", "Enable", "Enhance", "Empower",
+  "Transform", "Revolutionize",
+] as const;
+
+/**
+ * User-action verbs that indicate experiential naming.
+ * Names starting with these verbs describe what a user actually does.
+ */
+export const USER_ACTION_VERBS = [
+  "Create", "Share", "Export", "Build", "Drag", "Invite",
+  "Comment", "Vote", "Upload", "Filter", "Tag", "Open",
+  "View", "Configure", "Set", "Move",
+] as const;
+
+/**
+ * Check if a value moment name uses a business verb instead of a user-action verb.
+ * Returns true if the name starts with a business verb (i.e. is non-experiential).
+ */
+export function isBusinessVerb(name: string): boolean {
+  const firstWord = name.trim().split(/\s+/)[0];
+  return BUSINESS_VERBS.some((verb) => firstWord === verb);
+}
+
+/**
  * Validate convergence output quality. Non-blocking — returns a report
  * with pass/warn/fail per check.
  *
@@ -135,6 +164,7 @@ export function capTierDistribution(moments: ValueMoment[]): ValueMoment[] {
  * - tier_distribution: T1 1-5, T2 2-10, T3 <=20
  * - total_count: between 10 and 35 moments
  * - empty_fields: no moments with empty name or description
+ * - experiential_names: warn if any moment names use business verbs instead of user-action verbs
  */
 export function validateConvergenceQuality(result: ConvergenceResult): QualityReport {
   const checks: QualityCheck[] = [];
@@ -191,6 +221,18 @@ export function validateConvergenceQuality(result: ConvergenceResult): QualityRe
   }
 
   checks.push({ name: "empty_fields", status: emptyStatus, message: emptyMessage });
+
+  // Check experiential names: warn if any moment names use business verbs
+  const businessVerbMoments = result.value_moments.filter((m) => isBusinessVerb(m.name));
+  let experientialStatus: QualityStatus = "pass";
+  let experientialMessage = "All names use experiential verbs";
+  if (businessVerbMoments.length > 0) {
+    experientialStatus = "warn";
+    const examples = businessVerbMoments.slice(0, 3).map((m) => `"${m.name}"`);
+    experientialMessage = `${businessVerbMoments.length} moment(s) use business verbs: ${examples.join(", ")}`;
+  }
+
+  checks.push({ name: "experiential_names", status: experientialStatus, message: experientialMessage });
 
   // Overall: worst status across all checks (fail > warn > pass)
   const statusPriority: Record<QualityStatus, number> = { pass: 0, warn: 1, fail: 2 };

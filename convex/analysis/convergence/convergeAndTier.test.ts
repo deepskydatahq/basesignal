@@ -7,6 +7,9 @@ import {
   buildMergePrompt,
   capTierDistribution,
   validateConvergenceQuality,
+  BUSINESS_VERBS,
+  USER_ACTION_VERBS,
+  isBusinessVerb,
 } from "./convergeAndTier";
 import type { CandidateCluster, ValidatedCandidate, LensType, ConvergenceResult } from "./types";
 
@@ -567,7 +570,7 @@ describe("validateConvergenceQuality", () => {
     const result = makeConvergenceResult();
     const report = validateConvergenceQuality(result);
     expect(report.overall).toBe("pass");
-    expect(report.checks).toHaveLength(3);
+    expect(report.checks).toHaveLength(4);
     expect(report.checks.every((c) => c.status === "pass")).toBe(true);
   });
 
@@ -692,5 +695,171 @@ describe("validateConvergenceQuality", () => {
     expect(report.overall).toBe("fail");
     // Should have at least one fail check
     expect(report.checks.some((c) => c.status === "fail")).toBe(true);
+  });
+
+  it("warns when moment names use business verbs (experiential_names check)", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, name: "View a heatmap of team workload", contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, name: "Create a project dashboard", contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, name: "Filter results by date", contributing_candidates: ["a"] })
+      ),
+      // Business verb moment
+      makeMoment({ id: "biz-1", tier: 3, name: "Gain visibility into workload", contributing_candidates: ["a"] }),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const nameCheck = report.checks.find((c) => c.name === "experiential_names");
+    expect(nameCheck?.status).toBe("warn");
+    expect(nameCheck?.message).toContain("1 moment(s) use business verbs");
+    expect(nameCheck?.message).toContain("Gain visibility into workload");
+  });
+
+  it("passes when all moment names use user-action verbs", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, name: "View a heatmap of team workload", contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, name: "Create a project dashboard", contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 7 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, name: "Filter results by date", contributing_candidates: ["a"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const nameCheck = report.checks.find((c) => c.name === "experiential_names");
+    expect(nameCheck?.status).toBe("pass");
+    expect(nameCheck?.message).toBe("All names use experiential verbs");
+  });
+
+  it("warns for 'Automate protection of sensitive data'", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, name: "View dashboard", contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, name: "Create report", contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 4 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, name: "Filter items", contributing_candidates: ["a"] })
+      ),
+      makeMoment({ id: "biz-auto", tier: 3, name: "Automate protection of sensitive data", contributing_candidates: ["a"] }),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const nameCheck = report.checks.find((c) => c.name === "experiential_names");
+    expect(nameCheck?.status).toBe("warn");
+    expect(nameCheck?.message).toContain("Automate protection of sensitive data");
+  });
+
+  it("experiential_names check is non-blocking (warn, not fail)", () => {
+    const moments = [
+      ...Array.from({ length: 3 }, (_, i) =>
+        makeMoment({ id: `t1-${i}`, tier: 1, name: "Gain visibility", contributing_candidates: ["a", "b", "c", "d"] })
+      ),
+      ...Array.from({ length: 5 }, (_, i) =>
+        makeMoment({ id: `t2-${i}`, tier: 2, name: "Reduce overhead", contributing_candidates: ["a", "b"] })
+      ),
+      ...Array.from({ length: 7 }, (_, i) =>
+        makeMoment({ id: `t3-${i}`, tier: 3, name: "Accelerate delivery", contributing_candidates: ["a"] })
+      ),
+    ];
+    const result = makeConvergenceResult({ value_moments: moments });
+    const report = validateConvergenceQuality(result);
+    const nameCheck = report.checks.find((c) => c.name === "experiential_names");
+    // All names use business verbs, but status should be warn, never fail
+    expect(nameCheck?.status).toBe("warn");
+    expect(nameCheck?.status).not.toBe("fail");
+  });
+});
+
+// --- isBusinessVerb tests ---
+
+describe("isBusinessVerb", () => {
+  it("returns true for business verbs", () => {
+    expect(isBusinessVerb("Gain visibility into workload")).toBe(true);
+    expect(isBusinessVerb("Reduce time spent on reporting")).toBe(true);
+    expect(isBusinessVerb("Accelerate delivery of features")).toBe(true);
+    expect(isBusinessVerb("Optimize resource allocation")).toBe(true);
+    expect(isBusinessVerb("Automate protection of sensitive data")).toBe(true);
+    expect(isBusinessVerb("Leverage existing integrations")).toBe(true);
+    expect(isBusinessVerb("Enable cross-team collaboration")).toBe(true);
+    expect(isBusinessVerb("Enhance user experience")).toBe(true);
+    expect(isBusinessVerb("Empower teams to self-serve")).toBe(true);
+    expect(isBusinessVerb("Transform workflow efficiency")).toBe(true);
+    expect(isBusinessVerb("Revolutionize data processing")).toBe(true);
+    expect(isBusinessVerb("Streamline onboarding flow")).toBe(true);
+  });
+
+  it("returns false for user-action verbs", () => {
+    expect(isBusinessVerb("View a heatmap of team workload")).toBe(false);
+    expect(isBusinessVerb("Create a project dashboard")).toBe(false);
+    expect(isBusinessVerb("Share report with stakeholders")).toBe(false);
+    expect(isBusinessVerb("Export data as CSV")).toBe(false);
+    expect(isBusinessVerb("Filter results by date")).toBe(false);
+    expect(isBusinessVerb("Upload a file")).toBe(false);
+    expect(isBusinessVerb("Configure notification settings")).toBe(false);
+  });
+
+  it("returns false for unknown verbs", () => {
+    expect(isBusinessVerb("Discover new patterns")).toBe(false);
+    expect(isBusinessVerb("Monitor team velocity")).toBe(false);
+  });
+
+  it("handles empty and whitespace strings", () => {
+    expect(isBusinessVerb("")).toBe(false);
+    expect(isBusinessVerb("  ")).toBe(false);
+  });
+});
+
+// --- BUSINESS_VERBS and USER_ACTION_VERBS constants ---
+
+describe("verb constants", () => {
+  it("BUSINESS_VERBS contains all 12 expected verbs", () => {
+    expect(BUSINESS_VERBS).toHaveLength(12);
+    expect(BUSINESS_VERBS).toContain("Gain");
+    expect(BUSINESS_VERBS).toContain("Reduce");
+    expect(BUSINESS_VERBS).toContain("Accelerate");
+    expect(BUSINESS_VERBS).toContain("Optimize");
+    expect(BUSINESS_VERBS).toContain("Streamline");
+    expect(BUSINESS_VERBS).toContain("Automate");
+    expect(BUSINESS_VERBS).toContain("Leverage");
+    expect(BUSINESS_VERBS).toContain("Enable");
+    expect(BUSINESS_VERBS).toContain("Enhance");
+    expect(BUSINESS_VERBS).toContain("Empower");
+    expect(BUSINESS_VERBS).toContain("Transform");
+    expect(BUSINESS_VERBS).toContain("Revolutionize");
+  });
+
+  it("USER_ACTION_VERBS contains all 16 expected verbs", () => {
+    expect(USER_ACTION_VERBS).toHaveLength(16);
+    expect(USER_ACTION_VERBS).toContain("Create");
+    expect(USER_ACTION_VERBS).toContain("Share");
+    expect(USER_ACTION_VERBS).toContain("Export");
+    expect(USER_ACTION_VERBS).toContain("Build");
+    expect(USER_ACTION_VERBS).toContain("Drag");
+    expect(USER_ACTION_VERBS).toContain("Invite");
+    expect(USER_ACTION_VERBS).toContain("Comment");
+    expect(USER_ACTION_VERBS).toContain("Vote");
+    expect(USER_ACTION_VERBS).toContain("Upload");
+    expect(USER_ACTION_VERBS).toContain("Filter");
+    expect(USER_ACTION_VERBS).toContain("Tag");
+    expect(USER_ACTION_VERBS).toContain("Open");
+    expect(USER_ACTION_VERBS).toContain("View");
+    expect(USER_ACTION_VERBS).toContain("Configure");
+    expect(USER_ACTION_VERBS).toContain("Set");
+    expect(USER_ACTION_VERBS).toContain("Move");
+  });
+
+  it("BUSINESS_VERBS and USER_ACTION_VERBS have no overlap", () => {
+    const businessSet = new Set(BUSINESS_VERBS);
+    const overlap = USER_ACTION_VERBS.filter((v) => businessSet.has(v as any));
+    expect(overlap).toHaveLength(0);
   });
 });
