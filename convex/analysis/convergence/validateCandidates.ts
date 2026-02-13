@@ -25,6 +25,29 @@ export const FEATURE_AS_VALUE_PATTERNS: RegExp[] = [
   /^go to\b/i,
 ];
 
+/** Regex patterns that indicate marketing/business-speak rather than user experience */
+export const MARKETING_LANGUAGE_PATTERNS: RegExp[] = [
+  /\bautomate\b/i,
+  /\bstreamline\b/i,
+  /\boptimize\b/i,
+  /\bleverage\b/i,
+  /\benhance\b/i,
+  /\bempower\b/i,
+  /\baccelerate\b/i,
+  /\brevolutionize\b/i,
+  /\btransform\b/i,
+];
+
+/** Abstract outcome phrases that indicate business jargon without specificity */
+export const ABSTRACT_OUTCOME_PATTERNS: string[] = [
+  "at scale",
+  "cross-functional",
+  "end-to-end",
+  "enterprise-grade",
+  "best-in-class",
+  "next-generation",
+];
+
 /** Vague phrases that indicate a candidate lacks specificity */
 export const VAGUE_PHRASES: string[] = [
   "better visibility",
@@ -77,6 +100,45 @@ export function isVagueCandidate(description: string): string | null {
       return `Contains vague phrase: "${phrase}"`;
     }
   }
+  return null;
+}
+
+/**
+ * Check if a candidate uses marketing/business language without referencing specific product surfaces.
+ * Matches against marketing verb patterns and abstract outcome phrases.
+ * Does NOT flag if the candidate also references a known product feature (escape hatch).
+ * Returns explanation string if matched, null otherwise.
+ */
+export function isMarketingLanguage(
+  name: string,
+  description: string,
+  knownFeatures: Set<string>
+): string | null {
+  const combined = `${name} ${description}`;
+  const lower = combined.toLowerCase();
+
+  // Check if candidate references a known product surface — if so, don't flag
+  for (const feature of knownFeatures) {
+    if (lower.includes(feature)) {
+      return null;
+    }
+  }
+
+  // Check marketing verb patterns
+  for (const pattern of MARKETING_LANGUAGE_PATTERNS) {
+    if (pattern.test(combined)) {
+      const match = combined.match(pattern);
+      return `Contains marketing language: "${match?.[0]}"`;
+    }
+  }
+
+  // Check abstract outcome phrases
+  for (const phrase of ABSTRACT_OUTCOME_PATTERNS) {
+    if (lower.includes(phrase)) {
+      return `Contains abstract outcome phrase: "${phrase}"`;
+    }
+  }
+
   return null;
 }
 
@@ -330,6 +392,13 @@ export function runValidationPipeline(
 
       const vagueFlag = isVagueCandidate(candidate.description);
       if (vagueFlag) flags.push(vagueFlag);
+
+      const marketingFlag = isMarketingLanguage(
+        candidate.name,
+        candidate.description,
+        knownFeatures
+      );
+      if (marketingFlag) flags.push(marketingFlag);
 
       const featureRefFlag = hasUnverifiedFeatureRef(
         candidate.description,

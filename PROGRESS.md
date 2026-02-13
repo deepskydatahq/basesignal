@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E001-S003: Add Marketing-Language Detection to Candidate Validation
+
+**Files Changed:**
+- `convex/analysis/convergence/validateCandidates.ts` - Added `MARKETING_LANGUAGE_PATTERNS` (9 regex), `ABSTRACT_OUTCOME_PATTERNS` (6 phrases), `isMarketingLanguage()` function; integrated into `runValidationPipeline`
+- `convex/analysis/convergence/validateCandidates.test.ts` - Added 22 new tests: constants verification (2 describes, 4 tests), `isMarketingLanguage` unit tests (10 tests), pipeline integration tests with marketing language (5 tests)
+
+**Learnings:**
+- Word-boundary regex (`\bstreamline\b`) correctly distinguishes "Streamline" (marketing verb) from "Streamlined" (which is already caught by VAGUE_PHRASES as "streamlined workflow")
+- The escape-hatch pattern (skip flagging when candidate references known product feature) reuses the same `knownFeatures` set from `buildKnownFeaturesSet`
+- Marketing language detection fits cleanly as a single-line integration in the validation pipeline — same pattern as existing `isFeatureAsValue` and `isVagueCandidate` checks
+
+**Patterns Discovered:**
+- Two-tier pattern detection: marketing verbs (regex) + abstract outcome phrases (substring) in a single function, with an early-return escape hatch for known feature references
+- The validation pipeline's flag accumulation pattern (`flags: string[]`) naturally supports adding new checks without modifying the downstream LLM review flow
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**

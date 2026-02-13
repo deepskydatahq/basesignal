@@ -2,11 +2,14 @@ import { describe, it, expect } from "vitest";
 import {
   isFeatureAsValue,
   isVagueCandidate,
+  isMarketingLanguage,
   findWithinLensDuplicates,
   hasUnverifiedFeatureRef,
   buildKnownFeaturesSet,
   parseLlmResponse,
   runValidationPipeline,
+  MARKETING_LANGUAGE_PATTERNS,
+  ABSTRACT_OUTCOME_PATTERNS,
 } from "./validateCandidates";
 import type { LensResult } from "./types";
 
@@ -131,6 +134,158 @@ describe("isVagueCandidate", () => {
   it("is case-insensitive", () => {
     const result = isVagueCandidate("BETTER VISIBILITY into operations");
     expect(result).not.toBeNull();
+  });
+});
+
+// ========================================
+// Unit Tests: MARKETING_LANGUAGE_PATTERNS & ABSTRACT_OUTCOME_PATTERNS
+// ========================================
+
+describe("MARKETING_LANGUAGE_PATTERNS", () => {
+  it("contains 9 marketing verb patterns", () => {
+    expect(MARKETING_LANGUAGE_PATTERNS).toHaveLength(9);
+  });
+
+  it("includes automate, streamline, optimize, leverage, enhance, empower, accelerate, revolutionize, transform", () => {
+    const verbs = [
+      "automate",
+      "streamline",
+      "optimize",
+      "leverage",
+      "enhance",
+      "empower",
+      "accelerate",
+      "revolutionize",
+      "transform",
+    ];
+    for (const verb of verbs) {
+      const matches = MARKETING_LANGUAGE_PATTERNS.some((p) => p.test(verb));
+      expect(matches).toBe(true);
+    }
+  });
+});
+
+describe("ABSTRACT_OUTCOME_PATTERNS", () => {
+  it("contains 6 abstract outcome phrases", () => {
+    expect(ABSTRACT_OUTCOME_PATTERNS).toHaveLength(6);
+  });
+
+  it("includes at scale, cross-functional, end-to-end, enterprise-grade, best-in-class, next-generation", () => {
+    const phrases = [
+      "at scale",
+      "cross-functional",
+      "end-to-end",
+      "enterprise-grade",
+      "best-in-class",
+      "next-generation",
+    ];
+    for (const phrase of phrases) {
+      expect(ABSTRACT_OUTCOME_PATTERNS).toContain(phrase);
+    }
+  });
+});
+
+// ========================================
+// Unit Tests: isMarketingLanguage
+// ========================================
+
+describe("isMarketingLanguage", () => {
+  const emptyFeatures = new Set<string>();
+
+  it("flags 'Automate protection of sensitive business information'", () => {
+    const result = isMarketingLanguage(
+      "Automate protection of sensitive business information",
+      "Automatically protect sensitive data across the organization",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+    expect(result).toContain("marketing language");
+  });
+
+  it("does NOT flag 'Set board-level permissions to restrict editing'", () => {
+    const result = isMarketingLanguage(
+      "Set board-level permissions to restrict editing",
+      "Configure who can edit specific boards by setting permission levels",
+      emptyFeatures
+    );
+    expect(result).toBeNull();
+  });
+
+  it("flags 'Streamline cross-functional collaboration workflows'", () => {
+    const result = isMarketingLanguage(
+      "Streamline cross-functional collaboration workflows",
+      "Enable better collaboration across teams",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+  });
+
+  it("flags candidates with 'leverage'", () => {
+    const result = isMarketingLanguage(
+      "Leverage AI for faster decisions",
+      "Use artificial intelligence to speed up decision-making",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+    expect(result).toContain("Leverage");
+  });
+
+  it("flags candidates with abstract outcome 'at scale'", () => {
+    const result = isMarketingLanguage(
+      "Deploy protection at scale",
+      "Roll out data protection at scale across the enterprise",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+    expect(result).toContain("at scale");
+  });
+
+  it("flags candidates with abstract outcome 'enterprise-grade'", () => {
+    const result = isMarketingLanguage(
+      "Enterprise-grade security controls",
+      "Implement enterprise-grade security for all users",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+    expect(result).toContain("enterprise-grade");
+  });
+
+  it("does NOT flag when candidate references a known product feature", () => {
+    const knownFeatures = new Set(["permission settings"]);
+    const result = isMarketingLanguage(
+      "Streamline permission settings configuration",
+      "Quickly configure permission settings for your team",
+      knownFeatures
+    );
+    expect(result).toBeNull();
+  });
+
+  it("does NOT flag purely experiential language", () => {
+    const result = isMarketingLanguage(
+      "Feel confident about data safety",
+      "Know that sensitive data is protected by role-based access controls",
+      emptyFeatures
+    );
+    expect(result).toBeNull();
+  });
+
+  it("is case-insensitive for marketing verbs", () => {
+    const result = isMarketingLanguage(
+      "OPTIMIZE your workflow",
+      "Make your workflow more efficient",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+  });
+
+  it("is case-insensitive for abstract outcome phrases", () => {
+    const result = isMarketingLanguage(
+      "Security At Scale",
+      "Protect data At Scale across the organization",
+      emptyFeatures
+    );
+    expect(result).not.toBeNull();
+    expect(result).toContain("at scale");
   });
 });
 
@@ -511,5 +666,73 @@ describe("runValidationPipeline", () => {
     );
     expect(functionalResults).toHaveLength(5);
     expect(emotionalResults).toHaveLength(5);
+  });
+});
+
+// ========================================
+// Integration Test: Marketing Language in Pipeline
+// ========================================
+
+describe("runValidationPipeline with marketing language candidates", () => {
+  const knownFeatures = new Set(["board permissions"]);
+
+  const lensResults: LensResult[] = [
+    {
+      lens: "Functional Value",
+      candidates: [
+        {
+          id: "ml-1",
+          name: "Automate protection of sensitive business information",
+          description: "Automatically safeguard critical business data from unauthorized access",
+        },
+        {
+          id: "ml-2",
+          name: "Set board-level permissions to restrict editing",
+          description: "Configure board permissions to control who can edit specific content",
+        },
+        {
+          id: "ml-3",
+          name: "Streamline cross-functional collaboration workflows",
+          description: "Enable faster collaboration across teams and departments",
+        },
+        {
+          id: "ml-4",
+          name: "Feel confident about data safety",
+          description: "Know your data is safe with role-based access controls",
+        },
+      ],
+    },
+  ];
+
+  it("flags 'Automate protection of sensitive business information' as marketing language", () => {
+    const results = runValidationPipeline(lensResults, knownFeatures);
+    const ml1 = results.find((r) => r.id === "ml-1");
+    expect(ml1?.validation_status).not.toBe("valid");
+    expect(ml1?.validation_issue).toContain("marketing language");
+  });
+
+  it("does NOT flag 'Set board-level permissions to restrict editing' (references known feature)", () => {
+    const results = runValidationPipeline(lensResults, knownFeatures);
+    const ml2 = results.find((r) => r.id === "ml-2");
+    expect(ml2?.validation_status).toBe("valid");
+  });
+
+  it("flags 'Streamline cross-functional collaboration workflows' as marketing language", () => {
+    const results = runValidationPipeline(lensResults, knownFeatures);
+    const ml3 = results.find((r) => r.id === "ml-3");
+    expect(ml3?.validation_status).not.toBe("valid");
+    expect(ml3?.validation_issue).toContain("marketing language");
+  });
+
+  it("does NOT flag experiential language without marketing terms", () => {
+    const results = runValidationPipeline(lensResults, knownFeatures);
+    const ml4 = results.find((r) => r.id === "ml-4");
+    expect(ml4?.validation_status).toBe("valid");
+  });
+
+  it("full pipeline runs without errors", () => {
+    expect(() => runValidationPipeline(lensResults, knownFeatures)).not.toThrow();
+    const results = runValidationPipeline(lensResults, knownFeatures);
+    expect(results).toHaveLength(4);
   });
 });
