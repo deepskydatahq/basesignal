@@ -12,6 +12,27 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E001-S002: Rewrite Batch 2 Lens Prompts for Experiential Extraction
+
+**Files Changed:**
+- `convex/analysis/lenses/extractInfoAsymmetry.ts` - Rewrote SYSTEM_PROMPT: core question "What does a user SEE on a screen?", anti-patterns (abstract knowledge, marketing language, business outcomes), 3 BAD/GOOD example pairs
+- `convex/analysis/lenses/extractDecisionEnablement.ts` - Rewrote SYSTEM_PROMPT: core question "What specific choice does a user make INSIDE the product?", anti-patterns (business decisions, strategic outcomes, marketing language), 3 BAD/GOOD example pairs
+- `convex/analysis/lenses/extractStateTransitions.ts` - Rewrote SYSTEM_PROMPT: core question "What changes in a user's daily workflow?", anti-patterns (identity shifts, abstract transformations, marketing narratives), 3 BAD/GOOD example pairs
+
+**Learnings:**
+- Batch 1 established a clear experiential prompt pattern: core question → definition → anti-patterns (REJECT) → GOOD/BAD pairs → JSON format → rules
+- The key reframe for Batch 2 is grounding each lens in observable user experience: screens they see (info_asymmetry), clicks they make (decision_enablement), workflows that change (state_transitions)
+- Anti-patterns must explicitly call out marketing language — LLMs default to marketing-speak when analyzing product pages
+
+**Patterns Discovered:**
+- Experiential prompt pattern: each lens should answer "what does the user literally do/see?" not "what business outcome results?"
+- BAD/GOOD pairs are more effective than just listing anti-patterns — they show the model the concrete transformation expected
+- Keeping the JSON schema (field names, structure) identical while changing the prompt framing ensures all existing tests pass without modification
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- package-lock.json changes from `npm install` should not be committed as part of the feature change
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**
