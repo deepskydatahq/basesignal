@@ -12,6 +12,28 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-13 - Story M007-E003-S001: Rewrite Measurement Spec Prompt for Double Three-Layer Framework
+
+**Files Changed:**
+- `convex/analysis/outputs/types.ts` — Added `isHeartbeat?: boolean` to `EntityDefinition`, `perspective?: string` to `TrackingEvent`, `userStateModel?: unknown[]` to `MeasurementSpec`
+- `convex/analysis/outputs/generateMeasurementSpec.ts` — Rewrote `MEASUREMENT_SPEC_SYSTEM_PROMPT` with Double Three-Layer Framework (4 steps: entities 3-7 with heartbeat, activities with past-tense verbs and property inheritance, perspective assignment, user state model). Updated parser: `isHeartbeat` passthrough on entities, `perspective` passthrough on events, `userStateModel` passthrough at top-level, removed min-2 property check.
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` — Rewrote prompt content tests for new framework content (14 tests). Added 6 parser tests for isHeartbeat, perspective, userStateModel passthrough. Replaced "rejects events with fewer than 2 properties" with "accepts events with 0 additional properties". Updated fixture integration test.
+- `convex/analysis/outputs/types.test.ts` — Added 3 type compilation tests: EntityDefinition.isHeartbeat, TrackingEvent.perspective, MeasurementSpec.userStateModel
+
+**Learnings:**
+- The Double Three-Layer Framework reduces entity count (3-7 vs 5-10) and shifts property ownership to entities. Events only specify additional properties beyond what the entity provides.
+- Passthrough pattern for optional fields: spread with conditional `...(condition ? { field: value } : {})` keeps the field absent (not undefined) when not provided, which is cleaner for optional fields.
+- Removing the min-2 property check is necessary because with property inheritance, events may have 0 additional properties — all their properties come from the parent entity.
+
+**Patterns Discovered:**
+- Heartbeat entity pattern: exactly one entity marked `isHeartbeat: true` represents the primary unit of work/value delivery (e.g., Board in Miro, Issue in Linear)
+- Perspective classification: every event gets one of three perspectives (customer/product/interaction) to ensure balanced coverage across viewpoints
+- User State Model: 5-state lifecycle (new → activated → active → at_risk → dormant) with event-based transition criteria
+
+**Gotchas:**
+- The types.ts file has duplicate `EntityDefinition` interfaces (one under Entity Definition Types, one under Measurement Spec Types) — both needed `isHeartbeat` added
+- The `TrackingEvent` interface has a duplicate `entity_id` field (required + optional) — this pre-existed and wasn't addressed in this story
+
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 
 **Files Changed:**
