@@ -1,0 +1,80 @@
+# Story: Crawler Testing Infrastructure and Rate Limiting
+# Add rate limiting, robots.txt support, and fixture-based testing for crawlers.
+
+id = "M008-E003-S004"
+parent = "M008-E003"
+title = "Crawler rate limiting, robots.txt, and fixture testing"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+Crawlers respect robots.txt and rate limits by default. A BaseCrawler class
+provides common functionality (rate limiting, content truncation, error handling).
+A fixture-based testing helper makes it easy to test crawlers without HTTP.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "BaseCrawler class provides rate limiting (configurable delay between requests)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "BaseCrawler fetches and respects robots.txt (checks before crawling)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Content is truncated to configurable max size (default 100KB per page)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Errors on individual pages don't crash the entire crawl (graceful degradation)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "createFixtureCrawler(fixtures) helper creates a Crawler from saved response data"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "docs/crawlers.md explains the Crawler interface and how to contribute a new crawler"
+
+[context]
+relevant_paths = [
+    "packages/crawlers/",
+]
+input_fixtures = []
+depends_on = ["M008-E003-S002"]
+
+[handoff]
+implementation_hints = """
+BaseCrawler provides reusable infrastructure:
+```typescript
+abstract class BaseCrawler implements Crawler {
+  abstract name: string;
+  abstract sourceType: SourceType;
+  abstract canCrawl(url: string): boolean;
+  protected abstract doCrawl(url: string, options?: CrawlOptions): Promise<CrawlResult>;
+
+  async crawl(url: string, options?: CrawlOptions): Promise<CrawlResult> {
+    if (!await this.checkRobotsTxt(url)) return emptyResult('blocked by robots.txt');
+    return this.doCrawl(url, options);
+  }
+
+  protected async fetchWithRateLimit(url: string): Promise<Response> { ... }
+  protected truncateContent(content: string, maxBytes: number): string { ... }
+}
+```
+
+Fixture testing helper:
+```typescript
+function createFixtureCrawler(fixtures: Record<string, string>): Crawler {
+  // Returns a crawler that serves from saved HTML instead of HTTP
+}
+```
+
+This enables test-driven crawler development without network access.
+"""
+reference_files = []

@@ -1,0 +1,86 @@
+# Story: Crawler Interface and Registry
+# Define the Crawler interface, CrawlResult types, and crawler registration system.
+
+id = "M008-E003-S001"
+parent = "M008-E003"
+title = "Define Crawler interface, CrawlResult types, and registry"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+packages/crawlers/ exists with a well-defined Crawler interface, CrawlResult
+types, and a CrawlerRegistry that discovers and manages crawlers at runtime.
+The interface is simple enough that community contributors can implement new
+crawlers in an afternoon.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Crawler interface exports: name, sourceType, canCrawl(url), crawl(url, options)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CrawlResult type includes: pages (with url, content, pageType, metadata), timing, errors"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CrawlOptions type includes: maxPages, maxDepth, timeout, userAgent"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CrawlerRegistry.register(crawler) and CrawlerRegistry.getCrawlersFor(url) work"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "sourceType enum covers: 'website', 'social', 'reviews', 'docs', 'video', 'pricing'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/crawlers/ has its own package.json with name '@basesignal/crawlers'"
+
+[context]
+relevant_paths = [
+    "convex/crawledPages.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Design the interface to be dead simple for contributors:
+
+```typescript
+interface Crawler {
+  name: string;
+  sourceType: SourceType;
+  canCrawl(url: string): boolean;
+  crawl(url: string, options?: CrawlOptions): Promise<CrawlResult>;
+}
+
+interface CrawlResult {
+  pages: CrawledPage[];
+  timing: { startedAt: number; completedAt: number; totalMs: number };
+  errors: { url: string; error: string }[];
+}
+
+interface CrawledPage {
+  url: string;
+  pageType: string; // 'homepage', 'features', 'pricing', 'about', 'docs', 'help'
+  title?: string;
+  content: string;
+  metadata?: { description?: string; ogImage?: string; structuredData?: unknown };
+}
+```
+
+The registry is a simple map. getCrawlersFor(url) returns all crawlers where
+canCrawl(url) returns true. Default crawlers are auto-registered.
+
+Reference convex/crawledPages.ts for the current CrawledPage shape.
+"""
+reference_files = [
+    "convex/crawledPages.ts",
+]
