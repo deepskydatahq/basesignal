@@ -4,7 +4,7 @@
 id = "M008-E003-S004"
 parent = "M008-E003"
 title = "Crawler rate limiting, robots.txt, and fixture testing"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

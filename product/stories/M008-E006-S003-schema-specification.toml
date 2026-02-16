@@ -4,7 +4,7 @@
 id = "M008-E006-S003"
 parent = "M008-E006"
 title = "Schema specification v1.0 documentation"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

@@ -5,7 +5,7 @@
 id = "M007-E002-S001"
 parent = "M007-E002"
 title = "Rewrite merge and clustering prompts for experiential framing"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

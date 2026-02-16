@@ -4,7 +4,7 @@
 id = "M008-E001-S002"
 parent = "M008-E001"
 title = "Extract ProductProfile type system into packages/core"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

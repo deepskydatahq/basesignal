@@ -4,7 +4,7 @@
 id = "M008-E001-S006"
 parent = "M008-E001"
 title = "Extract convergence and tiering logic"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

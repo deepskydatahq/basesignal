@@ -4,7 +4,7 @@
 id = "M008-E006-S004"
 parent = "M008-E006"
 title = "Working examples (basic-scan, claude-desktop, custom-crawler)"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

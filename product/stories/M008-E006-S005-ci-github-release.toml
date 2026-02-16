@@ -4,7 +4,7 @@
 id = "M008-E006-S005"
 parent = "M008-E006"
 title = "GitHub Actions CI, issue templates, and release automation"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

@@ -4,7 +4,7 @@
 id = "M008-E003-S001"
 parent = "M008-E003"
 title = "Define Crawler interface, CrawlResult types, and registry"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

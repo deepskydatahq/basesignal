@@ -4,7 +4,7 @@
 id = "M008-E002-S001"
 parent = "M008-E002"
 title = "Extract MCP server into packages/mcp-server"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

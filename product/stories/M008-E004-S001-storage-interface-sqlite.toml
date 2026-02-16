@@ -4,7 +4,7 @@
 id = "M008-E004-S001"
 parent = "M008-E004"
 title = "Storage interface definition and SQLite adapter"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

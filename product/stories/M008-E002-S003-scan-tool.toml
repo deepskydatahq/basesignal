@@ -4,7 +4,7 @@
 id = "M008-E002-S003"
 parent = "M008-E002"
 title = "Implement scan_product MCP tool handler"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

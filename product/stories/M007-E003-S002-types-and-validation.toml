@@ -4,7 +4,7 @@
 id = "M007-E003-S002"
 parent = "M007-E003"
 title = "Update types and validation for property inheritance and heartbeat"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

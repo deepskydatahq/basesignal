@@ -4,7 +4,7 @@
 id = "M007-E001-S003"
 parent = "M007-E001"
 title = "Add marketing-language detection to candidate validation"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

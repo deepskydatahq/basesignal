@@ -4,7 +4,7 @@
 id = "M008-E003-S003"
 parent = "M008-E003"
 title = "Implement pricing page parser"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

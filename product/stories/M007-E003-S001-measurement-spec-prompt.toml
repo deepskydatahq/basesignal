@@ -5,7 +5,7 @@
 id = "M007-E003-S001"
 parent = "M007-E003"
 title = "Rewrite measurement spec prompt for Double Three-Layer Framework"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

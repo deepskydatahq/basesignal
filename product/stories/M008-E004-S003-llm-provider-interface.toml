@@ -4,7 +4,7 @@
 id = "M008-E004-S003"
 parent = "M008-E004"
 title = "LLM provider interface and Anthropic adapter"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

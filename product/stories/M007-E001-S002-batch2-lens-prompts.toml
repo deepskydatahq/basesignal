@@ -4,7 +4,7 @@
 id = "M007-E001-S002"
 parent = "M007-E001"
 title = "Rewrite Batch 2 lens prompts for experiential extraction"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

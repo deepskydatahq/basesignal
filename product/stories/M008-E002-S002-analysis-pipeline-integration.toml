@@ -4,7 +4,7 @@
 id = "M008-E002-S002"
 parent = "M008-E002"
 title = "Integrate analysis pipeline (lenses → convergence → outputs)"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

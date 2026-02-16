@@ -4,7 +4,7 @@
 id = "M008-E005-S003"
 parent = "M008-E005"
 title = "Implement export and serve CLI commands"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

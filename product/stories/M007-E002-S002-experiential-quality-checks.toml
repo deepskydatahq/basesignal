@@ -4,7 +4,7 @@
 id = "M007-E002-S002"
 parent = "M007-E002"
 title = "Add quality validation for experiential moment names"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

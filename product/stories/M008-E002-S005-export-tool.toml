@@ -4,7 +4,7 @@
 id = "M008-E002-S005"
 parent = "M008-E002"
 title = "Implement export_profile MCP tool"
-status = "ready"
+status = "complete"
 created = 2026-02-14
 
 [outcome]
