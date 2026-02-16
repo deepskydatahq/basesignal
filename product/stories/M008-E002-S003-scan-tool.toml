@@ -1,0 +1,72 @@
+# Story: scan_product Tool Handler
+# Implement the scan_product MCP tool that crawls a URL and generates a profile.
+
+id = "M008-E002-S003"
+parent = "M008-E002"
+title = "Implement scan_product MCP tool handler"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The MCP server exposes a scan_product tool that accepts a URL, crawls the
+product website, runs the analysis pipeline, and returns a ProductProfile.
+The profile is automatically saved to the configured storage adapter.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "scan_product tool is registered with MCP SDK and appears in tool listing"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tool accepts { url: string } as input parameter"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tool orchestrates: crawl(url) → analyze(pages) → save(profile) → return summary"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tool returns a human-readable summary (not raw JSON) for the AI assistant to relay"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Errors (invalid URL, crawl failure, LLM error) produce helpful error messages"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "End-to-end: scan_product('https://linear.app') produces a valid ProductProfile"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/",
+    "packages/crawlers/",
+    "packages/core/",
+]
+input_fixtures = []
+depends_on = ["M008-E002-S002", "M008-E003-S002", "M008-E004-S001"]
+
+[handoff]
+implementation_hints = """
+The scan_product tool is the flagship feature. It composes:
+1. Crawler (from @basesignal/crawlers) → crawl website pages
+2. Analysis pipeline (lenses, convergence, outputs) → extract structured data
+3. Storage adapter → save the generated profile
+
+The tool handler should:
+- Validate the URL
+- Run crawlers (website, pricing)
+- Feed crawled content to the analysis pipeline
+- Save the resulting ProductProfile to storage
+- Return a markdown summary of the profile for the AI to display
+
+Consider progress reporting via MCP notifications if the SDK supports it
+(crawling... analyzing... generating...).
+"""
+reference_files = [
+    "server/tools/",
+]

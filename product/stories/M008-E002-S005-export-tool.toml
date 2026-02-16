@@ -1,0 +1,58 @@
+# Story: export_profile Tool
+# Implement the export_profile MCP tool for markdown and JSON export.
+
+id = "M008-E002-S005"
+parent = "M008-E002"
+title = "Implement export_profile MCP tool"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The MCP server exposes an export_profile tool that converts a stored
+ProductProfile into markdown or JSON format, suitable for sharing
+in documents, Notion pages, or other tools.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "export_profile tool accepts { productId, format: 'markdown' | 'json' }"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Markdown export produces a well-structured document with sections for each profile area"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "JSON export produces a valid ProductProfile JSON matching the schema"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Markdown includes confidence scores and evidence sources for each section"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Export works for partial profiles (missing sections are noted, not errored)"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/",
+    "packages/core/",
+]
+input_fixtures = []
+depends_on = ["M008-E002-S004"]
+
+[handoff]
+implementation_hints = """
+The export functionality is shared between MCP tool and CLI:
+- Consider implementing the format conversion in packages/core or a shared util
+- Markdown template should be comprehensive but readable
+- Include: identity, revenue, journey, definitions, value moments, ICP profiles,
+  activation map, measurement spec
+- Each section should show confidence level and key evidence
+- JSON export is straightforward: serialize the ProductProfile with basesignal_version
+"""
+reference_files = []

@@ -1,0 +1,81 @@
+# Story: Analysis Pipeline Integration
+# Wire the lens extraction, convergence, and output generation into the MCP server.
+
+id = "M008-E002-S002"
+parent = "M008-E002"
+title = "Integrate analysis pipeline (lenses → convergence → outputs)"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The MCP server can execute the full analysis pipeline: run 7 lenses on crawled
+content, validate and cluster candidates, converge to value moments, and generate
+ICP profiles, activation maps, and measurement specs. The pipeline uses the
+injected LLM provider instead of direct Anthropic SDK calls.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Lens extraction functions accept crawled content + LLM provider and return LensCandidate[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All 7 lenses (capability, effort, time, artifact, info, decision, state) are available"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Orchestration runs Batch 1 (4 lenses) then Batch 2 (3 lenses with Batch 1 context)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Output generators (ICP, activation map, measurement spec) work with the LLM provider interface"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Full pipeline: crawled pages → lenses → convergence → outputs → ProductProfile"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/",
+    "convex/analysis/convergence/",
+    "convex/analysis/outputs/",
+    "convex/analysis/orchestrate.ts",
+    "convex/analysis/lenses/orchestrate.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S006", "M008-E002-S001"]
+
+[handoff]
+implementation_hints = """
+This is the biggest extraction. The lens functions currently:
+1. Read crawled pages from Convex DB → change to accept pages as parameter
+2. Call Claude directly via shared.ts → change to use LLM provider interface
+3. Store results via ctx.runMutation() → change to return results
+
+Each lens (extractCapabilityMapping, etc.) follows the same pattern:
+- Build prompt from crawled page content
+- Call LLM
+- Parse JSON response into LensCandidate[]
+
+Refactored signature pattern:
+```typescript
+export async function extractCapabilityMapping(
+  pages: CrawledContent[],
+  llm: LlmProvider
+): Promise<LensCandidate[]>
+```
+
+The output generators (generateICPProfiles, etc.) follow the same pattern.
+Extract them similarly, accepting value moments + profile data as input.
+
+Consider creating a packages/analyzers/ or keeping in packages/mcp-server/src/analysis/.
+"""
+reference_files = [
+    "convex/analysis/lenses/orchestrate.ts",
+    "convex/analysis/lenses/shared.ts",
+    "convex/analysis/outputs/orchestrate.ts",
+]

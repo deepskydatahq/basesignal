@@ -1,0 +1,68 @@
+# Story: MCP Server Skeleton
+# Extract the MCP server from server/ into packages/mcp-server, decouple from Clerk.
+
+id = "M008-E002-S001"
+parent = "M008-E002"
+title = "Extract MCP server into packages/mcp-server"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+packages/mcp-server/ exists as a standalone package with the MCP server
+skeleton. It starts, registers tools, and handles connections via stdio
+(for Claude Desktop) without requiring Clerk auth or Convex.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/mcp-server/ has its own package.json with @modelcontextprotocol/sdk dependency"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Server starts via stdio transport (for Claude Desktop local connection)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Server accepts storage adapter and LLM provider via constructor/config"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Ping tool is registered and responds to tool calls"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "No imports from '@clerk/', 'convex/', or 'express' exist in packages/mcp-server"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Server connects successfully from Claude Desktop MCP configuration"
+
+[context]
+relevant_paths = [
+    "server/index.ts",
+    "server/tools/",
+    "server/lib/",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S001"]
+
+[handoff]
+implementation_hints = """
+The existing server/ uses Express + Clerk + @modelcontextprotocol/sdk.
+For the open source package:
+- Use @modelcontextprotocol/sdk directly (no Express wrapper needed for stdio)
+- Support stdio transport (Claude Desktop) as primary, SSE as optional
+- Auth is NOT needed for self-hosted local use — remove Clerk dependency
+- Server constructor accepts: { storage: StorageAdapter, llmProvider: LlmProvider }
+- Tool registration follows MCP SDK patterns
+- Reference: server/index.ts for current tool registration pattern
+- The existing server/ can later become a thin wrapper that adds Clerk auth on top
+"""
+reference_files = [
+    "server/index.ts",
+    "server/tools/",
+]
