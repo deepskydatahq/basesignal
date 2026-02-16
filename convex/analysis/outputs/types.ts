@@ -1,158 +1,42 @@
-// Output types for M004: Actionable Output Generation
-// Defines the shape of all three output artifacts: ICPProfile, ActivationMap, MeasurementSpec
-
-import type { ValueMoment, ValueMomentTier } from "../convergence/types";
-import type {
-  ActivationLevel,
+// Re-export all output types from the core package.
+export type {
+  // Upstream re-exports
+  ValueMoment,
+  ValueMomentTier,
   SignalStrength,
-} from "../extractActivationLevels";
 
-// Re-export upstream types for convenience
-export type { ValueMoment, ValueMomentTier, ActivationLevel, SignalStrength };
+  // ICP types
+  ValueMomentPriority,
+  ICPProfile,
 
-// --- ICP Profile Types ---
+  // Activation Map types
+  ActivationStage,
+  StageTransition,
+  ActivationMap,
 
-export interface ValueMomentPriority {
-  moment_id: string;
-  priority: 1 | 2 | 3;
-  relevance_reason: string;
-}
+  // Entity/Property types
+  EntityPropertyDef,
+  EntityDefinition,
+  EventProperty,
+  Perspective,
+  PerspectiveDistribution,
 
-export interface ICPProfile {
-  id: string;
-  name: string;
-  description: string;
-  value_moment_priorities: ValueMomentPriority[];
-  activation_triggers: string[];
-  pain_points: string[];
-  success_metrics: string[];
-  confidence: number;
-  sources: string[];
-}
+  // Tracking Event types
+  MapsTo,
+  TrackingEvent,
 
-// --- Activation Map Types ---
+  // Measurement Spec
+  MeasurementSpec,
+  UserStateCriterion,
+  UserState,
 
-export interface ActivationStage {
-  level: number;
-  name: string;
-  signal_strength: SignalStrength;
-  trigger_events: string[];
-  value_moments_unlocked: string[];
-  drop_off_risk: "low" | "medium" | "high";
-  drop_off_reasons?: string[];
-}
+  // Input/Output containers
+  MeasurementInputData,
+  OutputGenerationResult,
 
-export interface StageTransition {
-  from_level: number;
-  to_level: number;
-  trigger_events: string[];
-  typical_timeframe?: string;
-}
+  // Activation levels (from extractActivationLevels)
+  ActivationLevel,
+} from "@basesignal/core";
 
-export interface ActivationMap {
-  stages: ActivationStage[];
-  transitions: StageTransition[];
-  primary_activation_level: number;
-  confidence: number;
-  sources: string[];
-}
-
-// --- Entity Definition Types ---
-
-export interface EntityPropertyDef {
-  name: string;
-  type: "string" | "number" | "boolean" | "array";
-  description: string;
-  isRequired: boolean;
-}
-
-export interface EntityDefinition {
-  id: string;
-  name: string;
-  description: string;
-  isHeartbeat: boolean;
-  properties: EntityPropertyDef[];
-}
-
-// --- User State Model Types ---
-
-export interface UserStateCriterion {
-  event_name: string;
-  condition: string;
-}
-
-export interface UserState {
-  name: string;
-  definition: string;
-  criteria: UserStateCriterion[];
-}
-
-// --- Measurement Spec Types ---
-
-export interface EventProperty {
-  name: string;
-  type: "string" | "number" | "boolean" | "array";
-  description: string;
-  isRequired: boolean;
-}
-
-export type EntityProperty = EntityPropertyDef;
-
-export type Perspective = "customer" | "product" | "interaction";
-
-export interface PerspectiveDistribution {
-  customer: number;
-  product: number;
-  interaction: number;
-}
-
-export type MapsTo =
-  | { type: "value_moment"; moment_id: string }
-  | { type: "activation_level"; activation_level: number }
-  | { type: "both"; moment_id: string; activation_level: number };
-
-export interface TrackingEvent {
-  name: string;
-  entity_id: string;
-  description: string;
-  perspective: Perspective;
-  properties: EventProperty[];
-  trigger_condition: string;
-  maps_to: MapsTo;
-  category: string;
-}
-
-export interface MeasurementSpec {
-  entities: EntityDefinition[];
-  events: TrackingEvent[];
-  total_events: number;
-  coverage: {
-    activation_levels_covered: number[];
-    value_moments_covered: string[];
-    perspective_distribution: PerspectiveDistribution;
-  };
-  userStateModel: UserState[];
-  confidence: number;
-  sources: string[];
-  warnings?: string[];
-}
-
-// --- Measurement Input Data ---
-
-export interface MeasurementInputData {
-  value_moments: ValueMoment[];
-  activation_levels: ActivationLevel[];
-  icp_profiles: ICPProfile[];
-  activation_map: ActivationMap;
-}
-
-// --- Container Type ---
-
-export interface OutputGenerationResult {
-  productId: string;
-  icp_profiles: ICPProfile[];
-  activation_map: ActivationMap;
-  measurement_spec: MeasurementSpec;
-  generated_at: string;
-  execution_time_ms: number;
-}
+// Backward compatibility: EntityProperty was a type alias for EntityPropertyDef
+export type { EntityPropertyDef as EntityProperty } from "@basesignal/core";

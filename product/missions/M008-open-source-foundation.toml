@@ -1,0 +1,85 @@
+# Mission: Open Source Foundation
+# Transform Basesignal into a self-hostable open source project with modular packages,
+# establishing the product profile schema as an industry standard.
+
+id = "M008"
+title = "Open Source Foundation"
+status = "draft"
+created = 2026-02-14
+hypothesis = "H8"
+depends_on = ["M001"]
+
+[outcome]
+description = """
+Basesignal is a publicly available, self-hostable open source project that anyone can
+install via npm or Docker. The analysis engine, MCP server, crawlers, and storage are
+modular packages with clear interfaces. Contributors can add crawlers, storage adapters,
+and integrations without touching core code. The product profile schema is a versioned
+specification that other tools can read and write.
+"""
+
+user_progress = "From 'closed-source prototype requiring hosted infrastructure' to 'open standard anyone can self-host, extend, and contribute to'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Repository contains modular packages (core, mcp-server, crawlers, storage, cli) with clear boundaries",
+    "A user can install via npm and run `basesignal scan <url>` to get a product profile without any hosted infrastructure",
+    "A user can run via Docker with `docker-compose up` and connect from Claude Desktop",
+    "The product profile schema is a versioned specification with TypeScript types and JSON Schema",
+    "The crawler interface allows adding new crawlers without modifying existing code",
+    "The storage adapter interface supports SQLite (default) and at least one alternative (Postgres or file-based)",
+    "LLM provider is configurable (user brings their own API key, supports OpenAI/Anthropic/Ollama)",
+    "README, CONTRIBUTING.md, LICENSE (MIT), and documentation exist and are accurate",
+    "All packages have tests and the CI pipeline passes",
+]
+
+validator_context = [
+    "packages/",
+    "docs/",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "docker/",
+    "examples/",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "HYPOTHESES.md",
+]
+relevant_paths = [
+    "packages/",
+    "convex/analysis/",
+    "convex/crawl/",
+]
+
+[notes]
+considerations = """
+This mission restructures the existing analysis engine (currently in convex/) into
+standalone, self-hostable packages. The key architectural decisions:
+
+1. **Convex decoupling**: The current backend uses Convex (serverless). Open source
+   requires a self-hostable alternative. Use an adapter pattern: SQLite as default
+   storage, with Convex/Postgres as optional adapters.
+
+2. **Monorepo structure**: Use a packages/ directory with a workspace setup. Each
+   package is independently publishable to npm.
+
+3. **Schema as specification**: The ProductProfile type system is the core IP.
+   Publish it as both TypeScript types and JSON Schema, versioned independently.
+
+4. **LLM provider flexibility**: Users bring their own API key. Support OpenAI,
+   Anthropic, and Ollama (local). The analyzer interface abstracts the provider.
+
+5. **Incremental extraction**: Don't rewrite from scratch. Extract existing code
+   from convex/analysis/ and convex/crawl/ into packages, adapting as needed.
+
+6. **Existing web app**: The React/Convex web app can coexist. It becomes one
+   consumer of the packages, not the only way to use Basesignal.
+
+The mission should be broken down so that each epic delivers a working, testable
+package. The packages should be usable independently where possible.
+"""

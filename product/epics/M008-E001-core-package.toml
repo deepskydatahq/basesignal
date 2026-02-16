@@ -1,0 +1,65 @@
+# Epic: Core Package — Schema, Validation, and Inference
+# Extract the product profile data model into a standalone @basesignal/core package.
+# This is the most important package — the schema IS the standard.
+
+id = "M008-E001"
+parent = "M008"
+title = "Core Package — Schema, Validation, and Inference"
+status = "draft"
+created = 2026-02-14
+
+[outcome]
+description = """
+The @basesignal/core package contains the complete product profile type system,
+validation logic, and inference rules as a standalone, publishable npm package.
+Any tool can import the schema to read, write, or validate Basesignal profiles.
+"""
+
+job_story = """
+When I'm building a tool that works with product profiles,
+I want to import a well-typed schema with validation and inference rules,
+so that I can read/write Basesignal-compatible profiles without reimplementing the data model.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/core/ exists as a standalone TypeScript package with its own package.json",
+    "ProductProfile interface and all sub-types (CoreIdentity, UserJourney, Definition, EntityModel, RevenueArchitecture, etc.) are exported",
+    "JSON Schema equivalent is generated or maintained alongside TypeScript types",
+    "Schema is versioned (basesignal_version field in profiles)",
+    "Validation functions accept a profile and return structured errors/warnings",
+    "Inference rules engine can derive fields from other fields (e.g., pricing model → likely expansion path)",
+    "Package can be imported and used without any other Basesignal packages",
+    "Tests cover type validation, inference rules, and edge cases",
+]
+
+validator_context = [
+    "packages/core/",
+    "packages/core/schema/",
+    "packages/core/validation/",
+    "packages/core/inference/",
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+The existing type definitions live in convex/analysis/outputs/types.ts and convex/schema.ts.
+Extract and refine these into the core package. Key decisions:
+
+- Types should be framework-agnostic (no Convex dependencies)
+- Include both runtime validation (zod or similar) and static types
+- JSON Schema generation enables non-TypeScript consumers
+- Version the schema from v1.0 — breaking changes get major bumps
+- Keep inference rules simple initially — expand based on real usage patterns
+- The core package should have zero or minimal dependencies
+"""
+
+estimated_stories = 6

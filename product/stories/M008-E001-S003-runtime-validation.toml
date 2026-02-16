@@ -1,0 +1,60 @@
+# Story: Runtime Validation Schemas
+# Create zod schemas matching all ProductProfile types for runtime validation.
+
+id = "M008-E001-S003"
+parent = "M008-E001"
+title = "Runtime validation schemas with zod"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+Every ProductProfile type has a corresponding zod schema that validates
+runtime data. A validateProfile() function accepts unknown data and returns
+either a typed ProfileProfile or structured validation errors.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Zod schemas exist for ProductProfile and all sub-types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateProfile(data) returns { success: true, data: ProductProfile } for valid data"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "validateProfile(data) returns { success: false, errors: ValidationError[] } for invalid data with field-level error paths"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Partial validation works: validateSection('identity', data) validates individual sections"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TypeScript types are inferred from zod schemas (z.infer<typeof schema> matches hand-written types)"
+
+[context]
+relevant_paths = [
+    "packages/core/",
+    "convex/productProfiles.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S002"]
+
+[handoff]
+implementation_hints = """
+- Use zod v4 (already in project dependencies)
+- Define schemas alongside types in packages/core/schema/
+- Export both the TypeScript types AND the zod schemas
+- Consider deriving types from schemas (z.infer) vs maintaining both
+- Validation errors should include: path, expected, received, message
+- Convex already has validators in productProfiles.ts — use as reference for field shapes
+- Keep validation strict for required fields, permissive for optional
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+]

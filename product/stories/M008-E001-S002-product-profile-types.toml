@@ -1,0 +1,76 @@
+# Story: ProductProfile Type System Extraction
+# Extract and refine the product profile type system into framework-agnostic TypeScript types.
+
+id = "M008-E001-S002"
+parent = "M008-E001"
+title = "Extract ProductProfile type system into packages/core"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+All product profile types (CoreIdentity, UserJourney, RevenueArchitecture,
+EntityModel, Definition, ValueMoment, ICPProfile, ActivationMap, MeasurementSpec)
+are exported from @basesignal/core as framework-agnostic TypeScript interfaces
+with no Convex or React dependencies.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ProductProfile interface is exported and includes: identity, journey, definitions, entities, outcomes, metrics, revenue, outputs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All sub-types (CoreIdentity, UserJourney, RevenueArchitecture, EntityModel, etc.) are independently importable"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Output types (ICPProfile, ActivationMap, MeasurementSpec, ValueMoment) are exported"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LensCandidate, ValidatedCandidate, and ConvergenceResult types are exported for pipeline consumers"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "No imports from 'convex/', '@clerk/', or 'react' exist in packages/core"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each type has JSDoc comments explaining its purpose"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/lenses/types.ts",
+    "convex/analysis/convergence/types.ts",
+    "convex/schema.ts",
+    "convex/productProfiles.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Source types from:
+- convex/analysis/outputs/types.ts → ICPProfile, ActivationMap, MeasurementSpec, etc.
+- convex/analysis/lenses/types.ts → LensType, LensCandidate, AllLensesResult
+- convex/analysis/convergence/types.ts → ValidatedCandidate, ValueMoment, ConvergenceResult
+- convex/schema.ts → ProductProfile shape (identity, revenue, entities, journey, etc.)
+
+Key changes:
+- Replace v.id("products") with string
+- Replace Convex Doc<> references with plain interfaces
+- Add basesignal_version field to ProductProfile
+- Add ProfileMetadata (created, updated, source, etc.)
+- Keep types strict but not coupled to any storage layer
+"""
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/lenses/types.ts",
+    "convex/analysis/convergence/types.ts",
+    "convex/schema.ts",
+]

@@ -1,0 +1,57 @@
+# Story: JSON Schema Generation and Schema Versioning
+# Generate JSON Schema from TypeScript types and implement schema versioning.
+
+id = "M008-E001-S004"
+parent = "M008-E001"
+title = "JSON Schema generation and schema versioning"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+A JSON Schema file is generated from the TypeScript/zod definitions and
+published alongside the package. Every profile includes a basesignal_version
+field. A version check utility warns when a profile was created with a
+different schema version.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "JSON Schema file exists at packages/core/schema.json and validates against JSON Schema Draft 2020-12"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "JSON Schema validates the same test profiles that zod validates (parity)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ProductProfile includes basesignal_version: '1.0' field"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "checkVersion(profile) returns compatibility status (compatible, needs_migration, incompatible)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "JSON Schema is included in the npm package distribution"
+
+[context]
+relevant_paths = [
+    "packages/core/",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S003"]
+
+[handoff]
+implementation_hints = """
+- Use zod-to-json-schema or typescript-json-schema to generate from existing definitions
+- Store generated schema at packages/core/schema.json
+- Include a build step that regenerates the schema (npm run build:schema)
+- Version format: semver for the schema (1.0, 1.1, 2.0)
+- Major version = breaking changes, minor = additive only
+- The schema file should be part of the published package (include in files[] or exports)
+"""
+reference_files = []

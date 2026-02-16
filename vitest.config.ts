@@ -7,13 +7,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@basesignal/core': path.resolve(__dirname, './packages/core/src/index.ts'),
     },
   },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
-    exclude: ['**/node_modules/**', '**/e2e/**'],
+    exclude: ['**/node_modules/**', '**/e2e/**', 'packages/**'],
     server: {
       deps: {
         inline: ['convex-test'],

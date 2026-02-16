@@ -1,0 +1,73 @@
+# Story: Pure Analysis Utilities Extraction
+# Extract TF-IDF similarity, Union-Find clustering, and deterministic validation into packages/core.
+
+id = "M008-E001-S005"
+parent = "M008-E001"
+title = "Extract pure analysis utilities (similarity, clustering, validation)"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The pure, framework-agnostic analysis utilities — TF-IDF similarity computation,
+Union-Find clustering, and deterministic validation checks — are extracted into
+packages/core with their existing tests adapted to the new location.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TF-IDF similarity functions (tokenize, termFrequency, idf, cosineSimilarity) are exported from packages/core"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Union-Find clustering algorithm is exported with same-lens constraint enforcement"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Deterministic validation checks (feature-as-value, vague language, marketing speak) are exported"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing tests from convex/lib/similarity.ts and convergence tests pass in new location"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Functions have zero external dependencies (pure TypeScript only)"
+
+[context]
+relevant_paths = [
+    "convex/lib/similarity.ts",
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/validateCandidates.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S002"]
+
+[handoff]
+implementation_hints = """
+These are the easiest extractions — the code is already framework-agnostic:
+
+- convex/lib/similarity.ts → packages/core/src/analysis/similarity.ts
+  Pure TF-IDF: tokenize, termFrequency, inverseDocumentFrequency, cosineSimilarity
+  Zero dependencies, already has tests
+
+- convex/analysis/convergence/clusterCandidates.ts → packages/core/src/analysis/clustering.ts
+  clusterCandidatesCore() is already a pure function
+  Union-Find algorithm with same-lens constraint
+  Depends only on similarity.ts
+
+- convex/analysis/convergence/validateCandidates.ts → packages/core/src/analysis/validation.ts
+  Deterministic checks only (not the LLM review part)
+  runDeterministicChecks(), isFeatureAsValue(), isVagueLanguage(), etc.
+  Depends on similarity.ts for deduplication
+
+Copy tests as-is, update imports.
+"""
+reference_files = [
+    "convex/lib/similarity.ts",
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/validateCandidates.ts",
+]

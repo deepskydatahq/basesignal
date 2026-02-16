@@ -1,0 +1,62 @@
+# Story: Monorepo Workspace Setup
+# Initialize npm workspaces and scaffold packages/core with build tooling.
+
+id = "M008-E001-S001"
+parent = "M008-E001"
+title = "Monorepo workspace setup and packages/core scaffold"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The repository has npm workspaces configured with a packages/ directory.
+packages/core/ exists with package.json, tsconfig.json, vitest config,
+and an index.ts entry point. The build produces both ESM and CJS outputs.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "npm workspaces resolve correctly — `npm install` from root installs all workspace deps"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/core/ has its own package.json with name '@basesignal/core' and correct entry points"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TypeScript build succeeds for packages/core (tsc --noEmit passes)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Vitest runs in packages/core with a placeholder test"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Existing React/Convex app still works (npm run dev + npx convex dev unaffected)"
+
+[context]
+relevant_paths = [
+    "package.json",
+    "tsconfig.json",
+    "vitest.config.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+- Add `"workspaces": ["packages/*"]` to root package.json
+- Create packages/core/package.json with name, version, exports map
+- Use tsconfig project references to keep builds independent
+- The existing app (src/, convex/, server/) should continue to work unchanged
+- Consider tsup or unbuild for package building (ESM + CJS)
+- Keep dependencies minimal: only typescript and vitest for now
+"""
+reference_files = [
+    "package.json",
+    "tsconfig.json",
+    "vitest.config.ts",
+]

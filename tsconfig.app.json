@@ -27,7 +27,8 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@basesignal/core": ["./packages/core/src/index.ts"]
     }
   },
   "include": ["src"],

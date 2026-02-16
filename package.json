@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -13,7 +16,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "server:dev": "tsx watch server/index.ts",
-    "server:start": "tsx server/index.ts"
+    "server:start": "tsx server/index.ts",
+    "build:packages": "npm run build --workspaces",
+    "test:packages": "npm test --workspaces",
+    "prepublishOnly": "echo 'Use scripts/publish-all.sh instead' && exit 1"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -54,6 +60,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.2",
+    "@changesets/cli": "^2.29.8",
     "@edge-runtime/vm": "^5.0.0",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.57.0",
@@ -68,6 +76,7 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "ajv": "^8.18.0",
     "autoprefixer": "^10.4.22",
     "convex-test": "^0.0.41",
     "eslint": "^9.39.1",

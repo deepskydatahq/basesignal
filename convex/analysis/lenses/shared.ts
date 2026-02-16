@@ -40,14 +40,9 @@ export function buildPageContext(
   return sections.join("\n\n");
 }
 
-/**
- * Extract JSON from text that may contain markdown code fences or raw JSON.
- */
-export function extractJson(text: string): unknown {
-  const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
-  const jsonStr = fenceMatch ? fenceMatch[1].trim() : text.trim();
-  return JSON.parse(jsonStr);
-}
+// Re-export extractJson from @basesignal/core (canonical location)
+export { extractJson } from "@basesignal/core";
+import { extractJson } from "@basesignal/core";
 
 const VALID_CONFIDENCE_LEVELS: ConfidenceLevel[] = ["low", "medium", "high"];
 
