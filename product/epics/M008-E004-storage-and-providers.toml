@@ -1,0 +1,68 @@
+# Epic: Storage & Provider Adapters
+# Implement adapter pattern for storage (SQLite default) and LLM providers (bring your own key).
+
+id = "M008-E004"
+parent = "M008"
+title = "Storage & Provider Adapters"
+status = "draft"
+created = 2026-02-14
+
+[outcome]
+description = """
+The @basesignal/storage package provides a Storage interface with SQLite as the
+zero-config default. Users can swap in Postgres or file-based storage. LLM provider
+abstraction lets users bring their own API key for OpenAI, Anthropic, or Ollama.
+"""
+
+job_story = """
+When I'm self-hosting Basesignal,
+I want it to work out of the box with SQLite and my preferred LLM provider,
+so that I don't need to set up any external services beyond an API key.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/storage/ exists with a Storage interface (save, load, list, delete profiles)",
+    "SQLite adapter works as zero-config default (creates ~/.basesignal/data.db)",
+    "File-based adapter stores profiles as JSON files (simple, inspectable)",
+    "Storage interface is simple enough that community can add Postgres/Turso/etc.",
+    "LLM provider abstraction lives in packages/analyzers/ or packages/core/",
+    "LLM interface supports: OpenAI, Anthropic, Ollama (local)",
+    "Provider is configured via environment variable (BASESIGNAL_LLM_PROVIDER, API key)",
+    "Tests cover all storage adapters and mock LLM providers",
+]
+
+validator_context = [
+    "packages/storage/",
+    "packages/storage/sqlite/",
+    "packages/storage/file/",
+]
+
+[context]
+relevant_paths = [
+    "convex/productProfiles.ts",
+    "convex/schema.ts",
+]
+dependencies = ["M008-E001"]
+
+[notes]
+considerations = """
+This epic decouples Basesignal from Convex for the open source distribution.
+The existing Convex backend continues to work for the web app — this adds
+alternatives for self-hosting.
+
+Storage adapter decisions:
+- SQLite via better-sqlite3 (sync, fast, zero-config)
+- File adapter stores one JSON per profile (good for debugging, git-friendly)
+- Interface: save(profile), load(id), list(), delete(id), search(query)
+
+LLM provider decisions:
+- Abstract the analyze() call behind a provider interface
+- Each provider wraps its SDK (openai, @anthropic-ai/sdk, ollama)
+- Support model configuration per provider
+- Ollama enables fully local/private operation
+- Default to OpenAI gpt-4o if no preference specified
+"""
+
+estimated_stories = 4

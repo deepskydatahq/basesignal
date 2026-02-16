@@ -1,0 +1,94 @@
+# Story: LLM Provider Interface
+# Define the LLM provider abstraction and implement the Anthropic adapter.
+
+id = "M008-E004-S003"
+parent = "M008-E004"
+title = "LLM provider interface and Anthropic adapter"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+An LlmProvider interface abstracts LLM calls. The Anthropic adapter wraps
+@anthropic-ai/sdk. Users configure their provider via environment variables.
+The interface is simple enough to implement for any LLM provider.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LlmProvider interface exports: complete(prompt, options) → string"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LlmOptions includes: model, temperature, maxTokens, systemPrompt"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "AnthropicProvider implements LlmProvider using @anthropic-ai/sdk"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "AnthropicProvider reads API key from ANTHROPIC_API_KEY env var"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "AnthropicProvider supports model selection (claude-sonnet-4-5-20250929, claude-haiku-4-5-20251001)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "createProvider(config) factory function creates the right provider from configuration"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests use a mock provider that returns canned responses"
+
+[context]
+relevant_paths = [
+    "convex/analysis/lenses/shared.ts",
+    "convex/ai.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Extract from convex/analysis/lenses/shared.ts which has callClaude():
+
+```typescript
+interface LlmProvider {
+  complete(messages: LlmMessage[], options?: LlmOptions): Promise<string>;
+}
+
+interface LlmMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface LlmOptions {
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+```
+
+The Anthropic adapter wraps the existing callClaude() pattern.
+Keep the interface minimal — just message-in, text-out.
+
+JSON extraction utility (extractJson from shared.ts) should live alongside
+the provider since all providers need it.
+
+Factory function:
+```typescript
+function createProvider(config: { provider: 'anthropic' | 'openai' | 'ollama', apiKey?: string }): LlmProvider
+```
+
+The provider abstraction lives in packages/core or a shared location
+since both the analysis pipeline and MCP server need it.
+"""
+reference_files = [
+    "convex/analysis/lenses/shared.ts",
+    "convex/ai.ts",
+]

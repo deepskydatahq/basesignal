@@ -1,0 +1,86 @@
+# Story: OpenAI and Ollama Provider Adapters
+# Implement LLM provider adapters for OpenAI and Ollama (local).
+
+id = "M008-E004-S004"
+parent = "M008-E004"
+title = "OpenAI and Ollama provider adapters"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+Users can choose between Anthropic, OpenAI, or Ollama (local) as their
+LLM provider. Ollama enables fully private, offline operation where no
+data leaves the user's machine.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OpenAIProvider implements LlmProvider using the openai npm package"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OpenAIProvider reads API key from OPENAI_API_KEY env var"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OpenAIProvider supports model selection (gpt-4o, gpt-4o-mini)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OllamaProvider implements LlmProvider using Ollama's HTTP API"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OllamaProvider connects to configurable host (default localhost:11434)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OllamaProvider works with common models (llama3, mistral, etc.)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "createProvider() factory handles all three providers based on config"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OpenAI and Ollama are optional peer dependencies (not required at install)"
+
+[context]
+relevant_paths = [
+    "packages/core/",
+]
+input_fixtures = []
+depends_on = ["M008-E004-S003"]
+
+[handoff]
+implementation_hints = """
+OpenAI adapter:
+- Use the 'openai' npm package
+- Map LlmMessage to OpenAI's ChatCompletionMessageParam
+- Support gpt-4o (best quality) and gpt-4o-mini (cheaper)
+
+Ollama adapter:
+- Use Ollama's REST API directly (fetch to localhost:11434)
+- POST /api/chat with model, messages, options
+- No API key needed — fully local
+- Quality varies by model but data stays on user's machine
+
+Both should be optional peer deps:
+```json
+"peerDependencies": {
+  "openai": "^4.0.0",
+  "@anthropic-ai/sdk": "^0.70.0"
+},
+"peerDependenciesMeta": {
+  "openai": { "optional": true },
+  "@anthropic-ai/sdk": { "optional": true }
+}
+```
+
+Ollama uses HTTP only, no npm package needed.
+"""
+reference_files = []
