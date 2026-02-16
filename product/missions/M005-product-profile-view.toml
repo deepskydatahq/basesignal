@@ -1,0 +1,84 @@
+# Mission: Product Profile View
+# Make analysis pipeline outputs visible through a structured product profile UI
+
+id = "M005"
+title = "Product Profile View"
+status = "active"
+created = 2026-02-11
+
+[outcome]
+description = """
+Users can browse their analyzed products and view the full analysis profile:
+value moments, ICP profiles, activation maps, and measurement specs. All M004
+outputs are presented in structured, card-based layouts that make the data
+immediately understandable and actionable.
+"""
+
+user_progress = "From 'analysis data trapped in the database' to 'browsable product profiles with structured views of all analysis outputs'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Product list page shows all products with profile completeness indicators",
+    "Product profile page displays value moments grouped by tier with lens badges",
+    "ICP profiles render as persona cards with priorities, triggers, and pain points",
+    "Activation map shows stage progression with signal strength and drop-off risk",
+    "Measurement spec displays events grouped by category with expandable property details",
+    "Empty states render correctly when profile sections are missing",
+    "All existing tests continue to pass"
+]
+
+validator_context = [
+    "src/routes/ProductsListPage.tsx",
+    "src/routes/ProductProfilePage.tsx",
+    "src/components/product-profile/"
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "HYPOTHESES.md"
+]
+relevant_paths = [
+    "convex/products.ts",
+    "convex/productProfiles.ts",
+    "convex/analysis/convergence/types.ts",
+    "convex/analysis/outputs/types.ts",
+    "src/routes/",
+    "src/components/product-profile/"
+]
+
+[notes]
+considerations = """
+This mission builds on M004 (Actionable Output Generation) which populated the
+productProfiles table with convergence results and three output types.
+
+Prerequisite for testing H1 (Opinionated Outputs) — users can't evaluate whether
+outputs are "good enough to use" until they can see them.
+
+Four epics:
+
+1. **Product List & Routing (E001)**
+   - New home page replacing ProfilePage with product list
+   - Route to /products/:productId for individual profiles
+   - listWithProfiles query to avoid N+1
+
+2. **Profile Page Shell & Value Moments (E002)**
+   - Tabbed profile page with product header
+   - Value moments display grouped by tier with lens badges
+
+3. **ICP Profiles & Activation Map (E003)**
+   - ICP persona cards with value moment priorities
+   - Activation stage progression with signal strength and drop-off risk
+
+4. **Measurement Spec (E004)**
+   - Events grouped by category (activation, value, retention, expansion)
+   - Expandable rows with property details
+
+Key design decisions:
+- Card-based layouts only, no React Flow graphs
+- Tabs for switching between output sections
+- Defensive rendering for missing/partial data
+- Follows existing patterns from JourneysListPage and component library
+"""

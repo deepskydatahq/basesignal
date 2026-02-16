@@ -1,0 +1,82 @@
+# Story: Build ICPProfilesSection
+# Display ICP persona cards with value moment priorities
+
+id = "M005-E003-S001"
+parent = "M005-E003"
+title = "Build ICPProfilesSection component"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+An ICPProfilesSection component displays 2-3 persona cards in a responsive
+grid. Each card shows name, description, confidence badge, value moment
+priorities with priority level and relevance reason, and collapsible
+subsections for activation triggers, pain points, and success metrics.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Persona cards render in a responsive grid layout"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card shows persona name, description, and confidence badge"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Value moment priorities display with priority level and relevance reason"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Collapsible subsections for activation triggers, pain points, success metrics"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state renders when no ICP profiles exist"
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/ICPProfilesSection.tsx",
+    "src/components/product-profile/types.ts",
+    "convex/analysis/outputs/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M005-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Create src/components/product-profile/ICPProfilesSection.tsx:
+
+```typescript
+interface Props {
+  icpProfiles: ICPProfile[]
+}
+
+export function ICPProfilesSection({ icpProfiles }: Props) {
+  // Grid of persona cards (responsive: 1 col mobile, 2-3 cols desktop)
+  // Each card:
+  //   - Header: name + confidence badge
+  //   - Description paragraph
+  //   - Value moment priorities: ordered list with priority + reason
+  //   - Collapsible: Activation Triggers (list)
+  //   - Collapsible: Pain Points (list)
+  //   - Collapsible: Success Metrics (list)
+}
+```
+
+Use Card, Badge, Collapsible from ui/. Confidence badge color:
+>0.8 = green, >0.6 = amber, else gray.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/card.tsx",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/collapsible.tsx"
+]

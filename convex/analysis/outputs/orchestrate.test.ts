@@ -53,6 +53,7 @@ const mockMeasurementSpec: MeasurementSpec = {
       id: "project",
       name: "Project",
       description: "A project workspace",
+      isHeartbeat: true,
       properties: [
         { name: "project_id", type: "string", description: "ID of project", isRequired: true },
       ],
@@ -63,6 +64,7 @@ const mockMeasurementSpec: MeasurementSpec = {
       name: "project_created",
       entity_id: "project",
       description: "User created a new project",
+      perspective: "customer",
       properties: [
         { name: "project_id", type: "string", description: "ID of project", isRequired: true },
         { name: "user_id", type: "string", description: "ID of user", isRequired: true },
@@ -76,7 +78,15 @@ const mockMeasurementSpec: MeasurementSpec = {
   coverage: {
     activation_levels_covered: [2],
     value_moments_covered: ["vm_1"],
+    perspective_distribution: { customer: 1, product: 0, interaction: 0 },
   },
+  userStateModel: [
+    { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
+    { name: "activated", definition: "Reached activation", criteria: [{ event_name: "activation_reached", condition: "completed onboarding" }] },
+    { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "session_started", condition: "3+ sessions in 7 days" }] },
+    { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "session_started", condition: "no session in 14 days" }] },
+    { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "session_started", condition: "no session in 30 days" }] },
+  ],
   confidence: 0.8,
   sources: ["value_moments", "activation_levels"],
 };
@@ -323,12 +333,14 @@ describe("OrchestrationResult Linear fixture", () => {
             id: "issue",
             name: "Issue",
             description: "A trackable work item",
+            isHeartbeat: true,
             properties: [{ name: "issue_id", type: "string", description: "ID of issue", isRequired: true }],
           },
           {
             id: "cycle",
             name: "Cycle",
             description: "A sprint cycle",
+            isHeartbeat: false,
             properties: [{ name: "cycle_id", type: "string", description: "ID of cycle", isRequired: true }],
           },
         ],
@@ -337,6 +349,7 @@ describe("OrchestrationResult Linear fixture", () => {
             name: "issue_created",
             entity_id: "issue",
             description: "User created a new issue",
+            perspective: "customer",
             properties: [
               { name: "issue_id", type: "string", description: "ID of issue", isRequired: true },
               { name: "project_id", type: "string", description: "Project context", isRequired: true },
@@ -350,6 +363,7 @@ describe("OrchestrationResult Linear fixture", () => {
             name: "cycle_completed",
             entity_id: "cycle",
             description: "Team completed a sprint cycle",
+            perspective: "interaction",
             properties: [
               { name: "cycle_id", type: "string", description: "ID of cycle", isRequired: true },
               { name: "velocity", type: "number", description: "Points completed", isRequired: true },
@@ -363,7 +377,15 @@ describe("OrchestrationResult Linear fixture", () => {
         coverage: {
           activation_levels_covered: [2, 3],
           value_moments_covered: ["issue_tracking", "cycle_planning"],
+          perspective_distribution: { customer: 1, product: 0, interaction: 1 },
         },
+        userStateModel: [
+          { name: "new", definition: "Just signed up", criteria: [{ event_name: "user_signed_up", condition: "within 7 days" }] },
+          { name: "activated", definition: "Reached activation", criteria: [{ event_name: "activation_reached", condition: "completed onboarding" }] },
+          { name: "active", definition: "Regularly engaged", criteria: [{ event_name: "session_started", condition: "3+ sessions in 7 days" }] },
+          { name: "at_risk", definition: "Declining engagement", criteria: [{ event_name: "session_started", condition: "no session in 14 days" }] },
+          { name: "dormant", definition: "Stopped engaging", criteria: [{ event_name: "session_started", condition: "no session in 30 days" }] },
+        ],
         confidence: 0.82,
         sources: ["value_moments", "activation_levels", "icp_profiles"],
       },

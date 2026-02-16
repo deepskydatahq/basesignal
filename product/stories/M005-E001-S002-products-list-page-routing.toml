@@ -1,0 +1,85 @@
+# Story: Create ProductsListPage and wire routing
+# New home page with product cards and route to profile view
+
+id = "M005-E001-S002"
+parent = "M005-E001"
+title = "Create ProductsListPage and wire routing"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+A new ProductsListPage replaces ProfilePage as the home route. Product cards
+show name, URL, completeness, and badges for available data. Each card links
+to /products/:productId. Routing and sidebar navigation are updated.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ProductsListPage renders product cards from useQuery(api.products.listWithProfiles)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card shows product name, URL, and completeness percentage"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Cards show badges for hasConvergence and hasOutputs when true"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card links to /products/:productId"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state renders when no products exist"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "App.tsx index route changed from ProfilePage to ProductsListPage"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "App.tsx has /products/:productId route for ProductProfilePage"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Sidebar Home nav active state works for / and /products/* routes"
+
+[context]
+relevant_paths = [
+    "src/App.tsx",
+    "src/components/Sidebar.tsx",
+    "src/routes/JourneysListPage.tsx",
+    "src/routes/ProfilePage.tsx"
+]
+
+input_fixtures = []
+
+depends_on = ["M005-E001-S001"]
+
+[handoff]
+implementation_hints = """
+1. Create src/routes/ProductsListPage.tsx following JourneysListPage pattern:
+   - useQuery(api.products.listWithProfiles)
+   - Grid of Cards with product info + badges
+   - Link to /products/:productId
+   - Empty state
+
+2. Update src/App.tsx:
+   - Change index route: <Route index element={<ProductsListPage />} />
+   - Add: <Route path="products/:productId" element={<ProductProfilePage />} />
+   - Import ProductsListPage (ProductProfilePage can be a placeholder initially)
+
+3. Update src/components/Sidebar.tsx:
+   - Home nav item should show active for / and /products/*
+"""
+
+reference_files = [
+    "src/routes/JourneysListPage.tsx",
+    "src/App.tsx",
+    "src/components/Sidebar.tsx"
+]

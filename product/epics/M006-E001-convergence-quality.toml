@@ -1,0 +1,87 @@
+# Epic: Value Moment Convergence Quality
+# Replace TF-IDF clustering with semantic clustering to produce useful tiered moments
+
+id = "M006-E001"
+parent = "M006"
+title = "Value Moment Convergence Quality"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+The convergence pipeline produces a well-distributed set of value moments:
+2-3 Tier 1 (core), 5-6 Tier 2 (important), and max 20 Tier 3 (supporting).
+Candidates that describe similar value in different words are correctly merged.
+"""
+
+job_story = """
+When I run the analysis pipeline on a product,
+I want to see a manageable set of tiered value moments that I can actually review,
+so that I can understand the product's core value without drowning in 100+ items.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Miro test produces 2-3 Tier 1, 5-6 Tier 2, and <=20 Tier 3 moments",
+    "Semantically similar candidates merge even with different wording",
+    "Same-lens constraint is preserved (no cluster has two candidates from same lens)",
+    "Total moment count is between 15 and 30",
+    "Tier 1 moments feel 'obviously right' as core product value",
+    "Existing convergence tests continue to pass"
+]
+
+validator_context = [
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/lib/similarity.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/clusterCandidates.ts",
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/validateCandidates.ts",
+    "convex/analysis/convergence/types.ts",
+    "convex/lib/similarity.ts"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+Root cause: TF-IDF cosine similarity is purely lexical. "Accelerate decision-making"
+and "Enable faster collaborative choices" share few words but mean the same thing.
+With threshold 0.7, almost nothing clusters, producing 111 single-candidate Tier 3 moments.
+
+Approach options (in order of preference):
+
+1. **LLM-assisted semantic clustering** (recommended)
+   - Send all candidates to Claude, ask it to group related ones into 15-30 clusters
+   - Preserve same-lens constraint as a rule in the prompt
+   - One LLM call replaces the entire TF-IDF similarity matrix
+   - Simple to implement, most accurate
+
+2. **Embedding-based clustering**
+   - Replace TF-IDF with embedding vectors for semantic similarity
+   - Keep union-find + same-lens constraint
+   - More deterministic but requires embedding API
+
+3. **Lower threshold + post-processing**
+   - Drop threshold from 0.7 to 0.3-0.4
+   - Add post-convergence compression step
+   - Least accurate, band-aid fix
+
+Also consider adjusting tier thresholds:
+- Current: 5+ lenses = T1, 3-4 = T2, 1-2 = T3
+- With 7 lenses, getting 5+ in one cluster is very hard
+- May need: 4+ = T1, 2-3 = T2, 1 = T3
+- Or use LLM judgment for tier assignment based on importance, not just lens count
+
+Stories:
+1. Replace TF-IDF clustering with LLM-based semantic clustering
+2. Refine tier assignment to produce target distribution
+3. Add post-convergence quality validation
+"""
+
+estimated_stories = 3

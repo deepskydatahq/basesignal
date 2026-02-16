@@ -1,0 +1,70 @@
+# Epic: Product List & Routing
+# New home page with product list and routing to individual profiles
+
+id = "M005-E001"
+parent = "M005"
+title = "Product List & Routing"
+status = "active"
+created = 2026-02-11
+
+[outcome]
+description = """
+A new product list replaces the current home page. Each product card shows
+name, URL, completeness, and badges for available data sections. Clicking a
+card navigates to /products/:productId for the full profile view.
+"""
+
+job_story = """
+When I open Basesignal,
+I want to see all my analyzed products at a glance with completeness indicators,
+so that I can quickly navigate to the product I want to review.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "listWithProfiles query returns products joined with profile summary (completeness, confidence, hasConvergence, hasOutputs)",
+    "ProductsListPage renders product cards with name, URL, and completeness",
+    "Cards link to /products/:productId",
+    "Empty state renders when no products exist",
+    "Sidebar Home nav item works for / and /products/* routes",
+    "Existing tests continue to pass"
+]
+
+validator_context = [
+    "convex/products.ts",
+    "src/routes/ProductsListPage.tsx",
+    "src/App.tsx",
+    "src/components/Sidebar.tsx"
+]
+
+[context]
+relevant_paths = [
+    "convex/products.ts",
+    "convex/productProfiles.ts",
+    "src/App.tsx",
+    "src/components/Sidebar.tsx",
+    "src/routes/JourneysListPage.tsx"
+]
+
+dependencies = []
+
+[notes]
+considerations = """
+Stories:
+
+1. **S001: Add listWithProfiles query** — New query in convex/products.ts that
+   joins products with productProfiles summary data via by_product index. Reuse
+   existing auth pattern from products.list.
+
+2. **S002: Create ProductsListPage and wire routing** — New route component,
+   update App.tsx to replace ProfilePage at index with ProductsListPage, add
+   /products/:productId route, update Sidebar nav. Follow JourneysListPage pattern.
+
+Key decisions:
+- Replace current ProfilePage at / (not add alongside it)
+- listWithProfiles avoids N+1 by fetching profile summaries in the query
+- Sidebar active state should match for both / and /products/*
+"""
+
+estimated_stories = 2

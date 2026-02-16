@@ -1,0 +1,151 @@
+# Epic: Apply the Double Three-Layer Framework to measurement spec generation
+# Problem: Entities are correct but events and properties are generic/invented
+# Solution: Implement the framework from timo.space/blog/the-double-three-layer-framework
+
+id = "M007-E003"
+parent = "M007"
+title = "Double Three-Layer Measurement Framework"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+Measurement spec generation follows the Double Three-Layer Framework: entities define
+properties once (3-7 reusable properties per entity), events inherit all parent entity
+properties plus event-specific additions, activities use past-tense verbs, and the spec
+covers three perspectives (Customer journey state, Product entity lifecycle, Interaction
+details). A user state model (new, activated, active, at_risk, dormant) is derivable
+from the generated events.
+"""
+
+job_story = """
+When the pipeline generates a measurement specification,
+I want events to inherit properties from their parent entities and cover three
+analytical perspectives,
+so that the resulting tracking plan is immediately implementable in Amplitude/Mixpanel
+without a data team having to redesign it.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Entity definitions include 3-7 reusable properties each (e.g., board_id, board_template_used, board_created_from)",
+    "Events inherit ALL properties from their parent entity — validation enforces this",
+    "Event-specific properties are additions ON TOP of entity properties, not replacements",
+    "Activity names use past-tense verbs (board_created, board_shared, asset_exported — not board_create)",
+    "Spec covers three perspectives: Customer (journey/lifecycle state), Product (entity actions), Interaction (specific UI actions)",
+    "A user state model (new, activated, active, at_risk, dormant) can be derived from the generated events",
+    "Heartbeat entity is identified (the entity most central to product value — e.g., Board for Miro)",
+    "Entity count stays within 3-7 range (not 5-10 as before — tighter per framework)",
+    "Miro test produces: Account, Board (heartbeat), Asset entities with recognizable activities",
+    "Generated spec aligns with existing measurementPlan.ts entity-activity-property structure"
+]
+
+validator_context = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/measurementPlan.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/aggregateMeasurementInputs.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/measurementPlan.ts"
+]
+
+dependencies = ["M007-E001"]
+
+[notes]
+considerations = """
+**Reference: Double Three-Layer Framework (timo.space)**
+
+The framework from timo.space/blog/the-double-three-layer-framework-for-tracking-setups/
+defines a 3x3 matrix:
+
+THREE COLUMNS (Building Blocks):
+1. Entities (nouns) — core objects in the product (3-7 max)
+   - Each entity has reusable properties: board_id, board_template_used, etc.
+   - One entity is the "heartbeat" — the most central to product value
+
+2. Activities (past-tense verbs) — events marking entity lifecycle progress
+   - board_created, board_shared, board_exported
+   - Each activity inherits ALL properties from its parent entity
+   - Plus event-specific additions (e.g., share_method for board_shared)
+
+3. Properties — designed at ENTITY level, reused everywhere
+   - "Design once, reuse everywhere"
+   - Account: account_id, account_plan_type, signup_source
+   - Board: board_id, board_template_used, created_from
+   - Asset: asset_type, asset_size, board_id (inherited from parent)
+
+THREE ROWS (Perspectives):
+1. Customer layer — "Where is the user in their journey?"
+   - User state model: new, activated, active, at_risk, dormant
+   - Derived from events, not tracked directly
+
+2. Product layer — "Which feature/object did they touch?"
+   - Entity lifecycle events (created, updated, shared, deleted)
+
+3. Interaction layer — "What exactly did they click/view?"
+   - UI-level detail for UX research
+
+**Current State (generateMeasurementSpec.ts)**
+
+The current prompt asks for 5-10 entities with properties, but:
+- Properties are defined PER EVENT, not per entity (no inheritance)
+- No heartbeat entity concept
+- No three-perspective structure
+- Events are categorized by pipeline stage (activation, value, retention, expansion)
+  instead of by entity lifecycle
+- No user state model derivation
+
+**Fix Approach**
+
+1. **Rewrite system prompt** to follow the framework:
+   - Step 1: Define entities (3-7) with heartbeat marker
+   - Step 2: Design properties at entity level (3-7 per entity)
+   - Step 3: Generate activities per entity (past-tense, inheriting entity properties)
+   - Step 4: Map activities to three perspectives
+   - Step 5: Define user state model derivable from the events
+
+2. **Update types** (types.ts):
+   - EntityDefinition gains: isHeartbeat, perspective
+   - TrackingEvent: inherits entity properties (validation enforces subset)
+   - MeasurementSpec: add user_state_model section
+
+3. **Update validation** (parser in generateMeasurementSpec.ts):
+   - Verify events inherit parent entity properties
+   - Verify heartbeat entity exists
+   - Verify three perspectives are covered
+   - Verify user state model references real events
+
+4. **Keep backward compatibility** with existing measurementPlan.ts CRUD:
+   - The existing entity-activity-property structure in measurementPlan.ts already
+     aligns with this framework
+   - Ensure generated spec can be imported into measurement plans
+
+**Key Design Decision: Event Categories**
+
+Current categories: activation, value, retention, expansion
+Framework perspectives: customer, product, interaction
+
+These can coexist — categories describe WHY we track (business purpose), perspectives
+describe WHAT we track (data model). Keep both, adding perspective as a new dimension.
+
+**Miro Reference (from blog post)**
+
+Entities: Account, Board (heartbeat), Asset
+Activities: board_created, board_shared, board_exported, asset_created, asset_updated
+Properties: account_id, account_plan_type, board_id, board_template_used, asset_type
+User states: New (<30d) → Activated (≥1 share OR ≥20 assets) → Active (high-value event
+  in 30d) → At Risk (31-60d silent) → Dormant (61d+ silent)
+
+**Estimated stories: 3**
+- S001: Rewrite measurement spec system prompt to follow Double Three-Layer Framework
+- S002: Update types and validation for property inheritance and heartbeat entity
+- S003: Add user state model generation and three-perspective coverage validation
+"""
+
+estimated_stories = 3

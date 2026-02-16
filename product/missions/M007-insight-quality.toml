@@ -1,0 +1,100 @@
+# Mission: Insight Quality
+# Fix the semantic quality of pipeline outputs — value moments should be user-experienced,
+# measurement events should follow the Double Three-Layer Framework
+
+id = "M007"
+title = "Insight Quality"
+status = "active"
+created = 2026-02-12
+depends_on = ["M006"]
+
+[outcome]
+description = """
+Analysis pipeline produces insights that a product team recognizes as accurate and
+actionable. Value moments describe things users actually experience in the product
+(not abstract business outcomes). Measurement specs follow the Double Three-Layer
+Framework: entities define properties once, events inherit them, and every event
+answers "what did the user accomplish?" not "what did the user click?"
+"""
+
+user_progress = "From 'technically structured but generic insights' to 'insights that make a product team say yes, that's exactly right'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Value moments describe user-experienced moments, not abstract business outcomes (e.g., 'Create a shared visual workspace for real-time brainstorming' not 'Automate protection of sensitive business information')",
+    "No value moment would make a user say 'that's not what I experience when I use this product'",
+    "Value moments are specific enough to map to product features/surfaces, not just marketing themes",
+    "Measurement spec entities have properties defined once at entity level (3-7 reusable properties per entity)",
+    "Event properties are inherited from their parent entity plus event-specific additions — not invented from scratch",
+    "Events follow entity_action naming where action is past-tense (board_created, asset_shared)",
+    "Measurement spec covers three perspectives: Customer (journey state), Product (entity lifecycle), Interaction (specific actions)",
+    "User state model is derivable from the generated events (new, activated, active, at_risk, dormant)",
+    "Miro test case produces recognizable value moments and a measurement spec that a Miro PM would validate"
+]
+
+validator_context = [
+    "convex/analysis/lenses/",
+    "convex/analysis/convergence/",
+    "convex/analysis/outputs/generateMeasurementSpec.ts",
+    "convex/analysis/outputs/types.ts"
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+    "https://timo.space/blog/the-double-three-layer-framework-for-tracking-setups/"
+]
+relevant_paths = [
+    "convex/analysis/lenses/",
+    "convex/analysis/convergence/",
+    "convex/analysis/outputs/",
+    "convex/measurementPlan.ts"
+]
+
+[notes]
+considerations = """
+Feedback from Miro test run (2026-02-12), second round after M006 structural fixes:
+
+**Problem 1: Value Moments Are Too Abstract**
+Current pipeline produces moments like:
+- "Automate protection of sensitive business information" — not a core Miro value
+- "Visualize customer journey evolution for strategic decision-making" — too high-level
+Value moments should be things a user EXPERIENCES while using the product:
+- "Build a shared whiteboard with your team in real-time"
+- "Drag a sticky note to vote on the best idea"
+- "Export a polished diagram to share in a presentation"
+Nobody uses Miro and thinks "I just automated protection of sensitive business info."
+
+Root cause: Lens prompts extract from marketing pages and ask abstract questions
+("What new capacities does this product unlock?"). The lenses need to ask
+"What does a user DO in this product that delivers value?" and filter out
+marketing language that doesn't map to in-app experiences.
+
+**Problem 2: Measurement Spec Events Lack Framework**
+Entities are correct but events and properties underneath are generic/invented.
+Should follow the Double Three-Layer Framework (timo.space blog):
+
+Layer 1 — Entities (nouns): The core objects in the product (3-7 max)
+  Example: Account, Board, Asset (for Miro)
+  Each entity defines reusable properties: board_id, board_template_used, etc.
+
+Layer 2 — Activities (past-tense verbs): Events marking entity lifecycle progress
+  Example: Board Created, Board Shared, Board Exported
+  Each event inherits ALL properties from its parent entity + event-specific additions
+
+Layer 3 — Three Perspectives:
+  Customer layer: "Where is the user in their journey?" (executives, growth)
+  Product layer: "Which feature/object did they touch?" (product, data teams)
+  Interaction layer: "What exactly did they click/view?" (UX, researchers)
+
+Key rules:
+- Design properties at the ENTITY level, reuse everywhere
+- Events answer "What did they accomplish?" not "What did they click?"
+- A user state model (new, activated, active, at_risk, dormant) should be
+  derivable from the generated events
+
+The existing measurementPlan.ts CRUD already supports this entity-activity-properties
+structure. The spec generator needs to produce output that aligns with it.
+"""

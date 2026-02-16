@@ -1,0 +1,126 @@
+# Story: Extend measurement spec types to include entity definitions
+# Add EntityDefinition and EntityProperty interfaces, extend MeasurementSpec and TrackingEvent
+
+id = "M006-E004-S001"
+parent = "M006-E004"
+title = "Extend measurement spec types to include entity definitions"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The measurement spec type system includes explicit entity definitions alongside
+the existing event-level types. An EntityDefinition interface captures a product
+entity (e.g., Board, User, Team) with its properties, and TrackingEvent gains an
+entity_id field linking each event to its parent entity. The new types mirror
+the schema shape of the existing measurementPlan.ts tables (measurementEntities,
+measurementActivities, measurementProperties) so that generated specs can be
+imported into the measurement plan without lossy transformation.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "EntityProperty interface exists with fields: name (string), type ('string'|'number'|'boolean'|'array'), description (string), isRequired (boolean)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "EntityDefinition interface exists with fields: id (string), name (string), description (string), properties (EntityProperty[])"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MeasurementSpec includes an optional entities field of type EntityDefinition[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TrackingEvent includes an optional entity_id field (string) linking the event to an EntityDefinition.id"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "EntityProperty.type values align with measurementProperties.dataType values in schema.ts ('string'|'number'|'boolean' shared, 'array' maps to spec-only, 'timestamp' maps to schema-only)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing MeasurementSpec without entities field still type-checks (backwards compatible)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing TrackingEvent without entity_id still type-checks (backwards compatible)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "convex/schema.ts",
+    "convex/measurementPlan.ts",
+    "convex/analysis/outputs/generateMeasurementSpec.ts"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add two new interfaces to convex/analysis/outputs/types.ts:
+
+```typescript
+export interface EntityProperty {
+  name: string;
+  type: "string" | "number" | "boolean" | "array";
+  description: string;
+  isRequired: boolean;
+}
+
+export interface EntityDefinition {
+  id: string;            // e.g., "board", "user", "team" — matches entity_action prefix
+  name: string;          // Display name: "Board", "User", "Team"
+  description: string;   // What this entity represents in the product
+  properties: EntityProperty[];
+}
+```
+
+Note: There's already an EventProperty interface in types.ts. EntityProperty is intentionally
+separate because it has isRequired (matching measurementProperties.isRequired in schema.ts)
+while EventProperty has a `required` field used in the event context. Consider whether to
+unify these or keep them separate — separate is safer for backwards compat.
+
+Extend MeasurementSpec:
+```typescript
+export interface MeasurementSpec {
+  entities?: EntityDefinition[];  // Optional for backwards compat
+  events: TrackingEvent[];
+  total_events: number;
+  // ... rest unchanged
+}
+```
+
+Extend TrackingEvent:
+```typescript
+export interface TrackingEvent {
+  entity_id?: string;  // Optional — references EntityDefinition.id
+  name: string;
+  // ... rest unchanged
+}
+```
+
+The entity_id on TrackingEvent should match the prefix of the event name (e.g., event
+"board_created" should have entity_id "board"). This is a convention, not a type constraint,
+but the generator (S002) will enforce it.
+
+Alignment with measurementPlan.ts tables:
+- EntityDefinition.id → maps to measurementEntities.name (lowercased)
+- EntityDefinition.name → maps to measurementEntities.name
+- EntityDefinition.description → maps to measurementEntities.description
+- EntityProperty.name → maps to measurementProperties.name
+- EntityProperty.type → maps to measurementProperties.dataType
+- EntityProperty.isRequired → maps to measurementProperties.isRequired
+- TrackingEvent.entity_id → maps to measurementActivities.entityId (via name lookup)
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/schema.ts",
+    "convex/measurementPlan.ts"
+]

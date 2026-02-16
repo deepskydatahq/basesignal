@@ -1,0 +1,84 @@
+# Story: Build ValueMomentsSection
+# Display value moments grouped by tier with lens badges
+
+id = "M005-E002-S002"
+parent = "M005-E002"
+title = "Build ValueMomentsSection component"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+A ValueMomentsSection component displays value moments from the convergence
+results. Moments are grouped by tier (Core, Important, Supporting) with a
+stats bar showing counts. Each moment card shows name, description, lens
+badges, roles, and product surfaces.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Stats bar shows total moments and tier 1/2/3 counts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Moments grouped into Tier 1 (Core), Tier 2 (Important), Tier 3 (Supporting) sections"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each moment card shows name, description, lens badges, roles, and product surfaces"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tier color coding: Tier 1 = indigo, Tier 2 = amber, Tier 3 = gray"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state renders when no value moments exist"
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/ValueMomentsSection.tsx",
+    "src/components/product-profile/types.ts",
+    "convex/analysis/convergence/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M005-E002-S001"]
+
+[handoff]
+implementation_hints = """
+1. Create src/components/product-profile/types.ts with frontend type defs
+   mirroring the backend types from convex/analysis/convergence/types.ts
+   and convex/analysis/outputs/types.ts.
+
+2. Create src/components/product-profile/ValueMomentsSection.tsx:
+
+```typescript
+interface Props {
+  valueMoments: ValueMoment[]
+}
+
+export function ValueMomentsSection({ valueMoments }: Props) {
+  const tier1 = valueMoments.filter(m => m.tier === 1)
+  const tier2 = valueMoments.filter(m => m.tier === 2)
+  const tier3 = valueMoments.filter(m => m.tier === 3)
+
+  // Stats bar: total, tier counts
+  // Tier sections with color-coded headers
+  // Card per moment: name, description, lens badges, roles, surfaces
+}
+```
+
+Lens badges use Badge component. Tier headers use colored left borders or backgrounds.
+"""
+
+reference_files = [
+    "convex/analysis/convergence/types.ts",
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/card.tsx",
+    "src/components/ui/badge.tsx"
+]

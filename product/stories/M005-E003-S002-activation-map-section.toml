@@ -1,0 +1,96 @@
+# Story: Build ActivationMapSection
+# Display activation stage progression with signal strength and transitions
+
+id = "M005-E003-S002"
+parent = "M005-E003"
+title = "Build ActivationMapSection component"
+status = "in-progress"
+created = 2026-02-11
+
+[outcome]
+description = """
+An ActivationMapSection component displays activation stages as a horizontal
+progression. Each stage card shows level, name, signal strength badge, trigger
+events, value moments unlocked, and drop-off risk indicator. Transitions
+between stages show trigger events and timeframe. The primary activation
+level is visually highlighted.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Stages render as horizontal progression cards sorted by level"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each stage shows level + name, signal strength badge (color-coded)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Trigger events and value moments unlocked display on each stage"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Drop-off risk indicator renders as green/amber/red"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Transition connectors between stages show trigger events and timeframe"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Primary activation level highlighted with distinct border/background"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Handles drop_off_risk as both { level, reason } object and string defensively"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state renders when no activation map exists"
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/ActivationMapSection.tsx",
+    "src/components/product-profile/types.ts",
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/extractActivationLevels.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M005-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Create src/components/product-profile/ActivationMapSection.tsx:
+
+```typescript
+interface Props {
+  activationMap: ActivationMap
+}
+
+export function ActivationMapSection({ activationMap }: Props) {
+  const sortedStages = [...activationMap.stages].sort((a, b) => a.level - b.level)
+  const isPrimary = (level: number) => level === activationMap.primary_activation_level
+
+  // Horizontal card layout (flex row, overflow-x-auto)
+  // Between cards: transition connector (arrow + trigger events + timeframe)
+  // Primary stage: ring-2 ring-indigo-500 or similar highlight
+  // Signal strength colors: very_strong=indigo, strong=green, medium=amber, weak=gray
+  // Drop-off risk: handle both string and { level, reason } shapes
+}
+```
+
+Signal strength badge colors match the activation level strength.
+Drop-off risk: normalize defensively — if string, use as-is; if object, use .level.
+"""
+
+reference_files = [
+    "convex/analysis/outputs/types.ts",
+    "convex/analysis/extractActivationLevels.ts",
+    "src/components/ui/card.tsx",
+    "src/components/ui/badge.tsx"
+]

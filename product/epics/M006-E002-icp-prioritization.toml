@@ -1,0 +1,79 @@
+# Epic: ICP Profile Prioritization
+# Ensure ICP personas reflect who uses the product, not what the website markets
+
+id = "M006-E002"
+parent = "M006"
+title = "ICP Profile Prioritization"
+status = "active"
+created = 2026-02-12
+
+[outcome]
+description = """
+ICP profiles correctly prioritize personas by product-core relevance rather
+than marketing prominence. The primary persona represents who the product is
+built for, not who the website talks to (e.g., buyers vs. users).
+"""
+
+job_story = """
+When I review the generated ICP profiles,
+I want the top persona to represent the product's core user,
+so that I can build activation and measurement around the right audience.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Miro test produces Product/Design/Marketing personas as primary, not Enterprise Security",
+    "Personas are ranked by product-usage relevance, not website content volume",
+    "Value moment tiers influence ICP ranking (T1 moments drive primary persona)",
+    "Confidence scores reflect data support, not content prominence",
+    "Existing ICP generation tests continue to pass"
+]
+
+validator_context = [
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/aggregateICPInputs.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/generateICPProfiles.ts",
+    "convex/analysis/outputs/aggregateICPInputs.ts",
+    "convex/analysis/outputs/types.ts"
+]
+
+dependencies = ["M006-E001"]
+
+[notes]
+considerations = """
+Root cause: Miro's website heavily promotes enterprise security features. The crawler
+picks up lots of security content, which feeds into value moments and roles. The LLM
+then generates "Enterprise Security Administrator" as top persona because it has the
+most supporting data by volume.
+
+The problem is conflating "what the website talks about" with "who the product is for."
+
+Approaches:
+
+1. **Prompt engineering** (simplest)
+   - Add explicit instruction to distinguish "core daily users" from "evaluators/buyers"
+   - Instruct Claude to weight activation-level signals over content volume
+   - Ask for primary persona = "who uses this product every day"
+
+2. **Input weighting**
+   - Use value moment tiers to weight role importance (T1 moments → core roles)
+   - Down-weight roles that only appear in marketing/security content
+   - Use activation level data as signal (who triggers activation events?)
+
+3. **Two-pass generation**
+   - First pass: generate 5+ candidate personas
+   - Second pass: rank by product-core relevance, select top 2-3
+
+This epic depends on E001 because better value moment tiers make ICP ranking more accurate.
+
+Stories:
+1. Improve ICP generation prompt to prioritize daily users over marketing personas
+2. Add value-moment-tier weighting to ICP input aggregation
+"""
+
+estimated_stories = 2

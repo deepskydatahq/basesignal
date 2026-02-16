@@ -12,30 +12,28 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-13 - Story M007-E001-S001: Rewrite Batch 1 Lens Prompts for Experiential Extraction
+### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
-- `convex/analysis/lenses/extractTimeCompression.ts` - Rewrote TIME_COMPRESSION_SYSTEM_PROMPT: core question reframed to "What specific user actions became instant or near-instant", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
-- `convex/analysis/lenses/extractTimeCompression.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
-- `convex/analysis/lenses/extractEffortElimination.ts` - Rewrote EFFORT_ELIMINATION_SYSTEM_PROMPT: core question reframed to "What specific steps does a user SKIP entirely", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
-- `convex/analysis/lenses/extractEffortElimination.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
-- `convex/analysis/lenses/extractCapabilityMapping.ts` - Rewrote CAPABILITY_MAPPING_SYSTEM_PROMPT: core question reframed to "What specific actions can a user take that they could not do before", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
-- `convex/analysis/lenses/extractCapabilityMapping.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
-- `convex/analysis/lenses/extractArtifactCreation.ts` - Rewrote ARTIFACT_CREATION_SYSTEM_PROMPT: core question reframed to "What specific things does a user BUILD or EXPORT", added banned marketing words, GOOD/BAD example pairs, screen/UI reference requirement
-- `convex/analysis/lenses/extractArtifactCreation.test.ts` - Updated core question test, added tests for banned words, GOOD/BAD pairs, screen reference requirement
+- `convex/analysis/outputs/types.ts` - Added `isHeartbeat: boolean` to EntityDefinition; added `Perspective` type ("customer" | "product" | "interaction") and `perspective` field to TrackingEvent; added `UserStateCriterion` and `UserState` interfaces; added `userStateModel: UserState[]` and `warnings?: string[]` to MeasurementSpec; made `entity_id` required on TrackingEvent; made `entities` required on MeasurementSpec; consolidated duplicate interface definitions
+- `convex/analysis/outputs/generateMeasurementSpec.ts` - Updated system prompt for isHeartbeat, perspective, userStateModel; added heartbeat count validation (exactly 1); added perspective validation on events; added property duplication warning logic; added `parseUserStateModel()` for validating 5 required user states (new, activated, active, at_risk, dormant); parser now returns warnings array
+- `convex/analysis/outputs/types.test.ts` - Added tests for Perspective, UserStateCriterion, UserState, isHeartbeat, perspective on TrackingEvent, userStateModel and warnings on MeasurementSpec; removed obsolete tests for optional entity_id/entities
+- `convex/analysis/outputs/generateMeasurementSpec.test.ts` - Added heartbeat validation tests (4), perspective validation tests (4), property duplication warning tests (3), parseUserStateModel tests (8), missing userStateModel test; updated all fixtures with isHeartbeat, perspective, userStateModel
+- `convex/analysis/outputs/orchestrate.test.ts` - Updated fixtures with isHeartbeat, perspective, userStateModel
+- `src/components/product-profile/MeasurementSpecSection.test.tsx` - Updated fixtures with isHeartbeat, perspective, userStateModel; reassigned ungrouped events to entities
 
 **Learnings:**
-- Prompt-only changes are safe to make — JSON output schema, field names, and parsing logic remain untouched, so all existing parser tests continue to pass
-- The GOOD/BAD example pairs pattern is more effective than listing good examples alone — showing the contrast between marketing fluff and concrete user actions makes the intent unambiguous
-- Banned words list (automate, streamline, optimize, leverage, enhance, empower) serves as a concrete "do not" constraint that's easy to test for
+- Pre-existing duplicate interface definitions in types.ts (EntityDefinition defined twice, entity_id both required and optional, entities both required and optional) — consolidating them is necessary when making fields required
+- Property duplication warnings (event props sharing names with parent entity props) are intentionally non-blocking — stored in `warnings?: string[]` rather than throwing
+- `isHeartbeat === true` pattern handles backward compatibility when field may be missing from older LLM responses
 
 **Patterns Discovered:**
-- Experiential extraction pattern: reframe every lens question from "what value does this deliver?" to "what does a user SEE and DO?" — always specify screen, button, or action
-- Anti-pattern contrast pairs: BAD example uses banned marketing words, GOOD example describes the same concept in concrete user-action terms
-- Prompt test pattern for constraints: test for specific string presence (BANNED WORDS, GOOD/BAD counts, screen reference instruction) to ensure prompts maintain quality guardrails
+- Warning vs error distinction: validation errors (wrong heartbeat count, invalid perspective, bad user state model) throw immediately; warnings (property name duplication) collect into an array and are returned alongside the parsed result
+- Required user state names as a constant set enables both validation and clear error messages about which names are expected
 
 **Gotchas:**
-- None — this was a prompt-text-only change with no structural modifications
+- Making entity_id required on TrackingEvent broke "ungrouped events" test in MeasurementSpecSection — resolved by assigning all test events to entities
+- Pre-existing "Write outside of transaction" convex-test errors from scheduled functions still present — unrelated to this work
 
 ### 2026-02-12 - Story M006-E004-S001: Extend Measurement Spec Types for Entity Definitions
 

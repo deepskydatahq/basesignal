@@ -1,0 +1,73 @@
+# Epic: Profile Page Shell & Value Moments
+# Tabbed profile page with value moments display
+
+id = "M005-E002"
+parent = "M005"
+title = "Profile Page Shell & Value Moments"
+status = "active"
+created = 2026-02-11
+
+[outcome]
+description = """
+A tabbed profile page shows the full analysis for a single product. The header
+displays product name, URL, completeness, and confidence. Four tabs switch
+between Value Moments, ICP Profiles, Activation Map, and Measurement Spec.
+The Value Moments tab renders moments grouped by tier with lens badges.
+"""
+
+job_story = """
+When I click on a product,
+I want to see its analysis organized in clear tabs with value moments front and center,
+so that I can understand what the product's most important value moments are.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "ProductProfilePage loads product and profile data via existing queries",
+    "Header shows product name, URL, completeness %, confidence score",
+    "Four tabs render: Value Moments, ICP Profiles, Activation Map, Measurement Spec",
+    "Value Moments tab groups moments by tier (Core, Important, Supporting)",
+    "Each moment card shows name, description, lens badges, roles, product surfaces",
+    "Tier color coding: Tier 1 = indigo, Tier 2 = amber, Tier 3 = gray",
+    "Stats bar shows total moments and tier counts",
+    "Loading and empty states render correctly"
+]
+
+validator_context = [
+    "src/routes/ProductProfilePage.tsx",
+    "src/components/product-profile/ValueMomentsSection.tsx",
+    "src/components/product-profile/types.ts"
+]
+
+[context]
+relevant_paths = [
+    "convex/products.ts",
+    "convex/productProfiles.ts",
+    "convex/analysis/convergence/types.ts",
+    "src/components/ui/tabs.tsx",
+    "src/components/ui/card.tsx",
+    "src/components/ui/badge.tsx"
+]
+
+dependencies = ["M005-E001"]
+
+[notes]
+considerations = """
+Stories:
+
+1. **S001: Create ProductProfilePage with tabs** — Shell page using useParams
+   for productId, useQuery for product + profile data. Header with summary stats.
+   Tabs component with 4 tabs. Loading/empty states. Back link to /.
+
+2. **S002: Build ValueMomentsSection** — Frontend types mirroring backend
+   (types.ts). Stats bar with counts. Moments grouped by tier. Card per moment
+   with name, description, lens badges, roles, product surfaces.
+
+No new Convex queries needed — existing productProfiles.get returns the full
+document including convergence and outputs as dynamic v.any() fields.
+
+Type source: convex/analysis/convergence/types.ts for ValueMoment shape.
+"""
+
+estimated_stories = 2

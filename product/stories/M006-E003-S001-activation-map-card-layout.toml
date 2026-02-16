@@ -1,0 +1,131 @@
+# Story: Redesign ActivationMapSection with card-based grid layout
+# Replace horizontal scroll strip with responsive vertical card grid matching ICP pattern
+
+id = "M006-E003-S001"
+parent = "M006-E003"
+title = "Redesign ActivationMapSection with card-based grid layout"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+ActivationMapSection is redesigned from a horizontal scrolling strip of narrow 240px
+cards into a responsive vertical card grid (1 column on mobile, 2 columns on desktop).
+Each stage renders as a full Card component with a header showing level badge, name, and
+signal strength badge, plus collapsible detail sections for trigger events, value moments
+unlocked, and drop-off risk. The primary activation level is highlighted with a distinct
+indigo border and background. Stage transitions are shown as a compact summary between
+or within cards. The layout matches the pattern established by ICPProfilesSection and
+eliminates all content overlapping issues.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Layout uses a responsive grid: single column on mobile, 2 columns on md+ breakpoints (grid-cols-1 md:grid-cols-2)"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Each stage card uses Card/CardHeader/CardContent components from the UI library, not raw divs with inline min-width"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Card header displays level badge (e.g. 'L1'), stage name, and signal strength badge with color coding"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Trigger events are shown in a collapsible section using Collapsible/CollapsibleTrigger/CollapsibleContent with item count"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Value moments unlocked are shown in a collapsible section with item count"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Drop-off risk is displayed as a colored badge (green/amber/red) in the card header or body"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "The primary activation level card has a distinct indigo ring/border and light indigo background to stand out from other cards"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Stage transitions (trigger events and typical timeframe) are displayed as a compact summary within or between relevant cards"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "No horizontal scroll container (overflow-x-auto) remains; all content flows vertically"
+
+[[acceptance_criteria.criteria]]
+test = "visual"
+description = "Cards render without content overlap on viewports from 375px to 1440px wide"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing data-testid='stage-card' is preserved or updated so any existing tests continue to locate stage cards"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state ('No activation map available yet.') still renders when activationMap is null or undefined"
+
+[context]
+relevant_paths = [
+    "src/components/product-profile/ActivationMapSection.tsx",
+    "src/components/product-profile/ICPProfilesSection.tsx",
+    "src/components/product-profile/types.ts",
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/card.tsx",
+    "src/components/ui/collapsible.tsx",
+    "src/components/ui/badge.tsx"
+]
+
+input_fixtures = []
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Refactor ActivationMapSection.tsx using ICPProfilesSection as the reference pattern:
+
+1. **Replace the outer layout** - Change from `flex items-start gap-0 overflow-x-auto`
+   to `grid grid-cols-1 md:grid-cols-2 gap-4`. Stages are sorted by level as before.
+
+2. **Upgrade StageCard** - Use Card/CardHeader/CardTitle/CardContent from `@/components/ui/card`
+   and Badge from `@/components/ui/badge` instead of raw styled divs:
+   - CardHeader: level badge ("L{n}"), stage name as CardTitle, signal strength as Badge
+   - CardContent: collapsible sections for triggers and value moments
+   - Drop-off risk as a Badge in the header area or top of content
+
+3. **Add collapsible sections** - Follow the CollapsibleSection pattern from ICPProfilesSection:
+   - Import Collapsible, CollapsibleTrigger, CollapsibleContent
+   - Use useState<Record<string, boolean>> for tracking open/closed state
+   - ChevronDown/ChevronRight icons from lucide-react
+   - "Trigger Events (N)" and "Value Moments (N)" as collapsible labels
+
+4. **Primary activation highlight** - Keep the existing `ring-2 ring-indigo-500 bg-indigo-50`
+   pattern for the card where `stage.level === activationMap.primary_activation_level`.
+
+5. **Transitions** - Instead of inline arrow connectors between horizontally adjacent cards,
+   show transition info as a small summary inside the source card's content area (bottom),
+   e.g. "-> L{next}: {trigger_events.join(', ')} ({typical_timeframe})". This avoids the
+   connector layout complexity that caused overlapping.
+
+6. **Keep existing signal/risk color maps** - SIGNAL_COLORS and RISK_COLORS are fine, just
+   apply them via the Badge component's className prop.
+
+7. **Preserve data-testid="stage-card"** on each card root for test compatibility.
+
+8. **Keep normalizeDropOffRisk** helper as-is.
+
+The component signature `ActivationMapSection({ activationMap })` stays the same.
+No backend or type changes are needed.
+"""
+
+reference_files = [
+    "src/components/product-profile/ActivationMapSection.tsx",
+    "src/components/product-profile/ICPProfilesSection.tsx",
+    "src/components/ui/card.tsx",
+    "src/components/ui/collapsible.tsx"
+]

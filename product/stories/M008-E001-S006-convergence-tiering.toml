@@ -1,0 +1,70 @@
+# Story: Convergence and Tiering Logic
+# Extract the convergence pipeline (validation → clustering → tiering → value moments).
+
+id = "M008-E001-S006"
+parent = "M008-E001"
+title = "Extract convergence and tiering logic"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The full convergence pipeline — from validated candidates to tiered value moments —
+is available as exported functions from packages/core. This includes the LLM-dependent
+merge step, which accepts an LLM provider through dependency injection.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "assignTier(lensCount) function is exported and correctly maps lens counts to tiers (1/2/3)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "directMerge() creates ValueMoments from clusters without LLM (deterministic fallback)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "converge() accepts an optional LLM provider for merge descriptions — works without one"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Full pipeline: validateCandidates → cluster → converge → ValueMoment[] with quality report"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM provider is injected as a function parameter, not imported directly"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/validateCandidates.ts",
+    "convex/analysis/convergence/clusterCandidates.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S005"]
+
+[handoff]
+implementation_hints = """
+Extract from convex/analysis/convergence/:
+- convergeAndTier.ts → packages/core/src/analysis/convergence.ts
+- The LLM merge step currently calls Claude directly via shared.ts
+- Refactor: accept an LlmProvider interface (or simple function) as parameter
+- If no LLM provided, use directMerge() (deterministic cluster-to-moment)
+- Quality report generation (QualityReport type) should also be extracted
+- This is where the LLM provider interface from E004 will eventually plug in,
+  but for now just accept a simple async function: (prompt: string) => Promise<string>
+
+Example refactored signature:
+```typescript
+export async function converge(
+  clusters: CandidateCluster[],
+  options?: { llmProvider?: (prompt: string) => Promise<string> }
+): Promise<ConvergenceResult>
+```
+"""
+reference_files = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+]

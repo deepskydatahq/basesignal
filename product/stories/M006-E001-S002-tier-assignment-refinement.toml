@@ -1,0 +1,82 @@
+# Story: Refine tier assignment to produce target distribution
+# Adjust tier logic so Miro-scale products get 2-3 T1, 5-6 T2, <=20 T3
+
+id = "M006-E001-S002"
+parent = "M006-E001"
+title = "Refine tier assignment to produce target distribution"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+Tier assignment produces a useful distribution: 2-3 Tier 1 (core), 5-6 Tier 2
+(important), and max 20 Tier 3 (supporting). Uses a combination of lens count
+and LLM importance judgment rather than lens count alone.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "assignTier with lowered thresholds: 4+ lenses = T1, 2-3 lenses = T2, 1 lens = T3"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Post-tier distribution capping: if >3 T1, demote lowest lens-count T1s to T2"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Post-tier distribution capping: if >20 T3, merge smallest T3 clusters or drop lowest-confidence ones"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ConvergenceResult stats accurately reflect final tier counts after capping"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing assignTier tests still pass (or are updated to match new thresholds)"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/convergeAndTier.test.ts",
+    "convex/analysis/convergence/types.ts"
+]
+
+input_fixtures = []
+
+depends_on = ["M006-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Two changes to convergeAndTier.ts:
+
+1. **Lower tier thresholds** in assignTier():
+   ```typescript
+   export function assignTier(lensCount: number): ValueMomentTier {
+     if (lensCount >= 4) return 1;  // was 5
+     if (lensCount >= 2) return 2;  // was 3
+     return 3;
+   }
+   ```
+
+2. **Add distribution capping** as a post-processing step after all moments are built:
+   ```typescript
+   export function capTierDistribution(moments: ValueMoment[]): ValueMoment[] {
+     // Sort T1 by lens_count desc, keep top 3, demote rest to T2
+     // Sort T3 by confidence/lens_count, keep top 20, drop rest
+     // Return adjusted moments
+   }
+   ```
+
+   Call this in convergeAndTier() after building all moments, before returning.
+
+Update the assignTier tests in convergeAndTier.test.ts to reflect new thresholds.
+Add tests for capTierDistribution with edge cases (fewer than 3 T1, more than 20 T3, etc.).
+"""
+
+reference_files = [
+    "convex/analysis/convergence/convergeAndTier.ts",
+    "convex/analysis/convergence/convergeAndTier.test.ts"
+]

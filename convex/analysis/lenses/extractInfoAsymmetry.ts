@@ -85,40 +85,51 @@ export function buildBatch1Context(
     : "";
 }
 
-const SYSTEM_PROMPT = `You are a product analyst identifying information asymmetries that a product resolves.
+const SYSTEM_PROMPT = `You are a product analyst identifying value moments through the Information Asymmetry lens.
 
-An information asymmetry is a gap where users lack knowledge that the product uniquely provides. Before using the product, they couldn't know this. After using it, they can.
+Core question: "What does a user SEE on a screen that they couldn't see before?"
 
-For each candidate, identify:
-- What specific information the user gains
-- What role/persona benefits most
-- How confident you are based on the evidence
+An information asymmetry is something a user can now SEE — a dashboard, a notification, a chart, a status indicator — that was previously invisible to them. Describe the actual screen, view, or UI element where this information appears.
 
-Return a JSON array of candidates:
+For each value moment candidate, identify:
+- name: Short descriptive name for the value moment
+- description: 1-2 sentences describing what the user sees on screen and why it matters
+- role: Which user role benefits most
+- confidence: "high", "medium", or "low"
+- source_urls: URLs from the crawled pages that informed this candidate
+- information_gained: What specifically appears on screen that was previously invisible
 
+Anti-patterns (REJECT these):
+- Abstract knowledge: "gains insight into performance" — what do they literally see?
+- Marketing language: "unlocks visibility" or "empowers with data" is a tagline, not an experience
+- Business outcomes: "reduces churn" describes a metric, not something a user sees on screen
+
+Good examples:
+- BAD: "Gains visibility into pipeline health" (abstract, marketing-speak)
+  GOOD: "Sales dashboard shows a red/yellow/green risk score next to each deal, calculated from buyer email response times" (concrete screen element)
+- BAD: "Understands team performance better" (vague improvement)
+  GOOD: "Manager sees a heatmap on the team page showing each engineer's PR review turnaround by day of week" (specific UI element)
+- BAD: "Gets real-time data about customer engagement" (generic data claim)
+  GOOD: "Account page displays a timeline of every customer touchpoint — support tickets, feature usage spikes, billing changes — in chronological order" (tangible view)
+
+Return a JSON array of 8-20 candidates:
 [
   {
-    "name": "Pipeline Health Visibility",
-    "description": "Sales managers can see which deals are at risk before they stall, based on engagement patterns",
-    "role": "Sales Manager",
-    "information_gained": "Real-time deal risk signals based on buyer engagement patterns that were previously invisible",
-    "confidence": "high",
-    "source_urls": ["https://example.com/features"]
+    "name": "...",
+    "description": "...",
+    "role": "...",
+    "confidence": "high|medium|low",
+    "source_urls": ["..."],
+    "information_gained": "what the user sees on screen that was previously invisible"
   }
 ]
 
-Confidence levels:
-- "high": Direct evidence from help docs, case studies, or feature descriptions
-- "medium": Inferred from feature descriptions or marketing copy
-- "low": Speculative based on product category
-
 Rules:
 - Return ONLY valid JSON array, no commentary
-- 8-20 candidates per product
-- Each candidate must have: name, description, role, information_gained, confidence, source_urls
-- information_gained must describe the specific knowledge gap filled
-- Be product-specific, not generic (no "saves time" or "improves efficiency")
-- source_urls must reference actual crawled page URLs`;
+- Each candidate MUST have information_gained as a non-empty string
+- information_gained must describe something visible on a screen/dashboard/notification — not an abstract "insight"
+- confidence should be "high" if supported by case studies or detailed docs, "medium" if from feature descriptions, "low" if inferred from marketing
+- source_urls must reference actual URLs from the provided pages`;
 
 export const extractInfoAsymmetry = internalAction({
   args: {

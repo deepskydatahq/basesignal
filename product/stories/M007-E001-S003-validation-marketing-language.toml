@@ -1,0 +1,124 @@
+# Story: Add marketing-language detection to candidate validation
+# Catches abstract business outcomes that slip through lens extraction
+
+id = "M007-E001-S003"
+parent = "M007-E001"
+title = "Add marketing-language detection to candidate validation"
+status = "in-progress"
+created = 2026-02-12
+
+[outcome]
+description = """
+The candidate validation pipeline catches and rewrites candidates that describe
+abstract business outcomes instead of user experiences. Marketing-language patterns
+are detected deterministically, flagged candidates are sent to LLM for experiential
+rewrite, and candidates that can't be rewritten are removed. This acts as a safety
+net for any marketing language that slips through the updated lens prompts.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MARKETING_LANGUAGE_PATTERNS constant added to validateCandidates.ts with regex patterns for: 'automate', 'streamline', 'optimize', 'leverage', 'enhance', 'empower', 'accelerate', 'revolutionize', 'transform' when used as standalone business verbs (not part of a specific user action)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ABSTRACT_OUTCOME_PATTERNS constant added for phrases like 'at scale', 'cross-functional', 'end-to-end', 'enterprise-grade', 'best-in-class', 'next-generation' that indicate marketing language"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "New isMarketingLanguage() function returns true when candidate name or description matches marketing patterns without referencing a specific product surface, screen, or UI element"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Flagged marketing-language candidates are sent to LLM review with instruction to rewrite as experiential moment (same pattern as existing feature-as-value rewrite)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LLM rewrite instruction says: 'Rewrite this as something a user would experience on screen. Reference a specific feature, screen, or UI element. If no experiential rewrite is possible, mark for removal.'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify: 'Automate protection of sensitive business information' is flagged as marketing language"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify: 'Set board-level permissions to restrict editing' is NOT flagged (has specific UI action)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify: 'Streamline cross-functional collaboration workflows' is flagged; 'Share a board link with the marketing team' is not flagged"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Full validation pipeline runs without errors when marketing-language candidates are present in input"
+
+[context]
+relevant_paths = [
+    "convex/analysis/convergence/validateCandidates.ts"
+]
+
+input_fixtures = [
+    "Candidates including 'Automate protection of sensitive business information'",
+    "Candidates including 'Set board-level permissions to restrict editing'",
+    "Candidates including 'Streamline cross-functional collaboration workflows'",
+    "Candidates including 'Share a board link with the marketing team'"
+]
+
+depends_on = []
+
+[handoff]
+implementation_hints = """
+validateCandidates.ts already has two pattern-based checks:
+
+1. FEATURE_AS_VALUE_PATTERNS (lines 15-26) — regexes for "use the", "click the", etc.
+2. VAGUE_PHRASES (lines 29-44) — strings like "better visibility", "improved efficiency"
+
+Add a third check following the same pattern:
+
+```typescript
+const MARKETING_LANGUAGE_PATTERNS: RegExp[] = [
+  /\bautomate\b/i,
+  /\bstreamline\b/i,
+  /\boptimize\b/i,
+  /\bleverage\b/i,
+  /\benhance\b/i,
+  /\bempower\b/i,
+  /\baccelerate\b/i,
+  /\brevolutionize\b/i,
+  /\btransform\b/i,
+];
+
+const ABSTRACT_OUTCOME_PHRASES: string[] = [
+  "at scale",
+  "cross-functional",
+  "end-to-end",
+  "enterprise-grade",
+  "best-in-class",
+  "next-generation",
+  "industry-leading",
+  "world-class",
+  "cutting-edge",
+  "mission-critical",
+];
+```
+
+The isMarketingLanguage() function should:
+1. Check if name/description contains marketing verb patterns
+2. Check if name/description contains abstract outcome phrases
+3. BUT NOT flag if the candidate also contains a specific product surface reference
+   (check against known entity names or product_surfaces from profile)
+
+This is a safety net — most marketing language should be prevented by the updated
+lens prompts in S001/S002. This catches what slips through.
+
+The LLM rewrite for flagged candidates should use the same pattern as the existing
+feature-as-value rewrite flow in validateCandidates.ts (lines 379-452), just with
+a different instruction focused on experiential reframing.
+"""
+
+reference_files = [
+    "convex/analysis/convergence/validateCandidates.ts"
+]

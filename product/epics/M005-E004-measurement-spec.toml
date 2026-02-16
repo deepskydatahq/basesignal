@@ -1,0 +1,64 @@
+# Epic: Measurement Spec
+# Event tracking specification display with expandable details
+
+id = "M005-E004"
+parent = "M005"
+title = "Measurement Spec"
+status = "active"
+created = 2026-02-11
+
+[outcome]
+description = """
+The Measurement Spec tab displays the generated event tracking specification.
+Events are grouped by category (activation, value, retention, expansion) with
+summary stats. Each event shows name, description, trigger condition, and
+maps_to badge. Expandable rows reveal property details (name, type, description).
+"""
+
+job_story = """
+When I view my product's measurement spec,
+I want to see all recommended tracking events organized by category with their properties,
+so that I can implement the tracking plan in my analytics tool.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Summary shows total events, confidence, and category breakdown",
+    "Events grouped by category with header and count badge",
+    "Table per category: event name, description, trigger condition, maps_to badge",
+    "Collapsible row detail shows properties table (name, type, description)",
+    "Empty state renders when measurement spec data is missing",
+    "Reuses existing Table, Badge, and Collapsible UI components"
+]
+
+validator_context = [
+    "src/components/product-profile/MeasurementSpecSection.tsx"
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/outputs/types.ts",
+    "src/components/ui/table.tsx",
+    "src/components/ui/badge.tsx",
+    "src/components/ui/collapsible.tsx"
+]
+
+dependencies = ["M005-E002"]
+
+[notes]
+considerations = """
+Stories:
+
+1. **S001: Build MeasurementSpecSection** — Summary bar with total events,
+   confidence, category breakdown. Events grouped by category (activation,
+   value, retention, expansion). Table per category with event name, description,
+   trigger condition, maps_to badge. Collapsible row detail with properties
+   table (name, type, description).
+
+Single story since this is a self-contained display component.
+
+Type source: convex/analysis/outputs/types.ts — MeasurementSpec, MeasurementEvent.
+"""
+
+estimated_stories = 1

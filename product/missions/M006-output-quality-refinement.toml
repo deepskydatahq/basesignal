@@ -1,0 +1,84 @@
+# Mission: Output Quality Refinement
+# Improve analysis pipeline outputs based on real-world feedback from Miro test run
+
+id = "M006"
+title = "Output Quality Refinement"
+status = "active"
+created = 2026-02-12
+depends_on = ["M004", "M005"]
+
+[outcome]
+description = """
+Analysis pipeline outputs are production-quality: value moments converge into
+a useful tiered set (2-3 core, 5-6 important, max 20 supporting), ICP profiles
+correctly prioritize personas by product relevance, activation maps display as
+readable cards, and measurement specs follow the entity-activity-properties framework.
+"""
+
+user_progress = "From 'raw outputs that need expert interpretation' to 'refined outputs a product team can act on immediately'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Convergence produces 2-3 Tier 1 (core), 5-6 Tier 2 (important), and ≤20 Tier 3 (supporting) value moments",
+    "ICP profiles rank personas by product-relevance, not marketing prominence",
+    "Activation map renders as horizontal cards (not overlapping vertical layout)",
+    "Measurement spec events follow entity_activity naming with defined entity set",
+    "Entity count is small (5-10), each with multiple activities",
+    "Miro test case produces recognizable, non-generic outputs across all four tabs"
+]
+
+validator_context = [
+    "convex/analysis/convergence/",
+    "convex/analysis/outputs/",
+    "src/components/product-profile/",
+    "convex/measurementPlan.ts"
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md"
+]
+relevant_paths = [
+    "convex/analysis/convergence/",
+    "convex/analysis/outputs/",
+    "convex/measurementPlan.ts",
+    "src/components/product-profile/"
+]
+
+[notes]
+considerations = """
+Feedback from Miro test run (2026-02-12):
+
+**Problem 1: Value Moment Convergence**
+111 moments, all Tier 3 — no core or important. Candidates don't cluster well,
+producing 1:1 candidate-to-cluster mapping. Need to:
+- Improve clustering so related candidates merge (lower threshold? semantic grouping?)
+- Potentially use LLM-assisted clustering instead of TF-IDF cosine similarity
+- Cap total moments and ensure tier distribution (2-3 T1, 5-6 T2, ≤20 T3)
+
+**Problem 2: ICP Profile Prioritization**
+Enterprise Security Administrator ranked #1 for Miro — likely because Miro heavily
+markets security, but it's not a core ICP. Need to:
+- Weight ICP relevance by product-core vs. marketing-emphasis
+- Distinguish between "what the website talks about" and "who the product is for"
+- Consider using activation levels and value moment tiers as signals for ICP ranking
+
+**Problem 3: Activation Map Layout**
+Vertical overlapping layout is hard to read. Need horizontal card-based display
+similar to ICP profile cards. The underlying activation level data is good.
+
+**Problem 4: Measurement Spec Event Structure**
+Events need to follow the entity-activity-properties three-level framework that
+already exists in convex/measurementPlan.ts:
+- Define a small set of entities (5-10) first
+- Define activities per entity
+- Event name = entity_action (already enforced by regex)
+- Properties attach to entities, not just events
+- This aligns the generated spec with the existing measurement plan tables
+
+The existing measurementPlan.ts has full CRUD for entities, activities, and properties
+with journey import integration. The spec generator should produce output compatible
+with this structure.
+"""
