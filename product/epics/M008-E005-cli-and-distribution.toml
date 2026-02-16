@@ -1,0 +1,64 @@
+# Epic: CLI & Distribution — Command-Line Tool and Self-Hosting
+# Build the basesignal CLI and Docker distribution for self-hosting.
+
+id = "M008-E005"
+parent = "M008"
+title = "CLI & Distribution"
+status = "draft"
+created = 2026-02-14
+
+[outcome]
+description = """
+Users can install Basesignal globally via npm and run scans from the command line.
+Docker and docker-compose configurations enable one-command self-hosting. The CLI
+is also the entry point for starting the MCP server.
+"""
+
+job_story = """
+When I want to quickly scan a product without setting up an MCP server,
+I want to run `basesignal scan <url>` from my terminal,
+so that I get a product profile as JSON or Markdown output immediately.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/cli/ exists with scan, export, and serve commands",
+    "`basesignal scan <url>` crawls and analyzes a product, outputs profile",
+    "`basesignal scan <url> --output profile.json` saves to file",
+    "`basesignal export <file> --format markdown` converts profile to markdown",
+    "`basesignal serve` starts the MCP server",
+    "Docker/Dockerfile builds a working container image",
+    "docker/docker-compose.yml runs the MCP server with environment configuration",
+    "npm install -g @basesignal/cli works for global installation",
+    "CLI provides helpful error messages (missing API key, invalid URL, etc.)",
+]
+
+validator_context = [
+    "packages/cli/",
+    "docker/",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/",
+    "packages/crawlers/",
+]
+dependencies = ["M008-E002"]
+
+[notes]
+considerations = """
+The CLI composes all other packages into a user-facing tool. Key decisions:
+
+- Use a CLI framework (commander, yargs, or citty) for argument parsing
+- The CLI is a thin wrapper — it creates instances of core, crawlers, storage,
+  and mcp-server, then delegates
+- `scan` command: instantiate crawlers + analyzers + storage, run pipeline, output
+- `serve` command: start MCP server with configured storage + crawlers
+- `export` command: load profile from storage, convert to format
+- Docker image should be minimal (node:alpine, only production deps)
+- docker-compose.yml includes environment variable documentation
+- Consider a `basesignal init` command that creates a config file
+"""
+
+estimated_stories = 4

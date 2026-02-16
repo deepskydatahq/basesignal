@@ -1,0 +1,75 @@
+# Story: export and serve Commands
+# Implement the export and serve CLI commands.
+
+id = "M008-E005-S003"
+parent = "M008-E005"
+title = "Implement export and serve CLI commands"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+`basesignal export` converts a stored profile to markdown or JSON.
+`basesignal serve` starts the MCP server for AI assistant connections.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal export <id-or-file> --format markdown` outputs markdown to stdout"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal export <id-or-file> --format json --output file.json` saves to file"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal export --list` shows all stored profiles"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal serve` starts the MCP server on stdio transport (default)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal serve --transport sse --port 3000` starts with SSE transport"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "`basesignal serve` works with Claude Desktop MCP configuration"
+
+[context]
+relevant_paths = [
+    "packages/cli/",
+    "packages/mcp-server/",
+]
+input_fixtures = []
+depends_on = ["M008-E005-S001", "M008-E002-S005"]
+
+[handoff]
+implementation_hints = """
+export command:
+- Accept either a profile ID (from storage) or a JSON file path
+- Auto-detect input: if it's a file path, read from file; if not, look up in storage
+- Format options: markdown (default for stdout), json
+- --list flag: show all profiles in storage with their IDs
+
+serve command:
+- Instantiate MCP server from packages/mcp-server
+- Configure storage and LLM provider from env
+- Default to stdio transport (for Claude Desktop)
+- SSE transport for remote/shared access
+- Print connection instructions on startup
+
+The serve command is essentially:
+```typescript
+const server = new BasesignalServer({
+  storage: new SQLiteStorage(config.storagePath),
+  llmProvider: createProvider(config),
+});
+server.start({ transport: config.transport, port: config.port });
+```
+"""
+reference_files = []

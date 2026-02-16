@@ -1,0 +1,72 @@
+# Story: basesignal scan Command
+# Implement the scan command that crawls a URL and outputs a product profile.
+
+id = "M008-E005-S002"
+parent = "M008-E005"
+title = "Implement basesignal scan command"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+Running `basesignal scan https://linear.app` crawls the website, runs the
+analysis pipeline, saves the profile to storage, and outputs a summary
+to stdout. Optional flags control output format and file destination.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal scan <url>` runs the full pipeline and prints a markdown summary to stdout"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal scan <url> --output profile.json` saves the profile as JSON to the specified file"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "`basesignal scan <url> --format markdown` outputs as markdown instead of the default summary"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Progress is shown during execution (crawling... analyzing... generating...)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Profile is automatically saved to storage (retrievable later via list/export)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Scan errors produce helpful messages (invalid URL, network error, LLM error, missing API key)"
+
+[context]
+relevant_paths = [
+    "packages/cli/",
+    "packages/crawlers/",
+    "packages/mcp-server/",
+    "packages/storage/",
+]
+input_fixtures = []
+depends_on = ["M008-E005-S001", "M008-E002-S003"]
+
+[handoff]
+implementation_hints = """
+The scan command is the CLI equivalent of the scan_product MCP tool.
+It composes the same pipeline:
+
+1. Create crawler instances (website, pricing)
+2. Create LLM provider from env config
+3. Create storage adapter (SQLite default)
+4. Crawl the URL
+5. Run analysis pipeline (lenses → convergence → outputs)
+6. Save to storage
+7. Output to stdout or file
+
+Progress can use ora (spinner) or simple console.log for each phase.
+The scan might take 30-90 seconds — keep the user informed.
+
+Consider a --dry-run flag that crawls but doesn't analyze (for testing).
+"""
+reference_files = []

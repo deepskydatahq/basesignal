@@ -1,0 +1,46 @@
+{
+  "name": "@basesignal/cli",
+  "version": "0.0.1",
+  "description": "Product profile analysis from the command line",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepskydatahq/basesignal.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/deepskydatahq/basesignal/issues"
+  },
+  "homepage": "https://github.com/deepskydatahq/basesignal#readme",
+  "keywords": ["basesignal", "product-profile", "product-analytics", "cli", "mcp"],
+  "bin": {
+    "basesignal": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "ora": "^8.0.0",
+    "@basesignal/core": "*",
+    "@basesignal/crawlers": "*",
+    "@basesignal/mcp-server": "*",
+    "@basesignal/storage": "*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

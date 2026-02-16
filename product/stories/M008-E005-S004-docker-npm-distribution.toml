@@ -1,0 +1,90 @@
+# Story: Docker and npm Distribution
+# Create Dockerfile, docker-compose.yml, and npm publish configuration.
+
+id = "M008-E005-S004"
+parent = "M008-E005"
+title = "Dockerfile, docker-compose, and npm publish configuration"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+A Dockerfile builds a minimal container image running the MCP server.
+docker-compose.yml provides a one-command self-hosting setup. All packages
+are configured for npm publishing under the @basesignal scope.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "docker/Dockerfile builds successfully and produces a working container"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Container image is based on node:alpine for minimal size"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "docker/docker-compose.yml starts the MCP server with environment variable configuration"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "docker-compose.yml documents all environment variables with comments"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All packages have correct 'files' and 'exports' fields for npm publishing"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Package names use @basesignal scope (e.g., @basesignal/core)"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "`docker-compose up` starts a working server connectable from Claude Desktop"
+
+[context]
+relevant_paths = [
+    "packages/",
+]
+input_fixtures = []
+depends_on = ["M008-E005-S003"]
+
+[handoff]
+implementation_hints = """
+Dockerfile:
+```dockerfile
+FROM node:22-alpine
+WORKDIR /app
+COPY packages/ packages/
+COPY package.json package-lock.json ./
+RUN npm ci --production
+EXPOSE 3000
+CMD ["node", "packages/cli/dist/index.js", "serve", "--transport", "sse"]
+```
+
+docker-compose.yml:
+```yaml
+services:
+  basesignal:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - BASESIGNAL_STORAGE=/data
+    volumes:
+      - basesignal-data:/data
+volumes:
+  basesignal-data:
+```
+
+npm publishing:
+- Use npm workspaces for coordinated publishing
+- Each package.json needs: name, version, description, license, repository, exports, files
+- Consider a release script that bumps versions and publishes all packages
+- Prepublish script should run build + test
+"""
+reference_files = []

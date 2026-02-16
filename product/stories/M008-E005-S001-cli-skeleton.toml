@@ -1,0 +1,74 @@
+# Story: CLI Skeleton
+# Create the basesignal CLI package with command structure.
+
+id = "M008-E005-S001"
+parent = "M008-E005"
+title = "CLI package skeleton with command structure"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+packages/cli/ exists with a basesignal command that has scan, export, and
+serve subcommands. Running `basesignal --help` shows usage information.
+The CLI is the thin orchestration layer that composes all other packages.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/cli/ has package.json with name '@basesignal/cli' and bin entry"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "basesignal --help shows available commands: scan, export, serve"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "basesignal --version shows the package version"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "basesignal scan --help shows scan command options (url, output, format, provider)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLI reads configuration from environment variables (API keys, storage path, provider)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Missing required config (e.g., no API key) shows helpful error message"
+
+[context]
+relevant_paths = []
+input_fixtures = []
+depends_on = ["M008-E001-S001"]
+
+[handoff]
+implementation_hints = """
+CLI framework options:
+- commander (most popular, well-documented)
+- citty (lighter, from unjs ecosystem)
+- yargs (powerful but heavier)
+
+Recommend commander for community familiarity.
+
+Command structure:
+```
+basesignal scan <url> [--output file] [--format json|markdown] [--provider anthropic|openai|ollama]
+basesignal export <file> [--format markdown|json]
+basesignal serve [--port 3000] [--transport stdio|sse]
+```
+
+Environment variables:
+- ANTHROPIC_API_KEY / OPENAI_API_KEY — LLM provider credentials
+- BASESIGNAL_STORAGE — storage directory path (default ~/.basesignal)
+- BASESIGNAL_PROVIDER — default LLM provider (default anthropic)
+- BASESIGNAL_MODEL — default model for the provider
+
+The CLI composes: core (types/validation), crawlers, storage, mcp-server.
+Keep the CLI thin — it just wires things together and handles I/O.
+"""
+reference_files = []
