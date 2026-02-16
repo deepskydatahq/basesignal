@@ -1,144 +1,103 @@
+[![CI](https://github.com/deepskydatahq/basesignal/actions/workflows/ci.yml/badge.svg)](https://github.com/deepskydatahq/basesignal/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@basesignal/cli.svg)](https://www.npmjs.com/package/@basesignal/cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 # Basesignal
 
-Outcome-driven product analytics for B2B SaaS. Transform how you measure product performance by shifting from interaction-driven tracking (clicks) to outcome-driven measurement (user success).
+**The open standard for product growth models.**
 
-**Key idea:** Every business has a P&L. Your product should too.
+Basesignal scans your product's website and generates a structured growth model — activation definitions, user journey, metric catalog, measurement plan — in 60 seconds. Use it from the CLI, connect it to Claude Desktop via MCP, or self-host with Docker.
 
-## What It Does
+## What it does
 
-Basesignal helps product teams measure what matters using a structured P&L framework:
+- **Scan any B2B SaaS product** — point it at a URL and get a structured product profile with activation definitions, journey stages, entity model, revenue architecture, and metric catalog
+- **MCP server for AI assistants** — connect to Claude Desktop, ChatGPT, or Cursor and make every product conversation smarter with structured context
+- **Structured data model** — not just text extraction. The profile schema encodes relationships, inference rules, and validation logic
+- **Extensible by design** — add crawlers for new data sources, storage adapters for different databases, or LLM providers. No core changes required
 
-| Layer | What It Measures |
-|-------|------------------|
-| **Reach** | New user volume, trial starts, activation rate |
-| **Engagement** | Active rate, feature adoption, usage intensity |
-| **Value Delivery** | User-defined activation/active rules, derived account states |
-| **Value Capture** | Conversion, retention, expansion rates |
+## Quick start
 
-## Features
-
-- **AI-Guided Overview Interview** - 15-minute guided interview that maps your user journey
-- **Profile Dashboard** - Central hub showing product measurement completeness
-- **User Journey Map** - Visual representation of user stages from signup to value
-- **First Value Definition** - Define and track when users first experience value
-- **Metric Catalog** - Auto-generated metrics derived from your measurement plan
-- **Measurement Plan** - Structured entities, activities, and properties for tracking
-- **Amplitude Integration** - Connect your analytics and map events to activities
-
-## Tech Stack
-
-- **Frontend**: React 19 + Vite + React Router v7
-- **Backend**: Convex (serverless database + functions)
-- **Styling**: Tailwind CSS + Clarity UI design system
-- **Graph Visualization**: React Flow
-- **AI**: Claude API (for journey interview)
-- **Auth**: Clerk
-- **Hosting**: Cloudflare Pages
-
-## Quick Start
+### CLI
 
 ```bash
-# Install dependencies
-npm install
+npm install -g @basesignal/cli
 
-# Terminal 1: Start Convex backend
-npx convex dev
+export ANTHROPIC_API_KEY=sk-ant-...   # or OPENAI_API_KEY
 
-# Terminal 2: Start frontend
-npm run dev
-
-# Open http://localhost:5173
+basesignal scan https://linear.app
 ```
 
-## Environment Variables
+This crawls the website, analyzes it with your LLM, and outputs a product profile as JSON.
 
-Set in your environment or `.env.local`:
+### Claude Desktop
+
+Add to your Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "basesignal": {
+      "command": "npx",
+      "args": ["@basesignal/mcp-server"],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-..."
+      }
+    }
+  }
+}
+```
+
+Then ask Claude: *"Scan my product at acme.io"*
+
+### Docker
 
 ```bash
-VITE_CONVEX_URL=<your-convex-deployment-url>
-CONVEX_DEPLOYMENT=<your-convex-deployment>
-VITE_CLERK_PUBLISHABLE_KEY=<your-clerk-key>
+cp .env.example .env          # add your API key
+docker compose up
 ```
 
-Convex environment variables (set via `npx convex env set`):
-```bash
-ANTHROPIC_API_KEY=<your-anthropic-api-key>
-CLERK_WEBHOOK_SECRET=<your-clerk-webhook-secret>
-```
+The MCP server starts on stdio, ready for Claude Desktop or any MCP client.
 
-## Project Structure
+## How it works
+
+Basesignal is a pipeline: **crawl** public sources, **analyze** with LLMs using specialized lenses, **converge** into a structured profile.
 
 ```
-basesignal/
-├── src/
-│   ├── components/
-│   │   ├── ui/           # Clarity UI design system
-│   │   ├── profile/      # Profile page sections
-│   │   ├── metrics/      # Metric catalog components
-│   │   ├── measurement/  # Measurement plan components
-│   │   ├── interview/    # AI interview panel
-│   │   ├── journey/      # Journey editor (React Flow)
-│   │   ├── overview/     # Overview interview components
-│   │   ├── setup/        # Setup wizard flow
-│   │   └── settings/     # Settings page
-│   ├── routes/           # Page components
-│   ├── shared/           # Shared utilities and templates
-│   └── lib/              # Auth and utilities
-├── convex/
-│   ├── schema.ts         # Database schema
-│   ├── profile.ts        # Profile data queries
-│   ├── interviews.ts     # Interview sessions
-│   ├── journeys.ts       # Journey CRUD
-│   ├── stages.ts         # Journey stages
-│   ├── measurementPlan.ts # Entities, activities, properties
-│   ├── metricCatalog.ts  # Metric generation
-│   ├── firstValue.ts     # First value definitions
-│   ├── ai.ts             # Claude API integration
-│   └── amplitude.ts      # Amplitude integration
-├── docs/plans/           # Design docs and implementation plans
-└── *.sh                  # Automation scripts
+URL → Crawlers → Analysis Lenses → Convergence → Product Profile
+         │              │                │              │
+    website          7 lenses        merge &        structured
+    pricing       (identity,       deduplicate      schema with
+    docs          journey,         + validate       confidence
+                  revenue, ...)                      scores
 ```
 
-## Development
+The product profile is a structured document with typed sections: core identity, user journey, activation definitions, entity model, revenue architecture, metric catalog, and measurement plan. Each element has a confidence score and links to the evidence that informed it.
 
-```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run lint         # Lint code
-npm test             # Run tests (watch mode)
-npm run test:run     # Run tests once
-```
+## Packages
 
-## Deployment
-
-```bash
-# Deploy Convex backend
-npx convex deploy
-
-# Deploy frontend to Cloudflare Pages
-npm run build
-npx wrangler pages deploy dist --project-name basesignal
-```
-
-## Issue Pipeline
-
-This project uses a three-stage issue pipeline:
-
-```
-stage:brainstorm → stage:plan → stage:ready → done
-```
-
-Automation scripts:
-```bash
-./brainstorm-issues.sh --loop    # Design all brainstorm issues
-./plan-issues.sh --loop          # Create plans for all plan issues
-./run-issue.sh --loop            # Implement all ready issues
-```
+| Package | Description |
+|---------|-------------|
+| [`@basesignal/core`](./packages/core) | Product profile schema, validation, and inference rules |
+| [`@basesignal/crawlers`](./packages/crawlers) | Pluggable crawler interface and built-in website/pricing crawlers |
+| [`@basesignal/storage`](./packages/storage) | Storage adapter interface with SQLite default |
+| [`@basesignal/mcp-server`](./packages/mcp-server) | Self-hostable MCP server for AI assistants |
+| [`@basesignal/cli`](./packages/cli) | Command-line tool for scanning and exporting profiles |
 
 ## Documentation
 
-For detailed development workflow, code patterns, and conventions, see **[CLAUDE.md](./CLAUDE.md)**.
+- [Getting Started](./docs/getting-started.md) — installation, configuration, first scan
+- [Data Model](./docs/data-model.md) — the product profile schema explained
+- [MCP Tools Reference](./docs/mcp-tools.md) — available tools and their parameters
+- [Writing Crawlers](./docs/writing-crawlers.md) — how to add a new data source
+- [Self-Hosting Guide](./docs/self-hosting.md) — Docker, environment variables, storage options
+- [Schema Specification](./docs/specification/v1.0/) — formal schema for tool interoperability
+
+## Contributing
+
+Basesignal is open source and contributions are welcome. The easiest way to contribute is to add a new crawler — see the [Crawler Contribution Guide](./CONTRIBUTING.md#adding-a-crawler) for a step-by-step walkthrough.
+
+For bugs, features, and other contributions, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-Proprietary - DeepSky Data ApS
+[MIT](./LICENSE) — DeepSky Data ApS

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "basesignal": {
+      "command": "npx",
+      "args": ["-y", "@basesignal/mcp-server"],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-your-key-here"
+      }
+    }
+  }
+}

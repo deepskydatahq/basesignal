@@ -1,0 +1,78 @@
+# Story: Schema Specification v1.0
+# Publish the formal schema specification as versioned documentation.
+
+id = "M008-E006-S003"
+parent = "M008-E006"
+title = "Schema specification v1.0 documentation"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+docs/specification/v1.0/ contains the formal schema specification with
+human-readable docs for each section, the JSON Schema file, and TypeScript
+type definitions. This is what makes Basesignal profiles interoperable.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/specification/v1.0/profile.md provides complete overview of the ProductProfile structure"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Individual section docs exist: identity.md, journey.md, definitions.md, entities.md, metrics.md, revenue.md"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "docs/specification/v1.0/schema.json is a valid JSON Schema that validates test profiles"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "docs/specification/v1.0/schema.ts re-exports the TypeScript types from @basesignal/core"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/specification/CHANGELOG.md documents the v1.0 release"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Each section doc includes field descriptions, types, required vs optional, and examples"
+
+[context]
+relevant_paths = [
+    "packages/core/",
+]
+input_fixtures = []
+depends_on = ["M008-E001-S004"]
+
+[handoff]
+implementation_hints = """
+The specification is the most important documentation artifact. It's what
+makes Basesignal a standard, not just a tool.
+
+Structure:
+docs/specification/
+├── v1.0/
+│   ├── profile.md      # Full profile overview
+│   ├── identity.md     # CoreIdentity fields
+│   ├── journey.md      # UserJourney stages
+│   ├── definitions.md  # Activation, FirstValue, Active, Churn
+│   ├── entities.md     # Entity model
+│   ├── metrics.md      # Metric catalog
+│   ├── revenue.md      # Revenue architecture
+│   ├── schema.json     # JSON Schema (generated from @basesignal/core)
+│   └── schema.ts       # TypeScript re-export
+└── CHANGELOG.md
+
+Each section doc should include:
+- Purpose and when this section is populated
+- Field-by-field reference table
+- Example values from a real product (sanitized)
+- Confidence scoring explanation
+"""
+reference_files = [
+    "packages/core/",
+]

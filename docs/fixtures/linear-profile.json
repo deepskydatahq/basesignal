@@ -1,0 +1,503 @@
+{
+  "basesignal_version": "1.0",
+  "metadata": {
+    "created": "2026-02-15T00:00:00Z",
+    "updated": "2026-02-15T00:00:00Z",
+    "source": "https://linear.app"
+  },
+  "identity": {
+    "productName": "Linear",
+    "description": "Modern project management tool built for software teams",
+    "targetCustomer": "Software development teams at startups and mid-market companies",
+    "businessModel": "Per-seat SaaS subscription",
+    "industry": "Developer Tools",
+    "companyStage": "Growth",
+    "confidence": 0.92,
+    "evidence": [
+      { "url": "https://linear.app/", "excerpt": "Linear is a better way to build software" },
+      { "url": "https://linear.app/pricing", "excerpt": "Per member per month" }
+    ]
+  },
+  "revenue": {
+    "model": "Per-seat SaaS subscription",
+    "billingUnit": "seat",
+    "hasFreeTier": true,
+    "tiers": [
+      {
+        "name": "Free",
+        "price": "$0/month",
+        "features": ["Up to 250 issues", "Basic integrations", "All core features"]
+      },
+      {
+        "name": "Standard",
+        "price": "$8/user/month",
+        "features": ["Unlimited issues", "Cycles", "Priority support", "Custom workflows"]
+      },
+      {
+        "name": "Plus",
+        "price": "$14/user/month",
+        "features": ["Advanced analytics", "SLA guarantees", "SAML SSO", "Audit log"]
+      }
+    ],
+    "expansionPaths": [
+      "Free to Standard: teams hitting the 250 issue limit",
+      "Standard to Plus: enterprises needing SSO and compliance",
+      "Seat expansion: team growth adds per-user revenue"
+    ],
+    "contractionRisks": [
+      "Team downsizing reduces seat count",
+      "Switching to competing tool (Jira, Shortcut)",
+      "Plus to Standard downgrade if advanced features unused"
+    ],
+    "confidence": 0.91,
+    "evidence": [
+      { "url": "https://linear.app/pricing", "excerpt": "Free for small teams. Standard at $8/user/month." }
+    ]
+  },
+  "entities": {
+    "items": [
+      {
+        "name": "User",
+        "type": "actor",
+        "properties": ["email", "displayName", "role", "lastActiveAt"]
+      },
+      {
+        "name": "Workspace",
+        "type": "container",
+        "properties": ["name", "slug", "plan", "memberCount"]
+      },
+      {
+        "name": "Issue",
+        "type": "core",
+        "properties": ["title", "status", "priority", "assignee", "labels", "estimate"]
+      },
+      {
+        "name": "Project",
+        "type": "container",
+        "properties": ["name", "lead", "status", "targetDate", "progress"]
+      },
+      {
+        "name": "Cycle",
+        "type": "time-bound",
+        "properties": ["name", "startDate", "endDate", "issues", "completedIssues"]
+      }
+    ],
+    "relationships": [
+      { "from": "Workspace", "to": "User", "type": "has many" },
+      { "from": "Workspace", "to": "Project", "type": "has many" },
+      { "from": "Project", "to": "Issue", "type": "has many" },
+      { "from": "Workspace", "to": "Cycle", "type": "has many" },
+      { "from": "Cycle", "to": "Issue", "type": "contains" },
+      { "from": "User", "to": "Issue", "type": "assigned to" }
+    ],
+    "confidence": 0.88,
+    "evidence": [
+      { "url": "https://linear.app/docs/issues", "excerpt": "Issues are the building blocks of Linear" },
+      { "url": "https://linear.app/docs/cycles", "excerpt": "Cycles help your team maintain a regular shipping cadence" }
+    ]
+  },
+  "journey": {
+    "stages": [
+      { "name": "Discovery", "description": "User visits website and explores features", "order": 0 },
+      { "name": "Signup", "description": "Creates account and sets up workspace", "order": 1 },
+      { "name": "Onboarding", "description": "Creates first project, invites team members", "order": 2 },
+      { "name": "Activation", "description": "Team creates and triages first issues", "order": 3 },
+      { "name": "Core Usage", "description": "Daily sprint management and issue tracking", "order": 4 },
+      { "name": "Expansion", "description": "Adopts roadmaps, cycles, and integrations", "order": 5 }
+    ],
+    "confidence": 0.85,
+    "evidence": [
+      { "url": "https://linear.app/docs/getting-started", "excerpt": "Create your workspace and invite your team" }
+    ]
+  },
+  "definitions": {
+    "activation": {
+      "levels": [
+        {
+          "level": 1,
+          "name": "Setup Complete",
+          "signalStrength": "weak",
+          "criteria": [
+            { "action": "create_workspace", "count": 1 },
+            { "action": "invite_member", "count": 1 }
+          ],
+          "reasoning": "Workspace setup with at least one invited member shows intent to use the product collaboratively",
+          "confidence": 0.8,
+          "evidence": [
+            { "url": "https://linear.app/docs/getting-started", "excerpt": "Start by creating your workspace" }
+          ]
+        },
+        {
+          "level": 2,
+          "name": "First Workflow",
+          "signalStrength": "medium",
+          "criteria": [
+            { "action": "create_issue", "count": 5, "timeWindow": "7d" },
+            { "action": "move_issue_status", "count": 3, "timeWindow": "7d" }
+          ],
+          "reasoning": "Creating and triaging issues shows the team is adopting Linear for real work",
+          "confidence": 0.85,
+          "evidence": [
+            { "url": "https://linear.app/docs/issues", "excerpt": "Issues are the building blocks of Linear" }
+          ]
+        },
+        {
+          "level": 3,
+          "name": "Team Adoption",
+          "signalStrength": "strong",
+          "criteria": [
+            { "action": "create_cycle", "count": 1 },
+            { "action": "create_issue", "count": 20, "timeWindow": "14d" }
+          ],
+          "reasoning": "Using cycles and high issue volume indicates the team has shifted their workflow to Linear",
+          "confidence": 0.9,
+          "evidence": [
+            { "url": "https://linear.app/docs/cycles", "excerpt": "Cycles help your team maintain a regular shipping cadence" }
+          ]
+        }
+      ],
+      "primaryActivation": 2,
+      "overallConfidence": 0.85
+    },
+    "firstValue": {
+      "description": "The moment a team completes their first sprint cycle and sees velocity metrics",
+      "criteria": [
+        "Complete at least one cycle with issues",
+        "View cycle summary or velocity chart"
+      ],
+      "timeWindow": "30d",
+      "reasoning": "Completing a cycle with real issues and reviewing the results is when teams first see the value of structured project management",
+      "confidence": 0.75,
+      "source": "product_analysis",
+      "evidence": [
+        { "url": "https://linear.app/docs/cycles", "excerpt": "Track your team's velocity over time" }
+      ]
+    },
+    "active": {
+      "criteria": [
+        "At least 3 team members active in the last 7 days",
+        "At least 10 issues created or updated in the last 7 days"
+      ],
+      "timeWindow": "7d",
+      "reasoning": "Active teams use Linear daily for issue tracking and sprint management",
+      "confidence": 0.82,
+      "source": "product_analysis",
+      "evidence": [
+        { "url": "https://linear.app/", "excerpt": "Built for the way modern teams work" }
+      ]
+    },
+    "atRisk": {
+      "criteria": [
+        "Less than 2 team members active in the last 14 days",
+        "No issues created in the last 14 days"
+      ],
+      "timeWindow": "14d",
+      "reasoning": "Declining activity signals the team may be reverting to their previous tool",
+      "confidence": 0.7,
+      "source": "product_analysis",
+      "evidence": [
+        { "url": "https://linear.app/", "excerpt": "Built for the way modern teams work" }
+      ]
+    },
+    "churn": {
+      "criteria": [
+        "No team members active in the last 30 days",
+        "Subscription cancelled or expired"
+      ],
+      "timeWindow": "30d",
+      "reasoning": "Complete inactivity combined with subscription loss indicates churn",
+      "confidence": 0.88,
+      "source": "product_analysis",
+      "evidence": [
+        { "url": "https://linear.app/pricing", "excerpt": "Cancel anytime" }
+      ]
+    }
+  },
+  "outcomes": {
+    "items": [
+      {
+        "description": "Engineering teams ship features faster with streamlined issue tracking",
+        "type": "efficiency",
+        "linkedFeatures": ["Issue tracking", "Cycles", "Auto-triage"]
+      },
+      {
+        "description": "Product managers gain real-time project visibility across teams",
+        "type": "visibility",
+        "linkedFeatures": ["Roadmaps", "Project views", "Updates"]
+      },
+      {
+        "description": "Engineering leaders measure team velocity and identify bottlenecks",
+        "type": "measurement",
+        "linkedFeatures": ["Cycle reports", "Analytics", "Insights"]
+      }
+    ],
+    "confidence": 0.72,
+    "evidence": [
+      { "url": "https://linear.app/customers", "excerpt": "Teams ship faster with Linear" },
+      { "url": "https://linear.app/features", "excerpt": "Purpose-built for modern product development teams" }
+    ]
+  },
+  "metrics": {
+    "items": [
+      {
+        "name": "Weekly Active Users",
+        "category": "engagement",
+        "formula": "COUNT(DISTINCT users WHERE active_last_7d)",
+        "linkedTo": ["Issue tracking", "Sprint planning"]
+      },
+      {
+        "name": "Trial-to-Paid Conversion",
+        "category": "value_capture",
+        "formula": "paid_workspaces / trial_workspaces",
+        "linkedTo": ["Onboarding flow", "Pricing page"]
+      },
+      {
+        "name": "Signup Rate",
+        "category": "reach",
+        "linkedTo": ["Landing page", "Pricing page"]
+      },
+      {
+        "name": "Feature Adoption Rate",
+        "category": "engagement",
+        "formula": "users_using_feature / total_active_users",
+        "linkedTo": ["Cycles", "Roadmaps", "Integrations"]
+      },
+      {
+        "name": "Seat Expansion Rate",
+        "category": "value_capture",
+        "formula": "new_seats_added / total_seats",
+        "linkedTo": ["Team invitations", "Workspace growth"]
+      }
+    ],
+    "confidence": 0.78,
+    "evidence": [
+      { "url": "https://linear.app/pricing", "excerpt": "Start free, upgrade when ready" }
+    ]
+  },
+  "outputs": {
+    "icpProfiles": [
+      {
+        "id": "icp-eng-lead",
+        "name": "Engineering Team Lead",
+        "description": "Leads a team of 5-15 engineers at a startup or scale-up, responsible for shipping velocity and sprint planning",
+        "value_moment_priorities": [
+          { "moment_id": "vm-sprint-velocity", "priority": 1, "relevance_reason": "Directly responsible for team output and cadence" },
+          { "moment_id": "vm-issue-triage", "priority": 2, "relevance_reason": "Needs to prioritize and assign work efficiently" }
+        ],
+        "activation_triggers": [
+          "Migrating from Jira or another tool that feels slow",
+          "Scaling team and needing better sprint management",
+          "Wanting keyboard-first workflow for faster issue management"
+        ],
+        "pain_points": [
+          "Jira is too slow and cluttered for fast-moving teams",
+          "Manual sprint planning wastes engineering time",
+          "No visibility into team velocity trends"
+        ],
+        "success_metrics": [
+          "Team creates and closes 50+ issues per cycle",
+          "Sprint velocity stabilizes within 3 cycles",
+          "80%+ of team members active weekly"
+        ],
+        "confidence": 0.82,
+        "sources": ["https://linear.app/", "https://linear.app/customers"]
+      },
+      {
+        "id": "icp-product-manager",
+        "name": "Product Manager",
+        "description": "Manages product roadmap and coordinates across engineering teams, needs visibility into progress and priorities",
+        "value_moment_priorities": [
+          { "moment_id": "vm-roadmap-visibility", "priority": 1, "relevance_reason": "Needs cross-team progress visibility for planning" },
+          { "moment_id": "vm-sprint-velocity", "priority": 2, "relevance_reason": "Uses velocity data to set realistic timelines" }
+        ],
+        "activation_triggers": [
+          "Joining a team already using Linear",
+          "Needing better roadmap tooling for stakeholder communication",
+          "Wanting a single source of truth for project status"
+        ],
+        "pain_points": [
+          "Scattered project status across Slack, docs, and spreadsheets",
+          "No unified view of roadmap progress",
+          "Difficulty estimating timelines without velocity data"
+        ],
+        "success_metrics": [
+          "Roadmap updated weekly with current progress",
+          "All projects have defined milestones and target dates",
+          "Stakeholder check-ins reference Linear data"
+        ],
+        "confidence": 0.76,
+        "sources": ["https://linear.app/features", "https://linear.app/customers"]
+      }
+    ],
+    "activationMap": {
+      "stages": [
+        {
+          "level": 1,
+          "name": "Setup Complete",
+          "signal_strength": "weak",
+          "trigger_events": ["workspace_created", "member_invited"],
+          "value_moments_unlocked": [],
+          "drop_off_risk": "high",
+          "drop_off_reasons": ["Invite not accepted", "No issues created after signup"]
+        },
+        {
+          "level": 2,
+          "name": "First Workflow",
+          "signal_strength": "medium",
+          "trigger_events": ["issue_created", "issue_status_changed"],
+          "value_moments_unlocked": ["vm-issue-triage"],
+          "drop_off_risk": "medium",
+          "drop_off_reasons": ["Only one person using it", "Issues created but not triaged"]
+        },
+        {
+          "level": 3,
+          "name": "Team Adoption",
+          "signal_strength": "strong",
+          "trigger_events": ["cycle_created", "multiple_members_active"],
+          "value_moments_unlocked": ["vm-sprint-velocity", "vm-roadmap-visibility"],
+          "drop_off_risk": "low",
+          "drop_off_reasons": ["Cycle feature not discovered", "Team reverts to previous tool"]
+        }
+      ],
+      "transitions": [
+        {
+          "from_level": 1,
+          "to_level": 2,
+          "trigger_events": ["issue_created", "issue_assigned"],
+          "typical_timeframe": "1-3 days"
+        },
+        {
+          "from_level": 2,
+          "to_level": 3,
+          "trigger_events": ["cycle_created", "third_member_active"],
+          "typical_timeframe": "1-2 weeks"
+        }
+      ],
+      "primary_activation_level": 2,
+      "confidence": 0.83,
+      "sources": ["https://linear.app/docs/getting-started", "https://linear.app/docs/cycles"]
+    },
+    "measurementSpec": {
+      "entities": [
+        {
+          "id": "user",
+          "name": "User",
+          "description": "A person with a Linear account",
+          "isHeartbeat": true,
+          "properties": [
+            { "name": "user_id", "type": "string", "description": "Unique user identifier", "isRequired": true },
+            { "name": "workspace_id", "type": "string", "description": "Workspace the user belongs to", "isRequired": true },
+            { "name": "role", "type": "string", "description": "User role in workspace", "isRequired": false }
+          ]
+        },
+        {
+          "id": "issue",
+          "name": "Issue",
+          "description": "A work item tracked in Linear",
+          "isHeartbeat": false,
+          "properties": [
+            { "name": "issue_id", "type": "string", "description": "Unique issue identifier", "isRequired": true },
+            { "name": "project_id", "type": "string", "description": "Parent project", "isRequired": false },
+            { "name": "priority", "type": "number", "description": "Issue priority level", "isRequired": false }
+          ]
+        }
+      ],
+      "events": [
+        {
+          "name": "issue_created",
+          "entity_id": "issue",
+          "description": "User creates a new issue",
+          "perspective": "interaction",
+          "properties": [
+            { "name": "issue_id", "type": "string", "description": "ID of the created issue", "isRequired": true },
+            { "name": "project_id", "type": "string", "description": "Project the issue belongs to", "isRequired": false }
+          ],
+          "trigger_condition": "User clicks 'New Issue' and saves",
+          "maps_to": { "type": "activation_level", "activation_level": 2 },
+          "category": "core_action"
+        },
+        {
+          "name": "cycle_created",
+          "entity_id": "issue",
+          "description": "User creates a new cycle for sprint planning",
+          "perspective": "product",
+          "properties": [
+            { "name": "cycle_id", "type": "string", "description": "ID of the created cycle", "isRequired": true },
+            { "name": "duration_weeks", "type": "number", "description": "Cycle duration in weeks", "isRequired": false }
+          ],
+          "trigger_condition": "User creates a new cycle and adds issues",
+          "maps_to": { "type": "activation_level", "activation_level": 3 },
+          "category": "advanced_action"
+        },
+        {
+          "name": "member_invited",
+          "entity_id": "user",
+          "description": "User invites a team member to the workspace",
+          "perspective": "customer",
+          "properties": [
+            { "name": "invitee_email", "type": "string", "description": "Email of invited member", "isRequired": true }
+          ],
+          "trigger_condition": "User sends a workspace invitation",
+          "maps_to": { "type": "activation_level", "activation_level": 1 },
+          "category": "growth_action"
+        },
+        {
+          "name": "velocity_viewed",
+          "entity_id": "user",
+          "description": "User views cycle velocity or analytics dashboard",
+          "perspective": "customer",
+          "properties": [
+            { "name": "view_type", "type": "string", "description": "Type of analytics view accessed", "isRequired": true }
+          ],
+          "trigger_condition": "User navigates to cycle summary or analytics page",
+          "maps_to": { "type": "value_moment", "moment_id": "vm-sprint-velocity" },
+          "category": "insight_action"
+        }
+      ],
+      "total_events": 4,
+      "coverage": {
+        "activation_levels_covered": [1, 2, 3],
+        "value_moments_covered": ["vm-sprint-velocity", "vm-issue-triage", "vm-roadmap-visibility"],
+        "perspective_distribution": {
+          "customer": 2,
+          "product": 1,
+          "interaction": 1
+        }
+      },
+      "userStateModel": [
+        {
+          "name": "activated",
+          "definition": "User has created 5+ issues and moved 3+ issue statuses within 7 days",
+          "criteria": [
+            { "event_name": "issue_created", "condition": "count >= 5 within 7d" },
+            { "event_name": "issue_status_changed", "condition": "count >= 3 within 7d" }
+          ]
+        },
+        {
+          "name": "active",
+          "definition": "At least 3 team members active and 10+ issues updated in the last 7 days",
+          "criteria": [
+            { "event_name": "issue_created", "condition": "count >= 10 within 7d" },
+            { "event_name": "session_started", "condition": "distinct_users >= 3 within 7d" }
+          ]
+        },
+        {
+          "name": "at_risk",
+          "definition": "Less than 2 team members active and no issues created in 14 days",
+          "criteria": [
+            { "event_name": "session_started", "condition": "distinct_users < 2 within 14d" },
+            { "event_name": "issue_created", "condition": "count == 0 within 14d" }
+          ]
+        }
+      ],
+      "confidence": 0.79,
+      "sources": [
+        "https://linear.app/docs/getting-started",
+        "https://linear.app/docs/issues",
+        "https://linear.app/docs/cycles"
+      ]
+    }
+  },
+  "completeness": 1.0,
+  "overallConfidence": 0.83
+}

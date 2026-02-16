@@ -1,0 +1,16 @@
+{
+  "name": "basesignal-example-basic-scan",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scan": "npx tsx scan.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@basesignal/cli": "latest"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "~5.9.3"
+  }
+}
