@@ -4,7 +4,8 @@
 
 id = "M008"
 title = "Open Source Foundation"
-status = "draft"
+status = "complete"
+completed = 2026-02-16
 created = 2026-02-14
 hypothesis = "H8"
 depends_on = ["M001"]
