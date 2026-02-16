@@ -1,0 +1,78 @@
+# Story: README, LICENSE, and CONTRIBUTING.md
+# Create the public-facing project documents for the open source release.
+
+id = "M008-E006-S001"
+parent = "M008-E006"
+title = "README.md, MIT LICENSE, and CONTRIBUTING.md"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The repository has a compelling README (overview, install, quick start),
+MIT LICENSE file, and CONTRIBUTING.md that makes adding a crawler feel
+achievable in an afternoon.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "README.md includes: tagline, what it does, install instructions, quick start, screenshot/demo"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "README.md includes Claude Desktop config example and CLI usage examples"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "README.md links to docs/ for detailed documentation"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "LICENSE contains MIT license text with 'DeepSky Data ApS' copyright"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "CONTRIBUTING.md explains: setup, adding crawlers, adding storage adapters, PR process"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "CONTRIBUTING.md includes the Crawler interface code and step-by-step instructions"
+
+[context]
+relevant_paths = [
+    "VISION.md",
+]
+input_fixtures = []
+depends_on = ["M008-E005-S004"]
+
+[handoff]
+implementation_hints = """
+README structure:
+1. Basesignal logo/name + tagline ("The open standard for product growth models")
+2. What it does (3-4 bullet points with examples)
+3. Quick start (npm install, basesignal scan, see result)
+4. Claude Desktop setup (JSON config snippet)
+5. Docker setup (docker-compose up)
+6. How it works (brief architecture: core → crawlers → analyzers → profile)
+7. Documentation links
+8. Contributing
+9. License
+
+CONTRIBUTING.md:
+- Dev setup (clone, npm install, npm test)
+- Adding a new crawler (step-by-step with code)
+- Adding a storage adapter
+- Code style and PR conventions
+- Where to ask questions
+
+The README is the single most important document for open source adoption.
+It should make someone star the repo within 30 seconds of reading.
+
+Draw from VISION.md for messaging but keep the README developer-focused.
+"""
+reference_files = [
+    "VISION.md",
+]

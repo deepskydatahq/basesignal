@@ -1,0 +1,38 @@
+# Basesignal self-hosted MCP server
+# Usage: docker-compose up
+# Connect from Claude Desktop using SSE transport at http://localhost:3000
+
+services:
+  basesignal:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${BASESIGNAL_PORT:-3000}:3000"
+    environment:
+      # === Required ===
+      # LLM API key (one of these, depending on provider)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+
+      # === Optional ===
+      # LLM provider: anthropic (default), openai, ollama
+      - BASESIGNAL_PROVIDER=${BASESIGNAL_PROVIDER:-anthropic}
+      # LLM model override (uses provider default if not set)
+      - BASESIGNAL_MODEL=${BASESIGNAL_MODEL:-}
+      # Storage path inside container (mapped to volume below)
+      - BASESIGNAL_STORAGE=/data
+    volumes:
+      # Persistent storage for SQLite database and cached profiles
+      - basesignal-data:/data
+    restart: unless-stopped
+    # Health check: verify the server is responding
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  basesignal-data:

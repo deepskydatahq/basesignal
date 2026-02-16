@@ -1,0 +1,70 @@
+# Epic: Open Source Readiness — Docs, Examples, and Community Infrastructure
+# Prepare the repository for public release with documentation, examples, and governance.
+
+id = "M008-E006"
+parent = "M008"
+title = "Open Source Readiness"
+status = "draft"
+created = 2026-02-14
+
+[outcome]
+description = """
+The repository is ready for public release with comprehensive documentation,
+working examples, MIT license, contribution guidelines, and GitHub infrastructure
+(issue templates, CI pipeline, release automation).
+"""
+
+job_story = """
+When I discover Basesignal on GitHub,
+I want clear documentation, working examples, and contribution guidelines,
+so that I can get started in minutes and know how to contribute back.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "README.md provides clear overview, installation, quick start, and links to docs",
+    "CONTRIBUTING.md explains how to add crawlers, storage adapters, and other extensions",
+    "LICENSE file contains MIT license",
+    "docs/ contains getting-started, data-model, mcp-tools, crawlers, and self-hosting guides",
+    "docs/specification/v1.0/ contains the formal schema specification",
+    "examples/ contains working examples: basic-scan, claude-desktop config, custom-crawler",
+    "GitHub issue templates exist for bugs, feature requests, and new crawler proposals",
+    "CI pipeline runs tests for all packages on PR",
+    "Each package has its own README with API documentation",
+]
+
+validator_context = [
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "docs/",
+    "examples/",
+    ".github/",
+]
+
+[context]
+relevant_paths = [
+    "packages/",
+    "docs/",
+]
+dependencies = ["M008-E001", "M008-E002", "M008-E003", "M008-E004", "M008-E005"]
+
+[notes]
+considerations = """
+This epic is the final polish before public release. It depends on all other
+epics because documentation must reflect what's actually built.
+
+Key decisions:
+- MIT license (maximum adoption, simple, well-understood)
+- Monorepo documentation: top-level README for overview, per-package README for API
+- The schema specification (docs/specification/v1.0/) is the most important doc —
+  it defines the standard that other tools can build against
+- Examples should be copy-pasteable and tested in CI
+- CONTRIBUTING.md should make adding a crawler feel achievable in an afternoon
+- GitHub Actions for CI (test all packages), release (npm publish), and docs
+- Consider a simple docs site (VitePress, Docusaurus) or just markdown in docs/
+- Good first issues should be identified and labeled for community onboarding
+"""
+
+estimated_stories = 5

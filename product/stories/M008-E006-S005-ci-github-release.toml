@@ -1,0 +1,76 @@
+# Story: GitHub Actions CI, Issue Templates, and Release Automation
+# Set up CI pipeline, issue templates, and automated release workflow.
+
+id = "M008-E006-S005"
+parent = "M008-E006"
+title = "GitHub Actions CI, issue templates, and release automation"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+GitHub Actions CI runs tests for all packages on every PR. Issue templates
+guide bug reports and feature requests. A release workflow publishes
+packages to npm when a version tag is pushed.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".github/workflows/ci.yml runs tests for all packages on push and PR"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CI builds all packages and verifies TypeScript compilation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".github/ISSUE_TEMPLATE/ contains templates for: bug report, feature request, new crawler proposal"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".github/workflows/release.yml publishes to npm on version tag push"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "CI passes on the current codebase (all tests green)"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Issue templates render correctly on GitHub"
+
+[context]
+relevant_paths = [
+    ".github/",
+    "packages/",
+]
+input_fixtures = []
+depends_on = ["M008-E006-S001"]
+
+[handoff]
+implementation_hints = """
+CI workflow (.github/workflows/ci.yml):
+- Trigger: push to main, PRs
+- Matrix: Node 18, 20, 22
+- Steps: checkout, setup-node, npm ci, npm run build (all packages), npm test
+- Consider caching node_modules for speed
+
+Release workflow (.github/workflows/release.yml):
+- Trigger: push tag matching v*
+- Steps: checkout, setup-node, npm ci, npm run build, npm publish for each package
+- Use NPM_TOKEN secret for publishing
+- Consider changesets or lerna for version management
+
+Issue templates:
+- Bug report: describe behavior, expected, actual, reproduction steps
+- Feature request: use case, proposed solution
+- New crawler proposal: source type, URL pattern, expected data
+
+Also add:
+- .github/FUNDING.yml (optional, for GitHub sponsors)
+- .github/PULL_REQUEST_TEMPLATE.md
+- Labels: 'good first issue', 'crawler', 'storage', 'documentation'
+"""
+reference_files = []

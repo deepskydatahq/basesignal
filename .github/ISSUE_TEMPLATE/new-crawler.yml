@@ -1,0 +1,66 @@
+name: New Crawler Proposal
+description: Propose a new data source crawler
+labels: ["crawler", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a new crawler! See the [contributing guide](../../CONTRIBUTING.md#adding-a-crawler) for how crawlers work.
+
+  - type: input
+    id: source-name
+    attributes:
+      label: Data source name
+      description: The name of the data source (e.g., "G2", "Product Hunt").
+      placeholder: e.g., G2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source-type
+    attributes:
+      label: Source type
+      options:
+        - Website
+        - API (authenticated)
+        - API (public)
+        - App store
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: url-pattern
+    attributes:
+      label: URL pattern or API endpoint
+      description: What URLs or API endpoints does this source use?
+      placeholder: e.g., https://www.g2.com/products/*/reviews
+    validations:
+      required: true
+
+  - type: textarea
+    id: available-data
+    attributes:
+      label: What data is available?
+      description: What structured data can be extracted from this source?
+      placeholder: |
+        - Product name
+        - Review text and rating
+        - Reviewer role and company size
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-valuable
+    attributes:
+      label: Why is this source valuable?
+      description: How does this data help build a product profile?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: willing-to-implement
+    attributes:
+      label: Would you like to implement this?
+      options:
+        - label: I'd like to submit a PR for this crawler

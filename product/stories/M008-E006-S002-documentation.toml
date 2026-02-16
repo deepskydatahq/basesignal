@@ -1,0 +1,86 @@
+# Story: Documentation
+# Create comprehensive docs for getting started, data model, MCP tools, crawlers, and self-hosting.
+
+id = "M008-E006-S002"
+parent = "M008-E006"
+title = "Documentation site content"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+docs/ contains comprehensive guides: getting-started, data-model, mcp-tools,
+crawlers, and self-hosting. Each doc is standalone and actionable.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/getting-started.md covers installation, first scan, and next steps"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/data-model.md explains the ProductProfile schema with examples"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/mcp-tools.md documents each MCP tool with parameters and examples"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/crawlers.md explains the Crawler interface and how to build custom crawlers"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "docs/self-hosting.md covers Docker setup, environment variables, and configuration"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "All code examples in docs are tested or derived from working code"
+
+[context]
+relevant_paths = [
+    "packages/",
+    "docs/",
+]
+input_fixtures = []
+depends_on = ["M008-E005-S004"]
+
+[handoff]
+implementation_hints = """
+Each doc should be standalone and actionable:
+
+getting-started.md:
+- Prerequisites (Node.js 18+, LLM API key)
+- Install (@basesignal/cli)
+- First scan (basesignal scan <url>)
+- View results (basesignal export)
+- Connect to Claude Desktop
+- Next steps (customize, contribute)
+
+data-model.md:
+- Overview of ProductProfile
+- Each section explained (identity, journey, definitions, entities, etc.)
+- Example profile (from Linear or Miro test case)
+- Schema versioning
+
+mcp-tools.md:
+- Each tool: name, description, parameters, return value, example
+- scan_product, get_profile, get_definition, update_definition, export_profile
+
+crawlers.md:
+- Crawler interface
+- Built-in crawlers
+- How to build a new crawler (step-by-step)
+- Testing crawlers with fixtures
+
+self-hosting.md:
+- Docker setup
+- Environment variables reference
+- Storage options
+- LLM provider configuration
+- Updating
+"""
+reference_files = []

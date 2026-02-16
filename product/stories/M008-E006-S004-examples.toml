@@ -1,0 +1,66 @@
+# Story: Working Examples
+# Create tested examples for basic-scan, Claude Desktop config, and custom crawler.
+
+id = "M008-E006-S004"
+parent = "M008-E006"
+title = "Working examples (basic-scan, claude-desktop, custom-crawler)"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+examples/ contains three working examples that demonstrate Basesignal usage.
+Each example has its own README, is self-contained, and is tested in CI.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "examples/basic-scan/ demonstrates CLI scan with a sample URL"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "examples/claude-desktop/ contains the claude_desktop_config.json snippet and setup instructions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "examples/custom-crawler/ demonstrates implementing a custom Crawler"
+
+[[acceptance_criteria.criteria]]
+test = "manual"
+description = "Each example has its own README.md with step-by-step instructions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Custom crawler example includes a complete, runnable crawler implementation"
+
+[context]
+relevant_paths = [
+    "packages/",
+]
+input_fixtures = []
+depends_on = ["M008-E005-S002", "M008-E003-S004"]
+
+[handoff]
+implementation_hints = """
+examples/basic-scan/:
+- Simple script that scans a URL and prints the profile
+- Shows: install, configure API key, run scan
+- Include a sample output for reference
+
+examples/claude-desktop/:
+- claude_desktop_config.json with basesignal server configuration
+- Step-by-step: install CLI, configure, restart Claude Desktop, test
+- Include screenshots or expected behavior descriptions
+
+examples/custom-crawler/:
+- Complete implementation of a simple crawler (e.g., GitHub README crawler)
+- Shows: interface implementation, registration, testing with fixtures
+- Demonstrates the full contribution workflow
+
+Each example should be copy-pasteable and work with minimal setup.
+Test them in CI to catch breakage.
+"""
+reference_files = []
