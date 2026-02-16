@@ -1,0 +1,65 @@
+# Epic: MCP Server Package — Self-Hostable Server
+# Package the MCP server as a standalone, self-hostable @basesignal/mcp-server.
+
+id = "M008-E002"
+parent = "M008"
+title = "MCP Server Package — Self-Hostable Server"
+status = "draft"
+created = 2026-02-14
+
+[outcome]
+description = """
+The @basesignal/mcp-server package is a self-contained MCP server that connects
+to AI assistants (Claude Desktop, etc.), exposes scan/retrieve/refine/export tools,
+and persists data locally. Users run it with a single command and connect from their
+preferred AI assistant.
+"""
+
+job_story = """
+When I want to use Basesignal from my AI assistant,
+I want to run a self-hosted MCP server with a single command,
+so that I can scan products, retrieve profiles, and refine definitions without relying on any hosted service.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/mcp-server/ exists as a standalone package",
+    "MCP server starts with a single command (npx or basesignal serve)",
+    "Exposes tools: scan_product, get_profile, get_definition, update_definition, export_profile",
+    "Tool handlers delegate to @basesignal/core for validation and @basesignal/crawlers for scanning",
+    "Storage is injected via adapter interface (defaults to SQLite)",
+    "LLM provider is configurable via environment variables",
+    "Server works with Claude Desktop MCP configuration",
+    "Tests cover tool registration, handler logic, and error cases",
+]
+
+validator_context = [
+    "packages/mcp-server/",
+    "packages/mcp-server/tools/",
+    "packages/mcp-server/handlers/",
+]
+
+[context]
+relevant_paths = [
+    "convex/analysis/",
+    "convex/crawl/",
+    "convex/productProfiles.ts",
+]
+dependencies = ["M008-E001", "M008-E003", "M008-E004"]
+
+[notes]
+considerations = """
+The MCP server is the primary distribution surface — it's how most users will
+interact with Basesignal. Key decisions:
+
+- Use the official MCP TypeScript SDK
+- Tool definitions should be clean and well-documented (they show up in AI assistants)
+- Compose packages: core (types), crawlers (scanning), storage (persistence)
+- Environment variable configuration: LLM API key, storage path, port
+- Keep the server stateless between requests — all state in storage adapter
+- Support both stdio (for Claude Desktop) and SSE (for remote connections)
+- Error handling should produce helpful messages for AI assistants to relay to users
+"""
+
+estimated_stories = 5

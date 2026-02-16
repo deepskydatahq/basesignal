@@ -1,0 +1,67 @@
+# Story: Profile Retrieval and Refinement Tools
+# Implement get_profile, get_definition, and update_definition MCP tools.
+
+id = "M008-E002-S004"
+parent = "M008-E002"
+title = "Implement profile retrieval and refinement MCP tools"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+The MCP server exposes tools for retrieving profiles, reading specific
+definitions, and updating definitions through conversation. Changes
+persist to the storage adapter.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "get_profile tool returns the full profile for a product (or lists available products)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "get_definition tool accepts a type (activation, firstValue, active, churn) and returns that section"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "update_definition tool accepts a definition type and new data, validates with zod, and saves"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "list_products tool returns all stored product profiles with basic metadata"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Updates are validated against the core schema before saving (rejects invalid data)"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/",
+    "packages/core/",
+    "packages/storage/",
+]
+input_fixtures = []
+depends_on = ["M008-E002-S001", "M008-E004-S001"]
+
+[handoff]
+implementation_hints = """
+These tools enable the conversational refinement loop:
+
+get_profile({ productId? }) → full profile or list of products
+get_definition({ productId, type: 'activation' }) → activation definition
+update_definition({ productId, type: 'activation', data: {...} }) → validate + save
+list_products() → [{id, name, url, completeness, updatedAt}]
+
+All tools read/write through the storage adapter.
+Validation uses @basesignal/core zod schemas.
+Return human-readable markdown from each tool, not raw JSON.
+
+Reference: convex/productProfiles.ts for the current CRUD patterns.
+"""
+reference_files = [
+    "convex/productProfiles.ts",
+    "server/tools/",
+]

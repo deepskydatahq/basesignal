@@ -1,0 +1,48 @@
+{
+  "name": "@basesignal/mcp-server",
+  "version": "0.0.1",
+  "description": "MCP server for AI-assisted product profile analysis",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepskydatahq/basesignal.git",
+    "directory": "packages/mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/deepskydatahq/basesignal/issues"
+  },
+  "homepage": "https://github.com/deepskydatahq/basesignal#readme",
+  "keywords": ["basesignal", "product-profile", "product-analytics", "mcp"],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./analysis/pipeline": {
+      "import": "./dist/analysis/pipeline.js",
+      "types": "./dist/analysis/pipeline.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "basesignal-mcp": "./dist/cli.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@basesignal/core": "*",
+    "@basesignal/storage": "*",
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.16"
+  }
+}
