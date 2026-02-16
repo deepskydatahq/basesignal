@@ -1,0 +1,43 @@
+{
+  "name": "@basesignal/storage",
+  "version": "0.0.1",
+  "description": "Storage adapters for product profiles (SQLite, file-based)",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepskydatahq/basesignal.git",
+    "directory": "packages/storage"
+  },
+  "bugs": {
+    "url": "https://github.com/deepskydatahq/basesignal/issues"
+  },
+  "homepage": "https://github.com/deepskydatahq/basesignal#readme",
+  "keywords": ["basesignal", "product-profile", "product-analytics"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "tsup": "^8.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.16"
+  }
+}

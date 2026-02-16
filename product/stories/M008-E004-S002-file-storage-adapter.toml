@@ -1,0 +1,70 @@
+# Story: File-Based JSON Storage Adapter
+# Implement a file-based storage adapter that stores profiles as JSON files.
+
+id = "M008-E004-S002"
+parent = "M008-E004"
+title = "File-based JSON storage adapter"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+A FileStorage adapter stores each ProductProfile as a separate JSON file
+in a configurable directory. This is useful for debugging, git-friendly
+storage, and simple deployments.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "FileStorage implements the StorageAdapter interface"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "save() writes profile to {dir}/{id}.json with pretty-printed JSON"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "load() reads and parses JSON from {dir}/{id}.json"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "list() scans the directory for .json files and returns metadata"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "delete() removes the JSON file"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "search() searches file contents for matching name/url"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests use a temporary directory (cleaned up after tests)"
+
+[context]
+relevant_paths = [
+    "packages/storage/",
+]
+input_fixtures = []
+depends_on = ["M008-E004-S001"]
+
+[handoff]
+implementation_hints = """
+Simple implementation:
+- Directory defaults to ~/.basesignal/profiles/
+- One file per profile: {id}.json
+- ID can be a slug from the product name or a UUID
+- Pretty-print JSON for readability (JSON.stringify(profile, null, 2))
+- list() reads all .json files, parses just enough for metadata
+- search() does a simple string match on loaded name/url fields
+
+This adapter is great for:
+- Debugging (inspect profiles in a text editor)
+- Version control (commit profiles to git)
+- Simple single-user deployments
+"""
+reference_files = []
