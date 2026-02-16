@@ -1,0 +1,77 @@
+# Story: Pricing Page Parser
+# Implement a specialized pricing page crawler that extracts structured pricing data.
+
+id = "M008-E003-S003"
+parent = "M008-E003"
+title = "Implement pricing page parser"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+A PricingCrawler extracts structured pricing information from pricing pages:
+tiers, prices, billing units, feature lists, and free tier availability.
+This feeds directly into the RevenueArchitecture section of the profile.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "PricingCrawler implements the Crawler interface with sourceType 'pricing'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "canCrawl() returns true for URLs containing /pricing, /plans, or /price"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Extracts tier names, prices, and billing periods from common pricing page layouts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Detects free tier presence and trial availability"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Returns structured metadata alongside raw content"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests use saved pricing page fixtures from 3+ real products"
+
+[context]
+relevant_paths = [
+    "convex/analysis/extractIdentity.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Pricing pages have common patterns:
+- Tier cards with name, price, features list
+- Toggle for monthly/annual billing
+- "Free" or "$0" for free tiers
+- "Contact sales" for enterprise tiers
+
+The parser should extract what it can structurally and include raw content
+for the LLM analyzer to interpret the rest.
+
+Structured output example:
+```typescript
+{
+  tiers: [
+    { name: 'Free', price: 0, period: 'month', features: [...] },
+    { name: 'Pro', price: 29, period: 'month', features: [...] },
+  ],
+  hasFreeTier: true,
+  billingOptions: ['monthly', 'annual'],
+  enterpriseTier: true
+}
+```
+
+Save fixture HTML from real pricing pages (Linear, Miro, Notion, etc.)
+"""
+reference_files = []

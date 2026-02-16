@@ -1,0 +1,63 @@
+# Epic: Modular Crawlers — Pluggable, Community-Extensible Crawler Architecture
+# Extract and restructure crawlers into @basesignal/crawlers with a plugin interface.
+
+id = "M008-E003"
+parent = "M008"
+title = "Modular Crawlers — Pluggable Crawler Architecture"
+status = "draft"
+created = 2026-02-14
+
+[outcome]
+description = """
+The @basesignal/crawlers package provides a Crawler interface and a set of built-in
+crawlers (website, pricing, docs). Anyone can implement the interface to add new
+source types (YouTube, G2, LinkedIn) without modifying existing code.
+"""
+
+job_story = """
+When I want to add a new data source for product analysis,
+I want to implement a simple Crawler interface and register it,
+so that the analysis pipeline automatically uses my crawler's output without any core changes.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/crawlers/ exists with a clear Crawler interface (name, sourceType, canCrawl, crawl)",
+    "Built-in crawlers: website (marketing pages), pricing (pricing page parser)",
+    "Each crawler returns structured CrawlResult with content, metadata, and source attribution",
+    "Crawlers are registered and discovered at runtime (not hardcoded)",
+    "A new crawler can be added by implementing the interface and registering it",
+    "Crawl options support depth limits, page limits, and timeouts",
+    "Tests use fixture data (not live crawling) for reliability",
+    "Documentation explains how to contribute a new crawler",
+]
+
+validator_context = [
+    "packages/crawlers/",
+    "packages/crawlers/website/",
+    "packages/crawlers/pricing/",
+    "docs/crawlers.md",
+]
+
+[context]
+relevant_paths = [
+    "convex/crawl/",
+    "convex/analysis/lenses/",
+]
+dependencies = ["M008-E001"]
+
+[notes]
+considerations = """
+The existing crawl logic is in convex/crawl/. Extract and generalize:
+
+- Crawler interface: { name, sourceType, canCrawl(url), crawl(url, options) }
+- CrawlResult should include: raw content, extracted text, metadata, screenshots (optional)
+- Built-in crawlers should work without any API keys (just HTTP)
+- Future crawlers (YouTube, G2) may need API keys — design for this
+- Rate limiting and politeness (robots.txt, delays) should be built into base class
+- Fixture-based testing: save real crawl results as test fixtures
+- The website crawler is the most important — it feeds the core analysis pipeline
+"""
+
+estimated_stories = 4

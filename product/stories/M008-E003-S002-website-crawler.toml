@@ -1,0 +1,82 @@
+# Story: Website Crawler
+# Implement the built-in website crawler for marketing pages.
+
+id = "M008-E003-S002"
+parent = "M008-E003"
+title = "Implement website crawler for marketing pages"
+status = "ready"
+created = 2026-02-14
+
+[outcome]
+description = """
+A WebsiteCrawler implements the Crawler interface and crawls a product's
+marketing site — homepage, features, about, help/docs pages. It classifies
+page types and extracts clean text content from HTML.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "WebsiteCrawler implements the Crawler interface"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "canCrawl() returns true for any HTTP/HTTPS URL"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Crawls homepage and discovers linked pages (features, about, pricing, docs, help)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Classifies pages by type based on URL patterns and content"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Extracts clean text content from HTML (strips nav, footer, scripts)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Respects CrawlOptions: maxPages, maxDepth, timeout"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests use saved HTML fixtures, not live HTTP requests"
+
+[context]
+relevant_paths = [
+    "convex/crawledPages.ts",
+]
+input_fixtures = []
+depends_on = ["M008-E003-S001"]
+
+[handoff]
+implementation_hints = """
+The current codebase uses @mendable/firecrawl-js for crawling. For the open
+source package, consider:
+
+Option A: Keep Firecrawl as a dependency (it's the simplest path)
+Option B: Use a lighter alternative (cheerio + fetch for basic crawling)
+Option C: Make it pluggable (Firecrawl as default, but swappable)
+
+Page type classification heuristics:
+- /pricing, /plans → 'pricing'
+- /features, /product → 'features'
+- /about, /company → 'about'
+- /docs, /help, /support → 'help'
+- / (root) → 'homepage'
+- /customers, /case-studies → 'customers'
+
+Content extraction should:
+- Remove navigation, headers, footers, scripts, styles
+- Preserve headings, paragraphs, lists
+- Truncate to reasonable size (100KB per page, matching current behavior)
+- Extract metadata (title, description, og:image)
+
+Use fixture-based tests: save real crawl results as JSON files in __fixtures__/.
+"""
+reference_files = [
+    "convex/crawledPages.ts",
+]
