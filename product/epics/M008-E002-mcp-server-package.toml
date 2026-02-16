@@ -4,7 +4,7 @@
 id = "M008-E002"
 parent = "M008"
 title = "MCP Server Package — Self-Hostable Server"
-status = "draft"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

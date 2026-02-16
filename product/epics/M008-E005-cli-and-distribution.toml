@@ -4,7 +4,7 @@
 id = "M008-E005"
 parent = "M008"
 title = "CLI & Distribution"
-status = "draft"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

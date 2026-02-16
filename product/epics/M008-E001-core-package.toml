@@ -5,7 +5,7 @@
 id = "M008-E001"
 parent = "M008"
 title = "Core Package — Schema, Validation, and Inference"
-status = "draft"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

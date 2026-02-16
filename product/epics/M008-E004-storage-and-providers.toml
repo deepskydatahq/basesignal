@@ -4,7 +4,7 @@
 id = "M008-E004"
 parent = "M008"
 title = "Storage & Provider Adapters"
-status = "draft"
+status = "complete"
 created = 2026-02-14
 
 [outcome]

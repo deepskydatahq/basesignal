@@ -5,7 +5,7 @@
 id = "M007-E003"
 parent = "M007"
 title = "Double Three-Layer Measurement Framework"
-status = "active"
+status = "complete"
 created = 2026-02-12
 
 [outcome]
