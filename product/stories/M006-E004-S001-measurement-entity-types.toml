@@ -4,7 +4,7 @@
 id = "M006-E004-S001"
 parent = "M006-E004"
 title = "Extend measurement spec types to include entity definitions"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

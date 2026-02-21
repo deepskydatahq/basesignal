@@ -4,7 +4,7 @@
 id = "M006-E003-S001"
 parent = "M006-E003"
 title = "Redesign ActivationMapSection with card-based grid layout"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

@@ -4,7 +4,7 @@
 id = "M006-E002-S002"
 parent = "M006-E002"
 title = "Add value-moment-tier weighting to ICP input aggregation"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

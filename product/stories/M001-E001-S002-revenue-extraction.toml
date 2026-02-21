@@ -4,7 +4,7 @@
 id = "M001-E001-S002"
 parent = "M001-E001"
 title = "Extract revenue architecture from pricing and feature pages"
-status = "in-progress"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

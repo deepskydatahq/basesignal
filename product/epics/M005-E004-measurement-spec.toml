@@ -4,7 +4,7 @@
 id = "M005-E004"
 parent = "M005"
 title = "Measurement Spec"
-status = "active"
+status = "complete"
 created = 2026-02-11
 
 [outcome]

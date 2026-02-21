@@ -3,7 +3,7 @@
 
 id = "M006"
 title = "Output Quality Refinement"
-status = "active"
+status = "complete"
 created = 2026-02-12
 depends_on = ["M004", "M005"]
 

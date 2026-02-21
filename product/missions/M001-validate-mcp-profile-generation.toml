@@ -3,7 +3,7 @@
 
 id = "M001"
 title = "Validate MCP-first product profile generation from website crawling"
-status = "active"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

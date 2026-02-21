@@ -4,7 +4,7 @@
 id = "M004-E002"
 parent = "M004"
 title = "ICP Profile Generation"
-status = "active"
+status = "complete"
 created = 2026-02-08
 
 [outcome]

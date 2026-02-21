@@ -4,7 +4,7 @@
 id = "M006-E001-S002"
 parent = "M006-E001"
 title = "Refine tier assignment to produce target distribution"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

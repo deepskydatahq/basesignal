@@ -5,7 +5,7 @@
 id = "M001-E001"
 parent = "M001"
 title = "Core Analysis Engine - LLM extraction into product profile"
-status = "active"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

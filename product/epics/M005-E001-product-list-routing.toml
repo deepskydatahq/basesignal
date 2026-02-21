@@ -4,7 +4,7 @@
 id = "M005-E001"
 parent = "M005"
 title = "Product List & Routing"
-status = "active"
+status = "complete"
 created = 2026-02-11
 
 [outcome]

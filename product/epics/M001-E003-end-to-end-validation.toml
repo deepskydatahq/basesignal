@@ -5,7 +5,7 @@
 id = "M001-E003"
 parent = "M001"
 title = "End-to-End Validation - prove the flow with a real product"
-status = "draft"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

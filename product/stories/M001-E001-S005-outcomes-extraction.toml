@@ -4,7 +4,7 @@
 id = "M001-E001-S005"
 parent = "M001-E001"
 title = "Extract product outcomes from hero messaging and value props"
-status = "in-progress"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

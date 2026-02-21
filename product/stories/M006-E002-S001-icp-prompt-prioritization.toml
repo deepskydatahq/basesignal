@@ -4,7 +4,7 @@
 id = "M006-E002-S001"
 parent = "M006-E002"
 title = "Improve ICP generation prompt to prioritize daily users over marketing personas"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

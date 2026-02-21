@@ -4,7 +4,7 @@
 id = "M005-E002-S002"
 parent = "M005-E002"
 title = "Build ValueMomentsSection component"
-status = "in-progress"
+status = "complete"
 created = 2026-02-11
 
 [outcome]

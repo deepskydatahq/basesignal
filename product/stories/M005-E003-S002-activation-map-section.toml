@@ -4,7 +4,7 @@
 id = "M005-E003-S002"
 parent = "M005-E003"
 title = "Build ActivationMapSection component"
-status = "in-progress"
+status = "complete"
 created = 2026-02-11
 
 [outcome]

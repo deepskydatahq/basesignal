@@ -4,7 +4,7 @@
 id = "M006-E003"
 parent = "M006"
 title = "Activation Map Layout"
-status = "active"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

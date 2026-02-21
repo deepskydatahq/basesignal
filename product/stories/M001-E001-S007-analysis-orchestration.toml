@@ -4,7 +4,7 @@
 id = "M001-E001-S007"
 parent = "M001-E001"
 title = "Orchestrate analysis pipeline triggered after scan completion"
-status = "in-progress"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

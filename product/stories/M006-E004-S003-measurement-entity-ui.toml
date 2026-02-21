@@ -4,7 +4,7 @@
 id = "M006-E004-S003"
 parent = "M006-E004"
 title = "Update MeasurementSpecSection UI to display entity-grouped events"
-status = "in-progress"
+status = "complete"
 created = 2026-02-12
 
 [outcome]

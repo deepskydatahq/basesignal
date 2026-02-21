@@ -4,7 +4,7 @@
 id = "M005-E001-S002"
 parent = "M005-E001"
 title = "Create ProductsListPage and wire routing"
-status = "in-progress"
+status = "complete"
 created = 2026-02-11
 
 [outcome]

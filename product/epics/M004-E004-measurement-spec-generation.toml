@@ -4,7 +4,7 @@
 id = "M004-E004"
 parent = "M004"
 title = "Measurement Spec Generation"
-status = "active"
+status = "complete"
 created = 2026-02-08
 
 [outcome]

@@ -4,7 +4,7 @@
 id = "M005-E004-S001"
 parent = "M005-E004"
 title = "Build MeasurementSpecSection component"
-status = "in-progress"
+status = "complete"
 created = 2026-02-11
 
 [outcome]

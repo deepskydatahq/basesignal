@@ -5,7 +5,7 @@
 id = "M001-E002"
 parent = "M001"
 title = "Profile MCP Tools - expose generated profiles via MCP"
-status = "draft"
+status = "complete"
 created = 2026-02-04
 
 [outcome]

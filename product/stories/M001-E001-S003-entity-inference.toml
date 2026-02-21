@@ -4,7 +4,7 @@
 id = "M001-E001-S003"
 parent = "M001-E001"
 title = "Infer entity model from features, pricing, and about pages"
-status = "in-progress"
+status = "complete"
 created = 2026-02-04
 
 [outcome]
