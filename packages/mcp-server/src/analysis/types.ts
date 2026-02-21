@@ -106,12 +106,27 @@ export interface ActivationLevelsResult {
   overallConfidence: number;
 }
 
+// Per-lens extraction result for intermediates
+export interface LensIntermediateResult {
+  lens: string;
+  candidates: LensCandidate[];
+}
+
+// Pipeline intermediates — all intermediate artifacts produced during analysis
+export interface PipelineIntermediates {
+  lens_results: LensIntermediateResult[];
+  validated_candidates: LensCandidate[];
+  clusters: ConvergenceResult["clusters"] | null;
+  quality_report: ConvergenceResult["quality"] | null;
+}
+
 // Pipeline result
 export interface PipelineResult {
   identity: IdentityResult | null;
   activation_levels: ActivationLevelsResult | null;
   lens_candidates: LensCandidate[];
   convergence: ConvergenceResult | null;
+  intermediates: PipelineIntermediates;
   outputs: {
     icp_profiles: ICPProfile[];
     activation_map: ActivationMap | null;

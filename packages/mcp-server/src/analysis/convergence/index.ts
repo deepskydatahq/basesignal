@@ -1,8 +1,12 @@
 // Convergence orchestration: validation -> clustering -> merge/tier -> quality.
 
-import type { LlmProvider, OnProgress } from "../types.js";
+import type { LlmProvider, OnProgress, LensCandidate } from "../types.js";
 import type { LensResult } from "../lenses/lens-types.js";
 import type { ConvergenceResult } from "@basesignal/core";
+
+export interface ConvergenceResultWithCandidates extends ConvergenceResult {
+  validated_candidates: LensCandidate[];
+}
 import { runValidationPipeline } from "./validate.js";
 import { clusterCandidatesLLM } from "./cluster.js";
 import { clusterCandidatesCore } from "@basesignal/core";
@@ -27,7 +31,7 @@ export async function runConvergence(
   llm: LlmProvider,
   knownFeatures?: Set<string>,
   progress?: OnProgress,
-): Promise<ConvergenceResult> {
+): Promise<ConvergenceResultWithCandidates> {
   const features = knownFeatures ?? new Set<string>();
 
   // 1. Validation
@@ -53,9 +57,10 @@ export async function runConvergence(
   progress?.({ phase: "convergence", status: "completed", detail: `${valueMoments.length} moments` });
 
   // 4. Build result with stats
-  const result: ConvergenceResult = {
+  const result: ConvergenceResultWithCandidates = {
     value_moments: valueMoments,
     clusters,
+    validated_candidates: active,
     stats: {
       total_candidates: active.length,
       total_clusters: clusters.length,

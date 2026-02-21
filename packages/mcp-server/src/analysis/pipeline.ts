@@ -1,7 +1,7 @@
 // Top-level analysis pipeline orchestrator.
 // Runs: identity + activation (parallel) -> lenses (batch1 -> batch2) -> convergence -> outputs.
 
-import type { PipelineInput, PipelineResult, PipelineError, LlmProvider, OnProgress } from "./types.js";
+import type { PipelineInput, PipelineResult, PipelineError, PipelineIntermediates, LlmProvider, OnProgress } from "./types.js";
 import { extractIdentity } from "./identity.js";
 import { extractActivationLevels } from "./activation-levels.js";
 import { runAllLenses } from "./lenses/index.js";
@@ -43,6 +43,7 @@ export async function runAnalysisPipeline(
       activation_levels: null,
       lens_candidates: [],
       convergence: null,
+      intermediates: { lens_results: [], validated_candidates: [], clusters: null, quality_report: null },
       outputs: { icp_profiles: [], activation_map: null, measurement_spec: null },
       errors: [{ phase: "input", step: "validate", message: "No pages provided" }],
       execution_time_ms: Date.now() - start,
@@ -97,11 +98,20 @@ export async function runAnalysisPipeline(
     outputs = await generateAllOutputs(convergence, activation_levels, identity, llm, progress, errors);
   }
 
+  // Build intermediates from all pipeline stages
+  const intermediates: PipelineIntermediates = {
+    lens_results: allLensResults.map((lr) => ({ lens: lr.lens, candidates: lr.candidates })),
+    validated_candidates: convergence?.validated_candidates ?? [],
+    clusters: convergence?.clusters ?? null,
+    quality_report: convergence?.quality ?? null,
+  };
+
   return {
     identity,
     activation_levels,
     lens_candidates: lensResult.allCandidates,
     convergence,
+    intermediates,
     outputs,
     errors,
     execution_time_ms: Date.now() - start,

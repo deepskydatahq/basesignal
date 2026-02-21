@@ -26,6 +26,17 @@ describe("runAnalysisPipeline", () => {
     expect(result.execution_time_ms).toBeGreaterThan(0);
     // Multiple LLM calls expected (identity, activation, 7 lenses, clustering, merge per cluster, ICP, activation map, measurement spec)
     expect(mockLlm.callCount).toBeGreaterThan(10);
+
+    // Intermediates should be populated
+    expect(result.intermediates).toBeDefined();
+    expect(result.intermediates.lens_results.length).toBeGreaterThan(0);
+    expect(result.intermediates.validated_candidates.length).toBeGreaterThan(0);
+    expect(result.intermediates.clusters).not.toBeNull();
+    // Each lens result should have a lens name and candidates
+    for (const lr of result.intermediates.lens_results) {
+      expect(lr.lens).toBeTruthy();
+      expect(Array.isArray(lr.candidates)).toBe(true);
+    }
   });
 
   it("returns empty result when no pages provided", async () => {
@@ -35,6 +46,9 @@ describe("runAnalysisPipeline", () => {
     expect(result.lens_candidates).toHaveLength(0);
     expect(result.identity).toBeNull();
     expect(result.convergence).toBeNull();
+    expect(result.intermediates.lens_results).toHaveLength(0);
+    expect(result.intermediates.validated_candidates).toHaveLength(0);
+    expect(result.intermediates.clusters).toBeNull();
   });
 
   it("reports progress for each phase", async () => {

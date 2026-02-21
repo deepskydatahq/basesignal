@@ -123,6 +123,54 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     progress.start("Saving", "to local storage");
     const profileId = await storage.save(profile as any);
     profile.id = profileId;
+
+    // Also persist structured artifacts via ProductDirectory
+    const { ProductDirectory, urlToSlug } = await import("@basesignal/storage");
+    const slug = urlToSlug(parsedUrl.href);
+    const productDir = new ProductDirectory({ root: config.storagePath + "/products" });
+
+    // Crawl artifacts
+    productDir.writeJson(slug, "crawl/pages.json", crawlResult.pages);
+    productDir.writeJson(slug, "crawl/metadata.json", {
+      url: parsedUrl.href,
+      timestamp: Date.now(),
+      pageCount: crawlResult.pages.length,
+    });
+
+    // Per-lens results
+    for (const lr of pipelineResult.intermediates.lens_results) {
+      const lensSlug = lr.lens.replace(/_/g, "-");
+      productDir.writeJson(slug, `lenses/${lensSlug}.json`, lr);
+    }
+
+    // Convergence artifacts
+    if (pipelineResult.intermediates.validated_candidates.length > 0) {
+      productDir.writeJson(slug, "convergence/validated-candidates.json", pipelineResult.intermediates.validated_candidates);
+    }
+    if (pipelineResult.intermediates.clusters) {
+      productDir.writeJson(slug, "convergence/clusters.json", pipelineResult.intermediates.clusters);
+    }
+    if (pipelineResult.convergence?.value_moments) {
+      productDir.writeJson(slug, "convergence/value-moments.json", pipelineResult.convergence.value_moments);
+    }
+    if (pipelineResult.intermediates.quality_report) {
+      productDir.writeJson(slug, "convergence/quality-report.json", pipelineResult.intermediates.quality_report);
+    }
+
+    // Output artifacts
+    if (pipelineResult.outputs.icp_profiles.length > 0) {
+      productDir.writeJson(slug, "outputs/icp-profiles.json", pipelineResult.outputs.icp_profiles);
+    }
+    if (pipelineResult.outputs.activation_map) {
+      productDir.writeJson(slug, "outputs/activation-map.json", pipelineResult.outputs.activation_map);
+    }
+    if (pipelineResult.outputs.measurement_spec) {
+      productDir.writeJson(slug, "outputs/measurement-spec.json", pipelineResult.outputs.measurement_spec);
+    }
+
+    // Combined profile
+    productDir.writeJson(slug, "profile.json", profile);
+
     progress.done("Saving", profileId);
 
     // 8. PHASE 4 -- OUTPUT

@@ -19,6 +19,7 @@ vi.mock("@basesignal/crawlers", () => {
 
 const mockSave = vi.fn().mockResolvedValue("test-profile-id");
 const mockClose = vi.fn();
+const mockWriteJson = vi.fn();
 vi.mock("@basesignal/storage", () => {
   return {
     FileStorage: class MockFileStorage {
@@ -28,6 +29,20 @@ vi.mock("@basesignal/storage", () => {
       delete = vi.fn();
       search = vi.fn();
       close = mockClose;
+    },
+    ProductDirectory: class MockProductDirectory {
+      writeJson = mockWriteJson;
+    },
+    urlToSlug: (url: string) => {
+      try {
+        const normalized = url.match(/^https?:\/\//i) ? url : `https://${url}`;
+        const parsed = new URL(normalized);
+        let hostname = parsed.hostname.toLowerCase();
+        if (hostname.startsWith("www.")) hostname = hostname.slice(4);
+        return hostname.replace(/\./g, "-");
+      } catch {
+        return "unknown";
+      }
     },
   };
 });
@@ -101,6 +116,14 @@ const pipelineResult = {
   activation_levels: null,
   lens_candidates: [],
   convergence: null,
+  intermediates: {
+    lens_results: [
+      { lens: "capability_mapping", candidates: [{ name: "test", description: "a test" }] },
+    ],
+    validated_candidates: [],
+    clusters: null,
+    quality_report: null,
+  },
   outputs: {
     icp_profiles: [],
     activation_map: null,
@@ -195,6 +218,7 @@ describe("runScan", () => {
     mockSave.mockResolvedValue("test-profile-id");
     mockClose.mockReset();
     mockWriteFileSync.mockReset();
+    mockWriteJson.mockReset();
 
     // Non-TTY for predictable output
     Object.defineProperty(process.stderr, "isTTY", {
@@ -314,6 +338,17 @@ describe("runScan", () => {
 
     const output = consoleLogSpy.mock.calls.map((c) => c[0]).join("\n");
     expect(() => JSON.parse(output)).not.toThrow();
+  });
+
+  it("persists artifacts via ProductDirectory", async () => {
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    // Should have written crawl, lens, and profile artifacts
+    const writeCalls = mockWriteJson.mock.calls.map((c: unknown[]) => c[1]);
+    expect(writeCalls).toContain("crawl/pages.json");
+    expect(writeCalls).toContain("crawl/metadata.json");
+    expect(writeCalls).toContain("lenses/capability-mapping.json");
+    expect(writeCalls).toContain("profile.json");
   });
 
   it("outputs markdown to stdout with --format markdown", async () => {
