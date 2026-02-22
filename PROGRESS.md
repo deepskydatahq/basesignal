@@ -12,6 +12,27 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E003-S001: Add Lifecycle States Progress Phase and OutputsResult Field
+
+**Files Changed:**
+- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` interfaces (cherry-picked from M010-E001-S001 dependency branch)
+- `packages/core/src/index.ts` - Exported `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` from barrel file
+- `packages/mcp-server/src/analysis/types.ts` - Imported and re-exported `LifecycleStatesResult` from `@basesignal/core`; added `"outputs_lifecycle_states"` to `ProgressPhase` union; added `lifecycle_states: LifecycleStatesResult | null` to `PipelineOutputs`
+- `packages/mcp-server/src/analysis/outputs/index.ts` - Imported `LifecycleStatesResult`; added `lifecycle_states: LifecycleStatesResult | null` to `OutputsResult`; initialized to `null` in `generateAllOutputs`
+- `packages/mcp-server/src/analysis/pipeline.ts` - Added `lifecycle_states: null` to both `PipelineOutputs` object literals (empty-pages early return and default outputs)
+
+**Learnings:**
+- Cherry-picking types from dependency branches is necessary when the dependency hasn't been merged yet — same pattern used in prior stories (M004, M003)
+- Pre-existing build errors in mcp-server (`@basesignal/crawlers`, `@basesignal/storage` missing type declarations) are unrelated to analysis pipeline work
+- Using `LifecycleStatesResult | null` (not `any`) follows the typed pattern of `measurement_spec` — the `any` on `activation_map` is acknowledged tech debt
+
+**Patterns Discovered:**
+- Pipeline extension pattern: adding a new output type requires touching 4 places: core types + export, analysis types.ts (import, re-export, ProgressPhase, PipelineOutputs), outputs/index.ts (import, OutputsResult, generateAllOutputs default), and pipeline.ts (default object literals)
+
+**Gotchas:**
+- `pipeline.ts` has two separate `PipelineOutputs` object literals (early return at line 47 and default at line 96) — both need the new field
+- Worktree needs `npm install` — node_modules not shared between worktrees
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**

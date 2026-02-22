@@ -1,6 +1,6 @@
 // Output generation orchestration: ICP profiles, activation map, measurement spec.
 
-import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec } from "../types.js";
+import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec, LifecycleStatesResult } from "../types.js";
 import { generateICPProfiles } from "./icp-profiles.js";
 import { generateActivationMap, type ActivationMapResult } from "./activation-map.js";
 import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
@@ -14,6 +14,7 @@ export interface OutputsResult {
   icp_profiles: ICPProfile[];
   activation_map: ActivationMapResult | null;
   measurement_spec: MeasurementSpec | null;
+  lifecycle_states: LifecycleStatesResult | null;
 }
 
 /**
@@ -31,6 +32,7 @@ export async function generateAllOutputs(
     icp_profiles: [],
     activation_map: null,
     measurement_spec: null,
+    lifecycle_states: null,
   };
 
   // 1. ICP profiles
