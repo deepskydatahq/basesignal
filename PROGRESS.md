@@ -12,6 +12,23 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E001-S002: Create Zod Validation Schemas for Lifecycle Types
+
+**Files Changed:**
+- `packages/core/src/schema/outputs.ts` - Added `StateCriterionSchema`, `LifecycleStateSchema`, `StateTransitionSchema`, `LifecycleStatesResultSchema` with inferred type exports after `// --- User State Model ---` section
+- `packages/core/src/schema/__tests__/outputs.test.ts` - Added 22 tests covering all 4 schemas: valid input acceptance, required field rejection, optional field handling, type validation
+
+**Learnings:**
+- Lifecycle schemas are parallel to (not derived from) UserState schemas — `StateCriterionSchema` adds optional `threshold` field that `UserStateCriterionSchema` doesn't have
+- Entry/exit asymmetry is deliberate: `entry_criteria` uses structured `StateCriterionSchema` objects while `exit_triggers` uses plain strings (narrative descriptions vs machine-checkable conditions)
+
+**Patterns Discovered:**
+- Schema placement convention: new domain sections go between related existing sections with `// --- Section Name ---` comment headers
+- Every schema in outputs.ts has a corresponding `z.infer` type export immediately after it
+
+**Gotchas:**
+- Story TOML originally said `exit_triggers (array of StateCriterion)` but design doc correctly specifies `z.array(z.string())` — always check design doc over story TOML for implementation details
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
