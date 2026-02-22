@@ -23,6 +23,7 @@ import type {
   MeasurementSpec,
   ActivationLevel,
   ValidatedCandidate,
+  LifecycleStatesResult,
 } from "@basesignal/core";
 
 // Re-export for convenience within the analysis package
@@ -39,6 +40,7 @@ export type {
   ActivationMap,
   MeasurementSpec,
   ActivationLevel,
+  LifecycleStatesResult,
 };
 
 // --- Pipeline-specific types ---
@@ -72,7 +74,8 @@ export type ProgressPhase =
   | "convergence"
   | "outputs_icp"
   | "outputs_activation_map"
-  | "outputs_measurement_spec";
+  | "outputs_measurement_spec"
+  | "outputs_lifecycle_states";
 
 export interface ProgressEvent {
   phase: ProgressPhase;
@@ -128,6 +131,7 @@ export interface PipelineOutputs {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activation_map: any;
   measurement_spec: MeasurementSpec | null;
+  lifecycle_states: LifecycleStatesResult | null;
 }
 
 // Pipeline result
