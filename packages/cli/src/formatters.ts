@@ -64,6 +64,18 @@ export function formatSummary(profile: ProductProfile): string {
     }
   }
 
+  // Lifecycle States
+  const lifecycleStates = profile.lifecycle_states as {
+    states?: Array<{ name: string; time_window: string }>;
+  } | undefined;
+  if (lifecycleStates?.states) {
+    lines.push("");
+    lines.push("Lifecycle States:");
+    for (const state of lifecycleStates.states) {
+      lines.push(`  ${state.name} (${state.time_window})`);
+    }
+  }
+
   // Metrics count
   const metrics = profile.metrics as {
     items?: Array<{ name: string }>;
@@ -162,6 +174,21 @@ export function formatMarkdown(profile: ProductProfile): string {
     for (const metric of metrics.items) {
       const formula = metric.formula ?? "-";
       lines.push(`| ${metric.name} | ${metric.category} | ${formula} |`);
+    }
+    lines.push("");
+  }
+
+  // Lifecycle States
+  const mdLifecycleStates = profile.lifecycle_states as {
+    states?: Array<{ name: string; definition: string; time_window: string }>;
+  } | undefined;
+  if (mdLifecycleStates?.states && mdLifecycleStates.states.length > 0) {
+    lines.push("## Lifecycle States");
+    lines.push("");
+    lines.push("| State | Definition | Time Window |");
+    lines.push("| --- | --- | --- |");
+    for (const state of mdLifecycleStates.states) {
+      lines.push(`| ${state.name} | ${state.definition} | ${state.time_window} |`);
     }
     lines.push("");
   }

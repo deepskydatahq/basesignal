@@ -1,19 +1,22 @@
-// Output generation orchestration: ICP profiles, activation map, measurement spec.
+// Output generation orchestration: ICP profiles, activation map, measurement spec, lifecycle states.
 
-import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec } from "../types.js";
+import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec, LifecycleStatesResult } from "../types.js";
 import { generateICPProfiles } from "./icp-profiles.js";
 import { generateActivationMap, type ActivationMapResult } from "./activation-map.js";
 import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
+import { generateLifecycleStates } from "./lifecycle-states.js";
 
 // Re-export
 export { generateICPProfiles } from "./icp-profiles.js";
 export { generateActivationMap } from "./activation-map.js";
 export { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
+export { generateLifecycleStates } from "./lifecycle-states.js";
 
 export interface OutputsResult {
   icp_profiles: ICPProfile[];
   activation_map: ActivationMapResult | null;
   measurement_spec: MeasurementSpec | null;
+  lifecycle_states: LifecycleStatesResult | null;
 }
 
 /**
@@ -31,6 +34,7 @@ export async function generateAllOutputs(
     icp_profiles: [],
     activation_map: null,
     measurement_spec: null,
+    lifecycle_states: null,
   };
 
   // 1. ICP profiles
@@ -79,6 +83,26 @@ export async function generateAllOutputs(
     } catch (e) {
       progress?.({ phase: "outputs_measurement_spec", status: "failed", detail: String(e) });
       errors?.push({ phase: "outputs", step: "measurement_spec", message: String(e) });
+    }
+  }
+
+  // 4. Lifecycle states (requires activation levels and activation map)
+  if (activationLevels && result.activation_map) {
+    progress?.({ phase: "outputs_lifecycle_states", status: "started" });
+    try {
+      result.lifecycle_states = await generateLifecycleStates(
+        {
+          identity,
+          value_moments: convergence.value_moments,
+          activation_levels: activationLevels,
+          activation_map: result.activation_map,
+        },
+        llm,
+      );
+      progress?.({ phase: "outputs_lifecycle_states", status: "completed" });
+    } catch (e) {
+      progress?.({ phase: "outputs_lifecycle_states", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "lifecycle_states", message: String(e) });
     }
   }
 

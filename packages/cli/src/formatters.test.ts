@@ -48,6 +48,22 @@ function fullProfile(): ProductProfile {
       ],
       confidence: 0.8,
     },
+    lifecycle_states: {
+      states: [
+        { name: "new", definition: "First visit", time_window: "0-7 days" },
+        { name: "activated", definition: "Completed onboarding", time_window: "7-14 days" },
+        { name: "engaged", definition: "Regular usage", time_window: "14-30 days" },
+        { name: "at_risk", definition: "Declining engagement", time_window: "7+ days inactive" },
+        { name: "dormant", definition: "Stopped engaging", time_window: "30+ days inactive" },
+        { name: "churned", definition: "Abandoned product", time_window: "60+ days inactive" },
+        { name: "resurrected", definition: "Returned after churn", time_window: "return after 30+ days" },
+      ],
+      transitions: [
+        { from_state: "new", to_state: "activated", trigger_conditions: ["creates first board"], typical_timeframe: "1-7 days" },
+      ],
+      confidence: 0.75,
+      sources: ["identity", "activation_levels"],
+    },
     metrics: {
       items: [
         { name: "Weekly Active Users", category: "engagement", formula: "count(distinct users active in 7d)" },
@@ -104,6 +120,20 @@ describe("formatSummary", () => {
     expect(output).toContain("Completeness: 82%");
   });
 
+  it("includes lifecycle states listing when present", () => {
+    const output = formatSummary(fullProfile());
+    expect(output).toContain("Lifecycle States:");
+    expect(output).toContain("new (0-7 days)");
+    expect(output).toContain("activated (7-14 days)");
+    expect(output).toContain("churned (60+ days inactive)");
+    expect(output).toContain("resurrected (return after 30+ days)");
+  });
+
+  it("omits lifecycle states when absent", () => {
+    const output = formatSummary(partialProfile());
+    expect(output).not.toContain("Lifecycle States:");
+  });
+
   it("handles partial profile (missing revenue, journey, metrics)", () => {
     const output = formatSummary(partialProfile());
     expect(output).toContain("Product: Acme");
@@ -136,6 +166,19 @@ describe("formatMarkdown", () => {
     expect(output).toContain("| Weekly Active Users | engagement |");
     expect(output).toContain("Profile ID: profile-123");
     expect(output).toContain("Completeness: 82%");
+  });
+
+  it("includes lifecycle states table when present", () => {
+    const output = formatMarkdown(fullProfile());
+    expect(output).toContain("## Lifecycle States");
+    expect(output).toContain("| State | Definition | Time Window |");
+    expect(output).toContain("| new | First visit | 0-7 days |");
+    expect(output).toContain("| churned | Abandoned product | 60+ days inactive |");
+  });
+
+  it("omits lifecycle states table when absent", () => {
+    const output = formatMarkdown(partialProfile());
+    expect(output).not.toContain("## Lifecycle States");
   });
 
   it("omits sections when data is missing", () => {
