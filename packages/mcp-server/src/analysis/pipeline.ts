@@ -44,7 +44,7 @@ export async function runAnalysisPipeline(
       lens_candidates: [],
       convergence: null,
       intermediates: { lens_results: [], validated_candidates: [], clusters: null, quality_report: null },
-      outputs: { icp_profiles: [], activation_map: null, lifecycle_states: null, measurement_spec: null },
+      outputs: { icp_profiles: [], activation_map: null, measurement_spec: null, lifecycle_states: null },
       errors: [{ phase: "input", step: "validate", message: "No pages provided" }],
       execution_time_ms: Date.now() - start,
     };
@@ -93,7 +93,7 @@ export async function runAnalysisPipeline(
   }
 
   // Phase 4: Output generation
-  let outputs: OutputsResult = { icp_profiles: [], activation_map: null, lifecycle_states: null, measurement_spec: null };
+  let outputs: OutputsResult = { icp_profiles: [], activation_map: null, measurement_spec: null, lifecycle_states: null };
   if (convergence) {
     outputs = await generateAllOutputs(convergence, activation_levels, identity, llm, progress, errors);
   }

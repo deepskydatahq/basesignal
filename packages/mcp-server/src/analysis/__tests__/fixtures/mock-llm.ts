@@ -2,7 +2,7 @@
 // Routes responses based on system prompt content.
 
 import type { LlmProvider, LlmMessage, LlmOptions } from "../../types.js";
-import { IDENTITY_RESPONSE, ACTIVATION_RESPONSE, lensResponse, CLUSTER_RESPONSE, MERGE_RESPONSE, ICP_RESPONSE, ACTIVATION_MAP_RESPONSE, MEASUREMENT_SPEC_RESPONSE, VALIDATION_REVIEW_RESPONSE } from "./responses.js";
+import { IDENTITY_RESPONSE, ACTIVATION_RESPONSE, lensResponse, CLUSTER_RESPONSE, MERGE_RESPONSE, ICP_RESPONSE, ACTIVATION_MAP_RESPONSE, MEASUREMENT_SPEC_RESPONSE, LIFECYCLE_STATES_RESPONSE, VALIDATION_REVIEW_RESPONSE } from "./responses.js";
 
 /** Canned responses keyed by a substring in the system prompt or user message */
 const FIXTURE_RESPONSES: Array<{ match: string; response: string }> = [
@@ -20,6 +20,7 @@ const FIXTURE_RESPONSES: Array<{ match: string; response: string }> = [
   { match: "Ideal Customer Profiles", response: ICP_RESPONSE },
   { match: "activation map", response: ACTIVATION_MAP_RESPONSE },
   { match: "measurement specification", response: MEASUREMENT_SPEC_RESPONSE },
+  { match: "lifecycle states", response: LIFECYCLE_STATES_RESPONSE },
   { match: "Review flagged", response: VALIDATION_REVIEW_RESPONSE },
 ];
 

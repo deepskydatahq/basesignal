@@ -100,42 +100,6 @@ export interface UserState {
 }
 
 // ---------------------------------------------------------------------------
-// Lifecycle States Types
-// ---------------------------------------------------------------------------
-
-/** A single criterion for entering or evaluating a lifecycle state. */
-export interface StateCriterion {
-  event_name: string;
-  condition: string;
-  threshold?: number;
-}
-
-/** A lifecycle state with structured entry criteria and exit triggers. */
-export interface LifecycleState {
-  name: string;
-  definition: string;
-  entry_criteria: StateCriterion[];
-  exit_triggers: string[];
-  time_window?: string;
-}
-
-/** A transition between two lifecycle states. */
-export interface StateTransition {
-  from_state: string;
-  to_state: string;
-  trigger_conditions: string[];
-  typical_timeframe?: string;
-}
-
-/** Complete lifecycle states result with states and transitions. */
-export interface LifecycleStatesResult {
-  states: LifecycleState[];
-  transitions: StateTransition[];
-  confidence: number;
-  sources: string[];
-}
-
-// ---------------------------------------------------------------------------
 // Measurement Spec Types
 // ---------------------------------------------------------------------------
 
@@ -195,31 +159,31 @@ export interface MeasurementSpec {
 // Lifecycle States Types
 // ---------------------------------------------------------------------------
 
-/** A single criterion for determining lifecycle state entry/exit. */
+/** A single criterion for entering or exiting a lifecycle state. */
 export interface StateCriterion {
   event_name: string;
   condition: string;
   threshold?: number;
 }
 
-/** A lifecycle state in the user lifecycle state machine. */
+/** A lifecycle state definition. */
 export interface LifecycleState {
   name: string;
   definition: string;
   entry_criteria: StateCriterion[];
   exit_triggers: StateCriterion[];
-  time_window?: string;
+  time_window: string;
 }
 
-/** Transition between two lifecycle states. */
+/** A transition between two lifecycle states. */
 export interface StateTransition {
   from_state: string;
   to_state: string;
   trigger_conditions: string[];
-  typical_timeframe?: string;
+  typical_timeframe: string;
 }
 
-/** Complete lifecycle states result from the generator. */
+/** Complete lifecycle states result from analysis. */
 export interface LifecycleStatesResult {
   states: LifecycleState[];
   transitions: StateTransition[];

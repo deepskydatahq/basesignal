@@ -1,186 +1,124 @@
 // Lifecycle States generation.
 
-import type { LlmProvider, ValueMoment, IdentityResult } from "../types.js";
-import type { ActivationLevel, LifecycleStatesResult } from "@basesignal/core";
+import type { LlmProvider, ValueMoment, IdentityResult, ActivationLevelsResult } from "../types.js";
+import type { LifecycleStatesResult } from "@basesignal/core";
 import type { ActivationMapResult } from "./activation-map.js";
 import { extractJson } from "@basesignal/core";
-import { LifecycleStatesResultSchema } from "@basesignal/core";
-
-// --- Input Type ---
 
 export interface LifecycleStatesInputData {
-  identity: IdentityResult;
+  identity: IdentityResult | null;
   value_moments: ValueMoment[];
-  activation_levels: ActivationLevel[];
+  activation_levels: ActivationLevelsResult;
   activation_map: ActivationMapResult;
 }
 
-// --- System Prompt ---
-
-export const LIFECYCLE_STATES_SYSTEM_PROMPT = `You are a product analyst generating a lifecycle state machine for a specific product. You must generate states that reflect THIS product's actual usage patterns, not generic SaaS templates.
-
-## Required States
-
-Generate exactly 7 states:
-
-1. **new** — Users who just signed up but haven't taken meaningful action
-2. **activated** — Users who reached the product's activation criteria (must align with the provided activation definition)
-3. **engaged** — Users who are regularly deriving value from the product
-4. **at_risk** — Users showing declining engagement patterns
-5. **dormant** — Users who have stopped engaging but haven't been gone long enough to be churned
-6. **churned** — Users who have been inactive beyond the product's natural usage cadence
-7. **resurrected** — Previously churned or dormant users who have returned
-
-## State Structure
-
-Each state must have:
-- **name**: one of the 7 required state names
-- **definition**: product-specific description of what this state means for THIS product
-- **entry_criteria**: array of measurable criteria using { event_name, condition, threshold? } format
-- **exit_triggers**: array of criteria that cause a user to leave this state
-- **time_window**: optional duration that contextualizes the state (e.g., "7 days", "30 days")
-
-## Transition Structure
-
-Each transition must have:
-- **from_state**: source state name
-- **to_state**: destination state name
-- **trigger_conditions**: array of human-readable conditions that cause the transition
-- **typical_timeframe**: optional expected duration for this transition
-
-## Rules
-
-1. Time windows MUST be calibrated to the product's natural usage cadence:
-   - Daily consumer apps: shorter windows (1-7 days)
-   - Weekly B2B tools: medium windows (7-30 days)
-   - Monthly/quarterly enterprise: longer windows (30-90 days)
-2. The "activated" state's entry_criteria MUST align with the activation map's primary activation level
-3. Entry criteria must use event_name + condition format that maps to trackable events
-4. Include both forward transitions (new → activated → engaged) and backward transitions (engaged → at_risk → dormant → churned)
-5. Include resurrection transitions (churned → resurrected, dormant → resurrected)
-6. The "resurrected" state needs product-specific re-engagement triggers, not generic "logged in" events
-7. Set confidence to a number between 0 and 1 based on data quality
-8. Set sources to describe what data informed the states
+export const LIFECYCLE_STATES_SYSTEM_PROMPT = `You are a product analytics specialist generating lifecycle states for a product. Define the canonical user lifecycle states that describe where users are in their journey from first visit through churning and potential resurrection.
 
 ## Output Format
-
-Return a single JSON object:
+Return a JSON object with this schema:
 {
   "states": [
     {
       "name": "new",
-      "definition": "...",
-      "entry_criteria": [{ "event_name": "user_signed_up", "condition": "account created" }],
-      "exit_triggers": [{ "event_name": "first_project_created", "condition": "completed onboarding" }],
-      "time_window": "7 days"
+      "definition": "What this state means",
+      "entry_criteria": [{ "event_name": "signup", "condition": "user signed up within last 7 days" }],
+      "exit_triggers": [{ "event_name": "first_action", "condition": "completes first meaningful action" }],
+      "time_window": "0-7 days"
     }
   ],
   "transitions": [
     {
       "from_state": "new",
       "to_state": "activated",
-      "trigger_conditions": ["User completes first project setup"],
-      "typical_timeframe": "1-3 days"
+      "trigger_conditions": ["completes onboarding", "creates first project"],
+      "typical_timeframe": "1-7 days"
     }
   ],
-  "confidence": 0.7,
-  "sources": ["activation_levels", "value_moments", "product_identity"]
+  "confidence": 0.75
 }
 
-## Important
+Rules:
+- Define 7 states: new, activated, engaged, at_risk, dormant, churned, resurrected
+- Each state must have entry_criteria, exit_triggers, and time_window
+- Define transitions between states with trigger conditions
+- Return ONLY valid JSON, no commentary
+- confidence must be between 0 and 1`;
 
-- Return ONLY valid JSON, no commentary before or after
-- All 7 states must be present
-- State names must exactly match the required names
-- Entry criteria and exit triggers must be product-specific and measurable`;
+export function buildLifecycleStatesPrompt(input: LifecycleStatesInputData): {
+  system: string;
+  user: string;
+} {
+  const sections: string[] = [];
 
-// --- Prompt Builder ---
-
-export function buildLifecycleStatesPrompt(
-  inputData: LifecycleStatesInputData,
-): string {
-  const { identity, value_moments, activation_levels, activation_map } =
-    inputData;
-  const parts: string[] = [];
-
-  // Product context for time window calibration
-  parts.push("## Product Context\n");
-  parts.push(`Product: ${identity.productName}`);
-  parts.push(`Description: ${identity.description}`);
-  parts.push(`Business Model: ${identity.businessModel}`);
-  parts.push(`Target Customer: ${identity.targetCustomer}`);
-  if (identity.industry) {
-    parts.push(`Industry: ${identity.industry}`);
+  if (input.identity) {
+    sections.push(`## Product: ${input.identity.productName}`);
+    sections.push(`Description: ${input.identity.description}`);
+    sections.push(`Target Customer: ${input.identity.targetCustomer}`);
   }
-  parts.push("");
 
-  // Activation levels
-  parts.push("## Activation Levels\n");
-  for (const level of activation_levels) {
-    parts.push(`### Level ${level.level}: ${level.name}`);
-    parts.push(`Signal Strength: ${level.signalStrength}`);
-    parts.push("Criteria:");
-    for (const c of level.criteria) {
-      const tw = c.timeWindow ? ` within ${c.timeWindow}` : "";
-      parts.push(`  - ${c.action} (count: ${c.count}${tw})`);
+  sections.push("\n## Activation Levels");
+  for (const level of input.activation_levels.levels) {
+    sections.push(`- Level ${level.level}: ${level.name} (${level.signalStrength})`);
+  }
+
+  if (input.activation_map?.stages) {
+    sections.push("\n## Activation Map Stages");
+    for (const stage of input.activation_map.stages) {
+      sections.push(`- ${stage.name}: ${stage.trigger_events.join(", ")}`);
     }
-    parts.push("");
   }
 
-  // Primary activation level from activation map
-  parts.push(
-    `## Primary Activation Level: ${activation_map.primary_activation_level}`,
-  );
-  parts.push(
-    "The 'activated' state must align with this activation level's criteria.\n",
-  );
-
-  // Value moments as evidence for engagement signals
-  parts.push("## Value Moments\n");
-  for (const vm of value_moments) {
-    parts.push(`### ${vm.name} (Tier ${vm.tier})`);
-    parts.push(`Description: ${vm.description}`);
-    parts.push(`Roles: ${vm.roles.join(", ")}`);
-    parts.push("");
+  if (input.value_moments.length > 0) {
+    sections.push("\n## Value Moments");
+    for (const vm of input.value_moments) {
+      sections.push(`- ${vm.name} (tier ${vm.tier}): ${vm.description}`);
+    }
   }
 
-  parts.push(
-    "Generate a lifecycle state machine with product-specific states, transitions, and time windows based on the above inputs.",
-  );
+  sections.push("\nGenerate lifecycle states for this product based on the above context.");
 
-  return parts.join("\n");
+  return {
+    system: LIFECYCLE_STATES_SYSTEM_PROMPT,
+    user: sections.join("\n"),
+  };
 }
 
-// --- Response Parser ---
+export function parseLifecycleStatesResponse(responseText: string): LifecycleStatesResult {
+  const parsed = extractJson(responseText) as Record<string, unknown>;
 
-export function parseLifecycleStatesResponse(
-  responseText: string,
-): LifecycleStatesResult {
-  const raw = extractJson(responseText);
-  return LifecycleStatesResultSchema.parse(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Expected JSON object with states and transitions");
+  }
+
+  if (!Array.isArray(parsed.states)) {
+    throw new Error("Missing required field: states (must be array)");
+  }
+  if (!Array.isArray(parsed.transitions)) {
+    throw new Error("Missing required field: transitions (must be array)");
+  }
+  if (typeof parsed.confidence !== "number") {
+    throw new Error("Missing required field: confidence (must be number)");
+  }
+
+  return {
+    states: parsed.states as LifecycleStatesResult["states"],
+    transitions: parsed.transitions as LifecycleStatesResult["transitions"],
+    confidence: parsed.confidence as number,
+    sources: (parsed.sources as string[]) ?? [],
+  };
 }
-
-// --- Generator ---
 
 export async function generateLifecycleStates(
-  inputData: LifecycleStatesInputData,
+  input: LifecycleStatesInputData,
   llm: LlmProvider,
 ): Promise<LifecycleStatesResult> {
-  const prompt = buildLifecycleStatesPrompt(inputData);
-
+  const { system, user } = buildLifecycleStatesPrompt(input);
   const responseText = await llm.complete(
     [
-      { role: "system", content: LIFECYCLE_STATES_SYSTEM_PROMPT },
-      { role: "user", content: prompt },
+      { role: "system", content: system },
+      { role: "user", content: user },
     ],
     { temperature: 0.2 },
   );
-
-  if (!responseText?.trim()) {
-    throw new Error(
-      "LLM returned empty response for lifecycle states generation",
-    );
-  }
-
   return parseLifecycleStatesResponse(responseText);
 }

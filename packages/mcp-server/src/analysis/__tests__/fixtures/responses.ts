@@ -306,6 +306,76 @@ export const MEASUREMENT_SPEC_RESPONSE = JSON.stringify({
   confidence: 0.7,
 });
 
+export const LIFECYCLE_STATES_RESPONSE = JSON.stringify({
+  states: [
+    {
+      name: "new",
+      definition: "Users who have signed up but not yet completed onboarding",
+      entry_criteria: [{ event_name: "user_signed_up", condition: "account created" }],
+      exit_triggers: [{ event_name: "board_created", condition: "creates first board" }],
+      time_window: "0-7 days",
+    },
+    {
+      name: "activated",
+      definition: "Users who have completed core onboarding actions",
+      entry_criteria: [{ event_name: "board_created", condition: "at least 1 board created" }, { event_name: "user_invited", condition: "at least 1 team member invited" }],
+      exit_triggers: [{ event_name: "issue_created", condition: "creates 5+ issues" }],
+      time_window: "7-14 days",
+    },
+    {
+      name: "engaged",
+      definition: "Users who regularly use the product and derive value",
+      entry_criteria: [{ event_name: "issue_created", condition: "5+ issues created in last 7 days" }],
+      exit_triggers: [{ event_name: "user_returned", condition: "no activity for 7+ days" }],
+      time_window: "14-30 days",
+    },
+    {
+      name: "at_risk",
+      definition: "Users showing declining engagement patterns",
+      entry_criteria: [{ event_name: "user_returned", condition: "days_since_last > 7" }],
+      exit_triggers: [{ event_name: "user_returned", condition: "days_since_last > 30" }],
+      time_window: "7+ days inactive",
+    },
+    {
+      name: "dormant",
+      definition: "Users who have stopped engaging with the product",
+      entry_criteria: [{ event_name: "user_returned", condition: "days_since_last > 30" }],
+      exit_triggers: [{ event_name: "user_returned", condition: "days_since_last > 60" }],
+      time_window: "30+ days inactive",
+    },
+    {
+      name: "churned",
+      definition: "Users who have abandoned the product entirely",
+      entry_criteria: [{ event_name: "user_returned", condition: "days_since_last > 60" }],
+      exit_triggers: [{ event_name: "user_returned", condition: "returns after 30+ days" }],
+      time_window: "60+ days inactive",
+    },
+    {
+      name: "resurrected",
+      definition: "Previously churned users who return to the product",
+      entry_criteria: [{ event_name: "user_returned", condition: "returns after 30+ days of inactivity" }],
+      exit_triggers: [{ event_name: "issue_created", condition: "resumes regular activity" }],
+      time_window: "return after 30+ days",
+    },
+  ],
+  transitions: [
+    {
+      from_state: "new",
+      to_state: "activated",
+      trigger_conditions: ["creates first board", "invites team member"],
+      typical_timeframe: "1-7 days",
+    },
+    {
+      from_state: "at_risk",
+      to_state: "dormant",
+      trigger_conditions: ["no activity for 30+ days"],
+      typical_timeframe: "3-4 weeks",
+    },
+  ],
+  confidence: 0.75,
+  sources: ["identity", "activation_levels", "activation_map", "value_moments"],
+});
+
 export const VALIDATION_REVIEW_RESPONSE = JSON.stringify([
   {
     id: "test-1",

@@ -12,25 +12,34 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E003-S003: Align Measurement Spec userStateModel with Lifecycle States
+### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
 **Files Changed:**
-- `packages/mcp-server/src/analysis/outputs/measurement-spec.ts` - Imported `LifecycleStatesResult` type; added optional `lifecycle_states` field to `MeasurementInputData`; softened Step 3 in `MEASUREMENT_SPEC_SYSTEM_PROMPT` (replaced "exactly 5 states" with flexible derivation from lifecycle states); added conditional lifecycle states section to `buildMeasurementSpecPrompt`; added optional 5th param `lifecycleStates` to `assembleMeasurementInput`
-- `packages/mcp-server/src/analysis/outputs/index.ts` - Pass `result.lifecycle_states ?? undefined` to `assembleMeasurementInput` in `generateAllOutputs`
-- `packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts` - Added 10 tests: assembleMeasurementInput lifecycle states inclusion (2), buildMeasurementSpecPrompt lifecycle states section (3), system prompt softening verification (4, previously 9 tests now 19)
+- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` types; added `lifecycle_states?` to `OutputGenerationResult`
+- `packages/core/src/index.ts` - Exported 4 new lifecycle state types
+- `packages/mcp-server/src/analysis/outputs/lifecycle-states.ts` - New: `generateLifecycleStates()` with prompt builder and response parser
+- `packages/mcp-server/src/analysis/types.ts` - Added `outputs_lifecycle_states` to `ProgressPhase`; added `lifecycle_states` to `PipelineOutputs`
+- `packages/mcp-server/src/analysis/outputs/index.ts` - Added `lifecycle_states` to `OutputsResult`; wired `generateLifecycleStates` into `generateAllOutputs` (step 4, after measurement spec)
+- `packages/mcp-server/src/analysis/pipeline.ts` - Added `lifecycle_states: null` to empty result defaults
+- `packages/mcp-server/src/analysis/__tests__/fixtures/responses.ts` - Added `LIFECYCLE_STATES_RESPONSE` (7 states, 2 transitions, confidence 0.75)
+- `packages/mcp-server/src/analysis/__tests__/fixtures/mock-llm.ts` - Added routing entry for "lifecycle states" prompt match
+- `packages/mcp-server/src/analysis/__tests__/pipeline.test.ts` - Added lifecycle_states assertions (non-null, 7+ states, canonical names, transitions, confidence, progress event, null on empty)
+- `packages/cli/src/formatters.ts` - Added lifecycle states to `formatSummary()` (multi-line listing) and `formatMarkdown()` (state table)
+- `packages/cli/src/formatters.test.ts` - Added lifecycle_states to fullProfile fixture; added 4 tests (summary present/absent, markdown present/absent)
+- `packages/cli/src/commands/scan.ts` - Attached `lifecycle_states` to profile object; persisted as `outputs/lifecycle-states.json`
 
 **Learnings:**
-- Softening the system prompt (making it flexible) is simpler and more effective than adding override instructions in the user prompt — eliminates conflicting instructions without making the prompt dynamic
-- The `parseMeasurementSpecResponse` function already handles arbitrary state names (no hardcoded validation), so no changes needed there
-- Cherry-picking from upstream dependency branches (M010-E001-S001 through M010-E003-S002) is essential when the types don't exist on main yet
+- Upstream M010-E001/E002/E003-S001-S002 stories hadn't been merged, requiring this story to implement the full lifecycle states infrastructure (types, generator, pipeline wiring) alongside the CLI display scope
+- The `ProductProfile` type in storage has `[key: string]: unknown` index signature, so `lifecycle_states` works as an additional field without type changes
+- Mock LLM routing uses substring matching — "lifecycle states" in the system prompt is sufficient for routing
 
 **Patterns Discovered:**
-- Conditional prompt section pattern: same approach as ICP profiles and activation map sections — check for data availability, format inline, push to sections array
-- Softened system prompt pattern: provide flexible instructions with a fallback default rather than prescriptive mandates — lets the user prompt context guide the LLM's behavior
+- Generator guard pattern in `generateAllOutputs`: `if (activationLevels && result.activation_map)` gates lifecycle states on having both activation levels AND a generated activation map
+- CLI formatter guard pattern: `if (lifecycleStates?.states)` with inline type cast matches existing journey/revenue pattern
+- Multi-line listing in summary format matches journey stages pattern — state names with time windows provide actionable context
 
 **Gotchas:**
-- `LifecycleStatesResult` type was not yet on main — needed to cherry-pick from `feat/m010-e003-s002-wire-lifecycle-states-generator-int` branch (8 files)
-- Worktree needs `npm install` — node_modules not shared between worktrees
+- The `lifecycle_states` response needs "lifecycle states" in the system prompt to match mock routing — the `LIFECYCLE_STATES_SYSTEM_PROMPT` constant includes this naturally
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
