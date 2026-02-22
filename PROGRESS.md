@@ -12,6 +12,23 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E001-S001: Define Lifecycle State TypeScript Types
+
+**Files Changed:**
+- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` interfaces in a new "Lifecycle States Types" section after User State Model
+
+**Learnings:**
+- Type-only changes are low-risk — build + existing test suite is sufficient validation
+- The existing `outputs.ts` has a clean section-based organization with `// ---` separators that makes placement intuitive
+
+**Patterns Discovered:**
+- Parallel domain concepts: `StateCriterion` (lifecycle) vs `UserStateCriterion` (measurement spec) — same shape idea but intentionally separate types for different analytical domains
+- `string[]` for narrative fields (`exit_triggers`, `trigger_conditions`) follows `ActivationStage.trigger_events` pattern — consistent across the codebase
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees (recurring)
+- 4 CLI test suites fail pre-existing due to package resolution (need full build of all packages first) — unrelated to type changes
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
