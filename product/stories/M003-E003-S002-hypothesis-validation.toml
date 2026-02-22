@@ -3,7 +3,7 @@
 
 id = "M003-E003-S002"
 parent = "M003-E003"
-title = "Run comparison and validate H6 hypothesis"
+title = "Run comparison and validate M003 outcome"
 status = "complete"
 created = 2026-02-07
 
@@ -11,7 +11,7 @@ created = 2026-02-07
 description = """
 Generated value moments for Linear are compared against the reference analysis.
 Each Tier 1 moment is rated for accuracy. If 70%+ are accurate or mostly accurate,
-H6 is validated and HYPOTHESES.md is updated.
+the mission outcome is validated.
 """
 
 [acceptance_criteria]
@@ -43,7 +43,7 @@ description = "docs/plans/M003-validation-results.md documents comparison findin
 
 [[acceptance_criteria.criteria]]
 test = "manual"
-description = "HYPOTHESES.md H6 status updated based on validation result"
+description = "Mission M003 status updated based on validation result"
 
 [[acceptance_criteria.criteria]]
 test = "manual"
@@ -51,7 +51,6 @@ description = "If invalidated: learnings documented with lens-specific refinemen
 
 [context]
 relevant_paths = [
-    "HYPOTHESES.md",
     "docs/plans/",
     "docs/reference/"
 ]
@@ -90,22 +89,19 @@ This is a manual validation story. Steps:
    - Which lenses contributed most to accurate moments
    - Which lenses underperformed (if any)
 
-6. Update HYPOTHESES.md:
+6. Update mission status:
    If validated (>= 70% accurate):
-   - Change H6 status to 🟢 Validated
+   - Mark M003 as complete
    - Add evidence with specific numbers
-   - Update outcome section
 
    If invalidated (< 70% accurate):
-   - Keep H6 status at 🔵 Testing
-   - Add evidence documenting what didn't work
-   - Document refinement plan in Next Steps
+   - Keep M003 as active
+   - Document what didn't work and refinement plan
 
 7. If validated, next mission is output layers:
    - M004: ICP Generation, Activation Maps, Measurement Specs
 """
 
 reference_files = [
-    "HYPOTHESES.md",
     "docs/reference/linear-value-moments.md"
 ]

@@ -48,7 +48,7 @@ dependencies = ["M001-E001", "M001-E002"]
 
 [notes]
 considerations = """
-This epic validates the mission hypothesis. It requires:
+This epic validates the mission outcome. It requires:
 
 1. Integration test: script or MCP session that runs the full pipeline
 2. AI judge: a prompt/action that evaluates profile accuracy against known facts
@@ -66,7 +66,7 @@ The AI judge is itself a Convex action or standalone script that:
 - Produces a structured evaluation with pass/fail per section
 
 Success threshold: if the judge confirms >= 70% of profile sections are
-substantially accurate for a well-known product, the mission hypothesis is validated.
+substantially accurate for a well-known product, the mission outcome is validated.
 """
 
 estimated_stories = 3

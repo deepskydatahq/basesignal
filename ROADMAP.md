@@ -16,7 +16,7 @@
 - CLI works end-to-end: `basesignal scan <url>` → structured growth profile on disk
 - MCP server works: connect from Claude Desktop for conversational access
 - 1,653 tests passing across all packages
-- 8 missions completed, all hypotheses for Phase 1 validated
+- 8 missions completed, all Phase 1 outcomes validated
 
 **The core bet (proven):**
 Point at a URL, get a structured growth profile in 60 seconds. The quality bar is "How did it know that?" — validated with M006/M007 output quality work. Value moments are experiential. Measurement specs follow the Double Three-Layer Framework. ICP profiles prioritize by product relevance, not marketing prominence.
@@ -207,22 +207,6 @@ These were open in the v2 roadmap. All answered through building:
 | LLM provider? | Pluggable — Anthropic, OpenAI, Ollama. Users bring their own key. |
 | Quality bar? | Experiential framing + Double Three-Layer Framework. Proven in M006/M007. |
 | Hosting? | Self-hosted. File storage default. SQLite optional. No hosted infrastructure required. |
-
----
-
-## Connection to Hypotheses
-
-See HYPOTHESES.md for the full catalog.
-
-**Validated (Phase 1):**
-- **H5:** Multi-level activation produces actionable understanding ✓
-- **H6:** 7-lens convergence matches human expert identification at 83.3% ✓
-
-**Testing (Phase 2):**
-- **H7:** Generated outputs are immediately actionable (3/5 users say "ready to use")
-- **H1:** Opinionated outputs are good enough without major edits
-
-**Next hypothesis:** *"Developers who run `basesignal scan` on their product will star the repo and scan a second product within a week."*
 
 ---
 

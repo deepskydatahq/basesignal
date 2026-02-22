@@ -109,6 +109,4 @@ Sources:
 - General product knowledge about Linear
 """
 
-reference_files = [
-    "HYPOTHESES.md"
-]
+reference_files = []

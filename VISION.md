@@ -331,12 +331,12 @@ The open source project builds the standard. The commercial layer builds on the 
 
 Eight missions completed. The analysis engine is validated end-to-end.
 
-### Validated Hypotheses
+### Validated Outcomes
 
-| Hypothesis | Result | Mission |
-|------------|--------|---------|
-| **H5: Multi-Level Activation** | 4 distinct levels with measurable criteria, aha-moment correctly identified | M002 |
-| **H6: 7-Lens Value Discovery** | 83.3% accuracy on Tier 1 moments (threshold: 70%) | M003 |
+| Mission | What It Proved |
+|---------|---------------|
+| **M002: Multi-Level Activation** | 4 distinct levels with measurable criteria, aha-moment correctly identified |
+| **M003: 7-Lens Value Discovery** | 83.3% accuracy on Tier 1 moments (threshold: 70%) |
 
 ### Production-Quality Outputs (M006 + M007)
 

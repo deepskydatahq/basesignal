@@ -11,7 +11,7 @@ created = 2026-02-07
 description = """
 The generated value moments for Linear are compared against known aha-moments
 and product understanding, with each Tier 1 moment rated for accuracy.
-Hypothesis H6 is validated or invalidated based on the comparison.
+The mission outcome is validated or invalidated based on the comparison.
 """
 
 job_story = """
@@ -27,12 +27,11 @@ criteria = [
     "Each Tier 1 generated moment is rated: accurate / mostly accurate / inaccurate",
     "70%+ of Tier 1 moments rated accurate or mostly accurate",
     "Tier 1 moments are recognizable as 'obviously important' for Linear",
-    "HYPOTHESES.md H6 status updated based on results",
+    "Mission M003 status updated based on results",
     "Learnings documented: which lenses worked, which need refinement"
 ]
 
 validator_context = [
-    "HYPOTHESES.md",
     "docs/plans/",
     "convex/analysis/"
 ]
@@ -55,18 +54,18 @@ Linear's known value moments (for reference comparison):
 - Integration with dev tools (GitHub, Slack)
 - Cross-team coordination (later activation level)
 
-Success criteria from H6:
+Success criteria from M003:
 - 70%+ of Tier 1 moments rated accurate or mostly accurate
 - Moments are recognizable to someone who knows Linear
 
 If validated:
-- Update H6 to 🟢 Validated
+- Mark M003 as complete
 - Proceed to output layers (ICPs, activation maps, measurement specs)
 
 If invalidated:
 - Document which lenses underperformed
 - Identify refinement opportunities
-- Update H6 with learnings
+- Keep M003 active with learnings
 """
 
 estimated_stories = 2

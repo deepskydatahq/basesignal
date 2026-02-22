@@ -51,13 +51,13 @@ Evaluate through these frameworks:
 - What does the user want to feel when using this?
 - What friction exists between intent and outcome?
 
-### 4. Update Hypotheses
+### 4. Update Mission Status
 
-Read HYPOTHESES.md and update:
-- Which hypothesis did this work test?
-- Status change: 🟢 Validated / 🔴 Invalidated / 🟡 Inconclusive
-- Add evidence with date
-- Note any new hypotheses generated
+Check the relevant mission TOML in `product/missions/`:
+- Did this work validate the mission's testing criteria?
+- Update status if appropriate (active → complete)
+- Add evidence/notes with date
+- Note any new missions or roadmap updates needed
 
 ### 5. Generate Next Iterations
 
@@ -102,11 +102,11 @@ Present findings as:
 ### Simplicity Check
 [What's essential? What could be removed?]
 
-### Hypothesis Update
-- Tested: [H#]
-- Status: [Validated/Invalidated/Inconclusive]
+### Mission Update
+- Mission: [M###]
+- Status: [Complete/Active/Needs refinement]
 - Evidence: [What we learned]
-- New hypotheses: [If any]
+- Follow-up: [New missions or roadmap changes needed]
 
 ### Recommended Next Iterations
 
@@ -123,7 +123,7 @@ Present findings as:
 
 ## After Running This Command
 
-1. HYPOTHESES.md should be updated with learnings
+1. Relevant mission TOML should be updated with learnings
 2. If major insight, consider running `/product-roadmap` to review investment areas
 3. Created tasks enter the dev workflow: `/brainstorm` → `/plan-issue` → `/pick-issue`
 
@@ -134,7 +134,7 @@ Present findings as:
     ↓
 /retro → technical follow-ups → HTE tasks
     ↓
-/product-iteration → product insights → HYPOTHESES.md + optional tasks
+/product-iteration → product insights → mission updates + optional tasks
     ↓
-/product-hypotheses select → next bet → brainstorm task
+/brainstorm-epics → next mission → brainstorm task
 ```

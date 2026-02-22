@@ -11,7 +11,7 @@ description = """
 A user inputs a website URL (e.g., miro.com) via MCP, the system crawls relevant pages,
 and an LLM generates a complete product profile with confidence scores and evidence.
 An AI judge evaluates the result and confirms whether it accurately captures the product.
-This validates the core hypothesis that the MCP-first model can automate product profiling.
+This validates that the MCP-first model can automate product profiling.
 """
 
 user_progress = "From 'manually researching and filling in product profiles' to 'getting an accurate, evidence-backed profile generated automatically from a URL'"

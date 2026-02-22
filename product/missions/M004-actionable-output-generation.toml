@@ -36,7 +36,7 @@ validator_context = [
 related_docs = [
     "VISION.md",
     "ROADMAP.md",
-    "HYPOTHESES.md"
+    "HOW_WE_WORK.md"
 ]
 relevant_paths = [
     "convex/analysis/",

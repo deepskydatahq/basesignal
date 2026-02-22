@@ -7,7 +7,6 @@ title = "Open Source Foundation"
 status = "complete"
 completed = 2026-02-16
 created = 2026-02-14
-hypothesis = "H8"
 depends_on = ["M001"]
 
 [outcome]
@@ -49,7 +48,6 @@ validator_context = [
 related_docs = [
     "VISION.md",
     "ROADMAP.md",
-    "HYPOTHESES.md",
 ]
 relevant_paths = [
     "packages/",

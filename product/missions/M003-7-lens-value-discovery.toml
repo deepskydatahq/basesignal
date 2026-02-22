@@ -28,14 +28,12 @@ criteria = [
 validator_context = [
     "convex/analysis/",
     "docs/plans/",
-    "HYPOTHESES.md"
 ]
 
 [context]
 related_docs = [
     "VISION.md",
     "ROADMAP.md",
-    "HYPOTHESES.md"
 ]
 relevant_paths = [
     "convex/analysis/",
@@ -44,7 +42,7 @@ relevant_paths = [
 
 [notes]
 considerations = """
-This is a focused validation mission - test the core hypothesis before building
+This is a focused validation mission - test the core premise before building
 all output layers. Uses Linear as reference case since we have existing profile data.
 
 The 7 lenses from the brief:

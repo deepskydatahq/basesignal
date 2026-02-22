@@ -191,16 +191,16 @@ The `/product-story-handoff` command registers dependencies when creating tasks 
 
 ## Product Thinking
 
-Strategic product commands that sit above the development workflow, using a structured hierarchy of TOML files.
+The full development workflow (vision → roadmap → missions → epics → stories → tasks → implementation) is documented in [HOW_WE_WORK.md](./HOW_WE_WORK.md). That document is the primary reference for how ideas become shipped features.
+
+### Quick Reference
 
 ```
 VISION.md              ← "What transformation?" (rarely)
     ↓
 ROADMAP.md             ← "Where investing?" (periodic)
     ↓
-HYPOTHESES.md          ← "What bets?" (living)
-    ↓
-product/missions/      ← /product-epic creates mission TOML (per hypothesis)
+product/missions/      ← Outcome-oriented work packages
     ↓
 product/epics/         ← /product-mission-breakdown creates epic TOMLs
     ↓
@@ -209,8 +209,6 @@ product/stories/       ← /product-epic-breakdown creates story TOMLs
 Beads tasks            ← /product-story-handoff creates bd tasks
     ↓
 Task Pipeline → /retro → /product-judgment validates up the hierarchy
-    ↓
-product iteration      ← "What did we learn?"
 ```
 
 ### Product Commands
@@ -219,22 +217,21 @@ product iteration      ← "What did we learn?"
 |---------|----------|---------|
 | `/product-vision` | VISION.md | Rarely (pivots only) |
 | `/product-roadmap` | ROADMAP.md | Periodic (monthly/quarterly) |
-| `/product-hypotheses` | HYPOTHESES.md | Constantly (living) |
-| `/product-epic` | Creates mission TOML + breakdowns | Per hypothesis |
+| `/brainstorm-epics` | Mission candidates | From roadmap focus areas |
 | `/product-mission-breakdown` | Creates epic TOMLs from mission | Per mission |
 | `/product-epic-breakdown` | Creates story TOMLs from epic | Per epic |
 | `/product-story-handoff` | Creates Beads tasks from stories | When stories are ready |
 | `/product-judgment` | Validates completion up hierarchy | After implementation |
-| `/product-iteration` | Updates HYPOTHESES.md | After features |
+| `/product-iteration` | Updates roadmap with learnings | After features |
 
 ### The Flow
 
-1. **Starting:** `/product-vision` → `/product-roadmap` → `/product-hypotheses`
-2. **Planning:** `/product-epic` → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
+1. **Direction:** `/product-vision` → `/product-roadmap`
+2. **Planning:** `/brainstorm-epics` → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
 3. **Handoff:** `/product-story-handoff` → Beads tasks with `brainstorm` label
 4. **Implementation:** Task pipeline (brainstorm → plan → ready → implement → close)
 5. **Validation:** `/product-judgment` → validates story → epic → mission
-6. **Learning:** `/product-iteration` → update hypotheses → next cycle
+6. **Learning:** `/product-iteration` → update roadmap → next cycle
 
 ---
 
