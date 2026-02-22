@@ -1,0 +1,146 @@
+# Mission: Remove Legacy Dependencies
+# Delete Convex, Clerk, and the legacy web app from the codebase
+
+id = "M009"
+title = "Remove Legacy Dependencies"
+status = "draft"
+created = 2026-02-22
+depends_on = ["M008"]
+
+[outcome]
+description = """
+The codebase contains only the open source packages (packages/*), documentation,
+and project configuration. All Convex backend code (convex/), React frontend (src/),
+legacy MCP server (server/), and dev scripts (scripts/) are deleted. The root
+package.json contains only workspace config and shared dev tooling. npm test passes
+with all packages/ tests green. The repository is a clean monorepo of @basesignal
+packages with no dead code from the pre-open-source era.
+"""
+
+user_progress = "From 'monorepo with 62K lines of dead Convex/React/Clerk code' to 'clean open source monorepo with only packages/ and docs'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "convex/ directory does not exist",
+    "src/ directory does not exist",
+    "server/ directory does not exist",
+    "scripts/ directory does not exist",
+    "No file in the repository imports from 'convex/' or '@clerk/'",
+    "Root package.json has no convex, @clerk, react, vite, or tailwind dependencies",
+    "Root package.json workspaces config still points to packages/*",
+    "npm install succeeds without errors",
+    "npm test passes — all packages/ tests green",
+    "Web app config files are gone: vite.config.ts, tailwind.config.js, postcss.config.js, components.json, index.html, playwright.config.ts",
+    "tsconfig.json does not reference convex/ or src/ subprojects",
+    ".env.local has no CONVEX_ or CLERK_ variables",
+]
+
+validator_context = [
+    "packages/",
+    "package.json",
+    "tsconfig.json",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "ROADMAP.md",
+]
+relevant_paths = [
+    "convex/",
+    "src/",
+    "server/",
+    "scripts/",
+    "package.json",
+    "tsconfig.json",
+    "vite.config.ts",
+    "tailwind.config.js",
+    "postcss.config.js",
+    "components.json",
+    "index.html",
+    "tsconfig.app.json",
+    "playwright.config.ts",
+    ".env.local",
+]
+
+[scope]
+in_scope = [
+    "Delete convex/ directory (132 files, ~36K lines — backend functions, schema, analysis pipeline, tests)",
+    "Delete src/ directory (207 files, ~25.6K lines — React frontend, components, routes, hooks)",
+    "Delete server/ directory (15 files, ~735 lines — legacy Express MCP server with Clerk OAuth)",
+    "Delete scripts/ directory (~4 files, ~300 lines — dev utilities with Convex/Clerk clients)",
+    "Delete web app config: vite.config.ts, tailwind.config.js, postcss.config.js, components.json, index.html, tsconfig.app.json, playwright.config.ts",
+    "Clean root package.json: remove convex, @clerk, react, vite, tailwind, and all other web app dependencies",
+    "Clean root tsconfig.json: remove references to convex/ and src/ subprojects",
+    "Clean .env files: remove CONVEX_ and CLERK_ variables",
+    "Update vitest.config.ts if it references convex/ or src/ test paths",
+    "Update eslint.config.js if it references deleted paths",
+]
+out_of_scope = [
+    "Rebuilding any web UI or dashboard",
+    "Replacing MCP server authentication (packages/mcp-server has its own approach)",
+    "Any changes to packages/ source code (they are already independent)",
+    "Removing historical docs/plans/ that reference convex (they are records of past work)",
+]
+acceptable_breakage = [
+    "Web app no longer works — there is no web app after this mission",
+    "npx convex dev no longer works — Convex is removed",
+    "Legacy MCP server (server/) no longer works — replaced by packages/mcp-server",
+    "Dev scripts (scripts/) no longer work — they depended on Convex/Clerk clients",
+]
+
+[notes]
+considerations = """
+Codebase exploration findings (2026-02-22):
+
+**packages/ is fully independent:**
+- Zero convex/clerk imports across all 5 packages
+- Enforced by no-forbidden-imports.test.ts (51 test cases)
+- Workspace config (packages/*) unaffected by deletions
+- All analysis pipeline code was already extracted from convex/ to packages/mcp-server/
+
+**Blast radius by area:**
+- convex/: 132 files, ~36K lines (backend functions, schema, analysis pipeline, tests)
+- src/: 207 files, ~25.6K lines (React frontend)
+- server/: 15 files, ~735 lines (legacy MCP server)
+- scripts/: ~4 files, ~300 lines (dev utilities)
+- Total removal: ~354 files, ~62.6K lines
+
+**Root package.json dependencies to remove:**
+- convex, convex-test (backend)
+- @clerk/backend, @clerk/clerk-react, @clerk/mcp-tools (auth)
+- react, react-dom, react-router (frontend)
+- vite, @vitejs/plugin-react (build)
+- tailwindcss, postcss, autoprefixer (styling)
+- @tanstack/react-query, @radix-ui/*, class-variance-authority, etc. (UI libs)
+- Keep: workspace config, vitest (shared), typescript, eslint
+
+**Root config files to delete:**
+- vite.config.ts (Vite build config)
+- tailwind.config.js, postcss.config.js (CSS tooling)
+- components.json (shadcn/ui config)
+- index.html (SPA entry point)
+- tsconfig.app.json (frontend TS config)
+- playwright.config.ts (E2E test config)
+
+**Root config files to update (not delete):**
+- package.json (remove deps, keep workspaces)
+- tsconfig.json (remove convex/app references)
+- vitest.config.ts (may reference convex test paths)
+- eslint.config.js (may reference deleted paths)
+- .env.local (remove CONVEX_/CLERK_ vars)
+
+**Sequencing for epic breakdown:**
+1. Delete directories first (convex/, src/, server/, scripts/)
+2. Clean root config files
+3. Clean root package.json
+4. Run npm install to regenerate lock file
+5. Run npm test to verify packages/ still pass
+6. Commit as single atomic change
+
+**Risk mitigation:**
+- packages/ independence verified by automated tests
+- Git history preserves all deleted code
+- Single atomic commit means easy revert if something breaks
+"""
