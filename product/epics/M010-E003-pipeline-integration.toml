@@ -1,0 +1,95 @@
+# Epic: Pipeline Integration and Measurement Spec Alignment
+# Wire lifecycle states into the scan pipeline and align the measurement spec's
+# userStateModel with the new lifecycle states output.
+
+id = "M010-E003"
+parent = "M010"
+title = "Pipeline Integration and Measurement Spec Alignment"
+status = "draft"
+created = 2026-02-22
+
+[outcome]
+description = """
+Running `basesignal scan <url>` generates lifecycle states as part of the standard
+output. The pipeline calls the lifecycle states generator after the activation map
+(which it depends on) and before or alongside the measurement spec. The measurement
+spec's userStateModel is derived from or references the lifecycle states output,
+ensuring consistency. Progress reporting includes the lifecycle states phase.
+"""
+
+job_story = """
+When I run basesignal scan on a URL,
+I want the output to include lifecycle state definitions automatically,
+so that the scan delivers complete post-activation intelligence without extra steps.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Pipeline Phase 4 includes lifecycle states generation",
+    "Lifecycle states generator runs after activation map (it depends on activation map output)",
+    "ProgressPhase union type includes a lifecycle states phase",
+    "Progress callbacks fire for lifecycle states generation (consistent with other outputs)",
+    "OutputsResult type includes lifecycle_states field",
+    "generateAllOutputs() in outputs/index.ts calls the lifecycle states generator",
+    "Measurement spec userStateModel is derived from lifecycle states when available",
+    "Scan output JSON includes lifecycle_states section",
+    "CLI displays lifecycle states in scan results",
+    "Full pipeline test passes end-to-end",
+    "Existing tests continue to pass — no regressions to ICP profiles, activation map, or measurement spec",
+    "Miro or similar test case produces recognizable lifecycle states",
+]
+
+validator_context = [
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/cli/src/",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+dependencies = ["M010-E001", "M010-E002"]
+
+[notes]
+considerations = """
+Pipeline sequencing:
+Currently Phase 4 runs outputs sequentially: ICP profiles → activation map → measurement spec.
+Lifecycle states needs activation map output as input, so it must run after activation map.
+Options:
+A) Sequential: ICP → activation map → lifecycle states → measurement spec
+B) Parallel where possible: ICP (parallel) activation map → lifecycle states (parallel) measurement spec
+
+Option A is simpler and fine for now. The LLM calls dominate runtime, and lifecycle states
+adds one more call. Can parallelize later if needed.
+
+Measurement spec alignment:
+The measurement spec currently generates its own 5-state userStateModel from scratch via
+LLM prompt. With lifecycle states as a separate, richer output:
+- Pass lifecycle states into the measurement spec generator as input
+- The measurement spec prompt can say "use these lifecycle states" instead of inventing them
+- userStateModel becomes a projection: name + definition + criteria from lifecycle states
+- This ensures states in the measurement spec match the lifecycle output exactly
+
+Progress reporting:
+Add 'generating-lifecycle-states' to ProgressPhase union in types.ts.
+The pipeline emits this before calling the generator.
+
+CLI integration:
+The scan command displays results. Add a lifecycle states section to the output display.
+Keep it concise — state names, definitions, and time windows. Full detail in JSON.
+
+Test strategy:
+- Unit test: lifecycle states appears in pipeline output
+- Integration test: full scan produces valid lifecycle states
+- Regression: existing outputs unchanged
+"""
+
+estimated_stories = 4

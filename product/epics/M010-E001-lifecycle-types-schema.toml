@@ -1,0 +1,74 @@
+# Epic: Lifecycle States Types and Schema
+# Define the LifecycleStatesResult type system and Zod validation schemas in @basesignal/core.
+
+id = "M010-E001"
+parent = "M010"
+title = "Lifecycle States Types and Schema"
+status = "draft"
+created = 2026-02-22
+
+[outcome]
+description = """
+@basesignal/core exports LifecycleStatesResult and all supporting types (LifecycleState,
+StateTransition, StateCriterion) with Zod validation schemas. The types define a complete
+lifecycle state machine with entry criteria, exit triggers, time windows, and transition
+paths. Types are exported from the package and available for import by mcp-server and cli.
+"""
+
+job_story = """
+When I'm building the lifecycle states generator,
+I want well-defined types and validation schemas for lifecycle state output,
+so that the generator output is type-safe and validated at runtime.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "LifecycleStatesResult type is exported from @basesignal/core",
+    "LifecycleState type includes: name, definition, entry_criteria, exit_triggers, time_window",
+    "StateTransition type includes: from_state, to_state, trigger_conditions, typical_timeframe",
+    "StateCriterion type includes: event_name, condition, threshold (optional)",
+    "Zod schemas exist for all lifecycle types in packages/core/src/schema/outputs.ts",
+    "Types support at minimum 7 states: new, activated, engaged, at_risk, dormant, churned, resurrected",
+    "LifecycleStatesResult includes confidence and sources fields (consistent with other outputs)",
+    "OutputsResult type in core is updated to include lifecycle_states field",
+    "npm run build in packages/core succeeds",
+    "Existing tests continue to pass",
+]
+
+validator_context = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/index.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/schema/definitions.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Existing related types to align with:
+- ActivationMapResult (types/outputs.ts lines 36-62) — sister output, similar structure
+- UserState in MeasurementSpec (types/outputs.ts) — the basic 5-state model this supersedes
+- DefinitionsMap in profile.ts — has placeholder lifecycle fields (firstValue, active, atRisk, churn)
+- ActivationLevel from types/activation.ts — the activation funnel this extends post-activation
+
+Design decisions:
+- Each state needs measurable criteria (event_name + condition), not just prose descriptions
+- Time windows should be expressed as ranges (e.g. "7-14 days") not absolutes
+- Transition paths should support both forward (engaged→at_risk) and backward (churned→resurrected)
+- Keep the type flexible enough for different product categories (B2C daily vs B2B monthly)
+
+The DefinitionsMap fields (active, atRisk, churn) in profile.ts are string-based and live
+at the profile level. The new LifecycleStatesResult is a richer, structured output that
+lives alongside ICP profiles and activation map. Don't modify DefinitionsMap yet — that
+alignment can happen in a future mission.
+"""
+
+estimated_stories = 3

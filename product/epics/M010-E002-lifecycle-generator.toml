@@ -1,0 +1,84 @@
+# Epic: Lifecycle States Generator
+# Build the output generator that produces product-specific lifecycle state definitions
+# from scan data, following the same pattern as icp-profiles.ts and activation-map.ts.
+
+id = "M010-E002"
+parent = "M010"
+title = "Lifecycle States Generator"
+status = "draft"
+created = 2026-02-22
+
+[outcome]
+description = """
+A lifecycle-states.ts output generator exists in packages/mcp-server/src/analysis/outputs/
+that takes value moments, activation levels, activation map, and product identity as input,
+and produces a LifecycleStatesResult with product-specific states, transitions, and time
+windows. The generator follows the established pattern: system prompt, prompt builder,
+response parser, and async generator function.
+"""
+
+job_story = """
+When the analysis pipeline completes convergence and activation map generation,
+I want a lifecycle states generator that produces a complete state machine,
+so that the scan output includes post-activation intelligence (engagement, churn, resurrection).
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts exists",
+    "Generator function signature: generateLifecycleStates(inputData, llm) => Promise<LifecycleStatesResult>",
+    "System prompt instructs the LLM to produce product-specific states, not generic SaaS templates",
+    "Prompt includes product identity (category, business model) to calibrate time windows",
+    "Prompt includes value moments and activation levels as evidence for state definitions",
+    "All 7 states are generated: new, activated, engaged, at_risk, dormant, churned, resurrected",
+    "Each state has measurable entry_criteria and exit_triggers referencing product events",
+    "Time windows are calibrated to product type (daily consumer app vs monthly B2B tool)",
+    "Transitions between states have explicit trigger conditions",
+    "The activated state aligns with the activation map's primary activation level",
+    "Response parser validates output against Zod schema from E001",
+    "Generator handles LLM errors gracefully (consistent with other generators)",
+    "Tests verify generator produces valid LifecycleStatesResult for a mock input",
+]
+
+validator_context = [
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/core/src/types/outputs.ts",
+]
+dependencies = ["M010-E001"]
+
+[notes]
+considerations = """
+Pattern to follow (from existing generators):
+1. SYSTEM_PROMPT constant — role and rules for the LLM
+2. buildPrompt(inputData) — constructs the user prompt with evidence
+3. parseResponse(text) — extracts JSON, validates with Zod, returns typed result
+4. generateLifecycleStates(inputData, llm) — orchestrates prompt→call→parse
+
+Input data the generator needs:
+- CoreIdentity (product category, business model, pricing — from extraction)
+- ValueMoment[] (what users experience — from convergence)
+- ActivationLevel[] (the activation funnel — from extraction)
+- ActivationMapResult (stages and transitions — from activation map output)
+
+Key prompt engineering considerations:
+- The LLM must understand product TYPE to set appropriate time windows
+  (a social media app's "at_risk" is 3 days; an enterprise tool's is 30 days)
+- States should reference specific value moments as engagement signals
+- The "activated" state must match the activation map's definition — not reinvent it
+- "Resurrected" is the hardest state — needs product-specific re-engagement triggers
+- Criteria should use event_name + condition format so they map to measurement spec events
+
+Existing generators are 250-400 lines. Expect lifecycle-states.ts to be ~300 lines.
+"""
+
+estimated_stories = 4
