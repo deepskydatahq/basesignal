@@ -12,6 +12,26 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E003-S002: Wire Lifecycle States Generator into Pipeline
+
+**Files Changed:**
+- `packages/mcp-server/src/analysis/outputs/index.ts` - Added import/re-export of `generateLifecycleStates`; added `lifecycle_states: LifecycleStatesResult | null` to `OutputsResult`; inserted step 3 (lifecycle states) between activation map and measurement spec with guard `if (activationLevels && result.activation_map && identity)`; renumbered measurement spec to step 4
+- `packages/mcp-server/src/analysis/pipeline.ts` - Added `lifecycle_states: null` to both default `OutputsResult` initializations (empty pages early return and pre-outputs default)
+- `packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts` - New: 8 tests for lifecycle states wiring (success, 3 skip conditions, progress callbacks, error handling, input verification)
+- Cherry-picked prerequisites: core types, Zod schemas, generator function, generator tests, and progress phase from M010-E001/E002/E003-S001 branches
+
+**Learnings:**
+- The lifecycle states generator requires `IdentityResult` (non-optional), but the orchestrator receives `IdentityResult | null` — adding `identity` to the guard condition narrows the type safely without unsafe casts
+- Sequential mock LLM pattern (tracking call index to return different responses per generator) is effective for testing orchestration functions that call multiple generators in sequence
+
+**Patterns Discovered:**
+- Guard condition pattern for pipeline steps: `if (prerequisiteData && result.previous_step_output && additionalDep)` — guards both data dependencies and type narrowing in one condition
+- Orchestration test pattern: `createSequentialMockLlm(responses[])` returns responses by call index, enabling tests of multi-step pipelines with a single mock
+
+**Gotchas:**
+- Cherry-picking from dependency branches is necessary when prerequisite stories haven't merged to main yet — files from E001 (types), E002 (generator), and E003-S001 (progress phase) all needed to be brought in
+- The `PipelineOutputs` type in `types.ts` (from S001 branch) requires `lifecycle_states`, so `pipeline.ts` defaults must be updated in both the early return and the pre-outputs initialization
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
