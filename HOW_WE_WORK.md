@@ -11,7 +11,7 @@ For technical conventions, code patterns, and testing requirements, see [CLAUDE.
 ```
 VISION.md           "What transformation are we enabling?"
     ↓
-ROADMAP.md          "Where are we investing?"
+VALUES.md           "What value do we deliver?"
     ↓
 product/missions/   "What do we need to prove?"
     ↓
@@ -38,13 +38,13 @@ The north star. What transformation does Basesignal enable? Updates rarely — o
 - **Updates:** Rarely (pivots only)
 - **Question:** "What transformation are we enabling?"
 
-### Roadmap (ROADMAP.md)
+### Value Ladder (VALUES.md)
 
-Where we're investing time and effort. Focus areas, sequencing, and success signals.
+The ordered progression of value basesignal delivers. 15 levels from URL scan to growth operations, each independently valuable.
 
-- **Command:** `/product-roadmap`
-- **Updates:** Periodic (monthly/quarterly)
-- **Question:** "Where are we investing?"
+- **Command:** `/product-values`
+- **Updates:** When missions complete or level statuses change
+- **Question:** "What value do we deliver?"
 
 ### Missions (product/missions/*.toml)
 
@@ -148,12 +148,12 @@ Each level checks its acceptance criteria / testing criteria against what was ac
 
 ## The Full Flow
 
-1. **Direction:** `/product-vision` → `/product-roadmap`
+1. **Direction:** `/product-vision` → `/product-values`
 2. **Planning:** `/plan-mission` (or `/brainstorm-epics`) → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
 3. **Handoff:** `/product-story-handoff` → Beads tasks with `brainstorm` label
 4. **Implementation:** brainstorm → plan → ready → implement → close
 5. **Validation:** `/product-judgment` → validates story → epic → mission
-6. **Learning:** `/product-iteration` → update roadmap → next cycle
+6. **Learning:** `/product-iteration` → update value ladder → next cycle
 
 ---
 
@@ -164,14 +164,14 @@ Each level checks its acceptance criteria / testing criteria against what was ac
 | Command | Creates | From |
 |---------|---------|------|
 | `/product-vision` | VISION.md | Strategy discussion |
-| `/product-roadmap` | ROADMAP.md | Vision + learnings |
+| `/product-values` | VALUES.md | Vision + learnings |
 | `/plan-mission` | Mission TOML (with codebase exploration) | User's mission idea |
-| `/brainstorm-epics` | Mission candidates | Roadmap focus areas |
+| `/brainstorm-epics` | Mission candidates | Value levels + ideas |
 | `/product-mission-breakdown` | Epic TOMLs | Mission TOML |
 | `/product-epic-breakdown` | Story TOMLs | Epic TOML |
 | `/product-story-handoff` | Beads tasks | Story TOMLs |
 | `/product-judgment` | Validation result | Completed work |
-| `/product-iteration` | Updated roadmap | Completed features |
+| `/product-iteration` | Updated value ladder | Completed features |
 
 ### Task Pipeline
 
@@ -191,7 +191,7 @@ Each level checks its acceptance criteria / testing criteria against what was ac
 | File | Purpose |
 |------|---------|
 | `VISION.md` | North star transformation |
-| `ROADMAP.md` | Investment areas and sequencing |
+| `VALUES.md` | Value ladder — ordered progression of 15 levels |
 | `CLAUDE.md` | Technical conventions, code patterns, testing rules |
 | `HOW_WE_WORK.md` | This document — the development workflow |
 | `CONTRIBUTING.md` | Guide for external contributors |

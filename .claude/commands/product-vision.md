@@ -98,6 +98,6 @@ If updating frequently, the vision isn't a vision—it's tactics.
 
 ## Connection to Other Documents
 
-- **Roadmap** should trace back to vision (every investment area serves the transformation)
+- **Value ladder** should trace back to vision (every level serves the transformation)
 - **Hypotheses** should test beliefs about how to deliver the transformation
 - **Features** should be evaluated against "does this serve the transformation?"

@@ -124,7 +124,7 @@ Present findings as:
 ## After Running This Command
 
 1. Relevant mission TOML should be updated with learnings
-2. If major insight, consider running `/product-roadmap` to review investment areas
+2. If major insight, consider running `/product-values` to review value ladder updates needed
 3. Created tasks enter the dev workflow: `/brainstorm` → `/plan-issue` → `/pick-issue`
 
 ## Connection to Dev Workflow

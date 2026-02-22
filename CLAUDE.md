@@ -129,7 +129,7 @@ bd status
 |---------|-------------|
 | `/new-feature` | Brainstorm idea → design doc → Beads task |
 | `/plan-mission` | Plan a mission with codebase exploration and scope mapping |
-| `/brainstorm-epics` | Generate mission candidates from vision + roadmap |
+| `/brainstorm-epics` | Generate mission candidates from vision + value ladder |
 | `/brainstorm` | Interactive brainstorm for `brainstorm` queue |
 | `/brainstorm-auto` | Autonomous brainstorm with expert personas (from `.claude/experts/`) |
 | `/plan-issue` | Process `plan` queue |
@@ -186,14 +186,14 @@ The `/product-story-handoff` command registers dependencies when creating tasks 
 
 ## Product Thinking
 
-The full development workflow (vision → roadmap → missions → epics → stories → tasks → implementation) is documented in [HOW_WE_WORK.md](./HOW_WE_WORK.md). That document is the primary reference for how ideas become shipped features.
+The full development workflow (vision → value ladder → missions → epics → stories → tasks → implementation) is documented in [HOW_WE_WORK.md](./HOW_WE_WORK.md). That document is the primary reference for how ideas become shipped features.
 
 ### Quick Reference
 
 ```
 VISION.md              ← "What transformation?" (rarely)
     ↓
-ROADMAP.md             ← "Where investing?" (periodic)
+VALUES.md              ← "What value?" (when levels change)
     ↓
 product/missions/      ← Outcome-oriented work packages
     ↓
@@ -211,22 +211,22 @@ Task Pipeline → /retro → /product-judgment validates up the hierarchy
 | Command | Artifact | Updates |
 |---------|----------|---------|
 | `/product-vision` | VISION.md | Rarely (pivots only) |
-| `/product-roadmap` | ROADMAP.md | Periodic (monthly/quarterly) |
-| `/brainstorm-epics` | Mission candidates | From roadmap focus areas |
+| `/product-values` | VALUES.md | When levels change |
+| `/brainstorm-epics` | Mission candidates | From value levels + ideas |
 | `/product-mission-breakdown` | Creates epic TOMLs from mission | Per mission |
 | `/product-epic-breakdown` | Creates story TOMLs from epic | Per epic |
 | `/product-story-handoff` | Creates Beads tasks from stories | When stories are ready |
 | `/product-judgment` | Validates completion up hierarchy | After implementation |
-| `/product-iteration` | Updates roadmap with learnings | After features |
+| `/product-iteration` | Updates value ladder with learnings | After features |
 
 ### The Flow
 
-1. **Direction:** `/product-vision` → `/product-roadmap`
+1. **Direction:** `/product-vision` → `/product-values`
 2. **Planning:** `/brainstorm-epics` → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
 3. **Handoff:** `/product-story-handoff` → Beads tasks with `brainstorm` label
 4. **Implementation:** Task pipeline (brainstorm → plan → ready → implement → close)
 5. **Validation:** `/product-judgment` → validates story → epic → mission
-6. **Learning:** `/product-iteration` → update roadmap → next cycle
+6. **Learning:** `/product-iteration` → update value ladder → next cycle
 
 ---
 

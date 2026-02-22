@@ -140,7 +140,7 @@ validator_context = [
 [context]
 related_docs = [
     "VISION.md",
-    "ROADMAP.md",
+    "VALUES.md",
 ]
 relevant_paths = [
     {list of directories/files affected, from Phase 2 exploration}

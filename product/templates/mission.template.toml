@@ -36,8 +36,9 @@ validator_context = [
 [context]
 related_docs = [
     "VISION.md",
-    "ROADMAP.md"
+    "VALUES.md"
 ]
+value_levels = []  # e.g. ["L05", "L06"] — which value levels this mission advances
 relevant_paths = [
     "src/relevant/area/"
 ]
