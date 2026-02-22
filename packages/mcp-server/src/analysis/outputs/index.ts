@@ -99,6 +99,7 @@ export async function generateAllOutputs(
         activationLevels.levels,
         result.icp_profiles,
         result.activation_map,
+        result.lifecycle_states ?? undefined,
       );
       result.measurement_spec = await generateMeasurementSpec(inputData, llm);
       progress?.({ phase: "outputs_measurement_spec", status: "completed" });
