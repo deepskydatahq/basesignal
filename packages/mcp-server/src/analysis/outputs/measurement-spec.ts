@@ -1,6 +1,6 @@
 // Measurement Spec generation.
 
-import type { LlmProvider, ValueMoment, ICPProfile } from "../types.js";
+import type { LlmProvider, ValueMoment, ICPProfile, LifecycleStatesResult } from "../types.js";
 import type { ActivationLevel, MeasurementSpec } from "@basesignal/core";
 import type { ActivationMapResult } from "./activation-map.js";
 import { extractJson } from "@basesignal/core";
@@ -14,6 +14,7 @@ export interface MeasurementInputData {
   activation_map: ActivationMapResult | null;
   activation_event_templates: ActivationEventTemplate[];
   value_event_templates: ValueEventTemplate[];
+  lifecycle_states?: LifecycleStatesResult;
 }
 
 interface ActivationEventTemplate {
@@ -93,17 +94,13 @@ Generate 15-25 events that cover:
 - Expansion signals (team growth, feature adoption)
 
 ## Step 3: User State Model
-Define a user state model with exactly 5 states representing the user lifecycle:
-- new: Users who just signed up
-- activated: Users who reached activation criteria
-- active: Users who are regularly engaged
-- at_risk: Users showing declining engagement
-- dormant: Users who have stopped engaging
-
-Each state has:
-- name: one of "new", "activated", "active", "at_risk", "dormant"
+Define a user state model representing the user lifecycle. Each state has:
+- name: state identifier
 - definition: human-readable description of what this state means
 - criteria: array of { event_name, condition } pairs that define transitions into this state
+
+If lifecycle states are provided in the context below, derive your user state model from them.
+Otherwise, define 5 representative states: new, activated, active, at_risk, dormant.
 
 ## Output Format
 Return a JSON object matching this exact schema:
@@ -225,6 +222,20 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
     }
   }
 
+  // Lifecycle States (when available from pipeline)
+  if (input.lifecycle_states) {
+    sections.push("\n## Lifecycle States (use for userStateModel)");
+    for (const state of input.lifecycle_states.states) {
+      const criteria = state.entry_criteria
+        .map((c) => `${c.event_name}: ${c.condition}`)
+        .join("; ");
+      sections.push(
+        `- **${state.name}**: ${state.definition}` +
+          `\n  Entry criteria: ${criteria}`,
+      );
+    }
+  }
+
   sections.push(
     "\nGenerate a measurement specification with trackable events based on the above inputs.",
   );
@@ -342,6 +353,7 @@ export function assembleMeasurementInput(
   activationLevels: ActivationLevel[],
   icpProfiles: ICPProfile[],
   activationMap: ActivationMapResult | null,
+  lifecycleStates?: LifecycleStatesResult,
 ): MeasurementInputData {
   // Build activation event templates from activation level criteria
   const activationEventTemplates: ActivationEventTemplate[] = activationLevels.map((level) => ({
@@ -373,6 +385,7 @@ export function assembleMeasurementInput(
     activation_map: activationMap,
     activation_event_templates: activationEventTemplates,
     value_event_templates: valueEventTemplates,
+    lifecycle_states: lifecycleStates,
   };
 }
 
