@@ -10,6 +10,17 @@ export interface AnthropicProviderConfig {
   defaultTemperature?: number;
 }
 
+// Map short aliases to full Anthropic model IDs
+const MODEL_ALIASES: Record<string, string> = {
+  haiku: "claude-haiku-4-5-20251001",
+  sonnet: "claude-sonnet-4-20250514",
+  opus: "claude-opus-4-20250514",
+};
+
+function resolveModel(model: string): string {
+  return MODEL_ALIASES[model] ?? model;
+}
+
 export class AnthropicProvider implements LlmProvider {
   private client: Anthropic;
   private defaults: Required<Omit<AnthropicProviderConfig, "apiKey">>;
@@ -23,7 +34,7 @@ export class AnthropicProvider implements LlmProvider {
     }
     this.client = new Anthropic({ apiKey });
     this.defaults = {
-      defaultModel: config.defaultModel ?? "claude-sonnet-4-20250514",
+      defaultModel: resolveModel(config.defaultModel ?? "claude-sonnet-4-20250514"),
       defaultMaxTokens: config.defaultMaxTokens ?? 4096,
       defaultTemperature: config.defaultTemperature ?? 0.2,
     };
@@ -36,7 +47,7 @@ export class AnthropicProvider implements LlmProvider {
     const system = systemMessages.map((m) => m.content).join("\n\n") || undefined;
 
     const response = await this.client.messages.create({
-      model: options?.model ?? this.defaults.defaultModel,
+      model: resolveModel(options?.model ?? this.defaults.defaultModel),
       max_tokens: options?.maxTokens ?? this.defaults.defaultMaxTokens,
       temperature: options?.temperature ?? this.defaults.defaultTemperature,
       ...(system ? { system } : {}),

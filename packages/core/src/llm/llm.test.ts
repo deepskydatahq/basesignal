@@ -54,6 +54,16 @@ describe("extractJson", () => {
     expect(result).toEqual([1, 2, 3]);
   });
 
+  it("extracts from truncated fence (no closing ```)", () => {
+    const result = extractJson('```json\n{"truncated": true}\n');
+    expect(result).toEqual({ truncated: true });
+  });
+
+  it("extracts JSON after prose text", () => {
+    const result = extractJson('Here is the result:\n{"k": "v"}');
+    expect(result).toEqual({ k: "v" });
+  });
+
   it("throws on invalid JSON", () => {
     expect(() => extractJson("not json")).toThrow(SyntaxError);
   });

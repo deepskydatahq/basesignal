@@ -401,7 +401,7 @@ export async function generateMeasurementSpec(
       { role: "system", content: system },
       { role: "user", content: user },
     ],
-    { temperature: 0.2 },
+    { temperature: 0.2, maxTokens: 16384 },
   );
   return parseMeasurementSpecResponse(responseText);
 }
