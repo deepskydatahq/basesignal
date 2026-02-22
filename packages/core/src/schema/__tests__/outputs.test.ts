@@ -9,6 +9,10 @@ import {
   ValueMomentPrioritySchema,
   TrackingEventSchema,
   PerspectiveSchema,
+  StateCriterionSchema,
+  LifecycleStateSchema,
+  StateTransitionSchema,
+  LifecycleStatesResultSchema,
 } from "../outputs";
 
 const validICPProfile = {
@@ -182,6 +186,185 @@ describe("ValueMomentPrioritySchema", () => {
     expect(
       ValueMomentPrioritySchema.safeParse({ moment_id: "vm-1", priority: 4, relevance_reason: "R" })
         .success,
+    ).toBe(false);
+  });
+});
+
+// --- Lifecycle States ---
+
+const validStateCriterion = {
+  event_name: "login",
+  condition: "count >= 3",
+};
+
+const validLifecycleState = {
+  name: "activated",
+  definition: "User has completed onboarding and performed core action",
+  entry_criteria: [validStateCriterion],
+  exit_triggers: ["no activity for 14 days"],
+};
+
+const validStateTransition = {
+  from_state: "new",
+  to_state: "activated",
+  trigger_conditions: ["completed onboarding"],
+};
+
+const validLifecycleStatesResult = {
+  states: [validLifecycleState],
+  transitions: [validStateTransition],
+  confidence: 0.85,
+  sources: ["analysis"],
+};
+
+describe("StateCriterionSchema", () => {
+  it("accepts valid criterion", () => {
+    expect(StateCriterionSchema.safeParse(validStateCriterion).success).toBe(true);
+  });
+
+  it("accepts optional threshold", () => {
+    expect(
+      StateCriterionSchema.safeParse({ ...validStateCriterion, threshold: 5 }).success,
+    ).toBe(true);
+  });
+
+  it("accepts absent threshold", () => {
+    expect(StateCriterionSchema.safeParse(validStateCriterion).success).toBe(true);
+  });
+
+  it("rejects empty event_name", () => {
+    expect(
+      StateCriterionSchema.safeParse({ ...validStateCriterion, event_name: "" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects empty condition", () => {
+    expect(
+      StateCriterionSchema.safeParse({ ...validStateCriterion, condition: "" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing event_name", () => {
+    const { event_name, ...rest } = validStateCriterion;
+    expect(StateCriterionSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects missing condition", () => {
+    const { condition, ...rest } = validStateCriterion;
+    expect(StateCriterionSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects non-number threshold", () => {
+    expect(
+      StateCriterionSchema.safeParse({ ...validStateCriterion, threshold: "high" }).success,
+    ).toBe(false);
+  });
+});
+
+describe("LifecycleStateSchema", () => {
+  it("accepts valid state", () => {
+    expect(LifecycleStateSchema.safeParse(validLifecycleState).success).toBe(true);
+  });
+
+  it("accepts optional time_window", () => {
+    expect(
+      LifecycleStateSchema.safeParse({ ...validLifecycleState, time_window: "7 days" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects empty name", () => {
+    expect(
+      LifecycleStateSchema.safeParse({ ...validLifecycleState, name: "" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects empty definition", () => {
+    expect(
+      LifecycleStateSchema.safeParse({ ...validLifecycleState, definition: "" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing entry_criteria", () => {
+    const { entry_criteria, ...rest } = validLifecycleState;
+    expect(LifecycleStateSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects missing exit_triggers", () => {
+    const { exit_triggers, ...rest } = validLifecycleState;
+    expect(LifecycleStateSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects invalid entry_criteria item", () => {
+    expect(
+      LifecycleStateSchema.safeParse({
+        ...validLifecycleState,
+        entry_criteria: [{ event_name: "" }],
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("StateTransitionSchema", () => {
+  it("accepts valid transition", () => {
+    expect(StateTransitionSchema.safeParse(validStateTransition).success).toBe(true);
+  });
+
+  it("accepts optional typical_timeframe", () => {
+    expect(
+      StateTransitionSchema.safeParse({ ...validStateTransition, typical_timeframe: "2-5 days" })
+        .success,
+    ).toBe(true);
+  });
+
+  it("rejects empty from_state", () => {
+    expect(
+      StateTransitionSchema.safeParse({ ...validStateTransition, from_state: "" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects empty to_state", () => {
+    expect(
+      StateTransitionSchema.safeParse({ ...validStateTransition, to_state: "" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing trigger_conditions", () => {
+    const { trigger_conditions, ...rest } = validStateTransition;
+    expect(StateTransitionSchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("LifecycleStatesResultSchema", () => {
+  it("accepts valid result", () => {
+    expect(LifecycleStatesResultSchema.safeParse(validLifecycleStatesResult).success).toBe(true);
+  });
+
+  it("rejects missing states", () => {
+    const { states, ...rest } = validLifecycleStatesResult;
+    expect(LifecycleStatesResultSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects missing transitions", () => {
+    const { transitions, ...rest } = validLifecycleStatesResult;
+    expect(LifecycleStatesResultSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects missing confidence", () => {
+    const { confidence, ...rest } = validLifecycleStatesResult;
+    expect(LifecycleStatesResultSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects missing sources", () => {
+    const { sources, ...rest } = validLifecycleStatesResult;
+    expect(LifecycleStatesResultSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("rejects non-number confidence", () => {
+    expect(
+      LifecycleStatesResultSchema.safeParse({
+        ...validLifecycleStatesResult,
+        confidence: "high",
+      }).success,
     ).toBe(false);
   });
 });

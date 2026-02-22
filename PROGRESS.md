@@ -12,22 +12,22 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E001-S001: Define Lifecycle State TypeScript Types
+### 2026-02-22 - Story M010-E001-S002: Create Zod Validation Schemas for Lifecycle Types
 
 **Files Changed:**
-- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` interfaces in a new "Lifecycle States Types" section after User State Model
+- `packages/core/src/schema/outputs.ts` - Added `StateCriterionSchema`, `LifecycleStateSchema`, `StateTransitionSchema`, `LifecycleStatesResultSchema` with inferred type exports after `// --- User State Model ---` section
+- `packages/core/src/schema/__tests__/outputs.test.ts` - Added 22 tests covering all 4 schemas: valid input acceptance, required field rejection, optional field handling, type validation
 
 **Learnings:**
-- Type-only changes are low-risk — build + existing test suite is sufficient validation
-- The existing `outputs.ts` has a clean section-based organization with `// ---` separators that makes placement intuitive
+- Lifecycle schemas are parallel to (not derived from) UserState schemas — `StateCriterionSchema` adds optional `threshold` field that `UserStateCriterionSchema` doesn't have
+- Entry/exit asymmetry is deliberate: `entry_criteria` uses structured `StateCriterionSchema` objects while `exit_triggers` uses plain strings (narrative descriptions vs machine-checkable conditions)
 
 **Patterns Discovered:**
-- Parallel domain concepts: `StateCriterion` (lifecycle) vs `UserStateCriterion` (measurement spec) — same shape idea but intentionally separate types for different analytical domains
-- `string[]` for narrative fields (`exit_triggers`, `trigger_conditions`) follows `ActivationStage.trigger_events` pattern — consistent across the codebase
+- Schema placement convention: new domain sections go between related existing sections with `// --- Section Name ---` comment headers
+- Every schema in outputs.ts has a corresponding `z.infer` type export immediately after it
 
 **Gotchas:**
-- Worktree needs `npm install` — node_modules not shared between worktrees (recurring)
-- 4 CLI test suites fail pre-existing due to package resolution (need full build of all packages first) — unrelated to type changes
+- Story TOML originally said `exit_triggers (array of StateCriterion)` but design doc correctly specifies `z.array(z.string())` — always check design doc over story TOML for implementation details
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
