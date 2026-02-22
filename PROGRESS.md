@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E002-S004: Tests for Lifecycle States Generator
+
+**Files Changed:**
+- `packages/mcp-server/src/analysis/__tests__/outputs/lifecycle-states.test.ts` - New: 5 tests across 3 describe blocks covering buildLifecycleStatesPrompt (2 tests), parseLifecycleStatesResponse (2 tests), and generateLifecycleStates (1 test with combined assertions)
+
+**Learnings:**
+- Test-first stories write tests against a module that doesn't exist yet — the test file fails with "Cannot find module" which is expected until S001-S003 implement the source
+- The `as LlmProvider` cast works for inline mock LLMs even though the mcp-server's LlmProvider interface is empty — the core package defines the `complete` method, and the cast satisfies TypeScript
+- Existing sibling test files (activation-map, measurement-spec, icp-profiles) use `is_coherent: true` on ValueMoment fixtures despite it not being in the core schema — TypeScript allows extra properties on typed const declarations
+
+**Patterns Discovered:**
+- Test-first pattern for output generators: 3 describe blocks (prompt builder, parser, generator) with inline fixtures modeling a realistic B2B SaaS product
+- Combined generator assertions: one mock LLM call = one test = one concept; assert states count, specific state names, transitions count, and confidence in a single test
+- Prompt builder uses individual params while generator uses wrapper object — the generator destructures internally, keeping the API clean for both callers
+
+**Gotchas:**
+- Worktree needs `npm install` and `npm run build --workspace=packages/core` before type-checking works — node_modules and build artifacts not shared between worktrees
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
