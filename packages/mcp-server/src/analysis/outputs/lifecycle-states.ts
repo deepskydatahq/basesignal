@@ -1,7 +1,8 @@
-// Lifecycle States prompt and prompt builder.
+// Lifecycle States prompt, prompt builder, and response parser.
 
 import type { IdentityResult, ValueMoment } from "../types.js";
-import type { ActivationLevel } from "@basesignal/core";
+import type { ActivationLevel, LifecycleStatesResult } from "@basesignal/core";
+import { extractJson, LifecycleStatesResultSchema } from "@basesignal/core";
 import type { ActivationMapResult } from "./activation-map.js";
 
 // --- System Prompt ---
@@ -204,4 +205,11 @@ export function buildLifecycleStatesPrompt(
   }
 
   return parts.join("\n");
+}
+
+// --- Response Parser ---
+
+export function parseLifecycleStatesResponse(text: string): LifecycleStatesResult {
+  const raw = extractJson(text);
+  return LifecycleStatesResultSchema.parse(raw);
 }
