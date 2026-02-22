@@ -12,28 +12,23 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E001-S003: Update OutputGenerationResult and Package Exports
+### 2026-02-22 - Story M010-E002-S001: System Prompt and Prompt Builder for Lifecycle States
 
 **Files Changed:**
-- `packages/core/src/types/outputs.ts` — Cherry-picked S001 lifecycle state types (StateCriterion, LifecycleState, StateTransition, LifecycleStatesResult); added optional `lifecycle_states?: LifecycleStatesResult` to OutputGenerationResult
-- `packages/core/src/schema/outputs.ts` — Cherry-picked S002 lifecycle state Zod schemas (StateCriterionSchema, LifecycleStateSchema, StateTransitionSchema, LifecycleStatesResultSchema)
-- `packages/core/src/schema/__tests__/outputs.test.ts` — Cherry-picked S002 tests (34 lifecycle state schema tests)
-- `packages/core/src/index.ts` — Added 4 lifecycle type exports (StateCriterion, LifecycleState, StateTransition, LifecycleStatesResult)
-- `packages/core/src/schema/index.ts` — Added 4 schema exports + 4 inferred type exports for lifecycle states
-- `packages/core/src/schema/__tests__/lifecycle-states.test.ts` — New: 4 tests for valid 7-state result, missing field, invalid criteria, non-object input
+- `packages/mcp-server/src/analysis/outputs/lifecycle-states.ts` - New: `LIFECYCLE_STATES_SYSTEM_PROMPT` constant and `buildLifecycleStatesPrompt` function following activation-map.ts pattern
 
 **Learnings:**
-- Cherry-picking from upstream branches (S001, S002) via `git checkout <branch> -- <path>` is the standard pattern for bringing in dependency work before it merges to main
-- OutputGenerationResult is TypeScript-only (no runtime schema) — adding optional fields is safe and backward-compatible
-- Barrel files in this codebase use explicit named exports, so each new type/schema must be added by name (no `export *`)
+- The `@basesignal/core` import errors in `tsc --noEmit` are pre-existing when packages aren't built yet — `npm run build` resolves them since it builds core first
+- No new types needed for this file — it only builds strings, importing existing types for parameter signatures
 
 **Patterns Discovered:**
-- Same-file type references: Since S001 added LifecycleStatesResult to the same outputs.ts file as OutputGenerationResult, no import was needed for the new field
-- Test file separation: Dedicated test files (lifecycle-states.test.ts) for acceptance-criteria-specific tests complement the comprehensive schema tests in outputs.test.ts
+- Prompt builder pattern: assemble markdown sections from typed inputs, each section mapping to a specific analytical concern (identity, activation levels, activation map summary, value moments)
+- System prompt with 2-3 representative JSON examples (not all 7 states) makes the expected output structure clear without bloating the prompt
+- Activation map summary section only surfaces `primary_activation_level` and transitions with `typical_timeframe` — minimal surface area for calibration signals
 
 **Gotchas:**
 - Worktree needs `npm install` — node_modules not shared between worktrees
-- S001 branch had no commits beyond main (diff showed changes but no separate commit log entries) — still had the file changes available for cherry-picking
+- Tests for this file are in a separate story (basesignal-r4g) — this story is prompt-only, no parser or generator
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
