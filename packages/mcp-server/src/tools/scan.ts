@@ -2,7 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod/v4";
 import type { ToolResult } from "./types.js";
 import { text, error } from "./types.js";
-import { formatProfileSummary } from "./formatProfile.js";
+import { formatProfileSummary, type FormattableProfile } from "./formatProfile.js";
 import type { Crawler, CrawlResult, CrawledPage } from "@basesignal/crawlers";
 import type { StorageAdapter, ProductProfile } from "@basesignal/storage";
 
@@ -84,6 +84,7 @@ function sendLog(
   message: string,
 ): void {
   // Fire-and-forget: best-effort progress reporting via MCP logging
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (server as any).server?.sendLoggingMessage?.({
     level,
     logger: "scan_product",
@@ -171,7 +172,7 @@ export function handleScanProduct(
       const msg = err instanceof Error ? err.message : String(err);
       sendLog(server, "warning", `Failed to save profile: ${msg}`);
       const summary = formatProfileSummary(
-        { ...profile, url: args.url } as any,
+        { ...profile, url: args.url } as unknown as FormattableProfile,
         "(unsaved)",
       );
       return text(summary + `\n\n**Warning:** Profile could not be saved: ${msg}`);
@@ -180,7 +181,7 @@ export function handleScanProduct(
     // Phase 5: Return summary
     sendLog(server, "info", "Done");
     const summary = formatProfileSummary(
-      { ...profile, url: args.url } as any,
+      { ...profile, url: args.url } as unknown as FormattableProfile,
       profileId,
     );
     return text(summary);
@@ -197,8 +198,7 @@ export function registerScanTool(
 ): void {
   server.registerTool(
     "scan_product",
-    scanProductMeta,
-    scanProductSchema,
+    { ...scanProductMeta, inputSchema: scanProductSchema },
     handleScanProduct(server, deps),
   );
 }

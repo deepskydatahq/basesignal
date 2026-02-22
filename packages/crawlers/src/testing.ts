@@ -1,4 +1,4 @@
-import type { Crawler, CrawlResult, CrawlOptions, CrawledPage } from "./types";
+import type { Crawler, CrawlResult, CrawlOptions, CrawledPage, SourceType } from "./types";
 
 /**
  * A fixture map: URL -> HTML content string.
@@ -57,7 +57,7 @@ export function createFixtureCrawler(
 
   return {
     name,
-    sourceType: sourceType as any,
+    sourceType: sourceType as SourceType,
     canCrawl(url: string): boolean {
       try {
         return origins.has(new URL(url).origin);

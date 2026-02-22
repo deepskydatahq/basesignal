@@ -231,8 +231,7 @@ export function registerUpdateDefinitionTool(
 ) {
   server.registerTool(
     "update_definition",
-    updateDefinitionMeta,
-    updateDefinitionSchema,
+    { ...updateDefinitionMeta, inputSchema: updateDefinitionSchema },
     handleUpdateDefinition(deps)
   );
 }

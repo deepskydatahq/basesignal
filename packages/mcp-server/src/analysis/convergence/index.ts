@@ -1,11 +1,11 @@
 // Convergence orchestration: validation -> clustering -> merge/tier -> quality.
 
-import type { LlmProvider, OnProgress, LensCandidate } from "../types.js";
+import type { LlmProvider, OnProgress } from "../types.js";
 import type { LensResult } from "../lenses/lens-types.js";
-import type { ConvergenceResult } from "@basesignal/core";
+import type { ConvergenceResult, ValidatedCandidate } from "@basesignal/core";
 
 export interface ConvergenceResultWithCandidates extends ConvergenceResult {
-  validated_candidates: LensCandidate[];
+  validated_candidates: ValidatedCandidate[];
 }
 import { runValidationPipeline } from "./validate.js";
 import { clusterCandidatesLLM } from "./cluster.js";

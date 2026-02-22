@@ -39,8 +39,7 @@ export function registerGetProfileTool(
 ) {
   server.registerTool(
     "get_profile",
-    getProfileMeta,
-    getProfileSchema,
+    { ...getProfileMeta, inputSchema: getProfileSchema },
     handleGetProfile(deps)
   );
 }

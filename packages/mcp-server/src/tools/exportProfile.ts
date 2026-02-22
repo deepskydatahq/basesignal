@@ -56,8 +56,7 @@ export function registerExportProfileTool(
 ) {
   server.registerTool(
     "export_profile",
-    exportProfileMeta,
-    exportProfileSchema,
+    { ...exportProfileMeta, inputSchema: exportProfileSchema },
     handleExportProfile(deps)
   );
 }

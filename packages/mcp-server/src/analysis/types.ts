@@ -22,6 +22,7 @@ import type {
   ActivationMap,
   MeasurementSpec,
   ActivationLevel,
+  ValidatedCandidate,
 } from "@basesignal/core";
 
 // Re-export for convenience within the analysis package
@@ -33,6 +34,7 @@ export type {
   AnalyticalLensType,
   ConvergenceResult,
   ValueMoment,
+  ValidatedCandidate,
   ICPProfile,
   ActivationMap,
   MeasurementSpec,
@@ -115,9 +117,17 @@ export interface LensIntermediateResult {
 // Pipeline intermediates — all intermediate artifacts produced during analysis
 export interface PipelineIntermediates {
   lens_results: LensIntermediateResult[];
-  validated_candidates: LensCandidate[];
+  validated_candidates: ValidatedCandidate[];
   clusters: ConvergenceResult["clusters"] | null;
   quality_report: ConvergenceResult["quality"] | null;
+}
+
+// Pipeline output artifacts (activation_map uses LLM-generated strings rather than core literal types)
+export interface PipelineOutputs {
+  icp_profiles: ICPProfile[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  activation_map: any;
+  measurement_spec: MeasurementSpec | null;
 }
 
 // Pipeline result
@@ -127,11 +137,7 @@ export interface PipelineResult {
   lens_candidates: LensCandidate[];
   convergence: ConvergenceResult | null;
   intermediates: PipelineIntermediates;
-  outputs: {
-    icp_profiles: ICPProfile[];
-    activation_map: ActivationMap | null;
-    measurement_spec: MeasurementSpec | null;
-  };
+  outputs: PipelineOutputs;
   errors: PipelineError[];
   execution_time_ms: number;
 }

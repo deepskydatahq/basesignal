@@ -12,6 +12,7 @@ export type StorageAdapter = _StorageAdapter;
  * Implementations: AnthropicProvider, OpenAIProvider, OllamaProvider.
  * Methods are added when analysis tools are integrated (S002+).
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface LlmProvider {
   // Intentionally empty for skeleton. See design doc section "Key Decisions #3".
 }

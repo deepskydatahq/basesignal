@@ -85,8 +85,7 @@ export function registerGetDefinitionTool(
 ) {
   server.registerTool(
     "get_definition",
-    getDefinitionMeta,
-    getDefinitionSchema,
+    { ...getDefinitionMeta, inputSchema: getDefinitionSchema },
     handleGetDefinition(deps)
   );
 }

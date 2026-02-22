@@ -121,6 +121,7 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
 
     // 7. PHASE 3 -- SAVE
     progress.start("Saving", "to local storage");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profileId = await storage.save(profile as any);
     profile.id = profileId;
 
@@ -174,10 +175,12 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     progress.done("Saving", profileId);
 
     // 8. PHASE 4 -- OUTPUT
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formatted = formatOutput(profile as any, options.format);
     console.log(formatted);
 
     if (options.output) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       writeOutputFile(options.output, profile as any);
       console.error(`Written to ${options.output}`);
     }

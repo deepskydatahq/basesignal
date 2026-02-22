@@ -6,11 +6,10 @@ import {
   scanProductMeta,
   validateUrl,
   type ScanToolDeps,
-  type AnalyzePipeline,
 } from "./scan.js";
 import { formatProfileSummary, type FormattableProfile } from "./formatProfile.js";
 import type { Crawler, CrawlResult, CrawledPage } from "@basesignal/crawlers";
-import type { StorageAdapter, ProductProfile } from "@basesignal/storage";
+import type { StorageAdapter } from "@basesignal/storage";
 
 // ---------------------------------------------------------------------------
 // Mock factories

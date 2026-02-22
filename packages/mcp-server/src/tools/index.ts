@@ -5,7 +5,7 @@ import { registerGetProfileTool } from "./getProfile.js";
 import { registerGetDefinitionTool } from "./getDefinition.js";
 import { registerUpdateDefinitionTool } from "./updateDefinition.js";
 import { registerExportProfileTool } from "./exportProfile.js";
-import { registerScanTool, type ScanToolDeps } from "./scan.js";
+import { registerScanTool } from "./scan.js";
 import type { ToolContext } from "../types.js";
 
 export function registerTools(

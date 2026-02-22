@@ -39,36 +39,5 @@ jobs:
       - name: Test
         run: npm test -- --run
 
-  test-examples:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build packages
-        run: npm run build --workspaces
-        continue-on-error: true
-
-      - name: Typecheck basic-scan
-        working-directory: examples/basic-scan
-        run: npm install && npx tsc --noEmit
-        continue-on-error: true
-
-      - name: Typecheck custom-crawler
-        working-directory: examples/custom-crawler
-        run: npm install && npx tsc --noEmit
-        continue-on-error: true
-
-      - name: Test custom-crawler
-        working-directory: examples/custom-crawler
-        run: npm install && npx vitest run
-
-      - name: Validate claude-desktop config
-        run: node -e "JSON.parse(require('fs').readFileSync('examples/claude-desktop/claude_desktop_config.json'))"
+  # test-examples: Re-enable after first npm publish of @basesignal packages.
+  # Examples reference @basesignal/*@latest from the npm registry.
