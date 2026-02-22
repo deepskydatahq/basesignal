@@ -128,6 +128,7 @@ bd status
 | Command | Description |
 |---------|-------------|
 | `/new-feature` | Brainstorm idea → design doc → Beads task |
+| `/plan-mission` | Plan a mission with codebase exploration and scope mapping |
 | `/brainstorm-epics` | Generate mission candidates from vision + roadmap |
 | `/brainstorm` | Interactive brainstorm for `brainstorm` queue |
 | `/brainstorm-auto` | Autonomous brainstorm with expert personas (from `.claude/experts/`) |

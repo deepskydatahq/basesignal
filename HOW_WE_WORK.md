@@ -149,7 +149,7 @@ Each level checks its acceptance criteria / testing criteria against what was ac
 ## The Full Flow
 
 1. **Direction:** `/product-vision` → `/product-roadmap`
-2. **Planning:** `/brainstorm-epics` → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
+2. **Planning:** `/plan-mission` (or `/brainstorm-epics`) → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
 3. **Handoff:** `/product-story-handoff` → Beads tasks with `brainstorm` label
 4. **Implementation:** brainstorm → plan → ready → implement → close
 5. **Validation:** `/product-judgment` → validates story → epic → mission
@@ -165,6 +165,7 @@ Each level checks its acceptance criteria / testing criteria against what was ac
 |---------|---------|------|
 | `/product-vision` | VISION.md | Strategy discussion |
 | `/product-roadmap` | ROADMAP.md | Vision + learnings |
+| `/plan-mission` | Mission TOML (with codebase exploration) | User's mission idea |
 | `/brainstorm-epics` | Mission candidates | Roadmap focus areas |
 | `/product-mission-breakdown` | Epic TOMLs | Mission TOML |
 | `/product-epic-breakdown` | Story TOMLs | Epic TOML |
