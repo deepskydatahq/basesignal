@@ -5,7 +5,7 @@ const makeState = (name: string) => ({
   name,
   definition: `User is in the ${name} state`,
   entry_criteria: [{ event_name: "login", condition: "count >= 1" }],
-  exit_triggers: ["no activity for 14 days"],
+  exit_triggers: [{ event_name: "activity_check", condition: "no activity for 14 days" }],
 });
 
 const valid7StateResult = {
@@ -50,7 +50,7 @@ describe("LifecycleStatesResultSchema", () => {
           name: "Bad",
           definition: "Invalid state",
           entry_criteria: [{ event_name: "", condition: "" }],
-          exit_triggers: ["none"],
+          exit_triggers: [{ event_name: "check", condition: "none" }],
         },
       ],
     };

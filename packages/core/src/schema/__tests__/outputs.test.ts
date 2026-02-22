@@ -201,7 +201,7 @@ const validLifecycleState = {
   name: "activated",
   definition: "User has completed onboarding and performed core action",
   entry_criteria: [validStateCriterion],
-  exit_triggers: ["no activity for 14 days"],
+  exit_triggers: [{ event_name: "activity_check", condition: "no activity for 14 days" }],
 };
 
 const validStateTransition = {
