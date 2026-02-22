@@ -115,6 +115,9 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     if (pipelineResult.outputs.measurement_spec) {
       profile.metrics = pipelineResult.outputs.measurement_spec;
     }
+    if (pipelineResult.outputs.lifecycle_states) {
+      profile.lifecycle_states = pipelineResult.outputs.lifecycle_states;
+    }
     if (pipelineResult.outputs.icp_profiles && pipelineResult.outputs.icp_profiles.length > 0) {
       profile.outputs = pipelineResult.outputs;
     }
@@ -167,6 +170,9 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     }
     if (pipelineResult.outputs.measurement_spec) {
       productDir.writeJson(slug, "outputs/measurement-spec.json", pipelineResult.outputs.measurement_spec);
+    }
+    if (pipelineResult.outputs.lifecycle_states) {
+      productDir.writeJson(slug, "outputs/lifecycle-states.json", pipelineResult.outputs.lifecycle_states);
     }
 
     // Combined profile

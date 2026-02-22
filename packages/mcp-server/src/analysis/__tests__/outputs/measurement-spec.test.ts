@@ -3,8 +3,9 @@ import {
   parseMeasurementSpecResponse,
   assembleMeasurementInput,
   buildMeasurementSpecPrompt,
+  MEASUREMENT_SPEC_SYSTEM_PROMPT,
 } from "../../outputs/measurement-spec.js";
-import type { ActivationLevel } from "@basesignal/core";
+import type { ActivationLevel, LifecycleStatesResult } from "@basesignal/core";
 import type { ValueMoment, ICPProfile } from "../../types.js";
 
 const sampleLevels: ActivationLevel[] = [
@@ -266,5 +267,161 @@ describe("parseMeasurementSpecResponse", () => {
       confidence: 1.5,
     });
     expect(() => parseMeasurementSpecResponse(input)).toThrow("confidence must be between 0 and 1");
+  });
+});
+
+// --- Lifecycle States Integration Tests ---
+
+const sampleLifecycleStates: LifecycleStatesResult = {
+  states: [
+    {
+      name: "new",
+      definition: "Just signed up",
+      entry_criteria: [{ event_name: "signup", condition: "account created" }],
+      exit_triggers: [{ event_name: "create_project", condition: "first project" }],
+      time_window: "7 days",
+    },
+    {
+      name: "activated",
+      definition: "Created first project",
+      entry_criteria: [{ event_name: "create_project", condition: "project created" }],
+      exit_triggers: [{ event_name: "daily_use", condition: "3+ days" }],
+      time_window: "14 days",
+    },
+    {
+      name: "engaged",
+      definition: "Regular user",
+      entry_criteria: [{ event_name: "daily_use", condition: "3+ days/week" }],
+      exit_triggers: [{ event_name: "session_gap", condition: "7 days" }],
+      time_window: "30 days",
+    },
+    {
+      name: "at_risk",
+      definition: "Declining engagement",
+      entry_criteria: [{ event_name: "session_gap", condition: "7 days" }],
+      exit_triggers: [{ event_name: "session_gap", condition: "30 days" }],
+      time_window: "14 days",
+    },
+    {
+      name: "dormant",
+      definition: "Stopped using product",
+      entry_criteria: [{ event_name: "session_gap", condition: "30 days" }],
+      exit_triggers: [{ event_name: "session_gap", condition: "60 days" }],
+      time_window: "30 days",
+    },
+    {
+      name: "churned",
+      definition: "Gone for 60+ days",
+      entry_criteria: [{ event_name: "session_gap", condition: "60 days" }],
+      exit_triggers: [{ event_name: "session_started", condition: "returns" }],
+    },
+    {
+      name: "resurrected",
+      definition: "Returned after churn",
+      entry_criteria: [{ event_name: "create_project", condition: "new project after churn" }],
+      exit_triggers: [{ event_name: "daily_use", condition: "regular use" }],
+      time_window: "14 days",
+    },
+  ],
+  transitions: [
+    { from_state: "new", to_state: "activated", trigger_conditions: ["Creates first project"], typical_timeframe: "1-3 days" },
+  ],
+  confidence: 0.75,
+  sources: ["activation_levels", "value_moments"],
+};
+
+describe("assembleMeasurementInput — lifecycle states", () => {
+  it("includes lifecycle_states when provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+      sampleLifecycleStates,
+    );
+
+    expect(input.lifecycle_states).toBeDefined();
+    expect(input.lifecycle_states!.states).toHaveLength(7);
+    expect(input.lifecycle_states!.confidence).toBe(0.75);
+  });
+
+  it("lifecycle_states is undefined when not provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+    );
+
+    expect(input.lifecycle_states).toBeUndefined();
+  });
+});
+
+describe("buildMeasurementSpecPrompt — lifecycle states", () => {
+  it("includes lifecycle states section when provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+      sampleLifecycleStates,
+    );
+    const { user } = buildMeasurementSpecPrompt(input);
+
+    expect(user).toContain("## Lifecycle States (use for userStateModel)");
+    expect(user).toContain("**new**: Just signed up");
+    expect(user).toContain("**engaged**: Regular user");
+    expect(user).toContain("**churned**: Gone for 60+ days");
+    expect(user).toContain("**resurrected**: Returned after churn");
+  });
+
+  it("includes entry criteria in lifecycle states section", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+      sampleLifecycleStates,
+    );
+    const { user } = buildMeasurementSpecPrompt(input);
+
+    expect(user).toContain("Entry criteria: signup: account created");
+    expect(user).toContain("Entry criteria: daily_use: 3+ days/week");
+  });
+
+  it("omits lifecycle states section when not provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+    );
+    const { user } = buildMeasurementSpecPrompt(input);
+
+    expect(user).not.toContain("## Lifecycle States");
+  });
+});
+
+describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — softened Step 3", () => {
+  it("does not mandate exactly 5 states", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain("exactly 5 states");
+  });
+
+  it("instructs to derive from lifecycle states when provided", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
+      "If lifecycle states are provided in the context below, derive your user state model from them.",
+    );
+  });
+
+  it("provides 5-state fallback when lifecycle states not available", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
+      "Otherwise, define 5 representative states: new, activated, active, at_risk, dormant.",
+    );
+  });
+
+  it("does not mandate specific state names", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain(
+      'name: one of "new", "activated", "active", "at_risk", "dormant"',
+    );
   });
 });

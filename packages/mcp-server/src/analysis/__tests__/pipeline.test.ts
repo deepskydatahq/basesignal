@@ -23,8 +23,17 @@ describe("runAnalysisPipeline", () => {
     expect(result.outputs.icp_profiles.length).toBeGreaterThanOrEqual(2);
     expect(result.outputs.activation_map).not.toBeNull();
     expect(result.outputs.measurement_spec).not.toBeNull();
+    expect(result.outputs.lifecycle_states).not.toBeNull();
+    expect(result.outputs.lifecycle_states!.states.length).toBeGreaterThanOrEqual(7);
+    expect(result.outputs.lifecycle_states!.transitions.length).toBeGreaterThan(0);
+    expect(result.outputs.lifecycle_states!.confidence).toBeGreaterThan(0);
+    // Verify canonical state names are present
+    const stateNames = result.outputs.lifecycle_states!.states.map((s) => s.name);
+    expect(stateNames).toContain("new");
+    expect(stateNames).toContain("activated");
+    expect(stateNames).toContain("churned");
     expect(result.execution_time_ms).toBeGreaterThan(0);
-    // Multiple LLM calls expected (identity, activation, 7 lenses, clustering, merge per cluster, ICP, activation map, measurement spec)
+    // Multiple LLM calls expected (identity, activation, 7 lenses, clustering, merge per cluster, ICP, activation map, measurement spec, lifecycle states)
     expect(mockLlm.callCount).toBeGreaterThan(10);
 
     // Intermediates should be populated
@@ -46,6 +55,7 @@ describe("runAnalysisPipeline", () => {
     expect(result.lens_candidates).toHaveLength(0);
     expect(result.identity).toBeNull();
     expect(result.convergence).toBeNull();
+    expect(result.outputs.lifecycle_states).toBeNull();
     expect(result.intermediates.lens_results).toHaveLength(0);
     expect(result.intermediates.validated_candidates).toHaveLength(0);
     expect(result.intermediates.clusters).toBeNull();
@@ -65,6 +75,7 @@ describe("runAnalysisPipeline", () => {
     expect(events.some((e) => e.phase === "activation_levels")).toBe(true);
     expect(events.some((e) => e.phase === "lenses_batch1")).toBe(true);
     expect(events.some((e) => e.phase === "convergence")).toBe(true);
+    expect(events.some((e) => e.phase === "outputs_lifecycle_states")).toBe(true);
   });
 
   it("uses identity result to enrich product context for lenses", async () => {

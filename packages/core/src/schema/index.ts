@@ -50,6 +50,10 @@ export {
   StageTransitionSchema,
   UserStateCriterionSchema,
   UserStateSchema,
+  StateCriterionSchema,
+  LifecycleStateSchema,
+  StateTransitionSchema,
+  LifecycleStatesResultSchema,
 } from "./outputs";
 export type {
   ICPProfile,
@@ -66,6 +70,10 @@ export type {
   StageTransition,
   UserStateCriterion,
   UserState,
+  StateCriterion,
+  LifecycleState,
+  StateTransition,
+  LifecycleStatesResult,
 } from "./outputs";
 
 // Lens types

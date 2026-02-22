@@ -12,22 +12,34 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E001-S001: Define Lifecycle State TypeScript Types
+### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
 **Files Changed:**
-- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` interfaces in a new "Lifecycle States Types" section after User State Model
+- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` types; added `lifecycle_states?` to `OutputGenerationResult`
+- `packages/core/src/index.ts` - Exported 4 new lifecycle state types
+- `packages/mcp-server/src/analysis/outputs/lifecycle-states.ts` - New: `generateLifecycleStates()` with prompt builder and response parser
+- `packages/mcp-server/src/analysis/types.ts` - Added `outputs_lifecycle_states` to `ProgressPhase`; added `lifecycle_states` to `PipelineOutputs`
+- `packages/mcp-server/src/analysis/outputs/index.ts` - Added `lifecycle_states` to `OutputsResult`; wired `generateLifecycleStates` into `generateAllOutputs` (step 4, after measurement spec)
+- `packages/mcp-server/src/analysis/pipeline.ts` - Added `lifecycle_states: null` to empty result defaults
+- `packages/mcp-server/src/analysis/__tests__/fixtures/responses.ts` - Added `LIFECYCLE_STATES_RESPONSE` (7 states, 2 transitions, confidence 0.75)
+- `packages/mcp-server/src/analysis/__tests__/fixtures/mock-llm.ts` - Added routing entry for "lifecycle states" prompt match
+- `packages/mcp-server/src/analysis/__tests__/pipeline.test.ts` - Added lifecycle_states assertions (non-null, 7+ states, canonical names, transitions, confidence, progress event, null on empty)
+- `packages/cli/src/formatters.ts` - Added lifecycle states to `formatSummary()` (multi-line listing) and `formatMarkdown()` (state table)
+- `packages/cli/src/formatters.test.ts` - Added lifecycle_states to fullProfile fixture; added 4 tests (summary present/absent, markdown present/absent)
+- `packages/cli/src/commands/scan.ts` - Attached `lifecycle_states` to profile object; persisted as `outputs/lifecycle-states.json`
 
 **Learnings:**
-- Type-only changes are low-risk — build + existing test suite is sufficient validation
-- The existing `outputs.ts` has a clean section-based organization with `// ---` separators that makes placement intuitive
+- Upstream M010-E001/E002/E003-S001-S002 stories hadn't been merged, requiring this story to implement the full lifecycle states infrastructure (types, generator, pipeline wiring) alongside the CLI display scope
+- The `ProductProfile` type in storage has `[key: string]: unknown` index signature, so `lifecycle_states` works as an additional field without type changes
+- Mock LLM routing uses substring matching — "lifecycle states" in the system prompt is sufficient for routing
 
 **Patterns Discovered:**
-- Parallel domain concepts: `StateCriterion` (lifecycle) vs `UserStateCriterion` (measurement spec) — same shape idea but intentionally separate types for different analytical domains
-- `string[]` for narrative fields (`exit_triggers`, `trigger_conditions`) follows `ActivationStage.trigger_events` pattern — consistent across the codebase
+- Generator guard pattern in `generateAllOutputs`: `if (activationLevels && result.activation_map)` gates lifecycle states on having both activation levels AND a generated activation map
+- CLI formatter guard pattern: `if (lifecycleStates?.states)` with inline type cast matches existing journey/revenue pattern
+- Multi-line listing in summary format matches journey stages pattern — state names with time windows provide actionable context
 
 **Gotchas:**
-- Worktree needs `npm install` — node_modules not shared between worktrees (recurring)
-- 4 CLI test suites fail pre-existing due to package resolution (need full build of all packages first) — unrelated to type changes
+- The `lifecycle_states` response needs "lifecycle states" in the system prompt to match mock routing — the `LIFECYCLE_STATES_SYSTEM_PROMPT` constant includes this naturally
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
