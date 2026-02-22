@@ -6,33 +6,27 @@ Best practices and conventions for working on Basesignal.
 
 ## Overview
 
-Basesignal is a SaaS for measuring product performance using a structured P&L framework.
+Basesignal is **context engineering for growth intelligence** — an open source analysis engine that crawls a product's public presence and generates structured growth context: ICP profiles, activation maps, value moments, and measurement specifications.
 
-**Target users:** Product leaders, executives, finance teams
+**Target users:** Developers, product engineers, product managers
 
-**Key concept:** "Every business has a P&L. Your product should too."
+**Key concept:** "Point at a URL, get a structured growth profile in 60 seconds."
 
----
+**How it works:** Crawl → 7 analytical lenses → convergence → ICP profiles, activation maps, measurement specs
 
-## P&L Framework
-
-| Layer | What It Measures |
-|-------|------------------|
-| **Reach** | New user volume, trial starts, activation rate |
-| **Engagement** | Active rate, feature adoption, usage intensity |
-| **Value Delivery** | User-defined activation/active rules, derived account states |
-| **Value Capture** | Conversion, retention, expansion rates |
+For the full vision, see [VISION.md](./VISION.md). For the development workflow, see [HOW_WE_WORK.md](./HOW_WE_WORK.md).
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: React 19 + Vite + React Router v7
-- **Backend**: Convex (serverless)
-- **Styling**: Tailwind CSS + Clarity UI design system
-- **Graph**: React Flow
-- **AI**: Claude API
-- **Auth**: Clerk
+- **Monorepo:** npm workspaces (`packages/`)
+- **Packages:** `@basesignal/core`, `crawlers`, `mcp-server`, `storage`, `cli`
+- **AI:** Pluggable LLM providers (Anthropic, OpenAI, Ollama)
+- **Storage:** File-based (ProductDirectory) or SQLite
+- **Config:** TOML (`basesignal.toml`)
+- **Testing:** Vitest
+- **Legacy web app:** React 19 + Vite + Convex (coexists as one consumer of the packages)
 
 ---
 
@@ -42,20 +36,20 @@ Basesignal is a SaaS for measuring product performance using a structured P&L fr
 # Install dependencies
 npm install
 
-# Terminal 1: Start Convex backend
-npx convex dev
-
-# Terminal 2: Start frontend dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
+# Run tests (all packages)
 npm test
 
-# Lint
-npm run lint
+# Run tests once (CI mode)
+npm run test:run
+
+# Build all packages
+npm run build
+
+# Scan a product (CLI)
+npx basesignal scan https://example.com
+
+# Start MCP server
+npx basesignal serve
 ```
 
 ---
@@ -261,57 +255,24 @@ npm run test:run  # Run tests once
 ## Critical Rules
 
 **Every feature must have tests**
-- Write tests for all new Convex functions and React components
+- Write tests for all new functions and modules
 - Use `superpowers:subagent-driven-development` for multi-step implementations - it enforces tests per task
 - Use `superpowers:finishing-a-development-branch` to verify all tests pass before merging/pushing
 - Never mark work complete until `npm test` passes
 
-**Never mutate Convex state outside of mutations**
-- Queries are read-only - use `useQuery()` for reading
-- Mutations modify state - use `useMutation()` for create/update/delete
-- Never edit `convex/_generated/` files (auto-generated)
-
-**React 19 conventions**
-- Functional components with hooks (no class components)
-- Hooks at top level (never in conditions/loops)
-- Custom hooks start with `use` prefix
-
-**Convex backend must stay in sync**
-- Run `npx convex dev` during local development
-- Schema changes require redeployment
+**Package boundaries matter**
+- Each package in `packages/` has its own public API via `src/index.ts`
+- Import from package names (`@basesignal/core`), not relative paths across packages
+- Keep dependencies between packages explicit in each `package.json`
 
 ---
 
-## Code Patterns
+## Key Packages
 
-**Component structure**
-
-```typescript
-export function JourneyCard({ journeyId }: Props) {
-  const journey = useQuery(api.journeys.get, { id: journeyId })
-  if (!journey) return <div>Loading...</div>
-
-  const handleClick = () => { ... }
-  return <div onClick={handleClick}>{journey.name}</div>
-}
-```
-
-**Convex patterns**
-
-```typescript
-// Queries (read-only)
-const journeys = useQuery(api.journeys.list)
-
-// Mutations (create/update/delete)
-const create = useMutation(api.journeys.create)
-await create({ name: "First Value Journey", ... })
-```
-
----
-
-## Key Features
-
-- **Journey Editor** - AI-assisted journey mapping with React Flow
-- **Overview Interview** - Guided interview to map user lifecycle
-- **Activity Validation** - Entity + Action format enforcement
-- **Amplitude Integration** - Connect and map Amplitude events
+| Package | Purpose |
+|---------|---------|
+| `@basesignal/core` | Schema types, validation, scoring algorithms |
+| `@basesignal/crawlers` | Pluggable crawlers (Firecrawl, Jina, static) |
+| `@basesignal/mcp-server` | Analysis pipeline, MCP server, LLM integration |
+| `@basesignal/storage` | Storage adapters (file, SQLite), ProductDirectory |
+| `@basesignal/cli` | Command-line interface (`scan`, `init`, `export`, `serve`) |
