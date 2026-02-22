@@ -3,7 +3,8 @@
 
 id = "M009"
 title = "Remove Legacy Dependencies"
-status = "draft"
+status = "complete"
+completed = 2026-02-22
 created = 2026-02-22
 depends_on = ["M008"]
 
