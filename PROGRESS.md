@@ -12,6 +12,24 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E002-S001: System Prompt and Prompt Builder for Lifecycle States
+
+**Files Changed:**
+- `packages/mcp-server/src/analysis/outputs/lifecycle-states.ts` - New: `LIFECYCLE_STATES_SYSTEM_PROMPT` constant and `buildLifecycleStatesPrompt` function following activation-map.ts pattern
+
+**Learnings:**
+- The `@basesignal/core` import errors in `tsc --noEmit` are pre-existing when packages aren't built yet — `npm run build` resolves them since it builds core first
+- No new types needed for this file — it only builds strings, importing existing types for parameter signatures
+
+**Patterns Discovered:**
+- Prompt builder pattern: assemble markdown sections from typed inputs, each section mapping to a specific analytical concern (identity, activation levels, activation map summary, value moments)
+- System prompt with 2-3 representative JSON examples (not all 7 states) makes the expected output structure clear without bloating the prompt
+- Activation map summary section only surfaces `primary_activation_level` and transitions with `typical_timeframe` — minimal surface area for calibration signals
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- Tests for this file are in a separate story (basesignal-r4g) — this story is prompt-only, no parser or generator
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
