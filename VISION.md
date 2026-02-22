@@ -1,34 +1,45 @@
 # BASESIGNAL
-## Product Vision Document v2
+## Product Vision Document v3
 
-*The Product Knowledge Layer*
+*Context Engineering for Growth Intelligence*
 
-**January 2026 | DeepSky Data ApS**
+**February 2026 | DeepSky Data ApS**
 
 ---
 
 ## Vision Statement
 
-> *Every product has a story of how it converts users into revenue.*
-> *Basesignal learns that story—from anywhere you work.*
+> *Every product has a growth model—who it acquires, how they activate, why they stay, where revenue expands.*
+> *Most teams have never written it down. Basesignal generates it—and anyone can run it.*
 
-Basesignal is the **product knowledge layer**—an intelligence system that crawls, analyzes, and structures everything about how a B2B SaaS product converts users into revenue. Users interact through their preferred AI assistant (Claude, ChatGPT, Cursor), and all knowledge persists in Basesignal's structured data model.
+Basesignal is **context engineering for growth intelligence**—an analysis engine that crawls a product's public presence, discovers how it converts users into revenue, and generates structured growth context: who the users are (ICP profiles), how they progress (activation maps), what they experience (value moments), and what to measure (measurement specifications).
 
-In 60 seconds instead of two weeks, teams get a comprehensive draft of their product's growth model—activation definitions, journey maps, metric catalogs, and measurement plans—generated from public sources and refined through conversation.
+This context is what makes AI conversations about your product actually useful. Without it, every question to Claude about your activation rate, your ICP, or your measurement plan starts from zero. With Basesignal, every conversation is grounded in structured growth intelligence that accumulates over time.
+
+Run it from the command line. Connect it as an MCP server. Self-host it with Docker. The tools are open source; the context is yours; the intelligence compounds across every product analyzed.
 
 ---
 
 ## The Paradigm Shift
 
-### Old Model: Build an App, Hope Users Come
+### Old Model: Start Every Conversation From Zero
 
-Traditional SaaS: You build the UI. Users learn your interface. They come to your app to do their work. You compete for screen time.
+Ask an AI assistant about your product's activation rate. It will give you a generic answer about B2B SaaS. Ask it to write a measurement plan. It will invent plausible-sounding events that don't match your product. Ask it who your ICP is. It will parrot your marketing page.
 
-### New Model: Build the Intelligence, Meet Users Where They Are
+The problem isn't the AI. It's the **context**. Without structured knowledge about your specific product — its users, value moments, activation model, entity structure — every AI conversation about growth starts from scratch.
 
-Basesignal doesn't compete for screen time. It becomes a **capability** within tools users already live in. When a PM asks Claude "help me define activation for my product," Basesignal provides the structure, the knowledge, and the persistence.
+### New Model: Engineer the Context Once, Use It Everywhere
 
-The interface is whatever AI assistant the user prefers. The value is the structured product knowledge that accumulates over time.
+Basesignal **engineers the growth context** that makes every downstream conversation, decision, and tool smarter. It crawls your product, runs 7 analytical lenses, and produces structured growth intelligence that persists, compounds, and connects to every tool in your stack.
+
+The shift is from "ask an AI and hope" to "give the AI the right context and know."
+
+Growth context should be:
+- **Structured:** Not prose in a doc — typed, validated, interconnected
+- **Engineered:** Not manually assembled — generated from evidence, refined through conversation
+- **Portable:** Move between tools without losing your model
+- **Compounding:** Every refinement makes every future conversation smarter
+- **Self-hostable:** Run on your infrastructure with your API keys
 
 ---
 
@@ -36,31 +47,41 @@ The interface is whatever AI assistant the user prefers. The value is the struct
 
 ### The Surface Problem
 
-Product teams can't answer the fundamental question: **Is our product converting users into revenue?**
+Product teams can't answer the fundamental question: **How does our product grow?**
+
+Not "are signups increasing" — but the structural question: Who are our best users? What do they experience that makes them stay? Where do others drop off? What should we measure to know?
 
 ### The Deeper Problem
 
-They don't have a structured model of how their product creates value. Ask five team members to define "activation" and you'll get five different answers. Ask for the user journey and you'll get a whiteboard sketch from 18 months ago.
+They don't have a structured growth model. Ask five team members to define "activation" and you'll get five different answers. Ask who the ideal customer is and you'll get a marketing persona that doesn't match the users who actually convert. Ask for the measurement plan and you'll get a tracking spreadsheet from 18 months ago.
+
+Growth intelligence — the connected understanding of users, value, activation, and measurement — is scattered across tools, teams, and outdated documents.
 
 ### Why This Persists
 
-Building this model is hard work. It requires:
-- Gathering information from multiple sources
-- Making dozens of interconnected decisions
-- Getting alignment across teams
+Building a growth model is hard work. It requires:
+- Understanding who your users really are (not just who marketing targets)
+- Mapping how they discover and experience value
+- Defining activation, retention, and expansion precisely
+- Translating all of that into a measurement spec engineering can implement
+- Getting alignment across product, growth, data, and engineering
 - Keeping it updated as the product evolves
 
-Most teams start this work, get 30% done, and abandon it. The document sits in a forgotten Notion page.
+Most teams start this work, get 30% done, and abandon it.
 
 ### What Changes Everything
 
-**What if the model built itself?**
+**What if the growth model built itself?**
 
-What if you could point at your product's website and get a structured draft of your entire growth model—activation definition, journey stages, metric catalog, entity model—in 60 seconds?
+What if you could point at your product's website and in 60 seconds get:
+- **Who** your ideal customers are and what they care about
+- **What** value moments drive activation and retention
+- **How** users progress from first visit to power user
+- **What to measure** — a complete tracking specification ready for engineering
 
 What if refining that model was as easy as having a conversation?
 
-What if that model lived in a system that any AI assistant could access, making every conversation about your product smarter?
+What if it lived in a portable, open format that worked with any tool in your stack?
 
 That's Basesignal.
 
@@ -70,15 +91,17 @@ That's Basesignal.
 
 ### The Keystone Belief
 
-> **"I need a structured model of how my product converts users to revenue—but I don't have time to build one from scratch."**
+> **"I need a structured model of how my product grows—who our users are, how they activate, what to measure—but I don't have time to build one from scratch, and I don't want to be locked into a vendor to store it."**
 
 This belief is central because:
 
 1. **It acknowledges the need.** Teams know they should have clear definitions, journey maps, and metrics. They just never get around to building them.
 
-2. **It acknowledges the constraint.** Time is the enemy. Two-week discovery projects don't happen. Elaborate tracking plans gather dust.
+2. **It acknowledges the constraint.** Time is the enemy. Two-week discovery projects don't happen.
 
-3. **It creates the opening.** If the model could be generated—not created from scratch—suddenly it's achievable.
+3. **It acknowledges the distrust.** Teams have been burned by vendor lock-in. They want to own their data.
+
+4. **It creates the opening.** If the model could be generated—and lived in an open format they control—suddenly it's achievable.
 
 ### The Belief Chain
 
@@ -91,7 +114,7 @@ This belief is central because:
 | 5 | We've tried to define these, but never finished / they're outdated | Pain recognition |
 | **6** | **I need a structured model, but I don't have time to build one from scratch** | **KEYSTONE** |
 | 7 | If the model could be generated from existing information... | Solution direction |
-| 8 | ...and refined through conversation rather than workshops... | Solution refinement |
+| 8 | ...in an open format I can inspect, extend, and own... | Trust requirement |
 | 9 | ...then I could finally have what I need | Product fit |
 
 ---
@@ -100,311 +123,277 @@ This belief is central because:
 
 ### Step 1: Scan
 
-User provides a URL. Basesignal crawls the marketing site, pricing page, documentation, and optionally YouTube channel and review sites.
+User provides a URL. Basesignal crawls the marketing site, pricing page, and documentation.
 
+```bash
+$ basesignal scan https://acme.io
+
+Crawling... found 34 pages
+Extracting identity, revenue model, entities...
+Running 7 analytical lenses...
+Converging 102 candidates into value moments...
+Generating ICP profiles, activation map, measurement spec...
+
+✓ Product profile saved to ~/.basesignal/products/acme-io/
 ```
-User: "Scan my product at acme.io"
 
-Basesignal: Analyzing... found 34 pages, pricing tier structure,
-            documentation at docs.acme.io, 12 YouTube demos.
-
-            Building your product profile...
-```
-
-**Time: 30-90 seconds**
+**Time: 60-90 seconds**
 
 ### Step 2: Generate
 
-Basesignal's analysis engine extracts structured information into the data model:
+The analysis engine runs a multi-phase pipeline:
 
-- **Core Identity:** What the product is, who it's for
-- **Revenue Architecture:** How money flows, pricing model, expansion paths
-- **Entity Model:** The "things" in the product (users, workspaces, projects, etc.)
-- **User Journey:** Stages from signup to retained revenue
-- **Definitions (draft):** Activation, First Value, Active, Churn
-- **Outcomes:** What users are trying to achieve
-- **Metric Catalog:** Relevant metrics with formulas
+**Phase 1 — Extract** (parallel): Identity, revenue architecture, entity model, activation levels
+**Phase 2 — Discover** (7 lenses): Capability mapping, effort elimination, time compression, artifact creation, information asymmetry, decision enablement, state transitions
+**Phase 3 — Converge**: Validate candidates → cluster semantically → assign tiers (Core / Important / Supporting)
+**Phase 4 — Output**: ICP profiles, activation maps, measurement specifications
 
-Each element has a confidence score and links to the evidence that informed it.
+Each output follows the **Double Three-Layer Framework**:
+- **Entities** define the core objects (3-7 per product) with reusable properties
+- **Activities** mark entity lifecycle progress (past-tense: board_created, asset_shared)
+- **Perspectives** cover Customer (journey state), Product (entity lifecycle), and Interaction (specific actions)
 
-**Output: 70% complete product profile**
+**Output: Structured product profile as portable JSON**
 
 ### Step 3: Refine
 
-User reviews the draft and refines through conversation:
+Connect Basesignal as an MCP server and refine through conversation:
 
 ```
 User: "The activation definition isn't quite right. We care about
        whether they connect a data source, not team invites."
 
-Basesignal: Updated. New activation definition:
-            "User creates a project AND connects at least one data source"
-
-            Should I also update the related metrics?
-            Activation Rate formula would change from...
+Basesignal: Updated activation definition.
+            Cascading update to measurement spec...
+            3 events adjusted. Activation map updated.
 ```
 
-Refinement happens naturally in conversation. Every update persists. The model gets more accurate over time.
+Or edit the JSON files directly. They're yours.
 
 ### Step 4: Use Everywhere
 
-The product knowledge is now accessible from any AI assistant:
+The product profile is a structured, portable artifact:
 
-- Ask Claude to help write a PRD → It knows your activation definition
-- Ask ChatGPT to analyze a feature idea → It knows your user journey
-- Ask Cursor to instrument tracking → It knows your entity model
-
-The knowledge compounds. Every conversation makes the model richer.
+- **In your AI assistant:** Connect as MCP server—every conversation is grounded in your product model
+- **In your docs:** Export as Markdown for Notion, Confluence, or your wiki
+- **In your code:** Import the JSON into your analytics pipeline
+- **In your team:** Share the profile directory—it's just files
 
 ---
 
-## The Data Model: Our Moat
+## The Growth Profile: Engineered Context
 
-### Why the Model Matters
+### Why Context Engineering Matters
 
 Anyone can crawl a website. Anyone can call an LLM.
 
-**The moat is the structure we impose on the chaos.**
+**The moat is the engineered context—structured growth intelligence that makes every downstream use better.**
 
 ```
-Raw crawled data  →  Basesignal Data Model  →  Actionable knowledge
-(commodity)          (the moat)               (what users get)
+Raw crawled data  →  Context Engineering  →  Structured growth profile
+(commodity)          (the engine)            (what makes AI useful)
 ```
 
-### What the Data Model Encodes
+The difference between "AI that gives generic advice" and "AI that knows your product" is the quality of context it has access to. Basesignal engineers that context.
 
-| Layer | What It Captures |
-|-------|------------------|
-| **Ontology** | What concepts exist (Activation, First Value, Stage, Outcome, Entity) |
-| **Relationships** | How concepts connect (Activation → belongs to → Journey Stage) |
-| **Inference Rules** | How to derive one thing from another |
-| **Validation Logic** | What makes a definition complete vs. incomplete |
-| **Patterns** | What "good" looks like across product types |
+### What the Schema Encodes
 
-### Concrete Example
+The growth profile captures the full picture of how a product converts users into revenue:
 
-Raw extraction: *"Free tier available, $29/seat/month"*
+| Layer | Growth Question | What It Captures |
+|-------|----------------|------------------|
+| **Identity** | "What is this product?" | What it does, who it's for, business model, revenue architecture |
+| **Value Moments** | "What makes users stay?" | Tiered catalog of user-experienced moments (Core / Important / Supporting) |
+| **ICP Profiles** | "Who are the best users?" | Distinct personas with value moment priorities, activation triggers, pain points |
+| **Activation Map** | "How do users progress?" | Multi-level progression from first visit → power user, with triggers and drop-off risk |
+| **Measurement Spec** | "What should we track?" | Entity-first tracking specification: entities, activities, properties, perspectives |
 
-Without model: Just text.
+Together, these layers form the **growth context** — a connected model that answers: **Who** should we acquire → **What** do they need to experience → **How** do they progress → **What** do we measure to know it's working.
 
-With Basesignal model:
-```yaml
-revenue_architecture:
-  model: seat_based
-  has_free_tier: true
-  entry_price: 29
-  billing_unit: seat
+### The Schema as Portable Context
 
-  # Inferred from model rules:
-  likely_expansion_path: add_seats
-  churn_risk_factor: seat_reduction
-  activation_pressure: high  # Free tier = must prove value fast
+The growth profile schema is:
+- **Versioned**: Semantic versioning, backward-compatible evolution
+- **Published**: TypeScript types and JSON Schema available as `@basesignal/core`
+- **Portable**: Any tool can read and write growth profiles
+- **Extensible**: Add custom sections without breaking the core
 
-  # Connected to other concepts:
-  links_to:
-    - journey_stage: "Trial → Paid"
-    - metric: "Free to Paid Conversion Rate"
-    - outcome: "Team Adoption"
-```
-
-The structure is the value. The relationships. The inferences. The connections.
-
-### The Model Gets Smarter
-
-Every product analyzed teaches the model:
-- More inference rules (if X then likely Y)
-- More patterns (DevTools products typically have Z% activation)
-- More benchmarks (data points by vertical, stage, model type)
-- Better validation (this combination usually means incomplete)
-
-**Compounding IP.** The more products use Basesignal, the smarter it gets.
+When you connect Basesignal as an MCP server, this context is available in every AI conversation. When you export it, this context travels with your product. When other tools adopt the schema, the context compounds across your entire stack.
 
 ---
 
-## Architecture: MCP-First
+## Architecture: Modular Open Source
 
-### What is MCP?
-
-Model Context Protocol (MCP) is an open standard that lets AI assistants connect to external tools and data sources. When Claude or ChatGPT connects to an MCP server, they gain new capabilities.
-
-### Basesignal as MCP Server
+### Package Structure
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         USER'S WORLD                            │
-│                                                                 │
-│    ┌──────────┐    ┌──────────┐    ┌──────────┐                 │
-│    │  Claude  │    │ ChatGPT  │    │  Cursor  │                 │
-│    └────┬─────┘    └────┬─────┘    └────┬─────┘                 │
-│         │               │               │                       │
-│         └───────────────┼───────────────┘                       │
-│                         │ MCP Protocol                          │
-└─────────────────────────┼───────────────────────────────────────┘
-                          │
-┌─────────────────────────┼───────────────────────────────────────┐
-│              BASESIGNAL MCP SERVER                              │
-│                                                                 │
-│  Tools:                                                         │
-│  ├─ scan_product(url)          # Crawl and analyze              │
-│  ├─ get_profile()              # Retrieve full profile          │
-│  ├─ get_definition(type)       # Get activation, churn, etc.    │
-│  ├─ update_definition(...)     # Refine through conversation    │
-│  ├─ get_metrics()              # Metric catalog                 │
-│  ├─ export_profile(format)     # MD, JSON, PDF                  │
-│  └─ ask_about_product(q)       # Query the knowledge            │
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                   DATA MODEL + STORAGE                   │   │
-│  │  Product profiles, knowledge graph, inference rules      │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+@basesignal/core           Schema types, validation, scoring algorithms
+@basesignal/crawlers       Pluggable crawlers (Firecrawl, Jina, static)
+@basesignal/mcp-server     Analysis pipeline, MCP server, LLM integration
+@basesignal/storage        Storage adapters (file, SQLite), product directory
+@basesignal/cli            Command-line interface
 ```
 
-### Why MCP-First?
+### Three Ways to Run
 
-| Advantage | Impact |
-|-----------|--------|
-| **Zero UI barrier** | Users don't learn a new app |
-| **Fits existing workflows** | PMs already use Claude daily |
-| **Compound knowledge** | Every conversation adds to the model |
-| **Solo founder leverage** | AI companies build the UI |
-| **Future-proof** | Works with whatever AI wins |
+```
+CLI (simplest)           basesignal scan <url>
+                         → JSON files on disk
 
-The web interface is optional—for sharing, visualization, and team collaboration. But the primary interaction is through AI assistants.
+MCP Server (richest)     Connect from Claude Desktop, Cursor, ChatGPT
+                         → Conversational refinement + persistence
+
+Docker (self-host)       docker-compose up
+                         → Full server with storage
+```
+
+### Extension Points
+
+| Extension | How |
+|-----------|-----|
+| **New crawler** | Implement the Crawler interface, register in config |
+| **New storage** | Implement the StorageAdapter interface |
+| **New LLM provider** | Implement the LlmProvider interface (Anthropic, OpenAI, Ollama supported) |
+| **New analysis lens** | Add to the lens registry |
+| **Custom output** | Add an output generator to the pipeline |
+
+### Configuration
+
+```toml
+# basesignal.toml
+[provider]
+name = "anthropic"       # or "openai", "ollama"
+
+[storage]
+adapter = "file"          # or "sqlite"
+
+[crawl]
+max_pages = 50
+```
+
+Precedence: env vars > `./basesignal.toml` > `~/.basesignal/config.toml` > defaults
 
 ---
 
 ## Target Users
 
-### Primary Audience
+### Primary: Developers and Product Engineers
 
-**Product managers and founders at B2B SaaS companies who use AI assistants daily.**
+**The open source entry point.** They discover Basesignal on GitHub, run `npx basesignal scan` on their product, and get a structured profile in their terminal. They care about:
+- Self-hostable, no vendor lock-in
+- Portable JSON output they can pipe into other tools
+- Extensible architecture they can contribute to
+- Bring-your-own LLM key
 
-They already ask Claude and ChatGPT for help with product work. Basesignal makes those conversations smarter by grounding them in structured product knowledge.
+### Secondary: Product Managers Who Use AI Assistants
 
-### Characteristics
+**The MCP entry point.** They connect Basesignal to Claude Desktop and refine their product model through conversation. They care about:
+- Instant value from URL scan
+- Conversational refinement without learning a new tool
+- Shareable profiles for team alignment
+- Measurement specs they can hand to engineering
 
-- Use AI assistants multiple times per day
-- Know they need better product definitions but haven't built them
-- Have tried and abandoned tracking plans, metric definitions, journey maps
-- Want data-driven decisions but lack the foundation
-
-### Entry Points
-
-- *"I need to define activation but don't know where to start"*
-- *"Our team argues about metrics because nothing is defined"*
-- *"I want to instrument tracking but don't have a plan"*
-- *"Help me think through our user journey"*
-
-These are things users already ask AI assistants. With Basesignal connected, the answers are grounded in their specific product.
-
-### Expansion Audiences
+### Expansion: Teams and Organizations
 
 | Audience | Use Case |
 |----------|----------|
-| **Data/Analytics teams** | Structured measurement plans, metric catalogs |
-| **Growth teams** | Journey optimization, conversion definitions |
-| **Engineering teams** | Tracking instrumentation from entity model |
+| **Data/Analytics teams** | Structured measurement plans from the schema |
+| **Growth teams** | ICP-driven activation optimization |
+| **Engineering teams** | Entity-first tracking instrumentation |
 | **Founders/Executives** | Product health overview, board-ready exports |
+
+---
+
+## Business Model: Open Core
+
+### Open Source (Free Forever)
+
+Everything in the repository:
+- Full analysis engine (crawl → extract → discover → converge → generate)
+- CLI, MCP server, all crawlers and storage adapters
+- Product profile schema and TypeScript types
+- Self-hosting via Docker
+
+### Commercial Layer (Future)
+
+| Offering | Value | Model |
+|----------|-------|-------|
+| **Basesignal Cloud** | Hosted MCP server, team collaboration, no setup | SaaS subscription |
+| **Benchmarks** | "Your activation rate vs. similar products" | Data network effect |
+| **Extended Sources** | YouTube, G2, documentation, review mining | Premium crawlers |
+| **Analytics Integration** | Connect Amplitude/Mixpanel, gap analysis | Premium connectors |
+
+The open source project builds the standard. The commercial layer builds on the network.
+
+---
+
+## What We've Proven
+
+Eight missions completed. The analysis engine is validated end-to-end.
+
+### Validated Hypotheses
+
+| Hypothesis | Result | Mission |
+|------------|--------|---------|
+| **H5: Multi-Level Activation** | 4 distinct levels with measurable criteria, aha-moment correctly identified | M002 |
+| **H6: 7-Lens Value Discovery** | 83.3% accuracy on Tier 1 moments (threshold: 70%) | M003 |
+
+### Production-Quality Outputs (M006 + M007)
+
+- **Value moments** describe user-experienced moments, not abstract business outcomes
+- **ICP profiles** prioritize by product relevance, not marketing prominence
+- **Measurement specs** follow the Double Three-Layer Framework (entities → activities → perspectives)
+- **Convergence** produces useful tier distribution: 2-3 Core, 5-6 Important, ≤20 Supporting
+
+### Open Source Foundation (M008)
+
+- Modular packages with clear boundaries
+- `basesignal scan <url>` works without any hosted infrastructure
+- Pluggable crawlers, storage adapters, and LLM providers
+- Product profile schema published as `@basesignal/core`
 
 ---
 
 ## Product Roadmap
 
-### Phase 1: The Scanner (MVP)
+### Phase 1: The Open Source Engine ✓ Complete
 
-**Goal:** Prove the magic works—URL in, useful profile out.
+**What shipped:**
+- Multi-phase analysis pipeline (identity → lenses → convergence → outputs)
+- 7 analytical lenses with experiential extraction
+- LLM-based semantic clustering and tiered convergence
+- ICP profile, activation map, and measurement spec generators
+- Modular packages: core, crawlers, mcp-server, storage, cli
+- CLI with `scan`, `init`, `export`, `serve` commands
+- TOML config, product directory storage, structured artifact persistence
+- Docker support for self-hosting
 
-**What It Does:**
-- MCP server with core tools
-- Website crawling and content extraction
-- LLM analysis into data model
-- Profile generation with confidence scores
-- Basic refinement through conversation
-- Markdown and JSON export
+### Phase 2: Refinement Loop
 
-**User Experience:**
-```
-Day 1: User connects Basesignal to Claude
-       "Scan my product at acme.io"
-       → Gets draft profile in 60 seconds
-       → Refines activation definition in conversation
-       → Exports to Notion
+**Goal:** Make generated profiles improvable through conversation and direct editing.
 
-Day 7: Returns to refine more
-       "What's my current activation definition?"
-       → Basesignal remembers everything
-       → Continues refinement
-```
+- MCP tools for retrieving, updating, and validating profile sections
+- Cascading updates (change activation → measurement spec adjusts)
+- Confidence tracking: AI-inferred vs. user-validated
+- Suggestions engine: "These sections need attention"
 
-**Success Metrics:**
-- Scanned profiles rated "useful" by >70% of users
-- >50% of users refine at least one definition
-- >30% of users return within 7 days
+### Phase 3: Extended Sources
 
----
+**Goal:** Richer inputs for deeper analysis.
 
-### Phase 2: Extended Intelligence
+- YouTube channel analysis (demos, tutorials, onboarding)
+- Documentation site parsing (API docs, guides)
+- G2/Capterra review mining (user sentiment, use cases)
+- Benchmark database from analyzed products
 
-**Goal:** Richer sources, smarter analysis.
+### Phase 4: Connected Intelligence
 
-**What It Does:**
-- YouTube channel analysis (demos, tutorials)
-- Documentation site parsing
-- G2/Capterra review mining
-- Benchmark comparisons
-- Inference rules engine
-- Product type patterns
+**Goal:** Bridge the gap between recommended tracking and actual data.
 
-**User Experience:**
-```
-"Also analyze my YouTube channel and G2 reviews"
-→ First Value moment identified from review sentiment
-→ Onboarding flow extracted from demo videos
-→ Activation compared to B2B SaaS benchmarks
-```
-
----
-
-### Phase 3: Connected Intelligence
-
-**Goal:** Connect to real data, show actual performance.
-
-**What It Does:**
-- Connect to Amplitude, Mixpanel, Segment
-- Gap analysis: ideal plan vs. actual tracking
-- Live metrics: actual activation rate, retention, etc.
-- Track definition accuracy over time
-
-**User Experience:**
-```
-"Connect my Amplitude account"
-→ "You're tracking 60% of your ideal measurement plan"
-→ "Your activation rate is 34%, below the 42% benchmark"
-→ "These 5 events are missing from your tracking"
-```
-
----
-
-### Phase 4: Growth Intelligence
-
-**Goal:** Actionable insights for prioritization.
-
-**What It Does:**
+- Amplitude, Mixpanel, Segment connectors
+- Gap analysis: "You're tracking 60% of your ideal measurement plan"
+- Live metrics: actual activation rate, retention, conversion
 - Feature → outcome correlation
-- Segment analysis (which user types convert best)
-- Expansion opportunity identification
-- Churn risk prediction
-- Prioritization recommendations
-
-**User Experience:**
-```
-"Which features drive activation?"
-→ "Users who use Feature X activate at 2.3x the rate"
-→ "Segment Y has 45% higher LTV but only 12% of signups"
-→ "Prioritize: improving Feature X for Segment Y"
-```
 
 ---
 
@@ -412,13 +401,12 @@ Day 7: Returns to refine more
 
 ### The Gap We Fill
 
-Basesignal fills a gap that exists **before** analytics tools and **above** raw data:
-
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  "What should we measure and why?"        ← BASESIGNAL          │
+│  "How does our product grow?"             ← BASESIGNAL          │
+│  (users, value, activation, measurement)                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  "Measure these events"                   ← Tracking Plans      │
+│  "Validate these events"                  ← Tracking Plans      │
 ├─────────────────────────────────────────────────────────────────┤
 │  "Here's your data"                       ← Analytics Tools     │
 ├─────────────────────────────────────────────────────────────────┤
@@ -426,89 +414,84 @@ Basesignal fills a gap that exists **before** analytics tools and **above** raw 
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Competitive Landscape
+Every layer below assumes you already know your growth model. Basesignal generates it.
 
-| Category | Examples | How We're Different |
-|----------|----------|---------------------|
-| **Analytics Tools** | Amplitude, Mixpanel | They measure what you track. We tell you what to track and why. |
-| **Tracking Plans** | Avo, Iteratively | They validate events. We define the strategy that informs events. |
-| **Data Modeling** | dbt, Census | Infrastructure layer. We're the strategy layer. |
-| **AI Assistants** | Claude, ChatGPT | General purpose. We add structured product knowledge. |
-| **Consulting** | Analytics consultants | We productize the discovery. 60 seconds vs. 2 weeks. |
+### Why Open Source Wins
 
-### Why Incumbents Won't Build This
+| vs. | Their Limitation | Our Advantage |
+|-----|-----------------|---------------|
+| **Analytics SaaS** (Amplitude, Mixpanel) | They measure what you track. Closed schema. No growth model. | We generate the growth model that tells you what to track. Open schema you own. |
+| **Tracking Plans** (Avo, Iteratively) | They validate events. No strategy layer. | We generate the strategy — users, value moments, activation — that informs events. |
+| **Growth platforms** (Pendo, Appcues) | They optimize existing flows. No structured intelligence. | We generate the structured intelligence they should be optimizing toward. |
+| **AI Assistants** (Claude, ChatGPT) | No persistence. Every conversation starts fresh. | Structured growth knowledge that accumulates and connects. |
+| **Consulting** | $20K and 2 weeks. | 60 seconds. Free. Self-serve. Open source. |
 
-1. **Analytics tools** are built for interactions, not outcomes. Rebuilding around outcome-driven measurement would cannibalize their core product.
+### Why Open Source Specifically
 
-2. **AI assistants** don't persist knowledge. Every conversation starts fresh. They can't accumulate product understanding over time.
-
-3. **Neither** has the specialized data model. They don't encode the relationships between activation, journey stages, metrics, and revenue.
-
-Basesignal sits **on top** of AI assistants (via MCP) and **before** analytics tools (defining what to measure). It's a new layer, not a replacement.
-
----
-
-## Business Model
-
-### MCP-Native Pricing
-
-The MCP model enables clean usage-based pricing:
-
-| Tier | What's Included | Price |
-|------|-----------------|-------|
-| **Free** | 1 product, basic scan, 10 refinements/month | $0 |
-| **Pro** | 3 products, extended sources, unlimited refinements, export | $29/month |
-| **Team** | Unlimited products, collaboration, benchmarks, API access | $99/month |
-
-Alternative: Pure usage-based
-- $1 per scan
-- $0.10 per refinement
-- $2 per export
-
-### Revenue Potential
-
-| Metric | Conservative | Optimistic |
-|--------|--------------|------------|
-| Users Year 1 | 500 | 2,000 |
-| Paid Conversion | 10% | 20% |
-| ARPU | $30/month | $50/month |
-| ARR Year 1 | $18,000 | $240,000 |
-
-The real upside is in Phase 3-4: connected data and intelligence. That's where enterprise value emerges.
+1. **Trust through transparency.** Product teams can inspect every prompt, every scoring algorithm, every inference rule. No black box.
+2. **Adoption through distribution.** `npx basesignal scan` is zero-friction. No signup, no credit card, no vendor approval.
+3. **Context compounds.** Every product analyzed, every refinement made, every conversation grounded—the context gets richer and the AI gets smarter about growth.
+4. **Quality through contribution.** Crawlers for new platforms, lenses for new analytical perspectives, storage adapters for new backends—community extends what one team can't.
 
 ---
 
 ## Key Product Decisions
 
-### 1. MCP-First, Web-Optional
+### 1. Open Source First, Commercial Later
 
-The primary interface is AI assistants via MCP. Web UI exists for sharing, visualization, and edge cases—not as the main product.
+The analysis engine, schema, and tools are fully open source (MIT). Commercial offerings build on top—never gate the core.
 
-**Rationale:** Meet users where they are. Don't compete for screen time. Leverage AI companies' UI investment.
+**Rationale:** Standards win through adoption, not monetization. Build the network first.
 
-### 2. Crawl-Then-Refine, Not Interview-First
+### 2. CLI + MCP, Not Web App
 
-We generate draft profiles from public sources, then refine through conversation. Users correct rather than create.
+The primary interfaces are the command line and MCP protocol. A web viewer exists for sharing and visualization—not as the main product.
 
-**Rationale:** Correction is easier than creation. Instant value creates engagement. "How did it know that?" is a hook.
+**Rationale:** Meet developers where they are. Don't compete for screen time. Leverage AI companies' UI investment.
 
-### 3. Data Model Is the Product
+### 3. Context Is the Product
 
-The structured ontology—concepts, relationships, inference rules—is the core IP. Everything else is interface.
+The engineered growth context—structured, validated, interconnected—is the core IP. Everything else is interface.
 
-**Rationale:** Crawling is commodity. LLMs are commodity. Structure is defensible.
+**Rationale:** Crawling is commodity. LLMs are commodity. Structured growth context that makes AI conversations actually useful doesn't exist. We're creating it.
 
-### 4. Confidence Over Completeness
+### 4. Experiential, Not Abstract
+
+Value moments describe what users **experience**, not what the marketing site says. Measurement specs follow the Double Three-Layer Framework.
+
+**Rationale:** M006 and M007 proved that experiential framing produces outputs product teams recognize as accurate. Abstract outputs get ignored.
+
+### 5. Confidence Over Completeness
 
 Every generated element has a confidence score. We'd rather be transparent about uncertainty than pretend false precision.
 
 **Rationale:** Trust requires honesty. Users can prioritize refinement based on confidence.
 
-### 5. Solo Founder, AI-Leveraged
+### 6. Solo Founder, AI-Leveraged
 
-One person, maximum AI leverage, minimal infrastructure. This is an experiment in what's possible in 2026.
+One person, maximum AI leverage, open source distribution. This is an experiment in what's possible in 2026.
 
-**Rationale:** Stay lean, move fast, validate before scaling.
+**Rationale:** Stay lean, build in the open, let the community amplify.
+
+---
+
+## The Founder's Bet
+
+This product is a bet on three trends:
+
+### 1. Open Source Eats the Product Stack
+
+PostHog, Supabase, Cal.com—the pattern is clear. Open source wins in developer-adjacent categories by building trust through transparency and community. Growth intelligence is next.
+
+### 2. Context Becomes the Bottleneck
+
+AI models are getting cheaper and smarter every quarter. The bottleneck isn't intelligence—it's context. The team that can feed an AI structured knowledge about their product's growth model will outperform the team prompting from scratch. Context engineering is the new competitive advantage.
+
+### 3. AI Makes Intelligence Generatable
+
+What took a consulting team two weeks can now be generated in 60 seconds. The barrier isn't intelligence anymore—it's structure. Basesignal provides the structure; LLMs provide the intelligence.
+
+Basesignal sits at the intersection: **context engineering for growth, open source, generated by AI.**
 
 ---
 
@@ -518,77 +501,25 @@ One person, maximum AI leverage, minimal infrastructure. This is an experiment i
 
 - *"It figured out more about my product in 60 seconds than I could explain in an hour"*
 - *"My team finally agrees on what activation means"*
-- *"Every conversation with Claude about my product is smarter now"*
 - *"I actually have a measurement plan I can hand to engineering"*
+- *"I can run this on my own infrastructure—no vendor dependency"*
 
-### For Basesignal (Phase 1)
+### For the Project
 
-| Metric | Target |
-|--------|--------|
-| Scanned profiles | 500 |
-| "Useful" rating | >70% |
-| Return rate (7-day) | >30% |
-| Paid conversion | >10% |
+| Metric | Phase 1 (Current) | Phase 2 | Phase 3 |
+|--------|-------------------|---------|---------|
+| GitHub stars | 500 | 2,000 | 5,000 |
+| Products analyzed | 100 | 1,000 | 10,000 |
+| Contributors | 5 | 20 | 50 |
+| Schema adopters | 1 (us) | 5 tools | 20 tools |
 
-### For Basesignal (Phase 2+)
+### For the Business
 
-| Metric | Target |
-|--------|--------|
-| Connected data sources | >100 |
-| Monthly active products | >1,000 |
-| ARR | >$100,000 |
-
----
-
-## Messaging Framework
-
-### Headline
-
-> **Your product's growth model—generated in 60 seconds.**
-
-### Core Message
-
-Every product has a story of how it converts users into revenue. But most teams have never written that story down. Definitions are vague. Journey maps are outdated. Metrics are undefined.
-
-Basesignal changes that. Point us at your website, and we'll draft your complete growth model—activation definitions, user journey, metric catalog, measurement plan. Then refine it through conversation with your AI assistant.
-
-Finally, a structured understanding of how your product works—without the two-week discovery project.
-
-### Tagline Options
-
-- The product knowledge layer
-- Your growth model, generated
-- Product intelligence for AI assistants
-- From URL to understanding in 60 seconds
-
-### Positioning Statement
-
-**For** product teams at B2B SaaS companies
-**Who** need structured definitions of how their product converts users to revenue
-**Basesignal is** a product knowledge layer
-**That** generates comprehensive growth models from public sources and refines them through conversation
-**Unlike** traditional analytics tools or manual discovery processes
-**We** deliver a complete, structured product model in 60 seconds instead of 2 weeks.
-
----
-
-## The Founder's Bet
-
-This product is a bet on three trends:
-
-### 1. AI Assistants Become Primary Interface
-
-More and more work happens through conversation with AI. Tools that integrate with this paradigm will win over tools that fight it.
-
-### 2. Structure Becomes Valuable Again
-
-In a world of infinite generated content, structured knowledge becomes scarce and valuable. The data model is the moat.
-
-### 3. Product-Led Growth Demands Clarity
-
-As PLG matures, "just ship and see" isn't enough. Teams need rigorous understanding of their growth models. But they don't have time to build it manually.
-
-Basesignal sits at the intersection: **structured product knowledge, accessible through AI assistants, generated automatically.**
+| Metric | Year 1 | Year 2 |
+|--------|--------|--------|
+| Cloud subscribers | 50 | 500 |
+| ARR | $15,000 | $150,000 |
+| Community-contributed crawlers | 5 | 20 |
 
 ---
 
@@ -596,25 +527,25 @@ Basesignal sits at the intersection: **structured product knowledge, accessible 
 
 | Element | Description |
 |---------|-------------|
-| **The Problem** | Teams can't answer "how does our product convert users to revenue?" because they lack structured definitions |
-| **Why It Persists** | Building the model is hard work that never gets finished |
-| **The Insight** | What if the model generated itself from existing information? |
-| **The Mechanism** | Crawl public sources → Generate structured profile → Refine through conversation |
-| **The Moat** | The data model: ontology, relationships, inference rules, patterns |
-| **The Interface** | MCP server accessible from any AI assistant |
-| **Phase 1** | Scanner: URL → draft profile → conversational refinement |
-| **Phase 2** | Extended sources: YouTube, docs, reviews, benchmarks |
-| **Phase 3** | Connected data: actual metrics from analytics tools |
-| **Phase 4** | Growth intelligence: prioritization and prediction |
+| **The Problem** | Teams can't answer "how does our product grow?" — and every AI conversation about it starts from zero |
+| **Why It Persists** | Building a growth model requires connecting users, value moments, activation, and measurement — hard work that never gets finished |
+| **The Insight** | What if the growth context engineered itself—and made every AI conversation smarter? |
+| **The Mechanism** | Crawl → 7 lenses → converge → generate ICP profiles, activation map, measurement spec |
+| **The Context** | Growth profile: structured, versioned, portable, compounding |
+| **The Distribution** | Open source: CLI, MCP server, Docker. Run anywhere. |
+| **Phase 1** | The engine: URL → structured product profile (complete) |
+| **Phase 2** | Refinement: conversational improvement, cascading updates |
+| **Phase 3** | Extended sources: YouTube, docs, reviews, benchmarks |
+| **Phase 4** | Connected intelligence: analytics integration, gap analysis |
 
 ---
 
-> **Basesignal: The product knowledge layer—accessible from any AI, generated in 60 seconds, refined through conversation.**
+> **Basesignal: Context engineering for growth intelligence—generated in 60 seconds, open source, compounding with every conversation.**
 
 ---
 
-*Version 2.0*
-*January 2026*
+*Version 3.0*
+*February 2026*
 *DeepSky Data ApS*
 
 ---
@@ -622,38 +553,55 @@ Basesignal sits at the intersection: **structured product knowledge, accessible 
 
 ## Version History
 
-### v1: Outcome-Driven Product Analytics (January 2026)
+### v2: The Product Knowledge Layer (January 2026)
 
-The original vision positioned Basesignal as a **web application** for outcome-driven product analytics. Key differences from v2:
+The second vision positioned Basesignal as a **hosted MCP-first SaaS**—a product knowledge layer accessible through AI assistants. Key differences from v3:
 
-| Aspect | v1 | v2 |
+| Aspect | v2 | v3 |
 |--------|----|----|
-| **Tagline** | "Outcome-Driven Product Analytics" | "The Product Knowledge Layer" |
-| **Primary interface** | Web app with guided setup | MCP server via AI assistants |
-| **Core mechanism** | AI-conducted interview (15 min) | URL scan + crawl (60 seconds) |
-| **User interaction** | Come to our app, complete setup | Stay in your AI assistant, we come to you |
-| **Value creation** | User answers questions → outputs generated | Public sources crawled → draft generated → user refines |
-| **Moat** | Opinionated framework + education | Structured data model + compounding inference rules |
-| **Keystone belief** | "I need to understand how much revenue potential our product is losing" | "I need a structured model, but I don't have time to build one from scratch" |
-| **Time to value** | 15 minutes | 60 seconds |
-| **Phase 1** | "The Generator" — interview-driven journey mapping | "The Scanner" — URL → draft profile |
+| **Tagline** | "The Product Knowledge Layer" | "Context Engineering for Growth Intelligence" |
+| **Distribution** | Hosted SaaS with MCP server | Open source: CLI + MCP + Docker |
+| **Moat** | Structured data model + compounding inference | Engineered growth context + open schema |
+| **Business model** | SaaS subscription ($29-99/month) | Open core: free engine + commercial cloud/benchmarks |
+| **Primary interface** | MCP server via AI assistants | CLI (developers) + MCP (product managers) |
+| **Schema ownership** | Stored in Basesignal's infrastructure | Portable JSON files the user owns |
+| **Architecture** | Monolithic Convex serverless backend | Modular npm packages, self-hostable |
+| **Phase 1 status** | Planned ("The Scanner") | Complete (8 missions shipped) |
 
 #### What Carried Forward
 
-These v1 ideas remain core to v2:
-- **The problem space**: Teams can't answer "Is our product converting users into revenue?"
-- **Outcome-driven thinking**: Measuring success, not just interactions
-- **The three-layer framework**: Entities, Activities, Properties
-- **Competitive positioning**: Sits above analytics tools, before tracking plans
+These v2 ideas remain core to v3:
+- **The problem space**: Teams can't answer "how does my product convert users to revenue?"
+- **Crawl-then-refine mechanism**: Generate draft from public sources, refine through conversation
+- **MCP as interface**: AI assistants as primary interaction for product managers
+- **Confidence over completeness**: Transparent uncertainty, not false precision
 - **Solo founder experiment**: Maximum AI leverage, minimal infrastructure
-- **Later phases**: Connected data (Amplitude/Mixpanel) and growth intelligence
 
 #### What Changed and Why
 
-1. **Interface shift (app → MCP)**: Instead of building a UI and competing for screen time, become a capability within tools users already use daily. This is the biggest strategic shift—from "build an app" to "build intelligence."
+1. **Distribution shift (SaaS → open source)**: M008 proved the engine works as standalone packages. Open source distribution removes all adoption friction—no signup, no credit card, no vendor approval process. Standards win through adoption.
 
-2. **Input shift (interview → crawl)**: Instead of asking users to spend 15 minutes answering questions, generate a 70% complete draft from public sources in 60 seconds. Correction is easier than creation.
+2. **Architecture shift (monolith → packages)**: The Convex backend was the right prototyping choice, but self-hosting requires portability. Modular packages (core, crawlers, mcp-server, storage, cli) let users compose what they need.
 
-3. **Moat shift (framework → data model)**: The defensibility moved from "an opinionated measurement framework" to "a structured ontology with compounding inference rules." Every product analyzed makes the model smarter.
+3. **Moat shift (data model → engineered context)**: The defensibility moved from "a data model inside our SaaS" to "the engine that produces structured growth context." The context compounds — every product analyzed, every refinement, every conversation makes the system smarter.
 
-4. **Belief shift**: v1 emphasized loss aversion ("revenue you're losing"). v2 emphasizes the time constraint ("I don't have time to build one from scratch") and the magic of instant generation.
+4. **Quality validation**: M006 (output quality) and M007 (insight quality) proved the engine produces outputs that product teams recognize as accurate. This gave confidence to open source the engine—the quality speaks for itself.
+
+### v1: Outcome-Driven Product Analytics (January 2026)
+
+The original vision positioned Basesignal as a **web application** for outcome-driven product analytics. Key differences:
+
+| Aspect | v1 | v2 | v3 |
+|--------|----|----|-----|
+| **Tagline** | "Outcome-Driven Product Analytics" | "The Product Knowledge Layer" | "Context Engineering for Growth Intelligence" |
+| **Primary interface** | Web app with guided setup | MCP server via AI assistants | CLI + MCP + Docker |
+| **Core mechanism** | AI-conducted interview (15 min) | URL scan + crawl (60 sec) | URL scan + 7 lenses + convergence (60 sec) |
+| **Distribution** | Web app | Hosted SaaS | Open source |
+| **Moat** | Opinionated framework | Structured data model | Engineered growth context |
+
+#### What Has Persisted Across All Three Versions
+
+- **The problem**: Teams lack structured definitions of how their product creates value
+- **The bet**: AI can generate what teams can't build manually
+- **The ambition**: 60 seconds instead of 2 weeks
+- **The outcome**: Structured growth context that makes AI conversations actually useful
