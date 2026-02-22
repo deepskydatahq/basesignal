@@ -232,24 +232,19 @@ Task Pipeline → /retro → /product-judgment validates up the hierarchy
 
 ## Testing
 
-Follow the testing skill at `.claude/skills/testing.md` for detailed patterns.
-
-**Quick reference:**
-- **Convex functions**: Use `convex-test` for business logic
-- **React components**: Use RTL with setup functions
-- **Pure functions**: Use Vitest directly
+All packages use Vitest. Tests live alongside source files.
 
 **Commands:**
 ```bash
 npm test          # Run tests in watch mode
-npm run test:run  # Run tests once
+npm run test:run  # Run tests once (CI)
 ```
 
 **Key patterns:**
-- Use `getByRole` as primary query
-- Use `userEvent.setup()` for interactions
+- Co-locate tests with source: `foo.ts` → `foo.test.ts`
 - Write workflow tests, not isolated assertions
 - Use setup functions instead of `beforeEach`
+- Each package has its own test config in `vitest.config.ts` or `package.json`
 
 ---
 
