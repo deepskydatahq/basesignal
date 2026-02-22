@@ -1,0 +1,147 @@
+# Mission: Lifecycle States
+# Generate product-specific lifecycle state definitions from scan data —
+# completing the user journey from activation through churn and resurrection.
+
+id = "M010"
+title = "Lifecycle States"
+status = "draft"
+created = 2026-02-22
+depends_on = ["M002", "M008"]
+
+[outcome]
+description = """
+Running `basesignal scan <url>` produces a standalone lifecycle states output alongside
+the existing ICP profiles, activation map, and measurement spec. The output defines a
+complete user lifecycle state machine — new, activated, engaged, at-risk, dormant,
+churned, resurrected — with product-specific entry criteria, exit triggers, time windows,
+and transition paths. States are grounded in the product's actual value moments and
+activation levels, not generic SaaS templates. The measurement spec's existing
+userStateModel is replaced by (or references) the richer lifecycle states output.
+"""
+
+user_progress = "From 'activation funnel only — no post-activation intelligence' to 'complete lifecycle state machine with retention, churn, and resurrection definitions'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Scan output includes a lifecycle_states section as a new top-level output",
+    "At minimum 7 states are defined: new, activated, engaged, at_risk, dormant, churned, resurrected",
+    "Each state has: name, definition, entry_criteria (measurable), exit_triggers, time_window",
+    "Transitions between states are explicit with trigger conditions",
+    "States reference product-specific value moments and activation levels — not generic placeholders",
+    "Time windows are product-appropriate (e.g. B2C daily app vs B2B monthly tool have different 'at_risk' windows)",
+    "The 'activated' state aligns with the existing activation map's primary activation level",
+    "Lifecycle states types are defined in @basesignal/core with Zod schemas",
+    "Lifecycle states generator follows the same pattern as existing output generators (icp-profiles, activation-map, measurement-spec)",
+    "The measurement spec's userStateModel references or is derived from the lifecycle states output",
+    "Pipeline generates lifecycle states as part of the standard scan flow",
+    "All existing tests continue to pass — no regressions",
+    "Miro test case produces lifecycle states a PM would recognize as accurate for a B2B collaboration tool",
+]
+
+validator_context = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "VALUES.md",
+]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/schema/definitions.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+]
+
+[scope]
+in_scope = [
+    "Define LifecycleStatesResult types in @basesignal/core (types + Zod schema)",
+    "Create lifecycle-states.ts output generator in packages/mcp-server/src/analysis/outputs/",
+    "Integrate lifecycle states generation into the pipeline (Phase 4 output generation)",
+    "Wire lifecycle states into the scan output / product profile",
+    "Update measurement spec's userStateModel to reference or align with lifecycle states",
+    "Add progress phase for lifecycle states generation",
+    "Tests for the new output generator",
+    "Validation that states are product-specific, not generic",
+]
+out_of_scope = [
+    "Revenue states (L07) — that is a separate value level",
+    "Breakdown dimensions (L09) — lifecycle state becomes a dimension later, not now",
+    "Cohort framework (L10) — cohort analysis uses lifecycle states but is a separate level",
+    "Connected intelligence (L11-L13) — no real data connections",
+    "MCP tools for editing/refining lifecycle states (Phase 2 refinement loop)",
+    "Changing the activation map output — it stays as-is",
+    "Changing how lenses work or adding new lenses",
+]
+acceptable_breakage = [
+    "Measurement spec's userStateModel format may change — consumers of this field need to adapt",
+    "Product profile schema version bump — existing stored profiles will lack lifecycle_states field",
+    "Scan output grows larger — one more section in the JSON output",
+]
+
+[notes]
+considerations = """
+Codebase exploration findings (2026-02-22):
+
+**What already exists:**
+- DefinitionsMap in profile.ts has placeholder lifecycle fields: firstValue, active, atRisk, churn
+  (string-based criteria, not structured output)
+- MeasurementSpec has userStateModel with 5 states: new, activated, active, at_risk, dormant
+  (embedded in measurement spec, generated from LLM prompt, basic criteria only)
+- State-transitions lens exists but is about product workflow transitions, not user lifecycle
+
+**Architecture decision: Standalone output generator (recommended)**
+The lifecycle states output should follow the same pattern as icp-profiles.ts,
+activation-map.ts, and measurement-spec.ts — a standalone generator with its own
+system prompt, prompt builder, response parser, and generator function.
+
+Reasons:
+1. Separation of concerns — measurement spec focuses on instrumentation, activation
+   map on value progression, lifecycle states on user health/retention modeling
+2. Can run in parallel with other outputs in the pipeline
+3. Richer schema possible (time windows, transition paths, resurrection criteria)
+4. Existing output generators are 250-400 lines each — adding lifecycle complexity
+   to measurement-spec.ts would make it unmanageable
+
+**Integration points (5 files to modify, 1 to create):**
+1. CREATE: packages/mcp-server/src/analysis/outputs/lifecycle-states.ts
+2. MODIFY: packages/core/src/types/outputs.ts (add LifecycleStatesResult type)
+3. MODIFY: packages/core/src/schema/outputs.ts (add Zod schema)
+4. MODIFY: packages/mcp-server/src/analysis/outputs/index.ts (add to generateAllOutputs)
+5. MODIFY: packages/mcp-server/src/analysis/pipeline.ts (wire into pipeline)
+6. MODIFY: packages/mcp-server/src/analysis/types.ts (add progress phase)
+
+**Input data for lifecycle states generator:**
+- ValueMoment[] (from convergence — what users experience)
+- ActivationLevel[] (from extraction — the activation funnel)
+- ActivationMapResult (from activation map output — stages and transitions)
+- CoreIdentity (from extraction — product category, business model)
+The generator needs product context to make time windows product-appropriate.
+
+**Relationship to measurement spec userStateModel:**
+Two options:
+A) Lifecycle states output replaces userStateModel — measurement spec references it
+B) Lifecycle states output is canonical, userStateModel is a simplified projection
+Option B is safer for backward compatibility. The measurement spec can derive its
+userStateModel from the lifecycle states output.
+
+**Epic breakdown suggestion:**
+E001: Core types and schema (types + Zod in @basesignal/core)
+E002: Lifecycle states generator (the output generator itself)
+E003: Pipeline integration and measurement spec alignment
+Each epic is independently testable and builds on the previous.
+
+**Timo's note:** L05 is broad and may span multiple missions. M010 focuses on
+generating lifecycle state definitions from scan data. Future missions may add
+refinement tools, richer transition modeling, or time-series analysis.
+"""
