@@ -12,6 +12,29 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E002-S002: Response Parser for Lifecycle States
+
+**Files Changed:**
+- `packages/core/src/types/outputs.ts` - Cherry-picked from S001: Added StateCriterion, LifecycleState, StateTransition, LifecycleStatesResult interfaces
+- `packages/core/src/schema/outputs.ts` - Cherry-picked from S002: Added StateCriterionSchema, LifecycleStateSchema, StateTransitionSchema, LifecycleStatesResultSchema Zod schemas
+- `packages/core/src/schema/index.ts` - Added barrel exports for lifecycle schemas and types
+- `packages/core/src/index.ts` - Added barrel exports for lifecycle types
+- `packages/mcp-server/src/analysis/outputs/lifecycle-states.ts` - Cherry-picked S001 prompt builder; added parseLifecycleStatesResponse function using Zod-first pattern
+- `packages/mcp-server/src/analysis/__tests__/outputs/lifecycle-states.test.ts` - New: 9 tests for parser (valid parse, markdown fence, optional fields, threshold, missing states, missing entry_criteria, empty name, wrong confidence type, missing from_state)
+
+**Learnings:**
+- Zod-first parser pattern reduces 50-100 lines of hand-written validation to 3 lines (extract, validate, return)
+- ZodError already includes field paths and type expectations — no custom error wrapping needed
+- Cherry-picking from dependency branches works well for bringing in prerequisite types/schemas
+
+**Patterns Discovered:**
+- Zod-first parser: `extractJson(text)` → `Schema.parse(raw)` → return typed result. Replaces manual typeof/Array.isArray validation
+- This is the new standard for output parsers going forward; existing parsers (activation-map, icp-profiles, measurement-spec) use the legacy hand-written approach
+
+**Gotchas:**
+- Must build `@basesignal/core` (`npm run build` in packages/core) before running mcp-server tests — Vite can't resolve the package entry without built artifacts
+- S003 barrel exports branch was empty — had to add lifecycle exports to schema/index.ts and src/index.ts ourselves
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**

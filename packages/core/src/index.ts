@@ -77,6 +77,10 @@ export type {
   ActivationLevel,
   MeasurementInputData,
   OutputGenerationResult,
+  StateCriterion,
+  LifecycleState,
+  StateTransition,
+  LifecycleStatesResult,
 } from "./types/outputs";
 
 // --- Zod Runtime Validation Schemas ---
