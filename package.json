@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/core",
+    "packages/crawlers",
+    "packages/storage",
+    "packages/mcp-server",
+    "packages/cli"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
