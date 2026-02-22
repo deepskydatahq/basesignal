@@ -3,16 +3,19 @@
 import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec, LifecycleStatesResult } from "../types.js";
 import { generateICPProfiles } from "./icp-profiles.js";
 import { generateActivationMap, type ActivationMapResult } from "./activation-map.js";
+import { generateLifecycleStates } from "./lifecycle-states.js";
 import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
 
 // Re-export
 export { generateICPProfiles } from "./icp-profiles.js";
 export { generateActivationMap } from "./activation-map.js";
+export { generateLifecycleStates } from "./lifecycle-states.js";
 export { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
 
 export interface OutputsResult {
   icp_profiles: ICPProfile[];
   activation_map: ActivationMapResult | null;
+  lifecycle_states: LifecycleStatesResult | null;
   measurement_spec: MeasurementSpec | null;
   lifecycle_states: LifecycleStatesResult | null;
 }
@@ -31,6 +34,7 @@ export async function generateAllOutputs(
   const result: OutputsResult = {
     icp_profiles: [],
     activation_map: null,
+    lifecycle_states: null,
     measurement_spec: null,
     lifecycle_states: null,
   };
@@ -66,7 +70,27 @@ export async function generateAllOutputs(
     }
   }
 
-  // 3. Measurement spec (uses ICP and activation map)
+  // 3. Lifecycle states (requires activation levels + activation map + identity)
+  if (activationLevels && result.activation_map && identity) {
+    progress?.({ phase: "outputs_lifecycle_states", status: "started" });
+    try {
+      result.lifecycle_states = await generateLifecycleStates(
+        {
+          identity,
+          value_moments: convergence.value_moments,
+          activation_levels: activationLevels.levels,
+          activation_map: result.activation_map,
+        },
+        llm,
+      );
+      progress?.({ phase: "outputs_lifecycle_states", status: "completed" });
+    } catch (e) {
+      progress?.({ phase: "outputs_lifecycle_states", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "lifecycle_states", message: String(e) });
+    }
+  }
+
+  // 4. Measurement spec (uses ICP and activation map)
   if (activationLevels) {
     progress?.({ phase: "outputs_measurement_spec", status: "started" });
     try {

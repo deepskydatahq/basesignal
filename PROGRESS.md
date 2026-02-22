@@ -12,26 +12,25 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E003-S001: Add Lifecycle States Progress Phase and OutputsResult Field
+### 2026-02-22 - Story M010-E003-S002: Wire Lifecycle States Generator into Pipeline
 
 **Files Changed:**
-- `packages/core/src/types/outputs.ts` - Added `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` interfaces (cherry-picked from M010-E001-S001 dependency branch)
-- `packages/core/src/index.ts` - Exported `StateCriterion`, `LifecycleState`, `StateTransition`, `LifecycleStatesResult` from barrel file
-- `packages/mcp-server/src/analysis/types.ts` - Imported and re-exported `LifecycleStatesResult` from `@basesignal/core`; added `"outputs_lifecycle_states"` to `ProgressPhase` union; added `lifecycle_states: LifecycleStatesResult | null` to `PipelineOutputs`
-- `packages/mcp-server/src/analysis/outputs/index.ts` - Imported `LifecycleStatesResult`; added `lifecycle_states: LifecycleStatesResult | null` to `OutputsResult`; initialized to `null` in `generateAllOutputs`
-- `packages/mcp-server/src/analysis/pipeline.ts` - Added `lifecycle_states: null` to both `PipelineOutputs` object literals (empty-pages early return and default outputs)
+- `packages/mcp-server/src/analysis/outputs/index.ts` - Added import/re-export of `generateLifecycleStates`; added `lifecycle_states: LifecycleStatesResult | null` to `OutputsResult`; inserted step 3 (lifecycle states) between activation map and measurement spec with guard `if (activationLevels && result.activation_map && identity)`; renumbered measurement spec to step 4
+- `packages/mcp-server/src/analysis/pipeline.ts` - Added `lifecycle_states: null` to both default `OutputsResult` initializations (empty pages early return and pre-outputs default)
+- `packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts` - New: 8 tests for lifecycle states wiring (success, 3 skip conditions, progress callbacks, error handling, input verification)
+- Cherry-picked prerequisites: core types, Zod schemas, generator function, generator tests, and progress phase from M010-E001/E002/E003-S001 branches
 
 **Learnings:**
-- Cherry-picking types from dependency branches is necessary when the dependency hasn't been merged yet — same pattern used in prior stories (M004, M003)
-- Pre-existing build errors in mcp-server (`@basesignal/crawlers`, `@basesignal/storage` missing type declarations) are unrelated to analysis pipeline work
-- Using `LifecycleStatesResult | null` (not `any`) follows the typed pattern of `measurement_spec` — the `any` on `activation_map` is acknowledged tech debt
+- The lifecycle states generator requires `IdentityResult` (non-optional), but the orchestrator receives `IdentityResult | null` — adding `identity` to the guard condition narrows the type safely without unsafe casts
+- Sequential mock LLM pattern (tracking call index to return different responses per generator) is effective for testing orchestration functions that call multiple generators in sequence
 
 **Patterns Discovered:**
-- Pipeline extension pattern: adding a new output type requires touching 4 places: core types + export, analysis types.ts (import, re-export, ProgressPhase, PipelineOutputs), outputs/index.ts (import, OutputsResult, generateAllOutputs default), and pipeline.ts (default object literals)
+- Guard condition pattern for pipeline steps: `if (prerequisiteData && result.previous_step_output && additionalDep)` — guards both data dependencies and type narrowing in one condition
+- Orchestration test pattern: `createSequentialMockLlm(responses[])` returns responses by call index, enabling tests of multi-step pipelines with a single mock
 
 **Gotchas:**
-- `pipeline.ts` has two separate `PipelineOutputs` object literals (early return at line 47 and default at line 96) — both need the new field
-- Worktree needs `npm install` — node_modules not shared between worktrees
+- Cherry-picking from dependency branches is necessary when prerequisite stories haven't merged to main yet — files from E001 (types), E002 (generator), and E003-S001 (progress phase) all needed to be brought in
+- The `PipelineOutputs` type in `types.ts` (from S001 branch) requires `lifecycle_states`, so `pipeline.ts` defaults must be updated in both the early return and the pre-outputs initialization
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
