@@ -12,28 +12,23 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E002-S003: Lifecycle States Generator Function
+### 2026-02-22 - Story M010-E002-S004: Tests for Lifecycle States Generator
 
 **Files Changed:**
-- `packages/core/src/types/outputs.ts` - Added StateCriterion, LifecycleState, StateTransition, LifecycleStatesResult interfaces; added optional lifecycle_states field to OutputGenerationResult
-- `packages/core/src/schema/outputs.ts` - Added StateCriterionSchema, LifecycleStateSchema, StateTransitionSchema, LifecycleStatesResultSchema Zod schemas
-- `packages/core/src/index.ts` - Exported new lifecycle types from output types block
-- `packages/core/src/schema/index.ts` - Exported new lifecycle schemas and types from output types block
-- `packages/mcp-server/src/analysis/outputs/lifecycle-states.ts` - New: LifecycleStatesInputData interface, LIFECYCLE_STATES_SYSTEM_PROMPT, buildLifecycleStatesPrompt(), parseLifecycleStatesResponse(), generateLifecycleStates()
-- `packages/mcp-server/src/analysis/__tests__/outputs/lifecycle-states.test.ts` - New: 11 tests across 3 describe blocks (prompt builder, parser, generator)
+- `packages/mcp-server/src/analysis/__tests__/outputs/lifecycle-states.test.ts` - New: 5 tests across 3 describe blocks covering buildLifecycleStatesPrompt (2 tests), parseLifecycleStatesResponse (2 tests), and generateLifecycleStates (1 test with combined assertions)
 
 **Learnings:**
-- Lifecycle states generator follows the same pattern as activation-map.ts and measurement-spec.ts but adds an explicit empty-response guard before the parser — this is a distinct AC requirement giving a clear error vs a cryptic Zod failure
-- Zod schema + extractJson pattern from S002 story is much simpler than the manual field-by-field validation in activation-map.ts parser — 3 lines vs 80+ lines
-- StateCriterion is structurally similar to UserStateCriterion but adds an optional threshold field for numeric conditions
+- Test-first stories write tests against a module that doesn't exist yet — the test file fails with "Cannot find module" which is expected until S001-S003 implement the source
+- The `as LlmProvider` cast works for inline mock LLMs even though the mcp-server's LlmProvider interface is empty — the core package defines the `complete` method, and the cast satisfies TypeScript
+- Existing sibling test files (activation-map, measurement-spec, icp-profiles) use `is_coherent: true` on ValueMoment fixtures despite it not being in the core schema — TypeScript allows extra properties on typed const declarations
 
 **Patterns Discovered:**
-- Generator pattern with Zod: extractJson → schema.parse() is the simplest parser pattern when a Zod schema exists — no manual validation needed
-- Empty-response guard pattern: `if (!responseText?.trim()) throw ...` before parser catches null/undefined/whitespace responses with a clear message
-- Input wrapper object pattern: single LifecycleStatesInputData interface vs individual params keeps the generator signature clean and extensible
+- Test-first pattern for output generators: 3 describe blocks (prompt builder, parser, generator) with inline fixtures modeling a realistic B2B SaaS product
+- Combined generator assertions: one mock LLM call = one test = one concept; assert states count, specific state names, transitions count, and confidence in a single test
+- Prompt builder uses individual params while generator uses wrapper object — the generator destructures internally, keeping the API clean for both callers
 
 **Gotchas:**
-- This branch includes E001 types/schemas and E002 S001/S002 prerequisites since those stories haven't been merged yet — the generator function can't compile without them
+- Worktree needs `npm install` and `npm run build --workspace=packages/core` before type-checking works — node_modules and build artifacts not shared between worktrees
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
