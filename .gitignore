@@ -12,10 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Convex
-.convex
-convex/*.js.map
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,10 +22,6 @@ convex/*.js.map
 *.njsproj
 *.sln
 *.sw?
-
-# Playwright
-playwright-report/
-test-results/
 
 # MCP server
 mcp-sessions.db
