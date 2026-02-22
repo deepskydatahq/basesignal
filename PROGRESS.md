@@ -12,6 +12,26 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-22 - Story M010-E003-S003: Align Measurement Spec userStateModel with Lifecycle States
+
+**Files Changed:**
+- `packages/mcp-server/src/analysis/outputs/measurement-spec.ts` - Imported `LifecycleStatesResult` type; added optional `lifecycle_states` field to `MeasurementInputData`; softened Step 3 in `MEASUREMENT_SPEC_SYSTEM_PROMPT` (replaced "exactly 5 states" with flexible derivation from lifecycle states); added conditional lifecycle states section to `buildMeasurementSpecPrompt`; added optional 5th param `lifecycleStates` to `assembleMeasurementInput`
+- `packages/mcp-server/src/analysis/outputs/index.ts` - Pass `result.lifecycle_states ?? undefined` to `assembleMeasurementInput` in `generateAllOutputs`
+- `packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts` - Added 10 tests: assembleMeasurementInput lifecycle states inclusion (2), buildMeasurementSpecPrompt lifecycle states section (3), system prompt softening verification (4, previously 9 tests now 19)
+
+**Learnings:**
+- Softening the system prompt (making it flexible) is simpler and more effective than adding override instructions in the user prompt — eliminates conflicting instructions without making the prompt dynamic
+- The `parseMeasurementSpecResponse` function already handles arbitrary state names (no hardcoded validation), so no changes needed there
+- Cherry-picking from upstream dependency branches (M010-E001-S001 through M010-E003-S002) is essential when the types don't exist on main yet
+
+**Patterns Discovered:**
+- Conditional prompt section pattern: same approach as ICP profiles and activation map sections — check for data availability, format inline, push to sections array
+- Softened system prompt pattern: provide flexible instructions with a fallback default rather than prescriptive mandates — lets the user prompt context guide the LLM's behavior
+
+**Gotchas:**
+- `LifecycleStatesResult` type was not yet on main — needed to cherry-pick from `feat/m010-e003-s002-wire-lifecycle-states-generator-int` branch (8 files)
+- Worktree needs `npm install` — node_modules not shared between worktrees
+
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 
 **Files Changed:**
