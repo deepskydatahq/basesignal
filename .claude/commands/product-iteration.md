@@ -1,6 +1,6 @@
 ---
 description: Product retrospective after completing features - learn and plan next steps
-allowed-tools: Bash(git:*), Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
+allowed-tools: Bash(git:*), Bash(bd:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Product Iteration
@@ -80,7 +80,7 @@ After presenting recommendations, ask:
 If yes, for each recommendation:
 
 ```bash
-hte tasks create --title "[Iteration Name]" --status brainstorm --data '{"body":"## Recommended Iteration\n\n**From:** Product iteration retrospective\n\n**What:** [Description]\n\n**Why:** [Product lens rationale]\n\n**Impact:** [Expected transformation improvement]\n\n**Generated Hypothesis:**\n- Belief: [What we believe]\n- Test: [How we'"'"'ll know]\n\n---\n*Created via /product-iteration*"}'
+bd create "[Iteration Name]" --labels brainstorm -d "## Recommended Iteration\n\n**From:** Product iteration retrospective\n\n**What:** [Description]\n\n**Why:** [Product lens rationale]\n\n**Impact:** [Expected transformation improvement]\n\n**Generated Hypothesis:**\n- Belief: [What we believe]\n- Test: [How we'll know]\n\n---\n*Created via /product-iteration*"
 ```
 
 ## Output Format
@@ -132,7 +132,7 @@ Present findings as:
 ```
 /pick-issue completes
     ↓
-/retro → technical follow-ups → HTE tasks
+/retro → technical follow-ups → Beads tasks
     ↓
 /product-iteration → product insights → mission updates + optional tasks
     ↓

@@ -1,6 +1,6 @@
 ---
 description: Pick a task needing planning and write an implementation plan
-allowed-tools: Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
+allowed-tools: Bash(bd:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Plan Issue
@@ -14,7 +14,7 @@ Pick a task from the `plan` queue and write a detailed implementation plan.
 
 ## Current Tasks Needing Planning
 
-!`hte tasks list --status plan --json`
+!`bd list --label plan --json`
 
 ## Instructions
 
@@ -22,7 +22,7 @@ Pick a task from the `plan` queue and write a detailed implementation plan.
 
 **If argument provided:**
 - Use that task ID directly
-- Fetch details: `hte tasks get <id>`
+- Fetch details: `bd show <id> --json`
 
 **If no argument:**
 - If no tasks with `plan` status: Report "No tasks need planning. Run `/brainstorm` to process brainstorming queue, or `/new-feature` to create tasks." and stop.
@@ -33,13 +33,13 @@ Pick a task from the `plan` queue and write a detailed implementation plan.
 ### 2. Claim the Task
 
 ```bash
-hte tasks update <id> --status in_progress
+bd update <id> --status in_progress
 ```
 
 ### 3. Fetch Full Context
 
 ```bash
-hte tasks get <id>
+bd show <id> --json
 ```
 
 Read these files to understand the project (if they exist):
@@ -160,7 +160,8 @@ Please update the plan to address these issues before moving to `ready` status.
 
 Move back to plan status:
 ```bash
-hte tasks update <id> --status plan
+bd update <id> --add-label plan
+bd update <id> --remove-label ready
 ```
 
 Report: "Plan validation failed for task <id>. See task details." and stop.
@@ -172,7 +173,8 @@ Proceed to Section 6 to move the task to `ready` status.
 ### 6. Move to Ready
 
 ```bash
-hte tasks update <id> --status ready
+bd update <id> --add-label ready
+bd update <id> --remove-label plan
 ```
 
 ## Output Format

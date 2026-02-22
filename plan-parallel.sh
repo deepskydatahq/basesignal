@@ -131,12 +131,7 @@ worker() {
             fi
         else
             echo "[Plan Worker $WORKER_ID] Task $TASK_ID completed"
-            # Safety net: ensure label transition happened
-            CURRENT_LABELS=$(bd show "$TASK_ID" --json 2>/dev/null | jq -r '.[0].labels[]?' 2>/dev/null)
-            if echo "$CURRENT_LABELS" | grep -q "plan"; then
-                echo "[Plan Worker $WORKER_ID] Label not transitioned, fixing: plan → ready"
-                bd update "$TASK_ID" --remove-label plan --add-label ready 2>/dev/null || true
-            fi
+            ensure_plan_body "$TASK_ID" "$TASK_TITLE" "Plan Worker $WORKER_ID"
             log_activity "plan-parallel:w$WORKER_ID" "SUCCESS" "$TASK_ID" "$TASK_TITLE" "duration=${DURATION}s"
             PROCESSED=$((PROCESSED + 1))
         fi

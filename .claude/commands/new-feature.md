@@ -1,11 +1,11 @@
 ---
-description: Brainstorm a new feature, create design doc, and add to HTE tasks
-allowed-tools: Bash(git:*), Bash(hte tasks:*), Read, Write, Glob, Grep, Skill
+description: Brainstorm a new feature, create design doc, and add to Beads tasks
+allowed-tools: Bash(git:*), Bash(bd:*), Read, Write, Glob, Grep, Skill
 ---
 
 # New Feature
 
-Guide a new feature from idea to design document and HTE task.
+Guide a new feature from idea to design document and Beads task.
 
 ## Instructions
 
@@ -76,10 +76,10 @@ Guide a new feature from idea to design document and HTE task.
 
    **Default to `plan`** - the brainstorming session just completed, so the design should be ready for planning.
 
-5. **Create HTE task:**
+5. **Create Beads task:**
 
    ```bash
-   hte tasks create --title "<Feature Name>" --status <status> --data '{"body":"## Summary\n<2-3 sentences from design overview>\n\n## Design Document\nSee: docs/plans/YYYY-MM-DD-<feature>-design.md\n\n## Key Decisions\n- <Main architectural choice>\n- <Key trade-off made>\n- <Important constraint>\n\n## Next Steps\n- [ ] Review design\n- [ ] Create implementation plan\n- [ ] Implement\n\n---\n*Created via /new-feature command*"}'
+   bd create "<Feature Name>" --labels <status> -d "## Summary\n<2-3 sentences from design overview>\n\n## Design Document\nSee: docs/plans/YYYY-MM-DD-<feature>-design.md\n\n## Key Decisions\n- <Main architectural choice>\n- <Key trade-off made>\n- <Important constraint>\n\n## Next Steps\n- [ ] Review design\n- [ ] Create implementation plan\n- [ ] Implement\n\n---\n*Created via /new-feature command*"
    ```
 
 6. **Offer continuation:**

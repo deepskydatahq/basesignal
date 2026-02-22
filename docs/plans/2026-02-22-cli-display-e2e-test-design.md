@@ -113,6 +113,23 @@ Attach `pipelineResult.outputs.lifecycle_states` to profile object (same pattern
 - **5+ transitions in mock:** Simplified to 2 — enough to validate transitions exist without over-specifying for CLI display scope.
 - **Export formatter in same story:** Rejected by simplification review — separate concern, scope creep for a CLI display story.
 
+## Verified Insertion Points (2026-02-22, re-verified during planning)
+
+Codebase verified — all line numbers confirmed accurate against current `main` branch.
+
+| File | Insertion Point | Context |
+|------|----------------|---------|
+| `responses.ts` | After line 307 (end of `MEASUREMENT_SPEC_RESPONSE`), before line 309 (`VALIDATION_REVIEW_RESPONSE`) | New `LIFECYCLE_STATES_RESPONSE` export |
+| `mock-llm.ts` | Line 5: add import; between lines 22-23 (after measurement spec routing, before validation review routing) | New routing entry |
+| `formatters.ts` (summary) | Between lines 74-76 (after metrics section, before footer) | Multi-line state listing |
+| `formatters.ts` (markdown) | Between lines 167-169 (after Suggested Metrics, before footer `---`) | `## Lifecycle States` table |
+| `scan.ts` (attachment) | After line 117 (after measurement_spec attachment) | Profile attachment |
+| `scan.ts` (persistence) | After line 170 (after measurement-spec persistence) | `outputs/lifecycle-states.json` |
+| `formatters.test.ts` | Fixture: around line 58 in `fullProfile()`; Tests: after line 105 (summary), after line 139 (markdown) | 4 new test cases |
+| `pipeline.test.ts` | After line 25 (after measurement_spec check); after line 67 (progress phase check) | lifecycle_states assertions |
+
+**Upstream dependency:** `basesignal-o0e` (M010-E003-S002 pipeline wiring) must be complete. `PipelineOutputs` (types.ts:125-131) and `OutputsResult` (outputs/index.ts:13-17) currently lack `lifecycle_states` — added by upstream story.
+
 ## Success Criteria
 - CLI shows lifecycle state names with time windows in summary output
 - CLI omits section gracefully when lifecycle states absent

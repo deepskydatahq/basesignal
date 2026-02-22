@@ -1,6 +1,6 @@
 ---
 description: Break a mission into an epic with child tasks for testing
-allowed-tools: Bash(git:*), Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
+allowed-tools: Bash(git:*), Bash(bd:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Product Epic
@@ -55,7 +55,7 @@ Aim for 3-7 concrete work items. Each should be:
 ### 3. Create Epic Task
 
 ```bash
-hte tasks create --title "Epic: [Mission ID] - [Mission Name]" --status brainstorm --data '{"body":"## Mission\n\n**Outcome:** [From mission TOML]\n\n**Testing Criteria:** [From mission TOML]\n\n---\n\n## Child Tasks\n\n(Child tasks will be linked here after creation)\n\n---\n\n*Created via /product-epic*"}'
+bd create "Epic: [Mission ID] - [Mission Name]" --labels brainstorm -d "## Mission\n\n**Outcome:** [From mission TOML]\n\n**Testing Criteria:** [From mission TOML]\n\n---\n\n## Child Tasks\n\n(Child tasks will be linked here after creation)\n\n---\n\n*Created via /product-epic*"
 ```
 
 Note the epic task ID for the next step.
@@ -65,7 +65,7 @@ Note the epic task ID for the next step.
 For each work item identified in step 2:
 
 ```bash
-hte tasks create --title "[Task title]" --status brainstorm --data '{"body":"## Context\n\nPart of epic task [EPIC_ID]: [Mission ID] - [Mission Name]\n\n## Goal\n\n[What this task accomplishes toward the mission outcome]\n\n## Done When\n\n[Clear completion criteria]\n\n---\n\n*Created via /product-epic*"}'
+bd create "[Task title]" --labels brainstorm -d "## Context\n\nPart of epic task [EPIC_ID]: [Mission ID] - [Mission Name]\n\n## Goal\n\n[What this task accomplishes toward the mission outcome]\n\n## Done When\n\n[Clear completion criteria]\n\n---\n\n*Created via /product-epic*"
 ```
 
 Collect all child task IDs.

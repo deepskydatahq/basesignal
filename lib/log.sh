@@ -28,10 +28,11 @@ ensure_brainstorm_body() {
 
     TASK_JSON=$(bd show "$TASK_ID" --json 2>/dev/null)
 
-    # Check label transition
+    # Check label transition (two-step: add first, then remove — single command is unreliable)
     if echo "$TASK_JSON" | jq -r '.[0].labels[]?' 2>/dev/null | grep -q "brainstorm"; then
         echo "[$LOG_PREFIX] Label not transitioned, fixing: brainstorm → plan"
-        bd update "$TASK_ID" --remove-label brainstorm --add-label plan 2>/dev/null || true
+        bd update "$TASK_ID" --add-label plan 2>/dev/null || true
+        bd update "$TASK_ID" --remove-label brainstorm 2>/dev/null || true
     fi
 
     # Check body populated
@@ -52,6 +53,45 @@ ensure_brainstorm_body() {
             echo "[$LOG_PREFIX] Task body populated from design doc"
         else
             echo "[$LOG_PREFIX] WARNING: No design doc found for task"
+        fi
+    fi
+}
+
+# Safety net: ensure plan task got a plan doc reference and label transition.
+# Call after a successful plan run.
+# Usage: ensure_plan_body "TASK_ID" "TASK_TITLE" "Worker label for logging"
+ensure_plan_body() {
+    local TASK_ID="$1" TASK_TITLE="$2" LOG_PREFIX="${3:-plan}"
+    local TASK_JSON SLUG PLAN_DOC SHORT_SLUG CURRENT_BODY
+
+    TASK_JSON=$(bd show "$TASK_ID" --json 2>/dev/null)
+
+    # Check label transition (two-step: add first, then remove — single command is unreliable)
+    if echo "$TASK_JSON" | jq -r '.[0].labels[]?' 2>/dev/null | grep -q "plan"; then
+        echo "[$LOG_PREFIX] Label not transitioned, fixing: plan → ready"
+        bd update "$TASK_ID" --add-label ready 2>/dev/null || true
+        bd update "$TASK_ID" --remove-label plan 2>/dev/null || true
+    fi
+
+    # Check if body contains plan content
+    CURRENT_BODY=$(echo "$TASK_JSON" | jq -r '.[0].description // ""' 2>/dev/null)
+    if ! echo "$CURRENT_BODY" | grep -qi "Implementation Plan\|Plan document\|### Steps\|### Tasks\|Step [0-9]"; then
+        echo "[$LOG_PREFIX] Task body missing plan content, looking for plan doc..."
+        SLUG=$(echo "$TASK_TITLE" | sed 's/^M[0-9]*-E[0-9]*-S[0-9]*: //' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+        PLAN_DOC=$(ls docs/plans/*"$SLUG"*-plan.md docs/plans/*"$SLUG"*-implementation*.md 2>/dev/null | head -1)
+        if [[ -z "$PLAN_DOC" ]]; then
+            SHORT_SLUG=$(echo "$SLUG" | cut -d- -f1-3)
+            PLAN_DOC=$(ls docs/plans/*"$SHORT_SLUG"*-plan.md docs/plans/*"$SHORT_SLUG"*-implementation*.md 2>/dev/null | head -1)
+        fi
+        if [[ -n "$PLAN_DOC" && -f "$PLAN_DOC" ]]; then
+            echo "[$LOG_PREFIX] Found plan doc: $PLAN_DOC"
+            PLAN_BODY=$(head -c 1500 "$PLAN_DOC")
+            # Append plan content to existing body
+            NEW_BODY="${CURRENT_BODY}"$'\n\n'"## Implementation Plan"$'\n\n'"${PLAN_BODY}"$'\n\n'"---"$'\n'"*Plan doc: ${PLAN_DOC}*"
+            bd update "$TASK_ID" -d "$NEW_BODY" 2>/dev/null || true
+            echo "[$LOG_PREFIX] Plan content appended to task body"
+        else
+            echo "[$LOG_PREFIX] WARNING: No plan doc found for task"
         fi
     fi
 }

@@ -1,6 +1,6 @@
 ---
 description: Pick a task needing brainstorming and run a design session
-allowed-tools: Bash(hte tasks:*), Skill, Read, Write, Glob, Grep
+allowed-tools: Bash(bd:*), Skill, Read, Write, Glob, Grep
 ---
 
 # Brainstorm
@@ -14,7 +14,7 @@ Pick a task from the `brainstorm` queue and run a brainstorming session.
 
 ## Current Tasks Needing Brainstorming
 
-!`hte tasks list --status brainstorm --json`
+!`bd list --label brainstorm --json`
 
 ## Instructions
 
@@ -22,7 +22,7 @@ Pick a task from the `brainstorm` queue and run a brainstorming session.
 
 **If argument provided:**
 - Use that task ID directly
-- Fetch details: `hte tasks get <id>`
+- Fetch details: `bd show <id> --json`
 
 **If no argument:**
 - If no tasks with `brainstorm` status: Report "No tasks need brainstorming. Run `/new-feature` to create some." and stop.
@@ -33,7 +33,7 @@ Pick a task from the `brainstorm` queue and run a brainstorming session.
 ### 2. Claim the Task
 
 ```bash
-hte tasks update <id> --status in_progress
+bd update <id> --status in_progress
 ```
 
 ### 3. Run Brainstorming Session
@@ -132,13 +132,13 @@ Before advancing to any status beyond brainstorm, verify brainstorming work is d
 For each child task:
 
 ```bash
-hte tasks create --title "<Child title>" --status <status> --data '{"body":"## Summary\n<what this piece does>\n\n## Context\nBroken out from task <parent-id> during brainstorming.\n\n## Design Decisions\n- <relevant decisions from brainstorm session>\n\n## Scope\n- <specific files/components involved>\n\n---\n*Created via /brainstorm from task <parent-id>*"}'
+bd create "<Child title>" --labels <status> -d "## Summary\n<what this piece does>\n\n## Context\nBroken out from task <parent-id> during brainstorming.\n\n## Design Decisions\n- <relevant decisions from brainstorm session>\n\n## Scope\n- <specific files/components involved>\n\n---\n*Created via /brainstorm from task <parent-id>*"
 ```
 
 ### 8. Mark Original Done (if broken down)
 
 ```bash
-hte tasks update <id> --status done
+bd close <id>
 ```
 
 Update the task body to document the breakdown:
@@ -154,7 +154,8 @@ Design exploration complete.
 ### 9. Update Original (if not broken down)
 
 ```bash
-hte tasks update <id> --status <next-status>
+bd update <id> --add-label <next-status>
+bd update <id> --remove-label brainstorm
 ```
 
 Update the task body with brainstorming results:

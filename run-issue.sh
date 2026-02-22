@@ -113,7 +113,7 @@ process_task_with_worktree() {
     local TASK_BODY=$(echo "$TASK_DATA" | jq -r '.body')
 
     # Build the prompt
-    local PROMPT="# Implement HTE Task
+    local PROMPT="# Implement Task
 
 **Task ID:** $TASK_ID
 **Title:** $TASK_TITLE
@@ -186,7 +186,7 @@ gh pr create --title \"<type>: <description>\" --body \"\$(cat <<'EOF'
 ## Summary
 <what this PR does>
 
-HTE Task: $TASK_ID
+Task: $TASK_ID
 EOF
 )\"
 \`\`\`

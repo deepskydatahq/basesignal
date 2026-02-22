@@ -1,6 +1,6 @@
 ---
-description: Pick the next HTE task ready for development and implement it
-allowed-tools: Bash(hte tasks:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr merge:*), Bash(npm run:*), Bash(git checkout:*), Bash(git worktree:*), Bash(git push:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(git branch:*), Bash(mkdir:*), Skill, Read, Write, Edit, Glob, Grep
+description: Pick the next task ready for development and implement it
+allowed-tools: Bash(bd:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr merge:*), Bash(npm run:*), Bash(git checkout:*), Bash(git worktree:*), Bash(git push:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(git branch:*), Bash(mkdir:*), Skill, Read, Write, Edit, Glob, Grep
 ---
 
 # Pick Issue
@@ -14,7 +14,7 @@ Pick a task from the `ready` queue and implement it.
 
 ## Current Tasks Ready for Development
 
-!`hte tasks list --status ready --json`
+!`bd list --label ready --json`
 
 ## Instructions
 
@@ -22,7 +22,7 @@ Pick a task from the `ready` queue and implement it.
 
 **If argument provided:**
 - Use that task ID directly
-- Fetch details: `hte tasks get <id>`
+- Fetch details: `bd show <id> --json`
 
 **If no argument:**
 - If no tasks with `ready` status: Report "No tasks ready for development. Run `/plan-issue` to process planning queue, or `/brainstorm` for brainstorming queue." and stop.
@@ -32,7 +32,7 @@ Pick a task from the `ready` queue and implement it.
 
 1. **Fetch all candidates:**
    ```bash
-   hte tasks list --status ready --json
+   bd list --label ready --json
    ```
 
 2. **Filter out blocked tasks:**
@@ -59,13 +59,13 @@ Pick a task from the `ready` queue and implement it.
 ### 2. Claim the Task
 
 ```bash
-hte tasks update <id> --status in_progress
+bd update <id> --status in_progress
 ```
 
 ### 3. Fetch Full Context
 
 ```bash
-hte tasks get <id>
+bd show <id> --json
 ```
 
 Review:
@@ -189,7 +189,7 @@ The task should have a detailed implementation plan. Follow it:
 
 If the plan is missing or unclear:
 - The task may have been incorrectly staged
-- Route back: `hte tasks update <id> --status plan`
+- Route back: `bd update <id> --add-label plan` then `bd update <id> --remove-label ready`
 - Report: "Task <id> lacks implementation plan. Moved back to plan status."
 
 ### 5a. Save Checkpoint After Each Step
@@ -321,7 +321,7 @@ gh pr create --title "<type>: <description>" --body "$(cat <<'EOF'
 ## Summary
 <what this PR does>
 
-HTE Task: <task-id>
+Task: <task-id>
 EOF
 )"
 ```
@@ -335,7 +335,7 @@ Use conventional commit types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore
 After PR is created, mark the task as done:
 
 ```bash
-hte tasks update <id> --status done
+bd close <id>
 ```
 
 **The task is complete once the PR is created.** The PR will be reviewed and merged separately.
@@ -377,7 +377,7 @@ For fixes: commit to the branch, push, CodeRabbit re-reviews automatically.
 
 For new tasks:
 ```bash
-hte tasks create --title "CodeRabbit: <summary>" --status brainstorm --data '{"body":"From review of task <id>:\n\n<feedback details>"}'
+bd create "CodeRabbit: <summary>" --labels brainstorm -d "From review of task <id>:\n\n<feedback details>"
 ```
 
 ### 11. Optional Retrospective
@@ -404,7 +404,8 @@ Otherwise, skip retro and exit. **Do NOT ask - just decide and act.**
 **When blocked, update the task with failure info and move back to plan status:**
 
 ```bash
-hte tasks update <id> --status plan
+bd update <id> --add-label plan
+bd update <id> --remove-label ready
 ```
 
 Document the failure in the task body with:

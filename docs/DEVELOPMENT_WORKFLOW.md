@@ -2,9 +2,11 @@
 
 A three-stage task pipeline with Claude Code commands for AI-assisted development.
 
+> **Primary reference:** See [HOW_WE_WORK.md](../HOW_WE_WORK.md) for the full development workflow including product layer, automation, and validation.
+
 ## Overview
 
-**Architecture:** HTE task statuses define workflow stages, Claude Code commands process each stage.
+**Architecture:** Beads task labels define workflow stages, Claude Code commands process each stage.
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -22,28 +24,10 @@ A three-stage task pipeline with Claude Code commands for AI-assisted developmen
 
 ## Setup
 
-### 1. Install HTE CLI
-
 ```bash
-# Install HTE (Hypothesis-Test-Evaluate) CLI
-# See https://github.com/your-org/hte for installation instructions
-
-# Initialize HTE in your project
-hte init
-```
-
-### 2. Verify HTE Connection
-
-```bash
-hte health
-hte tasks list
-```
-
-### 3. Install Superpowers Plugin (Recommended)
-
-```bash
-/plugin marketplace add obra/superpowers-marketplace
-/plugin install superpowers@superpowers-marketplace
+# Beads is the task engine — see https://beads.dev for installation
+bd status
+bd list --label brainstorm --json
 ```
 
 ## Commands
@@ -52,38 +36,38 @@ hte tasks list
 
 Start from a feature idea:
 1. Captures the idea
-2. Invokes `superpowers:brainstorming` skill
+2. Runs brainstorming session
 3. Saves design doc to `docs/plans/YYYY-MM-DD-<feature>-design.md`
-4. Creates HTE task with appropriate status
+4. Creates Beads task with appropriate label
 5. Offers continuation to planning
 
 ### `/brainstorm [task-id]`
 
 Process brainstorming queue:
-1. Lists tasks with `brainstorm` status
+1. Lists tasks with `brainstorm` label
 2. Selects and claims task (sets `in_progress`)
-3. Invokes `superpowers:brainstorming` skill
+3. Runs design exploration
 4. Either updates original task or breaks into child tasks
-5. Moves to appropriate next status
+5. Moves to appropriate next label
 
 ### `/plan-issue [task-id]`
 
 Process planning queue:
-1. Lists tasks with `plan` status
+1. Lists tasks with `plan` label
 2. Selects and claims task
-3. Invokes `superpowers:writing-plans` skill
+3. Writes implementation plan
 4. Adds implementation plan to task body
-5. Moves to `ready` status
+5. Moves to `ready` label
 
 ### `/pick-issue [task-id]`
 
 Process ready queue:
-1. Lists tasks with `ready` status
+1. Lists tasks with `ready` label
 2. Selects and claims task
 3. Fetches full context including plan
 4. Implements following the plan
 5. Runs verification (tests, lint)
-6. Marks task as `done`
+6. Closes the task
 
 ### `/retro`
 
@@ -92,7 +76,7 @@ Post-implementation retrospective:
 2. Runs verification suite
 3. Analyzes changed files for patterns
 4. Categorizes findings (bug, tech-debt, testing, etc.)
-5. Creates follow-up tasks with appropriate statuses
+5. Creates follow-up tasks with appropriate labels
 
 ## Headless Processing
 
@@ -144,7 +128,7 @@ Task is ready for implementation if ALL of:
     ↓
 [brainstorming session]
     ↓
-Design doc saved, task created (status: plan)
+Design doc saved, task created (label: plan)
     ↓
 /plan-issue <task-id>
     ↓
@@ -156,7 +140,7 @@ Plan added, moved to ready
     ↓
 [implementation]
     ↓
-Task marked done
+Task closed
     ↓
 /retro (optional)
 ```
@@ -175,7 +159,7 @@ Task marked done
 
 ### Bug Fix
 ```
-hte tasks create --title "Fix login timeout" --status plan
+bd create "Fix login timeout" --labels plan
     ↓
 /plan-issue
     ↓
@@ -193,8 +177,8 @@ When selecting from queues, commands use this priority:
 
 | Command | Creates |
 |---------|---------|
-| `/new-feature` | `docs/plans/YYYY-MM-DD-<feature>-design.md`, HTE task |
+| `/new-feature` | `docs/plans/YYYY-MM-DD-<feature>-design.md`, Beads task |
 | `/brainstorm` | Design decisions in task body, optional child tasks |
 | `/plan-issue` | Implementation plan in task body |
 | `/pick-issue` | Code changes, commits |
-| `/retro` | Follow-up HTE tasks |
+| `/retro` | Follow-up Beads tasks |

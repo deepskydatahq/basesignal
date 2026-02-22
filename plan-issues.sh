@@ -67,7 +67,7 @@ process_task() {
     TASK_BODY=$(echo "$TASK_DATA" | jq -r '"# Task: \(.title)\n\n## Description\n\(.body)"')
 
     # Build the prompt
-    PROMPT="Plan HTE task $TASK_ID: $TASK_TITLE
+    PROMPT="Plan task $TASK_ID: $TASK_TITLE
 
 $TASK_BODY
 
@@ -220,11 +220,13 @@ while true; do
             bd update "$TASK_ID" --status open 2>/dev/null || true
             log_activity "plan-issues" "RESET" "$TASK_ID" "$TASK_TITLE"
         else
+            ensure_plan_body "$TASK_ID" "$TASK_TITLE" "plan-issues"
             log_activity "plan-issues" "SUCCESS" "$TASK_ID" "$TASK_TITLE"
             PROCESSED=$((PROCESSED + 1))
         fi
     else
         process_task "$TASK_ID" "$TASK_TITLE"
+        ensure_plan_body "$TASK_ID" "$TASK_TITLE" "plan-issues"
         log_activity "plan-issues" "SUCCESS" "$TASK_ID" "$TASK_TITLE"
         PROCESSED=$((PROCESSED + 1))
     fi
