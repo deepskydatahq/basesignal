@@ -132,6 +132,37 @@ All support `--loop` (process all), `--max N` (limit count), and specific task I
 
 Workers use file-based locking to avoid conflicts. Implementation workers respect task dependencies registered via `bd dep add`.
 
+### Activity Log
+
+All automation scripts write to a daily JSONL activity log in `logs/`. Each entry records what happened, when, and which worker did it.
+
+```bash
+# Today's log
+cat logs/activity-$(date -u +%Y-%m-%d).jsonl | jq .
+
+# Find failures
+grep FAIL logs/activity-*.jsonl
+
+# Filter by script
+grep brainstorm-parallel logs/activity-*.jsonl | jq .
+```
+
+Entry format:
+```json
+{"ts":"2026-02-22T14:32:15Z","src":"brainstorm-parallel:w3","act":"CLAIM","task":"task-123","title":"Design lifecycle types","detail":""}
+```
+
+| Field | Description |
+|-------|-------------|
+| `ts` | ISO 8601 UTC timestamp |
+| `src` | Script name + worker ID (e.g., `plan-parallel:w2`, `run-issue`) |
+| `act` | Action: `START`, `CLAIM`, `SUCCESS`, `FAIL`, `SKIP`, `RESET` |
+| `task` | Beads task ID (`-` for session-level events) |
+| `title` | Task title |
+| `detail` | Duration, exit code, skip reason, etc. |
+
+Log files are gitignored. The shared logging function lives in `lib/log.sh`.
+
 ---
 
 ## Validation
@@ -198,3 +229,4 @@ Each level checks its acceptance criteria / testing criteria against what was ac
 | `product/missions/` | Mission TOML files |
 | `product/epics/` | Epic TOML files |
 | `product/stories/` | Story TOML files |
+| `lib/log.sh` | Shared activity logging function for automation scripts |

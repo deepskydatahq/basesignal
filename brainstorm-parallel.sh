@@ -7,6 +7,8 @@
 
 set -e
 
+source "$(dirname "$0")/lib/log.sh"
+
 WORKERS=3
 MAX_TASKS=0
 CONTINUE_ON_ERROR=false
@@ -48,6 +50,8 @@ echo "  Max tasks: ${MAX_TASKS:-unlimited}"
 echo "  Lock dir: $LOCK_DIR"
 echo "=========================================="
 echo ""
+
+log_activity "brainstorm-parallel" "START" "-" "Parallel session" "workers=$WORKERS"
 
 # Function to try to acquire lock for a task
 try_lock() {
@@ -110,6 +114,7 @@ worker() {
                 bd update "$TASK_ID" --status in_progress 2>/dev/null || true
                 CLAIMED=true
                 echo "[Worker $WORKER_ID] Claimed: $TASK_ID - $TASK_TITLE"
+                log_activity "brainstorm-parallel:w$WORKER_ID" "CLAIM" "$TASK_ID" "$TASK_TITLE"
                 break
             fi
         done
@@ -127,8 +132,10 @@ worker() {
             set +e
         fi
 
+        TASK_START=$SECONDS
         claude --dangerously-skip-permissions -p "Run /brainstorm-auto $TASK_ID"
         EXIT_CODE=$?
+        DURATION=$((SECONDS - TASK_START))
 
         set -e
 
@@ -137,6 +144,7 @@ worker() {
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
             echo "[Worker $WORKER_ID] Task $TASK_ID failed (exit $EXIT_CODE)"
+            log_activity "brainstorm-parallel:w$WORKER_ID" "FAIL" "$TASK_ID" "$TASK_TITLE" "exit=$EXIT_CODE duration=${DURATION}s"
             FAILED=$((FAILED + 1))
             # Reset status on failure
             bd update "$TASK_ID" --status open 2>/dev/null || true
@@ -146,6 +154,8 @@ worker() {
             fi
         else
             echo "[Worker $WORKER_ID] Task $TASK_ID completed"
+            ensure_brainstorm_body "$TASK_ID" "$TASK_TITLE" "Worker $WORKER_ID"
+            log_activity "brainstorm-parallel:w$WORKER_ID" "SUCCESS" "$TASK_ID" "$TASK_TITLE" "duration=${DURATION}s"
             PROCESSED=$((PROCESSED + 1))
         fi
 

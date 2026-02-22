@@ -13,6 +13,8 @@
 
 set -e
 
+source "$(dirname "$0")/lib/log.sh"
+
 # Parse args
 SPECIFIC_TASK=""
 PICK_RANDOM=false
@@ -79,6 +81,8 @@ process_task() {
         echo "Skipping claim (specific task mode)"
     fi
 
+    log_activity "brainstorm-issues" "CLAIM" "$TASK_ID" "$TASK_TITLE"
+
     # Build the prompt - delegate to /brainstorm-auto
     PROMPT="Run /brainstorm-auto $TASK_ID"
 
@@ -89,7 +93,9 @@ process_task() {
     echo "=========================================="
     echo ""
 
+    TASK_START=$SECONDS
     claude --dangerously-skip-permissions -p "$PROMPT"
+    DURATION=$((SECONDS - TASK_START))
 }
 
 # Track stats for loop mode
@@ -170,14 +176,20 @@ while true; do
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
             echo "Task $TASK_ID failed with exit code $EXIT_CODE"
+            log_activity "brainstorm-issues" "FAIL" "$TASK_ID" "$TASK_TITLE" "exit=$EXIT_CODE"
             FAILED=$((FAILED + 1))
             # Reset status on failure so it can be retried
             bd update "$TASK_ID" --status open 2>/dev/null || true
+            log_activity "brainstorm-issues" "RESET" "$TASK_ID" "$TASK_TITLE"
         else
+            ensure_brainstorm_body "$TASK_ID" "$TASK_TITLE" "brainstorm-issues"
+            log_activity "brainstorm-issues" "SUCCESS" "$TASK_ID" "$TASK_TITLE"
             PROCESSED=$((PROCESSED + 1))
         fi
     else
         process_task "$TASK_ID" "$TASK_TITLE" "false"
+        ensure_brainstorm_body "$TASK_ID" "$TASK_TITLE" "brainstorm-issues"
+        log_activity "brainstorm-issues" "SUCCESS" "$TASK_ID" "$TASK_TITLE"
         PROCESSED=$((PROCESSED + 1))
     fi
 

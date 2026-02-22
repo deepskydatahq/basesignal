@@ -19,6 +19,8 @@
 
 set -e
 
+source "$(dirname "$0")/lib/log.sh"
+
 # Get the repo root for worktree calculations
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE_BASE=$(dirname "$REPO_ROOT")/worktrees
@@ -92,6 +94,7 @@ process_task_with_worktree() {
     # Claim the task
     echo "Claiming task..."
     bd update "$TASK_ID" --status in_progress
+    log_activity "run-issue" "CLAIM" "$TASK_ID" "$TASK_TITLE"
 
     # Create worktree directory
     mkdir -p "$WORKTREE_BASE"
@@ -214,7 +217,9 @@ Begin by reading the project context, then extract all steps and implement them.
     echo ""
 
     # Change to worktree and run claude
+    TASK_START=$SECONDS
     (cd "$WORKTREE_PATH" && claude --dangerously-skip-permissions -p "$PROMPT")
+    DURATION=$((SECONDS - TASK_START))
 }
 
 # Function to process tasks (either specific or AI-selected)
@@ -288,6 +293,7 @@ while true; do
 
     if [[ "$EXIT_CODE" -ne 0 ]]; then
         echo "Session exited with code $EXIT_CODE"
+        log_activity "run-issue" "FAIL" "-" "" "exit=$EXIT_CODE"
         if [[ "$CONTINUE_ON_ERROR" == true ]]; then
             FAILED=$((FAILED + 1))
         else
@@ -295,6 +301,7 @@ while true; do
             exit "$EXIT_CODE"
         fi
     else
+        log_activity "run-issue" "SUCCESS" "-" ""
         PROCESSED=$((PROCESSED + 1))
     fi
 

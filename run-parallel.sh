@@ -8,6 +8,8 @@
 
 set -e
 
+source "$(dirname "$0")/lib/log.sh"
+
 WORKERS=3
 MAX_TASKS=0
 CONTINUE_ON_ERROR=false
@@ -54,6 +56,8 @@ echo "  Lock dir: $LOCK_DIR"
 echo "  Worktree base: $WORKTREE_BASE"
 echo "=========================================="
 echo ""
+
+log_activity "run-parallel" "START" "-" "Parallel session" "workers=$WORKERS"
 
 # Function to check if a task has unresolved dependencies
 has_unresolved_deps() {
@@ -112,6 +116,7 @@ worker() {
             # Check dependencies first
             if has_unresolved_deps "$TASK_ID"; then
                 echo "[Run Worker $WORKER_ID] Skipping $TASK_ID (has unresolved dependencies)"
+                log_activity "run-parallel:w$WORKER_ID" "SKIP" "$TASK_ID" "$TASK_TITLE" "blocked by deps"
                 continue
             fi
 
@@ -129,6 +134,7 @@ worker() {
                 bd update "$TASK_ID" --status in_progress 2>/dev/null || true
                 CLAIMED=true
                 echo "[Run Worker $WORKER_ID] Claimed: $TASK_ID - $TASK_TITLE"
+                log_activity "run-parallel:w$WORKER_ID" "CLAIM" "$TASK_ID" "$TASK_TITLE"
                 break
             fi
         done
@@ -277,9 +283,11 @@ Begin by reading the project context, then extract all steps and implement them.
             set +e
         fi
 
+        TASK_START=$SECONDS
         # Run Claude Code in the worktree directory
         (cd "$WORKTREE_PATH" && claude --dangerously-skip-permissions -p "$PROMPT")
         EXIT_CODE=$?
+        DURATION=$((SECONDS - TASK_START))
 
         set -e
 
@@ -288,6 +296,7 @@ Begin by reading the project context, then extract all steps and implement them.
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
             echo "[Run Worker $WORKER_ID] Task $TASK_ID failed (exit $EXIT_CODE)"
+            log_activity "run-parallel:w$WORKER_ID" "FAIL" "$TASK_ID" "$TASK_TITLE" "exit=$EXIT_CODE duration=${DURATION}s"
             FAILED=$((FAILED + 1))
             # Reset status on failure
             bd update "$TASK_ID" --status open 2>/dev/null || true
@@ -297,6 +306,13 @@ Begin by reading the project context, then extract all steps and implement them.
             fi
         else
             echo "[Run Worker $WORKER_ID] Task $TASK_ID completed"
+            # Safety net: ensure task was closed
+            CURRENT_STATUS=$(bd show "$TASK_ID" --json 2>/dev/null | jq -r '.[0].status' 2>/dev/null)
+            if [[ "$CURRENT_STATUS" != "closed" ]]; then
+                echo "[Run Worker $WORKER_ID] Task not closed, fixing..."
+                bd close "$TASK_ID" 2>/dev/null || true
+            fi
+            log_activity "run-parallel:w$WORKER_ID" "SUCCESS" "$TASK_ID" "$TASK_TITLE" "duration=${DURATION}s"
             PROCESSED=$((PROCESSED + 1))
         fi
 

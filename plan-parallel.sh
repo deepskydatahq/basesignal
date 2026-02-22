@@ -7,6 +7,8 @@
 
 set -e
 
+source "$(dirname "$0")/lib/log.sh"
+
 WORKERS=3
 MAX_TASKS=0
 CONTINUE_ON_ERROR=false
@@ -49,6 +51,8 @@ echo "  Lock dir: $LOCK_DIR"
 echo "=========================================="
 echo ""
 
+log_activity "plan-parallel" "START" "-" "Parallel session" "workers=$WORKERS"
+
 # Worker function
 worker() {
     local WORKER_ID="$1"
@@ -87,6 +91,7 @@ worker() {
                 bd update "$TASK_ID" --status in_progress 2>/dev/null || true
                 CLAIMED=true
                 echo "[Plan Worker $WORKER_ID] Claimed: $TASK_ID - $TASK_TITLE"
+                log_activity "plan-parallel:w$WORKER_ID" "CLAIM" "$TASK_ID" "$TASK_TITLE"
                 break
             fi
         done
@@ -104,8 +109,10 @@ worker() {
             set +e
         fi
 
+        TASK_START=$SECONDS
         claude --dangerously-skip-permissions -p "Run /plan-issue $TASK_ID"
         EXIT_CODE=$?
+        DURATION=$((SECONDS - TASK_START))
 
         set -e
 
@@ -114,6 +121,7 @@ worker() {
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
             echo "[Plan Worker $WORKER_ID] Task $TASK_ID failed (exit $EXIT_CODE)"
+            log_activity "plan-parallel:w$WORKER_ID" "FAIL" "$TASK_ID" "$TASK_TITLE" "exit=$EXIT_CODE duration=${DURATION}s"
             FAILED=$((FAILED + 1))
             # Reset status on failure
             bd update "$TASK_ID" --status open 2>/dev/null || true
@@ -123,6 +131,13 @@ worker() {
             fi
         else
             echo "[Plan Worker $WORKER_ID] Task $TASK_ID completed"
+            # Safety net: ensure label transition happened
+            CURRENT_LABELS=$(bd show "$TASK_ID" --json 2>/dev/null | jq -r '.[0].labels[]?' 2>/dev/null)
+            if echo "$CURRENT_LABELS" | grep -q "plan"; then
+                echo "[Plan Worker $WORKER_ID] Label not transitioned, fixing: plan → ready"
+                bd update "$TASK_ID" --remove-label plan --add-label ready 2>/dev/null || true
+            fi
+            log_activity "plan-parallel:w$WORKER_ID" "SUCCESS" "$TASK_ID" "$TASK_TITLE" "duration=${DURATION}s"
             PROCESSED=$((PROCESSED + 1))
         fi
 

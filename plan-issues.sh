@@ -10,6 +10,8 @@
 
 set -e
 
+source "$(dirname "$0")/lib/log.sh"
+
 # Parse args
 PICK_RANDOM=false
 LOOP_MODE=false
@@ -57,6 +59,7 @@ process_task() {
     # Claim the task
     echo "Claiming task (setting in_progress status)..."
     bd update "$TASK_ID" --status in_progress
+    log_activity "plan-issues" "CLAIM" "$TASK_ID" "$TASK_TITLE"
 
     # Get full task content
     echo "Fetching task details..."
@@ -145,7 +148,9 @@ Begin planning now."
     echo "=========================================="
     echo ""
 
+    TASK_START=$SECONDS
     claude --dangerously-skip-permissions -p "$PROMPT"
+    DURATION=$((SECONDS - TASK_START))
 }
 
 # Track stats for loop mode
@@ -209,14 +214,18 @@ while true; do
 
         if [[ "$EXIT_CODE" -ne 0 ]]; then
             echo "Task $TASK_ID failed with exit code $EXIT_CODE"
+            log_activity "plan-issues" "FAIL" "$TASK_ID" "$TASK_TITLE" "exit=$EXIT_CODE"
             FAILED=$((FAILED + 1))
             # Reset status on failure so it can be retried
             bd update "$TASK_ID" --status open 2>/dev/null || true
+            log_activity "plan-issues" "RESET" "$TASK_ID" "$TASK_TITLE"
         else
+            log_activity "plan-issues" "SUCCESS" "$TASK_ID" "$TASK_TITLE"
             PROCESSED=$((PROCESSED + 1))
         fi
     else
         process_task "$TASK_ID" "$TASK_TITLE"
+        log_activity "plan-issues" "SUCCESS" "$TASK_ID" "$TASK_TITLE"
         PROCESSED=$((PROCESSED + 1))
     fi
 
