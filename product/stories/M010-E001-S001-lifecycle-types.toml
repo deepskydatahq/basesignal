@@ -1,0 +1,70 @@
+# Story: Define Lifecycle State TypeScript Types
+# Add LifecycleState, StateTransition, StateCriterion, and LifecycleStatesResult
+# types to packages/core/src/types/outputs.ts.
+
+id = "M010-E001-S001"
+parent = "M010-E001"
+title = "Define lifecycle state TypeScript types"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+packages/core/src/types/outputs.ts defines LifecycleState, StateTransition,
+StateCriterion, and LifecycleStatesResult interfaces. The types model a complete
+user lifecycle state machine with measurable entry criteria, exit triggers, time
+windows, and transition paths between states.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "StateCriterion interface has: event_name (string), condition (string), threshold (optional number)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleState interface has: name (string), definition (string), entry_criteria (StateCriterion[]), exit_triggers (StateCriterion[]), time_window (optional string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "StateTransition interface has: from_state (string), to_state (string), trigger_conditions (string[]), typical_timeframe (optional string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleStatesResult interface has: states (LifecycleState[]), transitions (StateTransition[]), confidence (number), sources (string[])"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All four types are exported from types/outputs.ts"
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+]
+
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add a new section in types/outputs.ts between the User State Model section
+and the Measurement Spec section. Follow the existing pattern:
+
+// ---------------------------------------------------------------------------
+// Lifecycle States Types
+// ---------------------------------------------------------------------------
+
+The StateCriterion type is structurally similar to the existing UserStateCriterion
+but adds an optional threshold field for numeric conditions (e.g. "less than 3 sessions
+in 14 days"). Keep both types — UserStateCriterion stays for measurement spec backward
+compatibility.
+
+Note: LifecycleStatesResult follows the same confidence + sources pattern as
+ActivationMap and MeasurementSpec.
+"""
+
+reference_files = [
+    "packages/core/src/types/outputs.ts",
+]

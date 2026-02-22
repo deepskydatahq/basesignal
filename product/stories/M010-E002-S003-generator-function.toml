@@ -1,0 +1,85 @@
+# Story: Lifecycle States Generator Function
+# Orchestrate prompt building, LLM call, and response parsing into a single
+# generateLifecycleStates async function.
+
+id = "M010-E002-S003"
+parent = "M010-E002"
+title = "Lifecycle states generator function"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+lifecycle-states.ts exports generateLifecycleStates — an async function that takes
+input data (identity, value moments, activation levels, activation map) and an LLM
+provider, builds the prompt, calls the LLM, parses the response, and returns a
+LifecycleStatesResult. Handles LLM errors gracefully, consistent with other generators.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateLifecycleStates is exported from lifecycle-states.ts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function signature accepts input data object and LlmProvider, returns Promise<LifecycleStatesResult>"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function calls LLM with system prompt and user prompt from buildLifecycleStatesPrompt"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function passes LLM response through parseLifecycleStatesResponse"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function throws descriptive error if LLM returns empty response"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Function throws descriptive error if LLM response fails Zod validation"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E002-S001", "M010-E002-S002"]
+
+[handoff]
+implementation_hints = """
+Follow the pattern from icp-profiles.ts and activation-map.ts. The generator function
+ties everything together:
+
+export async function generateLifecycleStates(
+  inputData: LifecycleStatesInputData,
+  llm: LlmProvider,
+): Promise<LifecycleStatesResult> {
+  const prompt = buildLifecycleStatesPrompt(inputData);
+  const response = await llm([
+    { role: "system", content: LIFECYCLE_STATES_SYSTEM_PROMPT },
+    { role: "user", content: prompt },
+  ]);
+  return parseLifecycleStatesResponse(response);
+}
+
+Define LifecycleStatesInputData interface locally in the file:
+- identity: IdentityResult (product context for time window calibration)
+- value_moments: ValueMoment[]
+- activation_levels: ActivationLevel[]
+- activation_map: ActivationMapResult
+
+Error handling should match existing generators — let Zod errors propagate
+with useful messages, catch empty LLM responses explicitly.
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+]

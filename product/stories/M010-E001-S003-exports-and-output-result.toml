@@ -1,0 +1,85 @@
+# Story: Update OutputGenerationResult and Package Exports
+# Add lifecycle_states to OutputGenerationResult, update index.ts exports,
+# and add tests verifying the new types and schemas.
+
+id = "M010-E001-S003"
+parent = "M010-E001"
+title = "Update OutputGenerationResult and package exports"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+OutputGenerationResult in types/outputs.ts includes an optional lifecycle_states field
+of type LifecycleStatesResult. All lifecycle types and schemas are exported from
+packages/core/src/index.ts and packages/core/src/schema/index.ts. Tests verify
+the types compile, schemas validate correct input, and reject invalid input.
+npm run build succeeds for @basesignal/core.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OutputGenerationResult has optional lifecycle_states field of type LifecycleStatesResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleStatesResult, LifecycleState, StateTransition, StateCriterion types are exported from @basesignal/core"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleStatesResultSchema, LifecycleStateSchema, StateTransitionSchema, StateCriterionSchema are exported from @basesignal/core schema"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: LifecycleStatesResultSchema.parse() accepts a valid 7-state lifecycle result"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: LifecycleStatesResultSchema.parse() rejects a result with missing required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "npm run build in packages/core succeeds without errors"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing tests continue to pass — no regressions"
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/schema/index.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E001-S001", "M010-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Three files to update:
+
+1. types/outputs.ts — Add to OutputGenerationResult:
+   lifecycle_states?: LifecycleStatesResult;
+   (optional because existing scans won't have it)
+
+2. src/index.ts — Add to the 'Output types' export block:
+   LifecycleStatesResult, LifecycleState, StateTransition, StateCriterion
+
+3. src/schema/index.ts — Add to the 'Output types' export block:
+   LifecycleStatesResultSchema, LifecycleStateSchema, StateTransitionSchema, StateCriterionSchema
+
+For tests, create packages/core/src/schema/__tests__/lifecycle-states.test.ts
+following the pattern of existing schema tests (identity.test.ts, revenue.test.ts).
+Test both happy path (valid 7-state result) and rejection (missing fields, wrong types).
+"""
+
+reference_files = [
+    "packages/core/src/index.ts",
+    "packages/core/src/schema/index.ts",
+    "packages/core/src/schema/__tests__/identity.test.ts",
+]

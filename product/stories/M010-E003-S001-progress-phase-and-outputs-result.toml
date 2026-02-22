@@ -1,0 +1,71 @@
+# Story: Add Lifecycle States Progress Phase and OutputsResult Field
+# Add 'outputs_lifecycle_states' to ProgressPhase union, add lifecycle_states
+# to OutputsResult and PipelineOutputs interfaces.
+
+id = "M010-E003-S001"
+parent = "M010-E003"
+title = "Add lifecycle states progress phase and OutputsResult field"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+ProgressPhase in types.ts includes 'outputs_lifecycle_states'. OutputsResult in
+outputs/index.ts and PipelineOutputs in types.ts both include a lifecycle_states
+field. The types compile and existing tests pass.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ProgressPhase union in types.ts includes 'outputs_lifecycle_states'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OutputsResult in outputs/index.ts has lifecycle_states field (LifecycleStatesResult | null)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "PipelineOutputs in types.ts has lifecycle_states field (matching OutputsResult)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "npm run build in packages/mcp-server succeeds"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing tests continue to pass — no regressions"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E001-S003"]
+
+[handoff]
+implementation_hints = """
+Two files to modify:
+
+1. types.ts — Add to ProgressPhase union:
+   | "outputs_lifecycle_states"
+
+   Add to PipelineOutputs:
+   lifecycle_states: any;  // follows same pattern as activation_map
+
+2. outputs/index.ts — Add to OutputsResult:
+   lifecycle_states: LifecycleStatesResult | null;
+
+   Import LifecycleStatesResult from @basesignal/core.
+
+Initialize lifecycle_states to null in the result object in generateAllOutputs.
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]

@@ -1,0 +1,71 @@
+# Story: Response Parser for Lifecycle States
+# Parse and validate the LLM's JSON response into a typed LifecycleStatesResult
+# using the Zod schema from E001.
+
+id = "M010-E002-S002"
+parent = "M010-E002"
+title = "Response parser for lifecycle states"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+lifecycle-states.ts has a parseLifecycleStatesResponse function that extracts JSON
+from the LLM response text, validates it against LifecycleStatesResultSchema, and
+returns a typed LifecycleStatesResult. Handles malformed responses gracefully.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseLifecycleStatesResponse extracts JSON from LLM response text using extractJson"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseLifecycleStatesResponse validates extracted JSON against LifecycleStatesResultSchema"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Valid response with 7 states, transitions, confidence, and sources parses successfully"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Response missing required fields (e.g. no states array) throws a descriptive error"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Response with invalid state structure (e.g. missing entry_criteria) throws a descriptive error"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E001-S002", "M010-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Follow the pattern from existing parsers. Key implementation:
+
+import { extractJson } from "@basesignal/core";
+import { LifecycleStatesResultSchema } from "@basesignal/core";
+
+export function parseLifecycleStatesResponse(text: string): LifecycleStatesResult {
+  const raw = extractJson(text);
+  return LifecycleStatesResultSchema.parse(raw);
+}
+
+The extractJson utility from @basesignal/core handles stripping markdown fences,
+finding JSON in prose, etc. The Zod schema handles validation.
+
+Test with both valid and invalid JSON fixtures. A good test fixture is a 7-state
+result for a B2B collaboration tool like Miro — states, transitions, and time windows
+should feel realistic.
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+]

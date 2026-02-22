@@ -1,0 +1,85 @@
+# Story: CLI Display and End-to-End Test
+# Display lifecycle states in CLI scan output and add end-to-end pipeline test
+# verifying lifecycle states generation.
+
+id = "M010-E003-S004"
+parent = "M010-E003"
+title = "CLI display and end-to-end pipeline test"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+The CLI scan command displays lifecycle states in its results output (state names,
+definitions, time windows). The pipeline integration test verifies that a full scan
+produces a valid lifecycle_states section in the output. All existing tests pass.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLI scan output includes a Lifecycle States section when lifecycle states are generated"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLI displays state names and time windows in a concise format"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLI gracefully handles scan results without lifecycle states (backward compatible)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Markdown export format includes lifecycle states section"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Pipeline test: full generateAllOutputs with mock LLM produces non-null lifecycle_states"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Pipeline test: lifecycle_states result has 7+ states with valid structure"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "All existing tests continue to pass — no regressions to ICP profiles, activation map, or measurement spec"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/formatters.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E003-S002"]
+
+[handoff]
+implementation_hints = """
+CLI display:
+- In formatters.ts (or scan.ts output section), add a lifecycle states section
+- Keep it concise: state name, one-line definition, time window
+- Example format:
+  Lifecycle States (7 states)
+  - new: First visit, no meaningful actions (0-7 days)
+  - activated: Completed primary activation criteria (1-14 days)
+  - engaged: Regular usage pattern established (14+ days)
+  - ...
+
+Markdown export:
+- In the markdown formatter, add a ## Lifecycle States section
+- Include state names, definitions, entry criteria, and transitions
+
+End-to-end test:
+- Create or extend test in packages/mcp-server/src/analysis/__tests__/
+- Use mock LLM that returns valid responses for all generators
+- Verify generateAllOutputs produces all four output types including lifecycle_states
+- Verify lifecycle_states has expected structure (7+ states, transitions)
+"""
+
+reference_files = [
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/formatters.ts",
+]

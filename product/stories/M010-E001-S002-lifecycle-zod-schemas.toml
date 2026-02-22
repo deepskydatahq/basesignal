@@ -1,0 +1,72 @@
+# Story: Create Zod Validation Schemas for Lifecycle Types
+# Add Zod schemas for StateCriterion, LifecycleState, StateTransition,
+# and LifecycleStatesResult to packages/core/src/schema/outputs.ts.
+
+id = "M010-E001-S002"
+parent = "M010-E001"
+title = "Create Zod validation schemas for lifecycle types"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+packages/core/src/schema/outputs.ts defines and exports Zod schemas for all lifecycle
+state types: StateCriterionSchema, LifecycleStateSchema, StateTransitionSchema, and
+LifecycleStatesResultSchema. Schemas validate the structure at runtime and match the
+TypeScript types from S001 exactly.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "StateCriterionSchema validates objects with event_name (string min 1), condition (string min 1), threshold (optional number)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleStateSchema validates objects with name, definition, entry_criteria (array of StateCriterion), exit_triggers (array of StateCriterion), time_window (optional string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "StateTransitionSchema validates objects with from_state (string min 1), to_state (string min 1), trigger_conditions (array of string), typical_timeframe (optional string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleStatesResultSchema validates objects with states (array of LifecycleState), transitions (array of StateTransition), confidence (number), sources (array of string)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LifecycleStatesResultSchema rejects invalid input (missing required fields, wrong types)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All four schemas are exported from schema/outputs.ts"
+
+[context]
+relevant_paths = [
+    "packages/core/src/schema/outputs.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Follow the exact pattern used for ActivationMap schemas in schema/outputs.ts:
+
+export const StateCriterionSchema = z.object({
+  event_name: z.string().min(1),
+  condition: z.string().min(1),
+  threshold: z.number().optional(),
+});
+
+Place the lifecycle schemas after the User State Model section and before the
+Tracking Event section, matching the ordering in types/outputs.ts.
+
+Use z.infer<typeof Schema> for the type exports to keep types and schemas in sync.
+"""
+
+reference_files = [
+    "packages/core/src/schema/outputs.ts",
+]

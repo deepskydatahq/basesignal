@@ -1,0 +1,88 @@
+# Story: System Prompt and Prompt Builder for Lifecycle States
+# Define the LLM system prompt and buildPrompt function that constructs
+# the user prompt from product context, value moments, and activation data.
+
+id = "M010-E002-S001"
+parent = "M010-E002"
+title = "System prompt and prompt builder for lifecycle states"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+lifecycle-states.ts in packages/mcp-server/src/analysis/outputs/ contains
+LIFECYCLE_STATES_SYSTEM_PROMPT and a buildLifecycleStatesPrompt function. The system
+prompt instructs the LLM to produce product-specific lifecycle states (not generic
+SaaS templates). The prompt builder assembles product identity, value moments, and
+activation levels into a structured user prompt.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "LIFECYCLE_STATES_SYSTEM_PROMPT is an exported string constant"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt instructs LLM to generate 7 states: new, activated, engaged, at_risk, dormant, churned, resurrected"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt requires product-specific time windows calibrated to product type (daily consumer vs monthly B2B)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt requires measurable entry_criteria and exit_triggers using event_name + condition format"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "System prompt requires the 'activated' state to align with the activation map's primary activation level"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildLifecycleStatesPrompt accepts identity, value moments, activation levels, and activation map as input"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildLifecycleStatesPrompt includes product category and business model in the prompt for time window calibration"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildLifecycleStatesPrompt includes value moment names and tiers as evidence for engagement signals"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Create packages/mcp-server/src/analysis/outputs/lifecycle-states.ts.
+
+Follow the same file structure as icp-profiles.ts and activation-map.ts:
+1. Import types from ../types.js and @basesignal/core
+2. LIFECYCLE_STATES_SYSTEM_PROMPT constant
+3. buildLifecycleStatesPrompt() pure function
+
+The system prompt is the most important part. Key instructions to include:
+- Generate states for this SPECIFIC product, not generic SaaS
+- Time windows must reflect the product's natural usage cadence
+- Entry criteria must use event_name + condition format (maps to tracking events)
+- The 'activated' state must match the provided activation definition
+- Transitions should include both forward (normal progression) and backward (regression)
+- 'resurrected' needs product-specific re-engagement triggers
+
+The prompt builder should format inputs similarly to how activation-map.ts formats
+its activation levels and value moments.
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+]

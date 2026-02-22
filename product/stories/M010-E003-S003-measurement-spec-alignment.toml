@@ -1,0 +1,79 @@
+# Story: Align Measurement Spec userStateModel with Lifecycle States
+# Pass lifecycle states into the measurement spec generator so userStateModel
+# is derived from the lifecycle states output rather than invented from scratch.
+
+id = "M010-E003-S003"
+parent = "M010-E003"
+title = "Align measurement spec userStateModel with lifecycle states"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+When lifecycle states are available, the measurement spec generator receives them
+as input and its prompt instructs the LLM to derive userStateModel from the provided
+lifecycle states rather than inventing states from scratch. This ensures the measurement
+spec's state model matches the lifecycle states output exactly.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "assembleMeasurementInput accepts optional lifecycle_states parameter"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Measurement spec prompt includes lifecycle states when available"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Prompt instructs LLM to derive userStateModel from provided lifecycle states"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "When lifecycle states are not available, measurement spec generates its own userStateModel as before (backward compatible)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateAllOutputs passes lifecycle states result into measurement spec generation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing measurement spec tests continue to pass"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E003-S002"]
+
+[handoff]
+implementation_hints = """
+Two files to modify:
+
+1. measurement-spec.ts:
+   - Add optional lifecycle_states to MeasurementInputData (or as a separate parameter)
+   - In the prompt builder, if lifecycle states are provided, add a section:
+     "## Lifecycle States (use these for userStateModel)"
+     [formatted lifecycle states]
+   - Add prompt instruction: "Derive userStateModel directly from the provided
+     lifecycle states. Use each state's name, definition, and entry_criteria."
+   - If no lifecycle states provided, prompt remains unchanged (backward compatible)
+
+2. outputs/index.ts:
+   - In generateAllOutputs, pass result.lifecycle_states to assembleMeasurementInput
+   - The measurement spec step already runs after lifecycle states
+
+This is Option B from the mission notes: lifecycle states is canonical,
+userStateModel is a simplified projection.
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]

@@ -1,0 +1,86 @@
+# Story: Tests for Lifecycle States Generator
+# Unit tests for prompt builder, response parser, and generator function
+# using mock LLM provider.
+
+id = "M010-E002-S004"
+parent = "M010-E002"
+title = "Tests for lifecycle states generator"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+Test file packages/mcp-server/src/analysis/__tests__/lifecycle-states.test.ts
+covers the prompt builder, response parser, and generator function. Tests use
+mock LLM responses and verify the generator produces valid LifecycleStatesResult
+output. All tests pass via npm run test:run.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: buildLifecycleStatesPrompt includes product name and business model"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: buildLifecycleStatesPrompt includes value moment names"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: buildLifecycleStatesPrompt includes activation level names"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: parseLifecycleStatesResponse parses valid 7-state JSON into LifecycleStatesResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: parseLifecycleStatesResponse throws on invalid JSON (missing states array)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: generateLifecycleStates with mock LLM returns valid LifecycleStatesResult"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: generated result has at least 7 states with names matching expected lifecycle states"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test: generated result has transitions between states"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/__tests__/",
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E002-S001", "M010-E002-S002", "M010-E002-S003"]
+
+[handoff]
+implementation_hints = """
+Follow the test pattern from existing output tests like activation-levels.test.ts
+and identity.test.ts.
+
+Create a mock LLM that returns a realistic lifecycle states JSON response for a
+B2B collaboration tool (like Miro):
+- 7 states with product-specific criteria
+- Transitions between states
+- Time windows appropriate for B2B weekly usage
+
+Use the mock to test the full generator flow:
+const mockLlm: LlmProvider = async () => JSON.stringify(mockLifecycleStates);
+
+Also test edge cases:
+- Empty LLM response
+- Malformed JSON
+- Valid JSON but missing required fields
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/__tests__/activation-levels.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/identity.test.ts",
+]

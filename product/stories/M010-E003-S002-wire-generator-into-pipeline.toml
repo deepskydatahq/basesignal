@@ -1,0 +1,91 @@
+# Story: Wire Lifecycle States Generator into generateAllOutputs
+# Call generateLifecycleStates in the output generation pipeline after
+# the activation map, with progress reporting and error handling.
+
+id = "M010-E003-S002"
+parent = "M010-E003"
+title = "Wire lifecycle states generator into pipeline"
+status = "ready"
+created = 2026-02-22
+
+[outcome]
+description = """
+generateAllOutputs in outputs/index.ts calls generateLifecycleStates after the
+activation map step. The call follows the same pattern as other generators: progress
+started → generate → progress completed/failed. Lifecycle states output is included
+in the returned OutputsResult.
+"""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateAllOutputs imports and calls generateLifecycleStates"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Lifecycle states generation runs after activation map (requires activation map result as input)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Progress callback fires with phase 'outputs_lifecycle_states' status 'started' before generation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Progress callback fires with phase 'outputs_lifecycle_states' status 'completed' after success"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Progress callback fires with phase 'outputs_lifecycle_states' status 'failed' on error"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Errors are pushed to errors array (consistent with other generators)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Lifecycle states generation is skipped if activationLevels is null (same guard as activation map)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Lifecycle states generator receives identity, value moments, activation levels, and activation map"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+
+input_fixtures = []
+depends_on = ["M010-E002-S003", "M010-E003-S001"]
+
+[handoff]
+implementation_hints = """
+Add step 3b in generateAllOutputs (between activation map and measurement spec):
+
+  // 3b. Lifecycle states (requires activation levels + activation map)
+  if (activationLevels && result.activation_map) {
+    progress?.({ phase: "outputs_lifecycle_states", status: "started" });
+    try {
+      result.lifecycle_states = await generateLifecycleStates(
+        {
+          identity: identity ?? undefined,
+          value_moments: convergence.value_moments,
+          activation_levels: activationLevels.levels,
+          activation_map: result.activation_map,
+        },
+        llm,
+      );
+      progress?.({ phase: "outputs_lifecycle_states", status: "completed" });
+    } catch (e) {
+      progress?.({ phase: "outputs_lifecycle_states", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "lifecycle_states", message: String(e) });
+    }
+  }
+
+Add import for generateLifecycleStates and re-export it.
+"""
+
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
