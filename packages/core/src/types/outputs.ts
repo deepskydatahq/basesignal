@@ -192,6 +192,42 @@ export interface MeasurementSpec {
 }
 
 // ---------------------------------------------------------------------------
+// Lifecycle States Types
+// ---------------------------------------------------------------------------
+
+/** A single criterion for determining lifecycle state entry/exit. */
+export interface StateCriterion {
+  event_name: string;
+  condition: string;
+  threshold?: number;
+}
+
+/** A lifecycle state in the user lifecycle state machine. */
+export interface LifecycleState {
+  name: string;
+  definition: string;
+  entry_criteria: StateCriterion[];
+  exit_triggers: StateCriterion[];
+  time_window?: string;
+}
+
+/** Transition between two lifecycle states. */
+export interface StateTransition {
+  from_state: string;
+  to_state: string;
+  trigger_conditions: string[];
+  typical_timeframe?: string;
+}
+
+/** Complete lifecycle states result from the generator. */
+export interface LifecycleStatesResult {
+  states: LifecycleState[];
+  transitions: StateTransition[];
+  confidence: number;
+  sources: string[];
+}
+
+// ---------------------------------------------------------------------------
 // Activation Level (from extractActivationLevels)
 // ---------------------------------------------------------------------------
 

@@ -157,6 +157,42 @@ export type TrackingEvent = z.infer<typeof TrackingEventSchema>;
 
 // --- Measurement Spec ---
 
+// --- Lifecycle States ---
+
+export const StateCriterionSchema = z.object({
+  event_name: z.string().min(1),
+  condition: z.string().min(1),
+  threshold: z.number().optional(),
+});
+export type StateCriterion = z.infer<typeof StateCriterionSchema>;
+
+export const LifecycleStateSchema = z.object({
+  name: z.string().min(1),
+  definition: z.string().min(1),
+  entry_criteria: z.array(StateCriterionSchema),
+  exit_triggers: z.array(StateCriterionSchema),
+  time_window: z.string().optional(),
+});
+export type LifecycleState = z.infer<typeof LifecycleStateSchema>;
+
+export const StateTransitionSchema = z.object({
+  from_state: z.string().min(1),
+  to_state: z.string().min(1),
+  trigger_conditions: z.array(z.string().min(1)),
+  typical_timeframe: z.string().optional(),
+});
+export type StateTransition = z.infer<typeof StateTransitionSchema>;
+
+export const LifecycleStatesResultSchema = z.object({
+  states: z.array(LifecycleStateSchema),
+  transitions: z.array(StateTransitionSchema),
+  confidence: z.number(),
+  sources: z.array(z.string()),
+});
+export type LifecycleStatesResult = z.infer<typeof LifecycleStatesResultSchema>;
+
+// --- Measurement Spec ---
+
 export const MeasurementSpecSchema = z.object({
   entities: z.array(EntityDefinitionSchema),
   events: z.array(TrackingEventSchema),

@@ -1,172 +1,122 @@
-// Lifecycle States prompt, prompt builder, and response parser.
+// Lifecycle States generation.
 
-import type { IdentityResult, ValueMoment } from "../types.js";
+import type { LlmProvider, ValueMoment, IdentityResult } from "../types.js";
 import type { ActivationLevel, LifecycleStatesResult } from "@basesignal/core";
-import { extractJson, LifecycleStatesResultSchema } from "@basesignal/core";
 import type { ActivationMapResult } from "./activation-map.js";
+import { extractJson } from "@basesignal/core";
+import { LifecycleStatesResultSchema } from "@basesignal/core";
+
+// --- Input Type ---
+
+export interface LifecycleStatesInputData {
+  identity: IdentityResult;
+  value_moments: ValueMoment[];
+  activation_levels: ActivationLevel[];
+  activation_map: ActivationMapResult;
+}
 
 // --- System Prompt ---
 
-export const LIFECYCLE_STATES_SYSTEM_PROMPT = `You are a product analyst generating a user lifecycle state model.
+export const LIFECYCLE_STATES_SYSTEM_PROMPT = `You are a product analyst generating a lifecycle state machine for a specific product. You must generate states that reflect THIS product's actual usage patterns, not generic SaaS templates.
 
-A lifecycle state model defines the stages users pass through from first contact to long-term engagement (or churn), with measurable criteria for entering each state and triggers for transitioning between them.
+## Required States
 
-## Task
+Generate exactly 7 states:
 
-Generate exactly 7 lifecycle states with these exact names:
-1. **new** — User has signed up but not yet reached activation
-2. **activated** — User has reached the primary activation level (the "aha moment")
-3. **engaged** — User demonstrates sustained, recurring value extraction
-4. **at_risk** — User's engagement is declining from a previously engaged state
-5. **dormant** — User has stopped engaging but account still exists
-6. **churned** — User has been inactive long enough to be considered lost
-7. **resurrected** — User has returned after being dormant or churned
+1. **new** — Users who just signed up but haven't taken meaningful action
+2. **activated** — Users who reached the product's activation criteria (must align with the provided activation definition)
+3. **engaged** — Users who are regularly deriving value from the product
+4. **at_risk** — Users showing declining engagement patterns
+5. **dormant** — Users who have stopped engaging but haven't been gone long enough to be churned
+6. **churned** — Users who have been inactive beyond the product's natural usage cadence
+7. **resurrected** — Previously churned or dormant users who have returned
 
-## Output Structure
+## State Structure
 
-Return a single JSON object with this structure:
+Each state must have:
+- **name**: one of the 7 required state names
+- **definition**: product-specific description of what this state means for THIS product
+- **entry_criteria**: array of measurable criteria using { event_name, condition, threshold? } format
+- **exit_triggers**: array of criteria that cause a user to leave this state
+- **time_window**: optional duration that contextualizes the state (e.g., "7 days", "30 days")
 
+## Transition Structure
+
+Each transition must have:
+- **from_state**: source state name
+- **to_state**: destination state name
+- **trigger_conditions**: array of human-readable conditions that cause the transition
+- **typical_timeframe**: optional expected duration for this transition
+
+## Rules
+
+1. Time windows MUST be calibrated to the product's natural usage cadence:
+   - Daily consumer apps: shorter windows (1-7 days)
+   - Weekly B2B tools: medium windows (7-30 days)
+   - Monthly/quarterly enterprise: longer windows (30-90 days)
+2. The "activated" state's entry_criteria MUST align with the activation map's primary activation level
+3. Entry criteria must use event_name + condition format that maps to trackable events
+4. Include both forward transitions (new → activated → engaged) and backward transitions (engaged → at_risk → dormant → churned)
+5. Include resurrection transitions (churned → resurrected, dormant → resurrected)
+6. The "resurrected" state needs product-specific re-engagement triggers, not generic "logged in" events
+7. Set confidence to a number between 0 and 1 based on data quality
+8. Set sources to describe what data informed the states
+
+## Output Format
+
+Return a single JSON object:
 {
   "states": [
     {
       "name": "new",
-      "description": "User has created an account but has not yet completed their first meaningful action",
-      "entry_criteria": [
-        {
-          "event_name": "account_created",
-          "condition": "count >= 1"
-        }
-      ],
-      "exit_triggers": [
-        {
-          "event_name": "first_project_created",
-          "condition": "count >= 1"
-        }
-      ],
-      "time_window": "0-7 days",
-      "typical_duration": "1-3 days"
-    },
-    {
-      "name": "activated",
-      "description": "User has reached the primary activation level and experienced core product value",
-      "entry_criteria": [
-        {
-          "event_name": "project_shared_with_team",
-          "condition": "count >= 1"
-        },
-        {
-          "event_name": "template_customized",
-          "condition": "count >= 2 within 7 days"
-        }
-      ],
-      "exit_triggers": [
-        {
-          "event_name": "weekly_active_sessions",
-          "condition": "count >= 3 within 14 days"
-        }
-      ],
-      "time_window": "1-14 days",
-      "typical_duration": "3-7 days"
-    },
-    {
-      "name": "at_risk",
-      "description": "User's activity has dropped significantly from their engaged baseline",
-      "entry_criteria": [
-        {
-          "event_name": "weekly_active_sessions",
-          "condition": "count < 1 within 14 days"
-        }
-      ],
-      "exit_triggers": [
-        {
-          "event_name": "session_started",
-          "condition": "count >= 2 within 7 days"
-        },
-        {
-          "event_name": "days_inactive",
-          "condition": "count >= 30"
-        }
-      ],
-      "time_window": "14-30 days inactive",
-      "typical_duration": "7-21 days"
+      "definition": "...",
+      "entry_criteria": [{ "event_name": "user_signed_up", "condition": "account created" }],
+      "exit_triggers": [{ "event_name": "first_project_created", "condition": "completed onboarding" }],
+      "time_window": "7 days"
     }
   ],
   "transitions": [
     {
-      "from": "new",
-      "to": "activated",
-      "trigger_events": ["first_project_created", "template_customized"],
-      "direction": "forward"
-    },
-    {
-      "from": "engaged",
-      "to": "at_risk",
-      "trigger_events": ["activity_decline_detected"],
-      "direction": "regression"
-    },
-    {
-      "from": "dormant",
-      "to": "resurrected",
-      "trigger_events": ["session_started", "feature_used"],
-      "direction": "recovery"
+      "from_state": "new",
+      "to_state": "activated",
+      "trigger_conditions": ["User completes first project setup"],
+      "typical_timeframe": "1-3 days"
     }
   ],
-  "confidence": 0.75,
-  "sources": ["identity", "activation_levels", "activation_map", "value_moments"]
+  "confidence": 0.7,
+  "sources": ["activation_levels", "value_moments", "product_identity"]
 }
 
-## Calibration
+## Important
 
-Use the product's industry, business model, and activation map transition timeframes to calibrate state time windows. Different products have vastly different natural cadences:
-- A daily-use collaboration tool may consider 3 days of inactivity as "at_risk"
-- An enterprise reporting tool used monthly may not flag "at_risk" until 45+ days
-- A seasonal product may have natural dormancy periods that are not concerning
-
-The activation map transition timeframes tell you how quickly users typically move between levels — use these as the baseline for calibrating your time windows.
-
-## Alignment
-
-The activated state entry_criteria MUST correspond to the primary activation level from the activation map. The events and conditions that define "activated" should reflect what it means to reach that level.
-
-## Value Moments
-
-Value moments of any tier can indicate progression through states. Use them as evidence for what engagement looks like at each state — don't restrict which tiers map to which states. A Tier 3 moment might be relevant for the engaged state if that's what sustained usage looks like for this product.
-
-## Rules
-
-1. Return ONLY valid JSON, no commentary before or after
-2. Generate exactly 7 states with the exact names: new, activated, engaged, at_risk, dormant, churned, resurrected
-3. Every entry_criteria must have event_name (string) and condition (string with comparison operator)
-4. Every exit_triggers must have event_name (string) and condition (string with comparison operator)
-5. Include at least 8 transitions covering forward progression, regression, and recovery paths
-6. Each transition must have from, to, trigger_events (non-empty array), and direction ("forward", "regression", or "recovery")
-7. Set confidence between 0 and 1 based on data quality
-8. Set sources to describe what data informed the model`;
+- Return ONLY valid JSON, no commentary before or after
+- All 7 states must be present
+- State names must exactly match the required names
+- Entry criteria and exit triggers must be product-specific and measurable`;
 
 // --- Prompt Builder ---
 
 export function buildLifecycleStatesPrompt(
-  identity: IdentityResult,
-  valueMoments: ValueMoment[],
-  activationLevels: ActivationLevel[],
-  activationMap: ActivationMapResult,
+  inputData: LifecycleStatesInputData,
 ): string {
+  const { identity, value_moments, activation_levels, activation_map } =
+    inputData;
   const parts: string[] = [];
 
-  // Section 1: Product Identity
-  parts.push("## Product Identity\n");
-  parts.push(`Product Name: ${identity.productName}`);
+  // Product context for time window calibration
+  parts.push("## Product Context\n");
+  parts.push(`Product: ${identity.productName}`);
+  parts.push(`Description: ${identity.description}`);
   parts.push(`Business Model: ${identity.businessModel}`);
+  parts.push(`Target Customer: ${identity.targetCustomer}`);
   if (identity.industry) {
     parts.push(`Industry: ${identity.industry}`);
   }
-  parts.push(`Description: ${identity.description}`);
-  parts.push(`Target Customer: ${identity.targetCustomer}`);
   parts.push("");
 
-  // Section 2: Activation Levels
+  // Activation levels
   parts.push("## Activation Levels\n");
-  for (const level of activationLevels) {
+  for (const level of activation_levels) {
     parts.push(`### Level ${level.level}: ${level.name}`);
     parts.push(`Signal Strength: ${level.signalStrength}`);
     parts.push("Criteria:");
@@ -177,39 +127,60 @@ export function buildLifecycleStatesPrompt(
     parts.push("");
   }
 
-  // Section 3: Activation Map Summary
-  parts.push("## Activation Map Summary\n");
+  // Primary activation level from activation map
   parts.push(
-    `Primary Activation Level: ${activationMap.primary_activation_level}`,
+    `## Primary Activation Level: ${activation_map.primary_activation_level}`,
+  );
+  parts.push(
+    "The 'activated' state must align with this activation level's criteria.\n",
   );
 
-  const timedTransitions = activationMap.transitions.filter(
-    (t) => t.typical_timeframe,
-  );
-  if (timedTransitions.length > 0) {
-    parts.push("\nTransition Timeframes:");
-    for (const t of timedTransitions) {
-      parts.push(
-        `  - Level ${t.from_level} → Level ${t.to_level}: ${t.typical_timeframe}`,
-      );
-    }
-  }
-  parts.push("");
-
-  // Section 4: Value Moments
+  // Value moments as evidence for engagement signals
   parts.push("## Value Moments\n");
-  for (const vm of valueMoments) {
+  for (const vm of value_moments) {
     parts.push(`### ${vm.name} (Tier ${vm.tier})`);
     parts.push(`Description: ${vm.description}`);
+    parts.push(`Roles: ${vm.roles.join(", ")}`);
     parts.push("");
   }
+
+  parts.push(
+    "Generate a lifecycle state machine with product-specific states, transitions, and time windows based on the above inputs.",
+  );
 
   return parts.join("\n");
 }
 
 // --- Response Parser ---
 
-export function parseLifecycleStatesResponse(text: string): LifecycleStatesResult {
-  const raw = extractJson(text);
+export function parseLifecycleStatesResponse(
+  responseText: string,
+): LifecycleStatesResult {
+  const raw = extractJson(responseText);
   return LifecycleStatesResultSchema.parse(raw);
+}
+
+// --- Generator ---
+
+export async function generateLifecycleStates(
+  inputData: LifecycleStatesInputData,
+  llm: LlmProvider,
+): Promise<LifecycleStatesResult> {
+  const prompt = buildLifecycleStatesPrompt(inputData);
+
+  const responseText = await llm.complete(
+    [
+      { role: "system", content: LIFECYCLE_STATES_SYSTEM_PROMPT },
+      { role: "user", content: prompt },
+    ],
+    { temperature: 0.2 },
+  );
+
+  if (!responseText?.trim()) {
+    throw new Error(
+      "LLM returned empty response for lifecycle states generation",
+    );
+  }
+
+  return parseLifecycleStatesResponse(responseText);
 }

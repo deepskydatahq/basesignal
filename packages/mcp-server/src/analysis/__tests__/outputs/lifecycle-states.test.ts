@@ -1,164 +1,399 @@
 import { describe, it, expect } from "vitest";
-import { parseLifecycleStatesResponse } from "../../outputs/lifecycle-states.js";
-import { ZodError } from "zod/v4";
+import {
+  buildLifecycleStatesPrompt,
+  parseLifecycleStatesResponse,
+  generateLifecycleStates,
+  LIFECYCLE_STATES_SYSTEM_PROMPT,
+} from "../../outputs/lifecycle-states.js";
+import type { ActivationLevel } from "@basesignal/core";
+import type { LlmProvider, ValueMoment, IdentityResult } from "../../types.js";
+import type { ActivationMapResult } from "../../outputs/activation-map.js";
 
-function makeValidResult() {
+// --- Inline fixtures ---
+
+const sampleIdentity: IdentityResult = {
+  productName: "ProjectBoard",
+  description: "B2B project management tool for engineering teams",
+  targetCustomer: "Engineering managers at mid-size companies",
+  businessModel: "B2B SaaS subscription",
+  industry: "Project Management",
+  confidence: 0.85,
+  evidence: [],
+};
+
+const sampleValueMoments: ValueMoment[] = [
+  {
+    id: "vm-1",
+    name: "Sprint velocity insight",
+    description: "Team sees velocity trends across sprints",
+    tier: 1,
+    lens_count: 3,
+    lenses: ["capability_mapping"],
+    roles: ["Engineering Manager"],
+    product_surfaces: ["Dashboard"],
+    contributing_candidates: [],
+    is_coherent: true,
+  },
+  {
+    id: "vm-2",
+    name: "Quick task creation",
+    description: "Create and assign tasks in seconds",
+    tier: 2,
+    lens_count: 2,
+    lenses: ["workflow_analysis"],
+    roles: ["Developer"],
+    product_surfaces: ["Board View"],
+    contributing_candidates: [],
+    is_coherent: true,
+  },
+];
+
+const sampleActivationLevels: ActivationLevel[] = [
+  {
+    level: 1,
+    name: "explorer",
+    signalStrength: "weak",
+    criteria: [{ action: "create_project", count: 1 }],
+    reasoning: "Initial project setup",
+    confidence: 0.7,
+    evidence: [],
+  },
+  {
+    level: 2,
+    name: "builder",
+    signalStrength: "medium",
+    criteria: [
+      { action: "invite_member", count: 2, timeWindow: "7 days" },
+      { action: "create_sprint", count: 1 },
+    ],
+    reasoning: "Team adoption signals",
+    confidence: 0.6,
+    evidence: [],
+  },
+];
+
+const sampleActivationMap: ActivationMapResult = {
+  stages: [
+    {
+      level: 1,
+      name: "explorer",
+      signal_strength: "weak",
+      trigger_events: ["create_project"],
+      value_moments_unlocked: ["Quick task creation"],
+      drop_off_risk: { level: "medium", reason: "May not invite team" },
+    },
+    {
+      level: 2,
+      name: "builder",
+      signal_strength: "medium",
+      trigger_events: ["invite_member", "create_sprint"],
+      value_moments_unlocked: ["Sprint velocity insight"],
+      drop_off_risk: { level: "high", reason: "Team adoption hurdle" },
+    },
+  ],
+  transitions: [
+    {
+      from_level: 1,
+      to_level: 2,
+      trigger_events: ["invite_member"],
+      typical_timeframe: "1-3 days",
+    },
+  ],
+  primary_activation_level: 2,
+  confidence: "medium",
+  sources: ["activation_levels", "value_moments"],
+};
+
+const sampleInputData = {
+  identity: sampleIdentity,
+  value_moments: sampleValueMoments,
+  activation_levels: sampleActivationLevels,
+  activation_map: sampleActivationMap,
+};
+
+const validLifecycleStatesJson = JSON.stringify({
+  states: [
+    {
+      name: "new",
+      definition: "Users who signed up but haven't created a project",
+      entry_criteria: [
+        { event_name: "user_signed_up", condition: "account created" },
+      ],
+      exit_triggers: [
+        {
+          event_name: "create_project",
+          condition: "first project created",
+        },
+      ],
+      time_window: "7 days",
+    },
+    {
+      name: "activated",
+      definition:
+        "Users who invited team members and created their first sprint",
+      entry_criteria: [
+        {
+          event_name: "invite_member",
+          condition: "at least 2 members invited",
+          threshold: 2,
+        },
+        { event_name: "create_sprint", condition: "first sprint created" },
+      ],
+      exit_triggers: [
+        {
+          event_name: "sprint_completed",
+          condition: "completed first sprint",
+        },
+      ],
+      time_window: "14 days",
+    },
+    {
+      name: "engaged",
+      definition: "Users regularly completing sprints and tracking velocity",
+      entry_criteria: [
+        {
+          event_name: "sprint_completed",
+          condition: "at least 2 sprints completed",
+          threshold: 2,
+        },
+      ],
+      exit_triggers: [
+        {
+          event_name: "session_gap",
+          condition: "no activity for 14 days",
+        },
+      ],
+      time_window: "30 days",
+    },
+    {
+      name: "at_risk",
+      definition:
+        "Users showing declining sprint activity or reduced team participation",
+      entry_criteria: [
+        {
+          event_name: "session_gap",
+          condition: "no activity for 7 days",
+        },
+      ],
+      exit_triggers: [
+        {
+          event_name: "session_gap",
+          condition: "no activity for 30 days",
+        },
+      ],
+      time_window: "14 days",
+    },
+    {
+      name: "dormant",
+      definition: "Users who stopped using ProjectBoard for over 2 weeks",
+      entry_criteria: [
+        {
+          event_name: "session_gap",
+          condition: "no activity for 14 days",
+        },
+      ],
+      exit_triggers: [
+        {
+          event_name: "session_gap",
+          condition: "no activity for 60 days",
+        },
+      ],
+      time_window: "30 days",
+    },
+    {
+      name: "churned",
+      definition:
+        "Users who have been inactive for over 60 days with no engagement",
+      entry_criteria: [
+        {
+          event_name: "session_gap",
+          condition: "no activity for 60 days",
+        },
+      ],
+      exit_triggers: [
+        {
+          event_name: "session_started",
+          condition: "user returns to app",
+        },
+      ],
+    },
+    {
+      name: "resurrected",
+      definition:
+        "Previously churned users who returned and took meaningful action",
+      entry_criteria: [
+        {
+          event_name: "create_sprint",
+          condition: "created sprint after churned period",
+        },
+      ],
+      exit_triggers: [
+        {
+          event_name: "sprint_completed",
+          condition: "completed a sprint after returning",
+        },
+      ],
+      time_window: "14 days",
+    },
+  ],
+  transitions: [
+    {
+      from_state: "new",
+      to_state: "activated",
+      trigger_conditions: ["User invites 2+ members and creates first sprint"],
+      typical_timeframe: "1-7 days",
+    },
+    {
+      from_state: "activated",
+      to_state: "engaged",
+      trigger_conditions: ["User completes 2+ sprints with team"],
+      typical_timeframe: "2-4 weeks",
+    },
+    {
+      from_state: "engaged",
+      to_state: "at_risk",
+      trigger_conditions: ["No sprint activity for 7+ days"],
+      typical_timeframe: "1-2 weeks",
+    },
+    {
+      from_state: "at_risk",
+      to_state: "dormant",
+      trigger_conditions: ["No activity for 14+ days"],
+    },
+    {
+      from_state: "dormant",
+      to_state: "churned",
+      trigger_conditions: ["No activity for 60+ days"],
+    },
+    {
+      from_state: "churned",
+      to_state: "resurrected",
+      trigger_conditions: [
+        "User returns and creates a sprint after 60+ day absence",
+      ],
+    },
+  ],
+  confidence: 0.75,
+  sources: ["activation_levels", "value_moments", "product_identity"],
+});
+
+// --- Mock LLM ---
+
+function createMockLlm(response: string): LlmProvider {
   return {
-    states: [
-      {
-        name: "new",
-        definition: "User has signed up but not yet activated",
-        entry_criteria: [{ event_name: "account_created", condition: "count >= 1" }],
-        exit_triggers: ["first_project_created"],
-        time_window: "0-7 days",
-      },
-      {
-        name: "activated",
-        definition: "User reached primary activation level",
-        entry_criteria: [{ event_name: "project_shared", condition: "count >= 1" }],
-        exit_triggers: ["weekly_sessions >= 3"],
-      },
-      {
-        name: "engaged",
-        definition: "Sustained recurring value extraction",
-        entry_criteria: [{ event_name: "weekly_active_sessions", condition: "count >= 3 within 14 days" }],
-        exit_triggers: ["activity_decline_detected"],
-      },
-      {
-        name: "at_risk",
-        definition: "Engagement declining from engaged baseline",
-        entry_criteria: [{ event_name: "weekly_active_sessions", condition: "count < 1 within 14 days" }],
-        exit_triggers: ["session_started count >= 2 within 7 days"],
-      },
-      {
-        name: "dormant",
-        definition: "User stopped engaging but account exists",
-        entry_criteria: [{ event_name: "days_inactive", condition: "count >= 30" }],
-        exit_triggers: ["session_started"],
-      },
-      {
-        name: "churned",
-        definition: "Inactive long enough to be considered lost",
-        entry_criteria: [{ event_name: "days_inactive", condition: "count >= 90" }],
-        exit_triggers: ["account_reactivated"],
-      },
-      {
-        name: "resurrected",
-        definition: "Returned after being dormant or churned",
-        entry_criteria: [{ event_name: "session_started", condition: "count >= 1 after dormant" }],
-        exit_triggers: ["weekly_sessions >= 3"],
-      },
-    ],
-    transitions: [
-      { from_state: "new", to_state: "activated", trigger_conditions: ["first_project_created"] },
-      { from_state: "activated", to_state: "engaged", trigger_conditions: ["sustained_usage"] },
-    ],
-    confidence: 0.75,
-    sources: ["identity", "activation_levels"],
-  };
+    complete: async () => response,
+  } as LlmProvider;
 }
 
+// --- Tests ---
+
+describe("buildLifecycleStatesPrompt", () => {
+  it("includes product context for time window calibration", () => {
+    const prompt = buildLifecycleStatesPrompt(sampleInputData);
+    expect(prompt).toContain("ProjectBoard");
+    expect(prompt).toContain("B2B SaaS subscription");
+    expect(prompt).toContain("Engineering managers");
+    expect(prompt).toContain("Project Management");
+  });
+
+  it("includes activation levels and value moments", () => {
+    const prompt = buildLifecycleStatesPrompt(sampleInputData);
+    expect(prompt).toContain("Level 1: explorer");
+    expect(prompt).toContain("Level 2: builder");
+    expect(prompt).toContain("Sprint velocity insight");
+    expect(prompt).toContain("Quick task creation");
+    expect(prompt).toContain("Primary Activation Level: 2");
+  });
+
+  it("includes activation criteria with time windows", () => {
+    const prompt = buildLifecycleStatesPrompt(sampleInputData);
+    expect(prompt).toContain("invite_member");
+    expect(prompt).toContain("within 7 days");
+    expect(prompt).toContain("create_sprint");
+  });
+});
+
 describe("parseLifecycleStatesResponse", () => {
-  it("parses valid 7-state JSON into LifecycleStatesResult", () => {
-    const input = JSON.stringify(makeValidResult());
-    const result = parseLifecycleStatesResponse(input);
+  it("parses valid lifecycle states JSON via Zod", () => {
+    const result = parseLifecycleStatesResponse(validLifecycleStatesJson);
+    expect(result.states).toHaveLength(7);
+    expect(result.transitions).toHaveLength(6);
+    expect(result.confidence).toBe(0.75);
+    expect(result.sources).toContain("activation_levels");
+  });
+
+  it("rejects response missing required fields", () => {
+    const invalid = JSON.stringify({ transitions: [], confidence: 0.5 });
+    expect(() => parseLifecycleStatesResponse(invalid)).toThrow();
+  });
+
+  it("rejects state with missing entry_criteria", () => {
+    const invalid = JSON.stringify({
+      states: [
+        {
+          name: "new",
+          definition: "new users",
+          exit_triggers: [],
+        },
+      ],
+      transitions: [],
+      confidence: 0.5,
+      sources: [],
+    });
+    expect(() => parseLifecycleStatesResponse(invalid)).toThrow();
+  });
+});
+
+describe("generateLifecycleStates", () => {
+  it("calls LLM and returns parsed result", async () => {
+    const llm = createMockLlm(validLifecycleStatesJson);
+    const result = await generateLifecycleStates(sampleInputData, llm);
 
     expect(result.states).toHaveLength(7);
     expect(result.states[0].name).toBe("new");
-    expect(result.states[0].entry_criteria[0].event_name).toBe("account_created");
-    expect(result.transitions).toHaveLength(2);
-    expect(result.confidence).toBe(0.75);
-    expect(result.sources).toEqual(["identity", "activation_levels"]);
-  });
-
-  it("handles markdown-fenced JSON response", () => {
-    const json = JSON.stringify(makeValidResult());
-    const fenced = "```json\n" + json + "\n```";
-    const result = parseLifecycleStatesResponse(fenced);
-
-    expect(result.states).toHaveLength(7);
+    expect(result.transitions).toHaveLength(6);
     expect(result.confidence).toBe(0.75);
   });
 
-  it("preserves optional fields when present", () => {
-    const valid = makeValidResult();
-    valid.states[0].time_window = "0-7 days";
-    valid.transitions[0].typical_timeframe = "1-3 days";
-
-    const result = parseLifecycleStatesResponse(JSON.stringify(valid));
-    expect(result.states[0].time_window).toBe("0-7 days");
-    expect(result.transitions[0].typical_timeframe).toBe("1-3 days");
+  it("throws descriptive error on empty LLM response", async () => {
+    const llm = createMockLlm("");
+    await expect(
+      generateLifecycleStates(sampleInputData, llm),
+    ).rejects.toThrow("LLM returned empty response for lifecycle states");
   });
 
-  it("accepts optional threshold on entry_criteria", () => {
-    const valid = makeValidResult();
-    valid.states[0].entry_criteria[0] = {
-      event_name: "account_created",
-      condition: "count >= 1",
-      threshold: 1,
-    };
-    const result = parseLifecycleStatesResponse(JSON.stringify(valid));
-    expect(result.states[0].entry_criteria[0].threshold).toBe(1);
+  it("throws descriptive error on whitespace-only LLM response", async () => {
+    const llm = createMockLlm("   \n  ");
+    await expect(
+      generateLifecycleStates(sampleInputData, llm),
+    ).rejects.toThrow("LLM returned empty response for lifecycle states");
   });
 
-  it("throws ZodError when states field is missing", () => {
-    const invalid = { transitions: [], confidence: 0.5, sources: [] };
-    expect(() => parseLifecycleStatesResponse(JSON.stringify(invalid))).toThrow(ZodError);
-
-    try {
-      parseLifecycleStatesResponse(JSON.stringify(invalid));
-    } catch (e) {
-      expect(e).toBeInstanceOf(ZodError);
-      const zodErr = e as ZodError;
-      const paths = zodErr.issues.map((i) => i.path.join("."));
-      expect(paths.some((p) => p.includes("states"))).toBe(true);
-    }
+  it("throws on invalid LLM response (Zod validation failure)", async () => {
+    const llm = createMockLlm(JSON.stringify({ not: "valid" }));
+    await expect(
+      generateLifecycleStates(sampleInputData, llm),
+    ).rejects.toThrow();
   });
 
-  it("throws ZodError when state is missing entry_criteria", () => {
-    const valid = makeValidResult();
-    const badState = { ...valid.states[2] } as Record<string, unknown>;
-    delete badState.entry_criteria;
-    valid.states[2] = badState as typeof valid.states[2];
+  it("passes system prompt and user prompt to LLM", async () => {
+    let capturedMessages: Array<{ role: string; content: string }> = [];
+    const llm: LlmProvider = {
+      complete: async (messages) => {
+        capturedMessages = messages as Array<{
+          role: string;
+          content: string;
+        }>;
+        return validLifecycleStatesJson;
+      },
+    } as LlmProvider;
 
-    expect(() => parseLifecycleStatesResponse(JSON.stringify(valid))).toThrow(ZodError);
+    await generateLifecycleStates(sampleInputData, llm);
 
-    try {
-      parseLifecycleStatesResponse(JSON.stringify(valid));
-    } catch (e) {
-      const zodErr = e as ZodError;
-      const paths = zodErr.issues.map((i) => i.path.join("."));
-      expect(paths.some((p) => p.includes("states") && p.includes("entry_criteria"))).toBe(true);
-    }
-  });
-
-  it("throws ZodError when state name is empty string", () => {
-    const valid = makeValidResult();
-    valid.states[0].name = "";
-
-    expect(() => parseLifecycleStatesResponse(JSON.stringify(valid))).toThrow(ZodError);
-  });
-
-  it("throws ZodError when confidence is not a number", () => {
-    const data = makeValidResult() as Record<string, unknown>;
-    data.confidence = "high";
-
-    expect(() => parseLifecycleStatesResponse(JSON.stringify(data))).toThrow(ZodError);
-  });
-
-  it("throws ZodError when transition is missing from_state", () => {
-    const valid = makeValidResult();
-    const badTransition = { to_state: "activated", trigger_conditions: ["event"] };
-    valid.transitions = [badTransition as typeof valid.transitions[0]];
-
-    expect(() => parseLifecycleStatesResponse(JSON.stringify(valid))).toThrow(ZodError);
-
-    try {
-      parseLifecycleStatesResponse(JSON.stringify(valid));
-    } catch (e) {
-      const zodErr = e as ZodError;
-      const paths = zodErr.issues.map((i) => i.path.join("."));
-      expect(paths.some((p) => p.includes("transitions") && p.includes("from_state"))).toBe(true);
-    }
+    expect(capturedMessages).toHaveLength(2);
+    expect(capturedMessages[0].role).toBe("system");
+    expect(capturedMessages[0].content).toBe(LIFECYCLE_STATES_SYSTEM_PROMPT);
+    expect(capturedMessages[1].role).toBe("user");
+    expect(capturedMessages[1].content).toContain("ProjectBoard");
   });
 });
