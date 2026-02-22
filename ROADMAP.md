@@ -1,128 +1,117 @@
 # Basesignal Roadmap
 
-**Vision:** Every product has a story of how it converts users into revenue. Basesignal learns that story—from anywhere you work.
+**Vision:** Context engineering for growth intelligence — generated in 60 seconds, open source, compounding with every conversation.
 
-**Last Updated:** January 2026
+**Last Updated:** February 2026
 
-**Planning Horizon:** Next 3 months (MVP: URL → useful profile → refined → shareable)
+**Planning Horizon:** Next 3 months (open source launch → community adoption → refinement loop)
 
 ---
 
 ## Current State
 
 **Where we are:**
-- Existing React/Convex codebase with AI-guided interview flow and React Flow journey visualization (v1 approach)
-- New direction: MCP-first product knowledge layer that crawls, analyzes, and structures product knowledge
-- No MCP server exists yet — this is the build phase
+- Complete analysis engine: crawl → 7 lenses → convergence → ICP profiles, activation maps, measurement specs
+- Open source monorepo: `@basesignal/core`, `crawlers`, `mcp-server`, `storage`, `cli`
+- CLI works end-to-end: `basesignal scan <url>` → structured growth profile on disk
+- MCP server works: connect from Claude Desktop for conversational access
+- 1,653 tests passing across all packages
+- 8 missions completed, all hypotheses for Phase 1 validated
 
-**The core bet:**
-Point at a URL, get a structured product profile in 60 seconds. Refine through conversation. Share with your team. The data model — not the UI — is the product.
+**The core bet (proven):**
+Point at a URL, get a structured growth profile in 60 seconds. The quality bar is "How did it know that?" — validated with M006/M007 output quality work. Value moments are experiential. Measurement specs follow the Double Three-Layer Framework. ICP profiles prioritize by product relevance, not marketing prominence.
 
-**Key tension:** The scan has to be *surprisingly good* from day one. A mediocre generated profile is worse than no profile — it teaches users "this isn't worth my time." The quality bar is "How did it know that?"
+**What's next:**
+Ship the open source project publicly. Build the refinement loop. Grow the community. Let context compound.
 
 ---
 
 ## Current Focus Areas
 
-### 1. Scan Magic (Primary)
+### 1. Open Source Launch (Primary)
 
-**Why:** This is the hook. If scanning a URL doesn't produce something surprisingly useful, nothing else matters. The vision promises "60 seconds instead of two weeks" — this area delivers on that promise.
+**Why:** The engine is built and validated. The biggest risk is now distribution, not quality. Getting the open source project in front of developers and product engineers is the highest-leverage action. Every `npx basesignal scan` is a demo that sells itself.
 
-**Current State:** Nothing built. The scan pipeline (crawl → extract → analyze → assemble) doesn't exist yet.
+**Current State:** Repository is structured and tested. CLI, MCP server, Docker support all work. README, CONTRIBUTING.md, and LICENSE exist.
 
-**Desired State:** A user provides a URL and gets back a draft profile that makes them say "How did it know that?" The profile includes:
-- Core identity (what, who, business model)
-- Revenue architecture (pricing model, expansion paths)
-- Entity model (the "things" in the product)
-- Journey stages (signup → activated → retained)
-- Draft definitions (activation, first value, churn)
-- Metric suggestions with formulas
-- Confidence scores and evidence links throughout
+**Remaining Work:**
+- Polish README with compelling examples and quick-start
+- Publish packages to npm (`@basesignal/core`, `cli`, etc.)
+- Set up GitHub Actions CI for PRs and releases
+- Create 3-5 example growth profiles (Linear, Notion, Miro, etc.) as showcase
+- Write announcement post / launch strategy (HN, Twitter, Reddit)
+- Ensure `npx basesignal scan <url>` works as zero-install entry point
 
 **Key Questions:**
-- How good can LLM analysis be from marketing sites alone? What's the realistic confidence level?
-- Which profile sections produce the most "wow" — should we optimize depth in fewer areas over breadth?
-- What's the right crawl scope? (depth limit, page limit, JS rendering needs)
-- Does the structured data model need to be fully designed upfront, or can it evolve with each analysis component?
+- Which 3 example products best showcase the engine's quality?
+- What's the npm org name? (`@basesignal` preferred)
+- Do we launch on HN first or build a small community quietly?
 
-**Utility Curve Position:** Pre-threshold (zero value until this works and works well)
-
-**Connects to backlog:** Epic 2 (Website Crawling), Epic 3 (Core Analysis)
+**Success Signal:** 100 GitHub stars in first week. 5 community-filed issues (means people are actually using it).
 
 ---
 
-### 2. MCP Platform (Foundation)
+### 2. Refinement Loop (Next)
 
-**Why:** Without a running MCP server that AI assistants can connect to, Scan Magic has no delivery mechanism. This is the infrastructure that makes everything accessible. Invest enough to unblock the scan — not more.
+**Why:** The scan gets you to ~80%. The refinement loop is where that becomes 100% — and where context engineering becomes real. Users correct definitions, validate sections, add context. The growth profile gets more accurate. Every refinement makes every future AI conversation smarter.
 
-**Current State:** No MCP server. Existing app is React + Convex (web app architecture, not MCP).
-
-**Desired State:** A working MCP server that:
-- Accepts connections from Claude Desktop / other MCP clients
-- Authenticates users and persists their data across sessions
-- Exposes tools for scanning, retrieving profiles, and refining
-- Stores the structured data model reliably
-
-**Key Questions:**
-- Which MCP SDK? (TypeScript vs Python — TypeScript aligns with existing codebase)
-- Where to host? (Railway, Fly.io, or similar — needs SSE support)
-- Auth model? (OAuth2, magic links, or simple token-based)
-- Database choice? (PostgreSQL for structured data, or extend Convex?)
-- Does the existing Convex backend carry forward, or is this a clean-start project?
-
-**Utility Curve Position:** Pre-threshold (nothing works without the platform, but the platform alone has no value)
-
-**Connects to backlog:** Epic 1 (Foundation)
-
----
-
-### 3. Conversational Refinement
-
-**Why:** The scan gets you to ~70%. The refinement loop is where that becomes 100% — and where real stickiness emerges. Users correct definitions, validate sections, add context. The model gets more accurate over time. This is also where the "product knowledge layer" promise becomes real: knowledge that persists and compounds.
-
-**Current State:** Nothing built. The scan pipeline (Focus Area 1) produces the draft; this area makes it improvable.
+**Current State:** MCP server exposes read-only tools. Profile data persists in ProductDirectory (JSON files). No update/refine tools yet.
 
 **Desired State:** Users can:
-- Retrieve any section or definition through conversation
+- Retrieve any section through conversation or CLI
 - Update definitions naturally ("activation should be X, not Y")
-- Validate sections the AI got right (quick confidence upgrade)
-- Ask questions about their profile and get grounded answers
-- See what to improve next (prioritized suggestions)
-- Have updates ripple to connected elements (change activation → metrics update)
+- Validate sections the AI got right (confidence upgrade)
+- Have updates cascade to connected sections (change activation → measurement spec adjusts)
+- See what needs attention (confidence-based suggestions)
+
+**Key Design Decisions:**
+- Refinements edit the JSON files in ProductDirectory directly (transparent, inspectable)
+- MCP tools for `update_definition`, `validate_section`, `suggest_improvements`
+- CLI commands: `basesignal refine <slug>` for interactive refinement
+- Track provenance: AI-inferred vs. user-validated per field
+
+**Success Signal:** Users who refine at least one section have 2x return rate vs. scan-only users.
+
+---
+
+### 3. Community & Ecosystem (Parallel)
+
+**Why:** Open source lives or dies by community. Even a small group of contributors adds crawlers, lenses, and integrations that one person can't build alone. The growth profile schema becomes more valuable as more tools produce and consume it.
+
+**Current State:** Extension points exist (Crawler interface, StorageAdapter interface, LlmProvider interface, lens registry). No external contributors yet.
+
+**Desired State:**
+- 3+ community-contributed crawlers (e.g., YouTube, G2, docs site)
+- Clear contributor guide with "good first issue" labels
+- Discord or GitHub Discussions for community
+- At least one external tool consuming growth profiles
 
 **Key Questions:**
-- How much intelligence goes into the refinement tools vs. relying on the AI assistant's natural conversation ability?
-- How do we handle conflicts when a refinement breaks consistency with other sections?
-- What's the minimum viable refinement loop? (Update definition + validate section might be enough to start)
-- How do we track what's AI-inferred vs. user-validated?
+- What's the lowest-friction way for someone to contribute a new crawler?
+- Should we create a plugin registry / marketplace early?
+- How do we balance quality control with community velocity?
 
-**Utility Curve Position:** Crossing threshold (each refinement tool adds immediate value; small investments = visible improvement)
-
-**Connects to backlog:** Epic 4 (Profile Generation), Epic 5 (Conversational Refinement)
+**Success Signal:** First external PR merged. First tool that reads growth profiles.
 
 ---
 
 ### 4. Export & Sharing
 
-**Why:** Profiles need to escape the chat to spread. A PM who generates a great profile wants to share it with their team. That share moment is the growth mechanism — the recipient sees a profile and wants one for their product. Markdown export makes profiles immediately useful in Notion/docs. Shareable links make them viral.
+**Why:** Growth profiles need to escape the terminal and the chat to spread. A PM who generates a great profile wants to share it with their team. That share moment is the adoption mechanism — the recipient sees a profile and wants one for their product.
 
-**Current State:** Nothing built.
+**Current State:** JSON files on disk. CLI `export` command exists for markdown output.
 
-**Desired State:**
-- Markdown and JSON export work from MCP tools
-- Shareable link generates a public URL to a read-only web view
-- Web viewer renders profiles professionally (mobile-responsive, clean design)
-- Links can be revoked
+**Remaining Work:**
+- Polish markdown export (clean formatting, section headers, tier badges)
+- Add HTML export for standalone viewing
+- Shareable link generation (static site from profile JSON)
+- Optional: minimal web viewer for read-only profile browsing
 
 **Key Questions:**
-- How minimal can the web viewer be? (Static page from profile JSON? Or does it need a real app?)
-- Does the web viewer reuse the existing React codebase, or is it a separate lightweight app?
-- Is PDF export needed in the first 3 months, or is Markdown sufficient?
-- How do shareable links work with auth? (Public by default? Token-gated?)
+- Is a static HTML file (self-contained, no server) better than a hosted viewer?
+- Should sharing require Basesignal Cloud, or can it work peer-to-peer?
 
-**Utility Curve Position:** Pre-threshold (no sharing = no word-of-mouth, but basic export is low effort)
-
-**Connects to backlog:** Epic 8 (Export & Sharing), Epic 9 (Web Viewer — minimal)
+**Success Signal:** A shared profile leads to the recipient scanning their own product.
 
 ---
 
@@ -131,95 +120,120 @@ Point at a URL, get a structured product profile in 60 seconds. Refine through c
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│   FIRST: MCP Platform (Foundation)                              │
-│   ├── Server skeleton + basic auth + storage                    │
-│   └── Unblocks everything else                                  │
+│   NOW: Open Source Launch                                       │
+│   ├── npm publish + GitHub polish                               │
+│   ├── Example profiles + announcement                           │
+│   └── First 100 stars / first community issues                  │
 │                                                                 │
-│   THEN: Scan Magic (The Hook)                                   │
-│   ├── Crawling pipeline + content extraction                    │
-│   ├── LLM analysis into structured data model                   │
-│   └── End-to-end: URL → draft profile                           │
+│   NEXT: Refinement Loop                                         │
+│   ├── MCP update tools + CLI refine command                     │
+│   ├── Cascading updates + confidence tracking                   │
+│   └── Context that compounds with every conversation            │
 │                                                                 │
-│   THEN: Conversational Refinement (Stickiness)                  │
-│   ├── Profile retrieval tools                                   │
-│   ├── Definition updates + section validation                   │
-│   └── Suggestions engine                                        │
+│   PARALLEL: Community & Ecosystem                               │
+│   ├── Contributor onboarding + good first issues                │
+│   ├── Community-contributed crawlers                             │
+│   └── External tools consuming growth profiles                  │
 │                                                                 │
 │   THEN: Export & Sharing (Growth)                                │
-│   ├── Markdown + JSON export                                    │
-│   ├── Shareable links + minimal web viewer                      │
-│   └── The "I want one too" moment                               │
+│   ├── Polished markdown + HTML export                           │
+│   ├── Shareable links / static viewer                           │
+│   └── The "I want one for my product" moment                    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Note: MCP Platform and Scan Magic will overlap in practice — you need the server to test the scan tools. The sequencing reflects dependency, not strict phases.
+---
+
+## Future Horizons
+
+### Extended Sources (Phase 3)
+
+**What:** YouTube channel analysis, documentation site parsing, G2/Capterra review mining.
+
+**Why Not Now:** The marketing site scan produces validated, high-quality output. Extended sources enrich profiles that already work — they're additive, not foundational.
+
+**When:** After open source launch proves adoption and community can contribute crawlers.
+
+### Connected Intelligence (Phase 4)
+
+**What:** Amplitude/Mixpanel/Segment connectors. Gap analysis ("you're tracking 60% of your ideal measurement plan"). Live metrics vs. recommended tracking.
+
+**Why Not Now:** Requires the growth profile schema to be stable across real-world usage. Premature integration couples us to a model that might still evolve from community feedback.
+
+**When:** After 50+ products scanned and the schema stabilizes from real usage.
+
+### Benchmarks & Patterns (Phase 5)
+
+**What:** Cross-product intelligence. "Your activation rate vs. similar products." Industry patterns. Growth model archetypes.
+
+**Why Not Now:** Requires a critical mass of growth profiles to generate meaningful comparisons. This is where the commercial layer emerges — the open source engine generates profiles; the commercial service aggregates patterns.
+
+**When:** After 500+ products scanned. This is the network effect play.
+
+### Basesignal Cloud
+
+**What:** Hosted MCP server, team collaboration, no-setup experience.
+
+**Why Not Now:** Open source adoption comes first. Cloud is the monetization layer built on top of community trust and adoption.
+
+**When:** After open source proves demand and the refinement loop is solid.
 
 ---
 
-## Parked Areas
+## What We've Shipped (Phase 1 Complete)
 
-### Extended Sources (YouTube, Docs, Reviews)
+Eight missions, all complete:
 
-**Why Not Now:** The marketing site scan needs to be great first. Adding YouTube, G2, and documentation analysis is Phase 2 of the vision — it enriches profiles that already work, rather than fixing profiles that don't.
+| Mission | What It Proved |
+|---------|---------------|
+| **M001** Core Analysis | URL → structured profile works end-to-end |
+| **M002** Multi-Level Activation | Activation as spectrum (4 levels) produces actionable understanding |
+| **M003** 7-Lens Value Discovery | 83.3% accuracy on Tier 1 moments (threshold: 70%) |
+| **M004** Output Generation | ICP profiles, activation maps, measurement specs — all generatable |
+| **M005** Profile View | UI components for browsing and inspecting growth profiles |
+| **M006** Output Quality | Production-quality convergence, ICP prioritization, entity framework |
+| **M007** Insight Quality | Experiential value moments + Double Three-Layer measurement specs |
+| **M008** Open Source Foundation | Modular packages, CLI, self-hostable, pluggable providers |
 
-**When:** After Scan Magic is validated with real users and the core profile quality is proven.
+### Resolved Questions
 
-### Analytics Integration (Amplitude, Mixpanel, Segment)
+These were open in the v2 roadmap. All answered through building:
 
-**Why Not Now:** Connecting real data is Phase 3 of the vision. It requires the profile structure to be stable and validated. Premature integration would couple us to a data model that might still be evolving.
-
-**When:** After the scan-refine-share loop is working and profiles are stable enough to compare against real tracking.
-
-### Growth Intelligence (Feature Correlation, Segmentation, Prediction)
-
-**Why Not Now:** Phase 4 of the vision. Requires connected data (Phase 3) and a large enough user base to generate meaningful benchmarks.
-
-**When:** End of 2026 at earliest. This is the long-term value play.
-
-### Full Web Dashboard
-
-**Why Not Now:** The vision is MCP-first. A full dashboard with editing, collaboration, and visual journey editing competes with the core bet that AI assistants are the primary interface. The minimal web viewer (Focus Area 4) is sufficient for sharing.
-
-**When:** Only if user demand clearly shows chat-based interaction isn't enough for certain workflows (e.g., visual journey editing).
-
-### Intelligence Layer (Benchmarks, Inference Rules, Product Patterns)
-
-**Why Not Now:** The data model needs to be validated with real products first. Encoding inference rules and benchmark data before we know the model is right risks building on shaky foundations.
-
-**When:** After 50+ products scanned and patterns emerge organically from real data.
-
----
-
-## Open Questions
-
-1. **Codebase strategy:** Does the existing React/Convex app carry forward (shared backend, web app becomes viewer), or is the MCP platform a clean-start project? This affects architecture and timeline significantly.
-
-2. **Data model design:** Should the full ontology be designed upfront (risk: over-engineering before validation) or evolved iteratively (risk: painful migrations)?
-
-3. **Hosting & infrastructure:** MCP server needs SSE support, database, and potentially object storage (screenshots, PDFs). What's the minimal viable stack?
-
-4. **LLM provider & cost:** Which model for analysis? Cost per scan matters for pricing. Can we use cheaper models for some extraction steps?
-
-5. **Quality bar:** What's the minimum "wow" threshold for scan results? Should we focus depth on fewer sections (e.g., nail revenue architecture and activation) rather than breadth across all sections?
+| Question | Answer |
+|----------|--------|
+| Codebase strategy? | Monorepo with standalone packages. Convex web app coexists as one consumer. |
+| Data model design? | Evolved iteratively through M001-M007. Schema now stable in `@basesignal/core`. |
+| LLM provider? | Pluggable — Anthropic, OpenAI, Ollama. Users bring their own key. |
+| Quality bar? | Experiential framing + Double Three-Layer Framework. Proven in M006/M007. |
+| Hosting? | Self-hosted. File storage default. SQLite optional. No hosted infrastructure required. |
 
 ---
 
 ## Connection to Hypotheses
 
-Each investment area generates testable hypotheses. See HYPOTHESES.md for the full catalog.
+See HYPOTHESES.md for the full catalog.
 
-Key hypothesis for this horizon: *"Users who scan their product URL will rate the generated profile as 'useful' (>70%) and refine at least one definition (>50%)."*
+**Validated (Phase 1):**
+- **H5:** Multi-level activation produces actionable understanding ✓
+- **H6:** 7-lens convergence matches human expert identification at 83.3% ✓
+
+**Testing (Phase 2):**
+- **H7:** Generated outputs are immediately actionable (3/5 users say "ready to use")
+- **H1:** Opinionated outputs are good enough without major edits
+
+**Next hypothesis:** *"Developers who run `basesignal scan` on their product will star the repo and scan a second product within a week."*
 
 ---
 
 ## Version History
 
+### v2: MCP-First Product Knowledge Layer (January 2026)
+
+The previous roadmap focused on building from zero: MCP platform → scan magic → conversational refinement → export. Everything was "nothing built" and "pre-threshold." The architecture was assumed to be hosted SaaS on Convex.
+
+This was replaced after 8 missions shipped the entire Phase 1 engine and M008 restructured it as open source packages. The roadmap now starts from a working product, not a blank canvas.
+
 ### v1: Outcome-Driven Product Analytics (January 2026)
 
-The original roadmap focused on:
-- **Measurement Foundation:** Generating tracking plans and metric catalogs from interview data
-- **Interview Completion:** Validating that users complete the 15-minute guided interview
-- **Analytics Integration (stretch):** Connecting to Amplitude/Mixpanel
-
-This was replaced when the product vision shifted from web app with interview-driven setup to MCP-first product knowledge layer with crawl-then-refine mechanism. See VISION.md Version History for full context.
+The original roadmap focused on interview-driven setup, web app UX, and Amplitude integration. Replaced when the vision shifted from web app to MCP-first, then again to open source context engineering.
