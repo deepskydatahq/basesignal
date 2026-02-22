@@ -12,22 +12,28 @@
 
 <!-- New entries are added below this line -->
 
-### 2026-02-22 - Story M010-E001-S002: Create Zod Validation Schemas for Lifecycle Types
+### 2026-02-22 - Story M010-E001-S003: Update OutputGenerationResult and Package Exports
 
 **Files Changed:**
-- `packages/core/src/schema/outputs.ts` - Added `StateCriterionSchema`, `LifecycleStateSchema`, `StateTransitionSchema`, `LifecycleStatesResultSchema` with inferred type exports after `// --- User State Model ---` section
-- `packages/core/src/schema/__tests__/outputs.test.ts` - Added 22 tests covering all 4 schemas: valid input acceptance, required field rejection, optional field handling, type validation
+- `packages/core/src/types/outputs.ts` — Cherry-picked S001 lifecycle state types (StateCriterion, LifecycleState, StateTransition, LifecycleStatesResult); added optional `lifecycle_states?: LifecycleStatesResult` to OutputGenerationResult
+- `packages/core/src/schema/outputs.ts` — Cherry-picked S002 lifecycle state Zod schemas (StateCriterionSchema, LifecycleStateSchema, StateTransitionSchema, LifecycleStatesResultSchema)
+- `packages/core/src/schema/__tests__/outputs.test.ts` — Cherry-picked S002 tests (34 lifecycle state schema tests)
+- `packages/core/src/index.ts` — Added 4 lifecycle type exports (StateCriterion, LifecycleState, StateTransition, LifecycleStatesResult)
+- `packages/core/src/schema/index.ts` — Added 4 schema exports + 4 inferred type exports for lifecycle states
+- `packages/core/src/schema/__tests__/lifecycle-states.test.ts` — New: 4 tests for valid 7-state result, missing field, invalid criteria, non-object input
 
 **Learnings:**
-- Lifecycle schemas are parallel to (not derived from) UserState schemas — `StateCriterionSchema` adds optional `threshold` field that `UserStateCriterionSchema` doesn't have
-- Entry/exit asymmetry is deliberate: `entry_criteria` uses structured `StateCriterionSchema` objects while `exit_triggers` uses plain strings (narrative descriptions vs machine-checkable conditions)
+- Cherry-picking from upstream branches (S001, S002) via `git checkout <branch> -- <path>` is the standard pattern for bringing in dependency work before it merges to main
+- OutputGenerationResult is TypeScript-only (no runtime schema) — adding optional fields is safe and backward-compatible
+- Barrel files in this codebase use explicit named exports, so each new type/schema must be added by name (no `export *`)
 
 **Patterns Discovered:**
-- Schema placement convention: new domain sections go between related existing sections with `// --- Section Name ---` comment headers
-- Every schema in outputs.ts has a corresponding `z.infer` type export immediately after it
+- Same-file type references: Since S001 added LifecycleStatesResult to the same outputs.ts file as OutputGenerationResult, no import was needed for the new field
+- Test file separation: Dedicated test files (lifecycle-states.test.ts) for acceptance-criteria-specific tests complement the comprehensive schema tests in outputs.test.ts
 
 **Gotchas:**
-- Story TOML originally said `exit_triggers (array of StateCriterion)` but design doc correctly specifies `z.array(z.string())` — always check design doc over story TOML for implementation details
+- Worktree needs `npm install` — node_modules not shared between worktrees
+- S001 branch had no commits beyond main (diff showed changes but no separate commit log entries) — still had the file changes available for cherry-picking
 
 ### 2026-02-13 - Story M007-E003-S002: Update Types and Validation for Property Inheritance and Heartbeat
 

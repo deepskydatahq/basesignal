@@ -224,6 +224,7 @@ export interface OutputGenerationResult {
   icp_profiles: ICPProfile[];
   activation_map: ActivationMap;
   measurement_spec: MeasurementSpec;
+  lifecycle_states?: LifecycleStatesResult;
   generated_at: string;
   execution_time_ms: number;
 }
