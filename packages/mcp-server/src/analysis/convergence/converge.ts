@@ -9,6 +9,7 @@ import {
   directMerge,
   MERGE_SYSTEM_PROMPT,
   buildMergePrompt,
+  momentIdFromName,
 } from "@basesignal/core";
 
 // Re-export for convenience
@@ -41,7 +42,7 @@ export async function convergeAndTier(
       const parsed = parseMergeResponse(responseText);
 
       return {
-        id: `moment-${cluster.cluster_id}`,
+        id: "", // placeholder — assigned sequentially below for dedup
         name: parsed.name,
         description: parsed.description,
         tier: assignTier(cluster.lens_count),
@@ -54,8 +55,11 @@ export async function convergeAndTier(
     }),
   );
 
+  const usedIds = new Set<string>();
   return results.map((result, i) => {
-    if (result.status === "fulfilled") return result.value;
-    return directMerge(clusters[i]);
+    const moment = result.status === "fulfilled" ? result.value : directMerge(clusters[i]);
+    const id = momentIdFromName(moment.name, usedIds);
+    usedIds.add(id);
+    return { ...moment, id };
   });
 }

@@ -29,7 +29,7 @@ Levels build on each other. Lower levels are prerequisites for higher ones.
 | L02 | Value Moment Discovery | Scan Intelligence | shipped |
 | L03 | ICP Profiles | Scan Intelligence | shipped |
 | L04 | Activation Definition | Growth Definitions | shipped |
-| L05 | Lifecycle States | Growth Definitions | planned |
+| L05 | Lifecycle States | Growth Definitions | shipped |
 | L06 | Entity Model | Growth Definitions | shipped |
 | L07 | Revenue Architecture | Growth Definitions | planned |
 | L08 | Tracking Plan | Measurement Framework | shipped |
@@ -110,7 +110,8 @@ These levels produce the definitions a product team needs to align on: what acti
 ### L05: Lifecycle States
 > "Every state a user can be in — from first touch to churned, with transition triggers."
 
-**Status:** planned
+**Status:** shipped
+**Missions:** M010
 
 **What it delivers:** A complete lifecycle state machine: new → activated → engaged → at-risk → dormant → churned → resurrected. Each state has entry criteria, exit triggers, and time windows. Extends the activation map with post-activation states (at-risk, dormant, churned, resurrected).
 

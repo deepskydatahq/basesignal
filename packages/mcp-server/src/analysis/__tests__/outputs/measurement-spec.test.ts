@@ -402,6 +402,64 @@ describe("buildMeasurementSpecPrompt — lifecycle states", () => {
   });
 });
 
+describe("buildMeasurementSpecPrompt — product-perspective guidance", () => {
+  it("includes product-generated events guidance when product surfaces exist", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    const { user } = buildMeasurementSpecPrompt(input);
+
+    expect(user).toContain("## Product-Generated Events Guidance");
+    expect(user).toContain("Sprint Planning");
+    expect(user).toContain("product-perspective events");
+  });
+
+  it("includes identity description when provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+      undefined,
+      { productName: "Amplitude", description: "Digital analytics platform with AI-powered insights" },
+    );
+    const { user } = buildMeasurementSpecPrompt(input);
+
+    expect(user).toContain("Amplitude");
+    expect(user).toContain("AI-powered insights");
+    expect(user).toContain("product-perspective events");
+  });
+
+  it("omits guidance section when no surfaces and no identity", () => {
+    const noSurfaceMoments = sampleMoments.map((m) => ({
+      ...m,
+      product_surfaces: [],
+    }));
+    const input = assembleMeasurementInput(noSurfaceMoments, sampleLevels, [], null);
+    const { user } = buildMeasurementSpecPrompt(input);
+
+    expect(user).not.toContain("## Product-Generated Events Guidance");
+  });
+});
+
+describe("assembleMeasurementInput — identity", () => {
+  it("includes identity when provided", () => {
+    const identity = { productName: "Linear", description: "Issue tracking tool" };
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null, undefined, identity);
+    expect(input.identity).toEqual(identity);
+  });
+
+  it("identity is undefined when not provided", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    expect(input.identity).toBeUndefined();
+  });
+});
+
+describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — perspective balance", () => {
+  it("includes perspective balance guidance", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Perspective Balance");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("product perspective");
+  });
+});
+
 describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — softened Step 3", () => {
   it("does not mandate exactly 5 states", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain("exactly 5 states");

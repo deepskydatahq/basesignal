@@ -15,6 +15,7 @@ export interface MeasurementInputData {
   activation_event_templates: ActivationEventTemplate[];
   value_event_templates: ValueEventTemplate[];
   lifecycle_states?: LifecycleStatesResult;
+  identity?: { description: string; productName: string };
 }
 
 interface ActivationEventTemplate {
@@ -92,6 +93,16 @@ Generate 15-25 events that cover:
 - Key value moments (especially Tier 1 and Tier 2)
 - Retention signals (returning users, repeated engagement)
 - Expansion signals (team growth, feature adoption)
+
+### Perspective Balance
+You MUST include events from ALL three perspectives:
+- At least 40-60% customer perspective (user-initiated actions)
+- At least 15-25% product perspective (system/product-generated events)
+- At least 15-25% interaction perspective (user-product interaction outcomes)
+
+If the input context is primarily user-experiential, infer product-generated events from
+the product surfaces and features mentioned. Every product that delivers value also has
+system-initiated behaviors (notifications, reports, recommendations, automations, alerts).
 
 ## Step 3: User State Model
 Define a user state model representing the user lifecycle. Each state has:
@@ -236,6 +247,44 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
     }
   }
 
+  // Product-Generated Events Guidance
+  const allProductSurfaces = [
+    ...new Set(input.value_moments.flatMap((vm) => vm.product_surfaces)),
+  ];
+
+  if (allProductSurfaces.length > 0 || input.identity) {
+    sections.push("\n## Product-Generated Events Guidance");
+    sections.push(
+      "The inputs above are primarily user-initiated (customer perspective). " +
+        "You MUST also generate product-perspective events — system-initiated actions " +
+        "that the product performs automatically. Aim for at least 3-5 product-perspective events.",
+    );
+
+    if (allProductSurfaces.length > 0) {
+      sections.push("\n**Product surfaces discovered from value moments:**");
+      for (const surface of allProductSurfaces) {
+        sections.push(`- ${surface}`);
+      }
+      sections.push(
+        "\nFor each surface, consider what the product might do autonomously: " +
+          "generate reports, deliver insights, send notifications, compute recommendations, " +
+          "trigger automations, schedule digests, detect anomalies, etc.",
+      );
+    }
+
+    if (input.identity) {
+      sections.push(
+        `\n**Product description (${input.identity.productName}):**`,
+      );
+      sections.push(input.identity.description);
+      sections.push(
+        "\nExtract any AI-powered, automated, or system-generated features mentioned above " +
+          "and create product-perspective events for them (e.g., insight_delivered, " +
+          "anomaly_detected, report_auto_generated, recommendation_surfaced).",
+      );
+    }
+  }
+
   sections.push(
     "\nGenerate a measurement specification with trackable events based on the above inputs.",
   );
@@ -354,6 +403,7 @@ export function assembleMeasurementInput(
   icpProfiles: ICPProfile[],
   activationMap: ActivationMapResult | null,
   lifecycleStates?: LifecycleStatesResult,
+  identity?: { description: string; productName: string },
 ): MeasurementInputData {
   // Build activation event templates from activation level criteria
   const activationEventTemplates: ActivationEventTemplate[] = activationLevels.map((level) => ({
@@ -386,6 +436,7 @@ export function assembleMeasurementInput(
     activation_event_templates: activationEventTemplates,
     value_event_templates: valueEventTemplates,
     lifecycle_states: lifecycleStates,
+    identity,
   };
 }
 

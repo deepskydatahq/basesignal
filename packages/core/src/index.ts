@@ -138,3 +138,15 @@ export {
   converge,
   runConvergence,
 } from "./analysis";
+
+// --- Slugify Utilities ---
+export { slugify, momentIdFromName } from "./slugify";
+
+// --- Completeness Scoring ---
+export {
+  computeCompleteness,
+  PIPELINE_SECTIONS,
+  type PipelineSection,
+  type CompletenessInput,
+  type CompletenessResult,
+} from "./completeness";

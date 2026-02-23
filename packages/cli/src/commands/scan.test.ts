@@ -50,9 +50,13 @@ vi.mock("@basesignal/storage", () => {
 const mockCreateProvider = vi.fn().mockReturnValue({
   complete: vi.fn().mockResolvedValue("{}"),
 });
-vi.mock("@basesignal/core", () => ({
-  createProvider: mockCreateProvider,
-}));
+vi.mock("@basesignal/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@basesignal/core")>();
+  return {
+    ...actual,
+    createProvider: mockCreateProvider,
+  };
+});
 
 const mockRunAnalysisPipeline = vi.fn();
 vi.mock("@basesignal/mcp-server/analysis/pipeline", () => ({
@@ -128,6 +132,7 @@ const pipelineResult = {
     icp_profiles: [],
     activation_map: null,
     measurement_spec: null,
+    lifecycle_states: null,
   },
   errors: [],
   execution_time_ms: 500,
@@ -281,6 +286,37 @@ describe("runScan", () => {
         metadata: expect.objectContaining({ url: "https://example.com/" }),
       }),
     );
+  });
+
+  it("computes completeness from pipeline outputs (identity only = 1/6)", async () => {
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const savedProfile = mockSave.mock.calls[0][0];
+    // pipelineResult has identity but no activation_levels, empty icp_profiles, null outputs
+    expect(savedProfile.completeness).toBeCloseTo(1 / 6, 2);
+  });
+
+  it("computes completeness = 1 when all pipeline outputs are present", async () => {
+    const richPipelineResult = {
+      ...pipelineResult,
+      activation_levels: { levels: [{ level: 1 }], primaryActivation: 1, overallConfidence: 0.7 },
+      outputs: {
+        icp_profiles: [{ id: "icp-1", name: "PM" }],
+        activation_map: { stages: [] },
+        measurement_spec: { events: [] },
+        lifecycle_states: { states: [] },
+      },
+    };
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(richPipelineResult);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("rich-profile-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    expect(mockRunAnalysisPipeline).toHaveBeenCalledTimes(1);
+    const savedProfile = mockSave.mock.calls[0][0];
+    expect(savedProfile.completeness).toBe(1);
   });
 
   it("prints formatted output to stdout", async () => {

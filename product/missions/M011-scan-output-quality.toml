@@ -1,0 +1,101 @@
+# Mission: Scan Output Quality
+# Fix completeness scoring, improve moment ID readability, and ensure
+# all pipeline outputs are reflected accurately in the profile.
+
+id = "M011"
+title = "Scan Output Quality"
+status = "active"
+created = 2026-02-23
+depends_on = ["M010"]
+
+[outcome]
+description = """
+Running `basesignal scan <url>` produces an accurate completeness score reflecting
+all pipeline outputs, human-readable moment IDs derived from value moment names,
+and measurement specs with balanced perspective distribution including product-generated
+events. The scan output is self-consistent: completeness matches what was generated,
+moment IDs are meaningful, and the measurement spec covers all three perspectives.
+"""
+
+user_progress = "From 'broken completeness, opaque IDs, missing perspectives' to 'accurate scoring, readable IDs, balanced measurement spec'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Completeness score reflects actual pipeline outputs (not hardcoded 0.5)",
+    "A scan with all outputs succeeding produces completeness ~1.0",
+    "A scan with only identity produces completeness ~0.17 (1/6)",
+    "computeCompleteness() is a shared pure function in @basesignal/core",
+    "Moment IDs are human-readable slugs (e.g., moment-drag-tasks-between-columns)",
+    "Duplicate moment names get suffixed (moment-view-dashboard, moment-view-dashboard-2)",
+    "Measurement spec includes product-perspective events (perspective_distribution.product > 0)",
+    "The measurement spec prompt includes a Product-Generated Events Guidance section",
+    "All existing tests pass with updated assertions",
+    "npm run build succeeds across all packages",
+]
+
+validator_context = [
+    "packages/core/src/completeness.ts",
+    "packages/core/src/slugify.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/convergence/converge.ts",
+]
+
+[context]
+related_docs = [
+    "VALUES.md",
+]
+relevant_paths = [
+    "packages/core/src/completeness.ts",
+    "packages/core/src/slugify.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/analysis/convergence.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/mcp-server/src/analysis/convergence/converge.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/tools/updateDefinition.ts",
+]
+
+[scope]
+in_scope = [
+    "Shared computeCompleteness() function in @basesignal/core",
+    "Wire completeness into scan CLI replacing hardcoded 0.5",
+    "Update updateDefinition.ts to use shared completeness function",
+    "slugify() and momentIdFromName() utilities in @basesignal/core",
+    "Human-readable moment IDs in directMerge and convergeAndTier",
+    "Product-perspective event enrichment in measurement spec prompt",
+    "Perspective balance directive in measurement spec system prompt",
+    "Pass identity to measurement spec generation for product context",
+    "Update VALUES.md L05 status to shipped",
+]
+out_of_scope = [
+    "Adding new analytical lenses for product-generated events",
+    "Changing crawl or extraction phases",
+    "Revenue architecture (L07)",
+    "Breakdown dimensions (L09)",
+    "MCP tool changes beyond updateDefinition completeness fix",
+    "Storage schema migrations",
+]
+acceptable_breakage = [
+    "Moment IDs change format from moment-cluster-N to moment-slug-name — downstream code uses string comparison only",
+    "Completeness values change — profiles generated before this mission have hardcoded 0.5",
+    "Measurement spec event counts may shift due to perspective balance guidance",
+]
+
+[notes]
+considerations = """
+Discovered during live scan of amplitude.com (2026-02-22):
+- completeness: 0.5 despite all 6 outputs generating successfully
+- perspective_distribution: { customer: 18, product: 0, interaction: 3 }
+- moment IDs: moment-cluster-0 through moment-cluster-N
+
+Three independent epics:
+E001: Completeness scoring (pure function, easy)
+E002: Moment ID slugification (mechanical, test updates)
+E003: Product-perspective prompt enrichment (prompt engineering, non-deterministic)
+
+E003 is inherently non-deterministic — the LLM may still underweight product events.
+The perspective balance directive helps but cannot guarantee exact distribution.
+"""

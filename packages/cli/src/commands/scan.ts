@@ -1,4 +1,5 @@
 import type { Command } from "commander";
+import { computeCompleteness } from "@basesignal/core";
 import { ScanError, handleScanError } from "../errors.js";
 import { loadConfig, requireApiKey } from "../config.js";
 import { createProgress } from "../progress.js";
@@ -101,10 +102,18 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     progress.done("Analyzing", "profile generated");
 
     // Build a ProductProfile from the pipeline result
+    const { completeness } = computeCompleteness({
+      identity: pipelineResult.identity,
+      activation_levels: pipelineResult.activation_levels,
+      icp_profiles: pipelineResult.outputs.icp_profiles,
+      activation_map: pipelineResult.outputs.activation_map,
+      lifecycle_states: pipelineResult.outputs.lifecycle_states,
+      measurement_spec: pipelineResult.outputs.measurement_spec,
+    });
     const profile: Record<string, unknown> = {
       identity: pipelineResult.identity,
       metadata: { url: parsedUrl.href, scannedAt: Date.now() },
-      completeness: pipelineResult.identity ? 0.5 : 0,
+      completeness,
       overallConfidence: pipelineResult.identity?.confidence ?? 0,
     };
 

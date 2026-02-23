@@ -15,6 +15,8 @@ import type {
   QualityReport,
 } from "./convergence-types";
 
+import { momentIdFromName } from "../slugify";
+
 // --- LlmProvider type ---
 
 /**
@@ -84,14 +86,14 @@ export function parseMergeResponse(text: string): {
  * Fallback merge that constructs a ValueMoment without LLM.
  * Used when LLM call fails or no LLM provider is given.
  */
-export function directMerge(cluster: CandidateCluster): ValueMoment {
+export function directMerge(cluster: CandidateCluster, existingIds?: Set<string>): ValueMoment {
   const name = "Achieve " + cluster.candidates.map((c) => c.name).join(" / ");
   const description = cluster.candidates.map((c) => c.description).join(" ");
   const roles = [...new Set(cluster.candidates.flatMap(() => [] as string[]))];
   const productSurfaces = [...new Set(cluster.candidates.flatMap(() => [] as string[]))];
 
   return {
-    id: `moment-${cluster.cluster_id}`,
+    id: momentIdFromName(name, existingIds),
     name,
     description,
     tier: assignTier(cluster.lens_count),
@@ -324,8 +326,14 @@ export async function converge(
   clusters: CandidateCluster[],
   options?: ConvergeOptions
 ): Promise<ValueMoment[]> {
+  const usedIds = new Set<string>();
+
   if (!options?.llmProvider) {
-    return clusters.map(directMerge);
+    return clusters.map((cluster) => {
+      const moment = directMerge(cluster, usedIds);
+      usedIds.add(moment.id);
+      return moment;
+    });
   }
 
   const results = await Promise.allSettled(
@@ -335,7 +343,7 @@ export async function converge(
       const parsed = parseMergeResponse(text);
 
       return {
-        id: `moment-${cluster.cluster_id}`,
+        id: "", // placeholder — assigned sequentially below for dedup
         name: parsed.name,
         description: parsed.description,
         tier: assignTier(cluster.lens_count),
@@ -349,8 +357,10 @@ export async function converge(
   );
 
   return results.map((result, i) => {
-    if (result.status === "fulfilled") return result.value;
-    return directMerge(clusters[i]);
+    const moment = result.status === "fulfilled" ? result.value : directMerge(clusters[i]);
+    const id = momentIdFromName(moment.name, usedIds);
+    usedIds.add(id);
+    return { ...moment, id };
   });
 }
 

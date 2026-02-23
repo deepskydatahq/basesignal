@@ -11,6 +11,7 @@ import {
   ActivationDefinitionSchema,
   OutcomesSchema,
   MetricsSectionSchema,
+  computeCompleteness,
 } from "@basesignal/core";
 import type { ToolDeps, ToolResult, ProductProfile } from "./types.js";
 import { text, error } from "./types.js";
@@ -116,15 +117,41 @@ function recalculateCompleteness(profile: ProductProfile): {
   completeness: number;
   overallConfidence: number;
 } {
-  let populated = 0;
+  const p = profile as Record<string, unknown>;
+  const outputs = p.outputs as Record<string, unknown> | undefined;
+
+  // Pipeline-produced sections (from scan)
+  const pipelineResult = computeCompleteness({
+    identity: p.identity,
+    activation_levels: p.activation_levels,
+    icp_profiles: (outputs?.icp_profiles ?? p.icp_profiles) as unknown[] | undefined,
+    activation_map: p.journey ?? outputs?.activation_map,
+    lifecycle_states: p.lifecycle_states ?? outputs?.lifecycle_states,
+    measurement_spec: p.metrics ?? outputs?.measurement_spec,
+  });
+
+  // MCP-tool-specific sections (set via update_definition, not scan)
+  let mcpPopulated = 0;
+  for (const section of ["revenue", "entities", "outcomes"] as const) {
+    if (p[section]) mcpPopulated++;
+  }
+  const defs = p.definitions as Record<string, unknown> | undefined;
+  if (defs) {
+    for (const def of ALL_DEFINITIONS) {
+      if (defs[def]) mcpPopulated++;
+    }
+  }
+
+  const pipelinePresent = pipelineResult.sections.filter((s) => s.present).length;
+  const totalSections = pipelineResult.sections.length + 3 + ALL_DEFINITIONS.length; // 6 pipeline + 3 MCP + 5 definitions
+  const completeness = totalSections > 0 ? (pipelinePresent + mcpPopulated) / totalSections : 0;
+
+  // Confidence averaging from all available sections
   let totalConfidence = 0;
   let confidenceCount = 0;
-  const total = ALL_SECTIONS.length + ALL_DEFINITIONS.length;
-
   for (const section of ALL_SECTIONS) {
-    const data = (profile as Record<string, unknown>)[section];
+    const data = p[section];
     if (data) {
-      populated++;
       const conf = (data as Record<string, unknown>).confidence;
       if (typeof conf === "number") {
         totalConfidence += conf;
@@ -132,13 +159,10 @@ function recalculateCompleteness(profile: ProductProfile): {
       }
     }
   }
-
-  const defs = profile.definitions as Record<string, unknown> | undefined;
   if (defs) {
     for (const def of ALL_DEFINITIONS) {
       const data = defs[def];
       if (data) {
-        populated++;
         const d = data as Record<string, unknown>;
         const conf = d.confidence ?? d.overallConfidence;
         if (typeof conf === "number") {
@@ -150,7 +174,7 @@ function recalculateCompleteness(profile: ProductProfile): {
   }
 
   return {
-    completeness: total > 0 ? populated / total : 0,
+    completeness,
     overallConfidence: confidenceCount > 0 ? totalConfidence / confidenceCount : 0,
   };
 }

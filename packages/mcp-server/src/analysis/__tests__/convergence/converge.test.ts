@@ -72,7 +72,8 @@ describe("directMerge", () => {
   it("produces a fallback ValueMoment", () => {
     const cluster = makeCluster("test", 2);
     const result = directMerge(cluster);
-    expect(result.id).toBe("moment-test");
+    // ID is now slugified from the name (e.g., "Achieve Candidate 0 / Candidate 1")
+    expect(result.id).toMatch(/^moment-achieve-/);
     expect(result.tier).toBe(2);
     expect(result.lens_count).toBe(2);
     expect(result.contributing_candidates).toHaveLength(2);
@@ -85,8 +86,8 @@ describe("convergeAndTier", () => {
     const clusters = [makeCluster("c0", 3), makeCluster("c1", 1)];
     const result = await convergeAndTier(clusters, mockLlm);
     expect(result).toHaveLength(2);
-    expect(result[0].id).toBe("moment-c0");
-    // LLM merge provides proper name
+    // ID is now slugified from the LLM-generated name
+    expect(result[0].id).toBe("moment-create-sprint-plan-from-capacity-data");
     expect(result[0].name).toBe("Create sprint plan from capacity data");
   });
 

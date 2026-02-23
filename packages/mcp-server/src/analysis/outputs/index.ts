@@ -98,6 +98,7 @@ export async function generateAllOutputs(
         result.icp_profiles,
         result.activation_map,
         result.lifecycle_states ?? undefined,
+        identity ? { description: identity.description, productName: identity.productName } : undefined,
       );
       result.measurement_spec = await generateMeasurementSpec(inputData, llm);
       progress?.({ phase: "outputs_measurement_spec", status: "completed" });

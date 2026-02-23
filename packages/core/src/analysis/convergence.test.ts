@@ -206,7 +206,8 @@ describe("directMerge", () => {
     const cluster = makeCluster({ cluster_id: "cluster-0" });
     const moment = directMerge(cluster);
 
-    expect(moment.id).toBe("moment-cluster-0");
+    // ID is now slugified from the name (e.g., "Achieve Track progress / Monitor velocity")
+    expect(moment.id).toMatch(/^moment-achieve-/);
     expect(moment.name).toMatch(/^Achieve /);
     expect(moment.tier).toBe(assignTier(cluster.lens_count));
     expect(moment.lenses).toEqual(cluster.lenses);
