@@ -130,6 +130,9 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     if (pipelineResult.outputs.icp_profiles && pipelineResult.outputs.icp_profiles.length > 0) {
       profile.outputs = pipelineResult.outputs;
     }
+    if (pipelineResult.convergence?.value_moments && pipelineResult.convergence.value_moments.length > 0) {
+      profile.value_moments = pipelineResult.convergence.value_moments;
+    }
 
     // 7. PHASE 3 -- SAVE
     progress.start("Saving", "to local storage");

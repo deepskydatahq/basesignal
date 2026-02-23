@@ -387,6 +387,41 @@ describe("runScan", () => {
     expect(writeCalls).toContain("profile.json");
   });
 
+  it("persists value_moments in profile when convergence has value_moments", async () => {
+    const valueMoments = [
+      { id: "vm-1", name: "First value moment", description: "User sees value", confidence: 0.9 },
+      { id: "vm-2", name: "Second value moment", description: "User gets result", confidence: 0.8 },
+    ];
+    const resultWithValueMoments = {
+      ...pipelineResult,
+      convergence: {
+        value_moments: valueMoments,
+      },
+    };
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(resultWithValueMoments);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("vm-profile-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const savedProfile = mockSave.mock.calls[0][0];
+    expect(savedProfile.value_moments).toEqual(valueMoments);
+  });
+
+  it("does not include value_moments in profile when convergence is null", async () => {
+    // Explicitly set pipeline result with convergence: null
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(pipelineResult);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("null-conv-profile-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const savedProfile = mockSave.mock.calls[0][0];
+    expect(savedProfile).not.toHaveProperty("value_moments");
+  });
+
   it("outputs markdown to stdout with --format markdown", async () => {
     await runScan("https://example.com", { format: "markdown", verbose: false });
 
