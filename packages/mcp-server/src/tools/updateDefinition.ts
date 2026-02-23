@@ -127,7 +127,7 @@ function recalculateCompleteness(profile: ProductProfile): {
     icp_profiles: (outputs?.icp_profiles ?? p.icp_profiles) as unknown[] | undefined,
     activation_map: p.journey ?? outputs?.activation_map,
     lifecycle_states: p.lifecycle_states ?? outputs?.lifecycle_states,
-    measurement_spec: p.metrics ?? outputs?.measurement_spec,
+    measurement_spec: p.measurement_spec ?? outputs?.measurement_spec,
   });
 
   // MCP-tool-specific sections (set via update_definition, not scan)
