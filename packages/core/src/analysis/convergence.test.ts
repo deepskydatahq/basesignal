@@ -499,6 +499,45 @@ describe("converge", () => {
     const moments = await converge([], { llmProvider: provider });
     expect(moments).toEqual([]);
   });
+
+  it("deduplicates moment IDs when clusters produce the same slugified name (no LLM)", async () => {
+    const cluster1 = makeCluster({
+      cluster_id: "dup-1",
+      candidates: [
+        makeCandidate({ id: "c1", lens: "jtbd", name: "Foo", description: "First foo" }),
+      ],
+      lens_count: 1,
+      lenses: ["jtbd"],
+    });
+    const cluster2 = makeCluster({
+      cluster_id: "dup-2",
+      candidates: [
+        makeCandidate({ id: "c2", lens: "outcomes", name: "Foo", description: "Second foo" }),
+      ],
+      lens_count: 1,
+      lenses: ["outcomes"],
+    });
+
+    const moments = await converge([cluster1, cluster2]);
+    expect(moments).toHaveLength(2);
+    expect(moments[0].id).toBe("moment-achieve-foo");
+    expect(moments[1].id).toBe("moment-achieve-foo-2");
+  });
+
+  it("deduplicates moment IDs when LLM returns the same name for multiple clusters", async () => {
+    const cluster1 = makeCluster({ cluster_id: "llm-dup-1" });
+    const cluster2 = makeCluster({ cluster_id: "llm-dup-2" });
+
+    const { provider } = makeMockLlmProvider([
+      { name: "Gain visibility", description: "d1", roles: ["PM"], product_surfaces: ["Board"], is_coherent: true },
+      { name: "Gain visibility", description: "d2", roles: ["Lead"], product_surfaces: ["Dashboard"], is_coherent: true },
+    ]);
+
+    const moments = await converge([cluster1, cluster2], { llmProvider: provider });
+    expect(moments).toHaveLength(2);
+    expect(moments[0].id).toBe("moment-gain-visibility");
+    expect(moments[1].id).toBe("moment-gain-visibility-2");
+  });
 });
 
 // --- capTierDistribution tests ---

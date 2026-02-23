@@ -99,4 +99,14 @@ describe("convergeAndTier", () => {
     // directMerge name starts with "Achieve "
     expect(result[0].name).toContain("Achieve ");
   });
+
+  it("deduplicates moment IDs when LLM returns the same name for multiple clusters", async () => {
+    const mockLlm = createMockLlm();
+    const clusters = [makeCluster("dup-0", 2), makeCluster("dup-1", 3)];
+    const result = await convergeAndTier(clusters, mockLlm);
+    expect(result).toHaveLength(2);
+    // Both get the same MERGE_RESPONSE name, so IDs should be deduplicated
+    expect(result[0].id).toBe("moment-create-sprint-plan-from-capacity-data");
+    expect(result[1].id).toBe("moment-create-sprint-plan-from-capacity-data-2");
+  });
 });

@@ -12,6 +12,23 @@
 
 <!-- New entries are added below this line -->
 
+### 2026-02-23 - Task basesignal-c90: Add test for moment ID deduplication across clusters
+
+**Files Changed:**
+- `packages/core/src/analysis/convergence.test.ts` - Added 2 tests in `converge` describe block: directMerge dedup (no LLM) and LLM-path dedup
+- `packages/mcp-server/src/analysis/__tests__/convergence/converge.test.ts` - Added 1 test in `convergeAndTier` describe block: LLM dedup via mock that returns same MERGE_RESPONSE name
+
+**Learnings:**
+- The `converge()` function uses a `Set<string>` (`usedIds`) to track assigned IDs and passes it to `momentIdFromName()` which appends `-2`, `-3`, etc. for collisions
+- Both the no-LLM path (directMerge) and the LLM path converge on the same dedup mechanism via `momentIdFromName(name, usedIds)`
+- The mcp-server `convergeAndTier()` uses the same pattern — `usedIds` Set with sequential assignment
+
+**Patterns Discovered:**
+- Mock LLM in mcp-server always returns the same `MERGE_RESPONSE` for merge prompts, making dedup testing natural — just pass two clusters
+
+**Gotchas:**
+- Worktree needs `npm install` and `npm run build` — node_modules not shared and mcp-server tests need @basesignal/core built
+
 ### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
 **Files Changed:**
