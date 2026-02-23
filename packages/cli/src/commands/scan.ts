@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { computeCompleteness } from "@basesignal/core";
+import type { ProductProfile } from "@basesignal/storage";
 import { ScanError, handleScanError } from "../errors.js";
 import { loadConfig, requireApiKey } from "../config.js";
 import { createProgress } from "../progress.js";
@@ -110,8 +111,8 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
       lifecycle_states: pipelineResult.outputs.lifecycle_states,
       measurement_spec: pipelineResult.outputs.measurement_spec,
     });
-    const profile: Record<string, unknown> = {
-      identity: pipelineResult.identity,
+    const profile: ProductProfile = {
+      identity: pipelineResult.identity ?? undefined,
       metadata: { url: parsedUrl.href, scannedAt: Date.now() },
       completeness,
       overallConfidence: pipelineResult.identity?.confidence ?? 0,
@@ -133,8 +134,7 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
 
     // 7. PHASE 3 -- SAVE
     progress.start("Saving", "to local storage");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const profileId = await storage.save(profile as any);
+    const profileId = await storage.save(profile);
     profile.id = profileId;
 
     // Also persist structured artifacts via ProductDirectory
@@ -190,13 +190,11 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     progress.done("Saving", profileId);
 
     // 8. PHASE 4 -- OUTPUT
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const formatted = formatOutput(profile as any, options.format);
+    const formatted = formatOutput(profile, options.format);
     console.log(formatted);
 
     if (options.output) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      writeOutputFile(options.output, profile as any);
+      writeOutputFile(options.output, profile);
       console.error(`Written to ${options.output}`);
     }
   } finally {
