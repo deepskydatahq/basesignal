@@ -4,7 +4,7 @@ import type { StorageAdapter, LlmProvider } from "@basesignal/mcp-server";
 export function registerServeCommand(
   program: Command,
   getStorage: () => StorageAdapter | Promise<StorageAdapter>,
-  getProvider: () => LlmProvider,
+  getProvider: () => LlmProvider | Promise<LlmProvider>,
 ): void {
   program
     .command("serve")
@@ -18,7 +18,7 @@ export function registerServeCommand(
 
       await createServer({
         storage: await getStorage(),
-        llmProvider: getProvider(),
+        llmProvider: await getProvider(),
       });
 
       console.error(

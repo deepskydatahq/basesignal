@@ -16,14 +16,8 @@ import type {
 } from "./convergence-types";
 
 import { momentIdFromName } from "../slugify";
-
-// --- LlmProvider type ---
-
-/**
- * A function that sends a prompt to an LLM and returns the text response.
- * Consumers wrap their preferred SDK into this shape.
- */
-export type LlmProvider = (prompt: string, system: string) => Promise<string>;
+import type { LlmProvider } from "../llm/types";
+import { callLlm } from "../llm/helpers";
 
 export interface ConvergeOptions {
   /** Optional LLM provider for semantic merge descriptions. Without it, uses directMerge(). */
@@ -339,7 +333,7 @@ export async function converge(
   const results = await Promise.allSettled(
     clusters.map(async (cluster): Promise<ValueMoment> => {
       const prompt = buildMergePrompt(cluster);
-      const text = await options.llmProvider!(prompt, MERGE_SYSTEM_PROMPT);
+      const text = await callLlm(options.llmProvider!, { user: prompt, system: MERGE_SYSTEM_PROMPT });
       const parsed = parseMergeResponse(text);
 
       return {

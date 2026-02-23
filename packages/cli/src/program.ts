@@ -22,10 +22,9 @@ export function createProgram(): Command {
     return new FileStorage({ dir: config.storagePath });
   };
 
-  const getProvider = (): LlmProvider => {
-    // LlmProvider is currently an empty interface (skeleton).
-    // When analysis tools are integrated, this will create an actual provider.
-    return {};
+  const getProvider = async (): Promise<LlmProvider> => {
+    const { createProviderFromEnv } = await import("@basesignal/core");
+    return createProviderFromEnv();
   };
 
   registerInitCommand(program);

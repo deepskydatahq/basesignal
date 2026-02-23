@@ -1,4 +1,5 @@
 import type { StorageAdapter as _StorageAdapter } from "@basesignal/storage";
+import type { LlmProvider as _LlmProvider } from "@basesignal/core";
 import type { ScanToolDeps } from "./tools/scan.js";
 
 /**
@@ -8,14 +9,10 @@ import type { ScanToolDeps } from "./tools/scan.js";
 export type StorageAdapter = _StorageAdapter;
 
 /**
- * Adapter interface for LLM calls (analysis pipeline).
- * Implementations: AnthropicProvider, OpenAIProvider, OllamaProvider.
- * Methods are added when analysis tools are integrated (S002+).
+ * Re-export LlmProvider from @basesignal/core so consumers can use
+ * it without adding a direct dependency on the core package.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface LlmProvider {
-  // Intentionally empty for skeleton. See design doc section "Key Decisions #3".
-}
+export type LlmProvider = _LlmProvider;
 
 /**
  * Configuration for creating an MCP server instance.

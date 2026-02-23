@@ -123,7 +123,6 @@ export {
   runValidationPipeline,
   type ValidationLensResult,
   // Convergence and tiering (S006)
-  type LlmProvider as ConvergenceLlmFn,
   type ConvergeOptions,
   assignTier,
   parseMergeResponse,
