@@ -12,7 +12,6 @@
 
 <!-- New entries are added below this line -->
 
-<<<<<<< HEAD
 ### 2026-02-23 - Task basesignal-c90: Add test for moment ID deduplication across clusters
 
 **Files Changed:**
@@ -85,6 +84,21 @@
 
 **Gotchas:**
 - Worktree needs `npm install` — node_modules not shared between worktrees
+
+### 2026-02-23 - Task basesignal-ej2: Persist value_moments in top-level scan profile
+
+**Files Changed:**
+- `packages/cli/src/commands/scan.ts` - Added guarded assignment of `value_moments` from `pipelineResult.convergence.value_moments` to the profile object, matching the existing pattern for `lifecycle_states` and `icp_profiles`
+- `packages/cli/src/commands/scan.test.ts` - Added 2 tests: value_moments present when convergence has them, absent when convergence is null
+
+**Learnings:**
+- Vitest mock state leaks between tests when using `mockReset()` + `mockResolvedValue()` in one test — the next test's `beforeEach` `mockResolvedValue()` may not fully override. Explicit mock reset in the test itself ensures isolation.
+
+**Patterns Discovered:**
+- Profile section attachment pattern in scan.ts: guarded `if (source?.field && source.field.length > 0)` for arrays, `if (source?.field)` for objects — value_moments follows the array guard pattern
+
+**Gotchas:**
+- Worktree needs `npm install` and `npm run build` before tests will pass — packages need to be built for cross-package imports to resolve
 
 ### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
