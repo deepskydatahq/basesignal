@@ -460,6 +460,226 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — perspective balance", () => {
   });
 });
 
+// --- Format Validation Tests ---
+
+function makeValidSpecJson(overrides: {
+  entities?: Array<Record<string, unknown>>;
+  events?: Array<Record<string, unknown>>;
+} = {}): string {
+  const defaultEntity = {
+    id: "issue", name: "Issue", description: "Work item",
+    isHeartbeat: true,
+    properties: [{ name: "issue_id", type: "string", description: "ID", isRequired: true }],
+  };
+  const defaultEvent = {
+    name: "issue_created", entity_id: "issue", description: "Created",
+    perspective: "customer",
+    properties: [
+      { name: "title", type: "string", description: "T", required: true },
+      { name: "p", type: "string", description: "P", required: false },
+    ],
+    trigger_condition: "When created",
+    maps_to: { type: "value_moment", moment_id: "vm-1" },
+    category: "activation",
+  };
+  return JSON.stringify({
+    entities: overrides.entities ?? [defaultEntity],
+    events: overrides.events ?? [defaultEvent],
+    userStateModel: [
+      { name: "new", definition: "D", criteria: [] },
+    ],
+    confidence: 0.7,
+  });
+}
+
+describe("parseMeasurementSpecResponse — entity ID format validation", () => {
+  it("rejects entity ID starting with digit", () => {
+    const json = makeValidSpecJson({
+      entities: [{ id: "1issue", name: "Issue", description: "D", isHeartbeat: true, properties: [] }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
+  });
+
+  it("rejects entity ID with uppercase", () => {
+    const json = makeValidSpecJson({
+      entities: [{ id: "Issue", name: "Issue", description: "D", isHeartbeat: true, properties: [] }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
+  });
+
+  it("rejects entity ID with hyphens", () => {
+    const json = makeValidSpecJson({
+      entities: [{ id: "my-entity", name: "Entity", description: "D", isHeartbeat: true, properties: [] }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
+  });
+
+  it("accepts valid entity ID with underscores", () => {
+    const json = makeValidSpecJson({
+      entities: [{ id: "project_board", name: "Board", description: "D", isHeartbeat: true, properties: [] }],
+      events: [{
+        name: "project_board_created", entity_id: "project_board", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
+  });
+});
+
+describe("parseMeasurementSpecResponse — heartbeat uniqueness validation", () => {
+  it("rejects zero heartbeat entities", () => {
+    const json = makeValidSpecJson({
+      entities: [
+        { id: "issue", name: "Issue", description: "D", isHeartbeat: false, properties: [] },
+      ],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("none found");
+  });
+
+  it("rejects multiple heartbeat entities", () => {
+    const json = makeValidSpecJson({
+      entities: [
+        { id: "issue", name: "Issue", description: "D", isHeartbeat: true, properties: [] },
+        { id: "board", name: "Board", description: "D", isHeartbeat: true, properties: [] },
+      ],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("found 2");
+  });
+
+  it("accepts exactly one heartbeat entity", () => {
+    const json = makeValidSpecJson();
+    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
+  });
+});
+
+describe("parseMeasurementSpecResponse — event name format validation", () => {
+  it("rejects event name without underscore", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "issuecreated", entity_id: "issue", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
+  });
+
+  it("rejects event name starting with uppercase", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "Issue_created", entity_id: "issue", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
+  });
+
+  it("rejects event name starting with underscore", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "_issue_created", entity_id: "issue", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
+  });
+
+  it("accepts valid multi-segment event name", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "board_column_moved", entity_id: "issue", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
+  });
+
+  it("rejects event name with only prefix and no action", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "issue_", entity_id: "issue", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
+  });
+
+  it("accepts event name with digits in entity prefix", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "v2board_created", entity_id: "issue", description: "D",
+        perspective: "customer", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
+  });
+});
+
+describe("parseMeasurementSpecResponse — perspective enum validation", () => {
+  it("rejects invalid perspective", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "issue_created", entity_id: "issue", description: "D",
+        perspective: "user", category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("perspective must be one of");
+  });
+
+  it("rejects missing perspective", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "issue_created", entity_id: "issue", description: "D",
+        category: "activation",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("perspective must be one of");
+  });
+});
+
+describe("parseMeasurementSpecResponse — category enum validation", () => {
+  it("rejects invalid category", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "issue_created", entity_id: "issue", description: "D",
+        perspective: "customer", category: "engagement",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("category must be one of");
+  });
+
+  it("rejects missing category", () => {
+    const json = makeValidSpecJson({
+      events: [{
+        name: "issue_created", entity_id: "issue", description: "D",
+        perspective: "customer",
+        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
+        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("category must be one of");
+  });
+});
+
 describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — softened Step 3", () => {
   it("does not mandate exactly 5 states", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain("exactly 5 states");

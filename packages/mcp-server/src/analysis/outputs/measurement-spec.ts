@@ -295,6 +295,12 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
   };
 }
 
+// --- Validation Constants ---
+const ENTITY_ID_RE = /^[a-z][a-z0-9_]*$/;
+const EVENT_NAME_RE = /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/;
+const VALID_PERSPECTIVES = new Set(["customer", "product", "interaction"]);
+const VALID_CATEGORIES = new Set(["activation", "value", "retention", "expansion"]);
+
 // --- Response Parser (simplified, trusts core types) ---
 
 export function parseMeasurementSpecResponse(
@@ -329,6 +335,24 @@ export function parseMeasurementSpecResponse(
       throw new Error("Entity missing id");
     }
     entityIds.add(entity.id);
+    if (!ENTITY_ID_RE.test(entity.id)) {
+      throw new Error(
+        `Entity '${entity.id}': id must match /^[a-z][a-z0-9_]*$/ (lowercase, starts with letter, only letters/digits/underscores)`,
+      );
+    }
+  }
+
+  // Heartbeat uniqueness validation
+  const heartbeatEntities = (parsed.entities as Array<Record<string, unknown>>)
+    .filter((e) => e.isHeartbeat === true);
+  if (heartbeatEntities.length === 0) {
+    throw new Error("Exactly one entity must have isHeartbeat: true, but none found");
+  }
+  if (heartbeatEntities.length > 1) {
+    const ids = heartbeatEntities.map((e) => e.id).join(", ");
+    throw new Error(
+      `Exactly one entity must have isHeartbeat: true, but found ${heartbeatEntities.length}: ${ids}`,
+    );
   }
 
   // Minimal validation for events
@@ -338,6 +362,23 @@ export function parseMeasurementSpecResponse(
     }
     if (typeof event.entity_id !== "string" || !entityIds.has(event.entity_id)) {
       throw new Error(`Event '${event.name}': entity_id '${event.entity_id}' not in defined entities`);
+    }
+    if (!EVENT_NAME_RE.test(event.name)) {
+      throw new Error(
+        `Event '${event.name}': name must match /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/ (entity_action format)`,
+      );
+    }
+    const perspective = event.perspective as string;
+    if (!VALID_PERSPECTIVES.has(perspective)) {
+      throw new Error(
+        `Event '${event.name}': perspective must be one of [customer, product, interaction], got '${perspective}'`,
+      );
+    }
+    const category = event.category as string;
+    if (!VALID_CATEGORIES.has(category)) {
+      throw new Error(
+        `Event '${event.name}': category must be one of [activation, value, retention, expansion], got '${category}'`,
+      );
     }
   }
 
