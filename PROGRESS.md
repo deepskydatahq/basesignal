@@ -12,6 +12,7 @@
 
 <!-- New entries are added below this line -->
 
+<<<<<<< HEAD
 ### 2026-02-23 - Task basesignal-c90: Add test for moment ID deduplication across clusters
 
 **Files Changed:**
@@ -69,6 +70,21 @@
 
 **Gotchas:**
 - Worktree needs `npm install` and `npm run build` before tests resolve cross-package imports.
+
+### 2026-02-23 - Type scan profile object properly — remove as any casts
+
+**Files Changed:**
+- `packages/cli/src/commands/scan.ts` - Imported `ProductProfile` type from `@basesignal/storage`; changed `profile` from `Record<string, unknown>` to `ProductProfile`; converted `identity: pipelineResult.identity` to `identity: pipelineResult.identity ?? undefined` (null→undefined); removed 3 `as any` casts and their `eslint-disable` comments at `storage.save()`, `formatOutput()`, and `writeOutputFile()` calls
+
+**Learnings:**
+- The `ProductProfile` type in `@basesignal/storage` already has all the fields scan.ts sets (identity, metadata, completeness, overallConfidence, journey, metrics, outputs) plus an index signature `[key: string]: unknown` for forward-compatible fields like `lifecycle_states`
+- `PipelineResult.identity` is `IdentityResult | null` while `ProductProfile.identity` is `{ ... } | undefined` — the `?? undefined` conversion is needed since null is not assignable to the optional field type
+
+**Patterns Discovered:**
+- When the storage type already covers the fields being built, `as any` casts are unnecessary — proper typing gives compile-time validation for free
+
+**Gotchas:**
+- Worktree needs `npm install` — node_modules not shared between worktrees
 
 ### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
