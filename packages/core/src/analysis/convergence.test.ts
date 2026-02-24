@@ -13,7 +13,7 @@ import {
   isBusinessVerb,
   MERGE_SYSTEM_PROMPT,
 } from "./convergence";
-import type { LlmProvider } from "./convergence";
+import type { LlmProvider } from "../llm/types";
 import type {
   CandidateCluster,
   ValueMoment,
@@ -111,11 +111,15 @@ function makeMockLlmProvider(
   const calls: Array<{ prompt: string; system: string }> = [];
   let callIndex = 0;
 
-  const provider: LlmProvider = async (prompt, system) => {
-    calls.push({ prompt, system });
-    const response = responses[callIndex++];
-    if (!response) throw new Error("No more mock responses");
-    return "```json\n" + JSON.stringify(response, null, 2) + "\n```";
+  const provider: LlmProvider = {
+    complete: async (messages) => {
+      const system = messages.find((m) => m.role === "system")?.content ?? "";
+      const prompt = messages.find((m) => m.role === "user")?.content ?? "";
+      calls.push({ prompt, system });
+      const response = responses[callIndex++];
+      if (!response) throw new Error("No more mock responses");
+      return "```json\n" + JSON.stringify(response, null, 2) + "\n```";
+    },
   };
 
   return { provider, calls };
@@ -444,8 +448,8 @@ describe("converge", () => {
   it("falls back to directMerge when LLM provider throws", async () => {
     const cluster = makeCluster({ cluster_id: "fail-test" });
 
-    const failingProvider: LlmProvider = async () => {
-      throw new Error("API rate limited");
+    const failingProvider: LlmProvider = {
+      complete: async () => { throw new Error("API rate limited"); },
     };
 
     const moments = await converge([cluster], { llmProvider: failingProvider });
@@ -457,7 +461,9 @@ describe("converge", () => {
   it("falls back to directMerge when response parsing fails", async () => {
     const cluster = makeCluster({ cluster_id: "parse-fail" });
 
-    const badProvider: LlmProvider = async () => "This is not JSON at all";
+    const badProvider: LlmProvider = {
+      complete: async () => "This is not JSON at all",
+    };
 
     const moments = await converge([cluster], { llmProvider: badProvider });
     expect(moments).toHaveLength(1);
@@ -469,18 +475,20 @@ describe("converge", () => {
     const cluster2 = makeCluster({ cluster_id: "fail" });
 
     let callCount = 0;
-    const mixedProvider: LlmProvider = async (prompt, system) => {
-      callCount++;
-      if (callCount === 1) {
-        return "```json\n" + JSON.stringify({
-          name: "Gain visibility",
-          description: "good",
-          roles: ["PM"],
-          product_surfaces: ["Board"],
-          is_coherent: true,
-        }, null, 2) + "\n```";
-      }
-      throw new Error("API error");
+    const mixedProvider: LlmProvider = {
+      complete: async () => {
+        callCount++;
+        if (callCount === 1) {
+          return "```json\n" + JSON.stringify({
+            name: "Gain visibility",
+            description: "good",
+            roles: ["PM"],
+            product_surfaces: ["Board"],
+            is_coherent: true,
+          }, null, 2) + "\n```";
+        }
+        throw new Error("API error");
+      },
     };
 
     const moments = await converge([cluster1, cluster2], { llmProvider: mixedProvider });

@@ -40,7 +40,6 @@ export {
 
 // Convergence and tiering (S006)
 export {
-  type LlmProvider,
   type ConvergeOptions,
   assignTier,
   parseMergeResponse,

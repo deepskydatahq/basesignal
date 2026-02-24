@@ -29,6 +29,28 @@
 **Gotchas:**
 - Worktree needs `npm install` and `npm run build` — node_modules not shared and mcp-server tests need @basesignal/core built
 
+### 2026-02-23 - Task basesignal-hp5: Consolidate LlmProvider type definition across core and mcp-server
+
+**Files Changed:**
+- `packages/core/src/analysis/convergence.ts` - Removed local `type LlmProvider` function type; imported `LlmProvider` from `../llm/types` and `callLlm` from `../llm/helpers`; updated `converge()` to use `callLlm()` instead of calling provider as a function
+- `packages/core/src/analysis/index.ts` - Removed `type LlmProvider` from convergence re-export block (now exported via `../llm`)
+- `packages/core/src/index.ts` - Removed `type LlmProvider as ConvergenceLlmFn` alias
+- `packages/mcp-server/src/types.ts` - Replaced empty `interface LlmProvider {}` skeleton with re-export of `LlmProvider` from `@basesignal/core`
+- `packages/cli/src/program.ts` - Changed `getProvider()` from returning empty object to using `createProviderFromEnv()` from `@basesignal/core`; made async
+- `packages/cli/src/commands/serve.ts` - Updated `getProvider` parameter type to accept `Promise<LlmProvider>`; await the result
+- `packages/core/src/analysis/convergence.test.ts` - Updated all mock providers from bare functions to `{ complete: async () => ... }` shape; changed import source from `./convergence` to `../llm/types`
+
+**Learnings:**
+- The `callLlm()` helper in `core/llm/helpers.ts` bridges the gap between the simple `(prompt, system)` calling convention and the `complete(messages, options)` interface cleanly
+- Re-export pattern (`type X = _X`) is already established in mcp-server for `StorageAdapter` — using the same pattern for `LlmProvider` keeps consistency
+
+**Patterns Discovered:**
+- Type consolidation pattern: when multiple packages define the same type, keep it in the lowest-level package (core) and re-export through higher-level packages (mcp-server) for consumer convenience
+- The `callLlm()` helper serves as a stable bridge for code that uses the simpler `(prompt, system)` calling convention
+
+**Gotchas:**
+- Changing `LlmProvider` from empty interface to one with `complete()` method means CLI's `getProvider()` returning `{}` no longer type-checks — must provide a real provider implementation
+
 ### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
 **Files Changed:**
