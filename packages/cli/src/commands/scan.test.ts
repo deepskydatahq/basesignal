@@ -387,6 +387,27 @@ describe("runScan", () => {
     expect(writeCalls).toContain("profile.json");
   });
 
+  it("stores measurement_spec at top-level, not in profile.metrics", async () => {
+    const specData = { events: [{ name: "signup" }], entities: [], coverage: {} };
+    const resultWithSpec = {
+      ...pipelineResult,
+      outputs: {
+        ...pipelineResult.outputs,
+        measurement_spec: specData,
+      },
+    };
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(resultWithSpec);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("spec-profile-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const savedProfile = mockSave.mock.calls[0][0];
+    expect(savedProfile.measurement_spec).toEqual(specData);
+    expect(savedProfile.metrics).toBeUndefined();
+  });
+
   it("outputs markdown to stdout with --format markdown", async () => {
     await runScan("https://example.com", { format: "markdown", verbose: false });
 

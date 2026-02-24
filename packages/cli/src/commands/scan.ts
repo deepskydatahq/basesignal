@@ -122,7 +122,7 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
       profile.journey = pipelineResult.outputs.activation_map;
     }
     if (pipelineResult.outputs.measurement_spec) {
-      profile.metrics = pipelineResult.outputs.measurement_spec;
+      profile.measurement_spec = pipelineResult.outputs.measurement_spec;
     }
     if (pipelineResult.outputs.lifecycle_states) {
       profile.lifecycle_states = pipelineResult.outputs.lifecycle_states;

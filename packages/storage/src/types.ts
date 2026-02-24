@@ -60,8 +60,11 @@ export interface ProductProfile {
   /** Outcomes. */
   outcomes?: Record<string, unknown>;
 
-  /** Metrics. */
+  /** Metrics (MetricsSection data, set via MCP tools). */
   metrics?: Record<string, unknown>;
+
+  /** Measurement spec (MeasurementSpec data, set by scan pipeline). */
+  measurement_spec?: Record<string, unknown>;
 
   /** Generated outputs (ICP profiles, activation map, measurement spec). */
   outputs?: Record<string, unknown>;

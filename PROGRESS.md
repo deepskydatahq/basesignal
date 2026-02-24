@@ -51,6 +51,25 @@
 **Gotchas:**
 - Changing `LlmProvider` from empty interface to one with `complete()` method means CLI's `getProvider()` returning `{}` no longer type-checks — must provide a real provider implementation
 
+### 2026-02-23 - Task basesignal-d99: Resolve Dual Storage of Measurement Spec
+
+**Files Changed:**
+- `packages/cli/src/commands/scan.ts` - Changed `profile.metrics = ...measurement_spec` to `profile.measurement_spec = ...measurement_spec` (line 125)
+- `packages/mcp-server/src/tools/updateDefinition.ts` - Changed `p.metrics ?? outputs?.measurement_spec` to `p.measurement_spec ?? outputs?.measurement_spec` in `recalculateCompleteness` (line 130)
+- `packages/storage/src/types.ts` - Added explicit `measurement_spec?: Record<string, unknown>` field to `ProductProfile` interface
+- `packages/cli/src/commands/scan.test.ts` - Added test verifying measurement_spec stored at top-level key, not in `profile.metrics`
+
+**Learnings:**
+- `profile.metrics` is typed as `MetricsSection` (items with name/category/formula) — a completely different type from `MeasurementSpec` (entities/events/coverage/userStateModel). Scan was incorrectly storing MeasurementSpec data in `profile.metrics`.
+- The `ProductProfile` type has `[key: string]: unknown` index signature, so `measurement_spec` already worked at runtime, but adding an explicit field makes the intent clear.
+- `lifecycle_states` was already correctly stored as a top-level field — `measurement_spec` now follows the same pattern.
+
+**Patterns Discovered:**
+- Pipeline output fields should be stored at top-level profile keys matching their pipeline output name (e.g., `measurement_spec`, `lifecycle_states`), not mapped to unrelated existing sections.
+
+**Gotchas:**
+- Worktree needs `npm install` and `npm run build` before tests resolve cross-package imports.
+
 ### 2026-02-22 - Story M010-E003-S004: CLI Display and End-to-End Pipeline Test
 
 **Files Changed:**
