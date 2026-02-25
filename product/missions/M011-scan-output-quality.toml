@@ -4,7 +4,7 @@
 
 id = "M011"
 title = "Scan Output Quality"
-status = "active"
+status = "complete"
 created = 2026-02-23
 depends_on = ["M010"]
 
