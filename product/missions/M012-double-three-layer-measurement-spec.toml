@@ -1,0 +1,188 @@
+# Mission: Double Three-Layer Measurement Spec
+# Redesign the measurement spec output to properly follow the Double Three-Layer
+# Framework — entity-centric, perspective-grouped, with JSON Schema per entity.
+
+id = "M012"
+title = "Double Three-Layer Measurement Spec"
+status = "draft"
+created = 2026-02-27
+depends_on = ["M011"]
+
+[outcome]
+description = """
+Running `basesignal scan <url>` produces a measurement specification that follows the
+Double Three-Layer Framework from the book. The output is organized by three perspectives
+(Customer, Product, Interaction), each containing entities with nested activities and
+entity-level properties. Product entities (3-7) have past-tense lifecycle activities with
+properties_supported declarations. The Customer entity has derived activities with
+derivation_rules composed from product activities. The Interaction entity has generic
+activities (element_clicked, element_submitted) with contextual properties. Each entity
+also produces a JSON Schema (activity as enum, properties as fields) that serves as the
+tracking contract an engineer implements against. The output replaces the current flat
+{ entities[], events[] } structure entirely.
+"""
+
+user_progress = "From 'flat event list with per-event properties' to 'entity-centric measurement spec with perspective grouping, entity-level properties, derived customer activities, and JSON Schema per entity'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Output has three perspective keys: customer, product, interaction",
+    "Each perspective contains an entities array",
+    "Product perspective has 3-7 entities with past-tense lifecycle activities",
+    "Exactly one product entity has isHeartbeat: true",
+    "Entity properties are defined at entity level, not per-activity",
+    "Each activity declares properties_supported referencing entity property names",
+    "Activity-specific properties (activity_properties) are separate from entity properties",
+    "Customer perspective has a single Customer entity with derived activities",
+    "Customer activities have derivation_rule fields referencing product activities",
+    "Interaction perspective has a single Interaction entity with generic activities",
+    "Interaction activities are element_clicked and element_submitted with contextual properties",
+    "A jsonSchemas array is produced with one JSON Schema per entity",
+    "Each JSON Schema has activity as enum, entity properties as fields, additionalProperties: false",
+    "Entity count >7 in product perspective produces a warning (not error)",
+    "Product activities pass the test: 'Does this prove or unlock user value?'",
+    "Product activities exclude UI-level interactions (no 'clicked_button', 'viewed_page')",
+    "All existing tests pass with updated assertions",
+    "npm run build succeeds across all packages",
+    "npm run test:run passes",
+    "A scan of amplitude.com produces a measurement spec a PM would recognize as a proper tracking plan",
+]
+
+validator_context = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/formatters.ts",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "VALUES.md",
+]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/schema/index.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/completeness.ts",
+    "packages/core/src/completeness.test.ts",
+    "packages/core/src/types/__tests__/outputs.test.ts",
+    "packages/core/src/schema/__tests__/outputs.test.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/pipeline.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/fixtures/mock-llm.ts",
+    "packages/mcp-server/src/tools/updateDefinition.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/commands/scan.test.ts",
+    "packages/cli/src/formatters.ts",
+    "packages/storage/src/types.ts",
+]
+
+[scope]
+in_scope = [
+    "Redesign MeasurementSpec type — perspective-grouped, entity-centric with nested activities",
+    "New types: PerspectiveLayer, ProductEntity, ProductActivity, CustomerActivity (with derivation_rule), InteractionEntity",
+    "Entity-level properties with per-activity properties_supported declarations",
+    "Activity-specific properties (activity_properties) for lifecycle-transition-only context",
+    "Customer perspective: single entity, derived activities composed from product activities",
+    "Interaction perspective: single entity, generic activities (element_clicked, element_submitted)",
+    "Product perspective: 3-7 entities with past-tense lifecycle activities, one heartbeat",
+    "JSON Schema generation per entity (activity enum, properties as fields, additionalProperties: false)",
+    "New Zod schemas for all new types",
+    "Rewrite LLM system prompt to teach the Double Three-Layer Framework",
+    "Rewrite response parser and validator for new structure",
+    "Update prompt builder with framework-aware input sections",
+    "Update generateAllOutputs orchestration",
+    "Update CLI scan command persistence",
+    "Update CLI formatters for new structure",
+    "Update completeness scoring",
+    "Update updateDefinition MCP tool",
+    "Update all ~80+ tests and fixtures",
+    "Warn (not error) when product entity count exceeds 7",
+]
+out_of_scope = [
+    "Changing other outputs (ICP profiles, activation map, lifecycle states)",
+    "Changing crawl, extraction, or convergence phases",
+    "Adding new analytical lenses",
+    "Migration tool for existing stored profiles (overwritten on next scan)",
+    "Revenue architecture (L07)",
+    "Breakdown dimensions (L09)",
+    "MCP tools for editing/refining measurement spec sections",
+]
+acceptable_breakage = [
+    "Existing stored measurement-spec.json files won't match new schema — overwritten on next scan",
+    "profile.json measurement_spec field changes shape entirely",
+    "All test fixtures must be rewritten for the new structure",
+    "Entity count may differ from previous runs (fewer, more focused entities)",
+    "Event names change — activities are now past-tense inside entities, not flat entity_action events",
+    "userStateModel replaced by Customer perspective derived activities",
+    "Coverage computation changes — perspective distribution is now structural, not counted from flat events",
+]
+
+[notes]
+considerations = """
+Codebase exploration findings (2026-02-27):
+
+**Blast radius:** ~15 files across 4 packages (core, mcp-server, cli, storage).
+~80+ tests reference the current MeasurementSpec shape.
+
+**Current structure (wrong):**
+{ entities[], events[], total_events, coverage, userStateModel[], confidence }
+- Events are a flat array separated from entities
+- Properties are per-event, not per-entity
+- Activities mix lifecycle markers with UI interactions
+- No distinction between product/customer/interaction layer structure
+- No derivation rules for customer journey stages
+
+**Target structure (Double Three-Layer Framework):**
+{
+  perspectives: {
+    customer: { entities: [{ name, activities: [{ name, derivation_rule, properties_used }], properties }] },
+    product: { entities: [{ name, activities: [{ name, properties_supported }], properties }] },
+    interaction: { entities: [{ name, activities: [{ name, properties_supported }], properties }] }
+  },
+  jsonSchemas: [{ entityName, schema: { ... JSON Schema ... } }],
+  confidence, sources
+}
+
+**Key design decisions from framework author:**
+1. Perspectives ARE top-level grouping (determines how activities are designed and consumed)
+2. Activities live inside entities (entity groups activities defining its lifecycle)
+3. Properties defined at entity level, activities declare properties_supported subset
+4. Customer activities need derivation_rule (composed from product activities with filters/thresholds)
+5. Interaction layer: generic activities (element_clicked, element_submitted) + contextual properties
+6. Entity count: not hard-capped at 7, but challenge each entity (unique ID + distinct lifecycle)
+7. Output format: JSON Schema per entity (activity as enum, properties as fields)
+8. Past-tense activities only in product layer — test: "Does this prove or unlock user value?"
+
+**Reference: Miro product layer entities:**
+Account (created, updated, deleted)
+User (invited, created, role_changed, removed_from_account, deleted)
+Board (joined, created, updated, viewed, shared, presented, deleted) — heartbeat
+Asset (added, updated, deleted, commented)
+Subscription (created, canceled, ended)
+
+**Reference: Miro customer layer:**
+Single Customer entity with derived stages:
+- Miro experienced first time (Board viewed, first time, anonymous)
+- Account created (mapped from product Account created)
+- First value created (Board shared first time OR Asset created 30+ times)
+- Value repeated, Value creation reduced, Subscription created, etc.
+
+**Epic breakdown suggestion:**
+E001: Core types and Zod schemas (new type structure in @basesignal/core)
+E002: LLM prompt, parser, and validator (rewrite generation logic)
+E003: Pipeline integration, CLI, storage, MCP tools (wire everything together)
+E004: JSON Schema generation (per-entity schema output)
+Each epic builds on the previous and is independently testable.
+"""

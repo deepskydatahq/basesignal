@@ -65,7 +65,7 @@ export interface ActivationMap {
 // Entity / Property Types
 // ---------------------------------------------------------------------------
 
-/** Property definition for an entity. */
+/** @deprecated Use EntityProperty instead. */
 export interface EntityPropertyDef {
   name: string;
   type: "string" | "number" | "boolean" | "array";
@@ -73,13 +73,92 @@ export interface EntityPropertyDef {
   isRequired: boolean;
 }
 
-/** Entity definition for the measurement spec. */
+/** @deprecated Use ProductEntity instead. */
 export interface EntityDefinition {
   id: string;
   name: string;
   description: string;
   isHeartbeat: boolean;
   properties: EntityPropertyDef[];
+}
+
+// ---------------------------------------------------------------------------
+// Double Three-Layer Building Blocks
+// ---------------------------------------------------------------------------
+
+/** Property type for the Double Three-Layer Framework. */
+export type EntityPropertyType =
+  | "string"
+  | "number"
+  | "boolean"
+  | "array"
+  | "id"
+  | "calculated"
+  | "experimental"
+  | "temporary";
+
+/** Property definition for an entity in the Double Three-Layer Framework. */
+export interface EntityProperty {
+  name: string;
+  type: EntityPropertyType;
+  description: string;
+  isRequired: boolean;
+  variations?: string;
+}
+
+/** A product entity activity — past-tense lifecycle marker. */
+export interface ProductActivity {
+  name: string;
+  properties_supported: string[];
+  activity_properties: EntityProperty[];
+}
+
+/** A customer journey activity — derived from product activities. */
+export interface CustomerActivity {
+  name: string;
+  derivation_rule: string;
+  properties_used: string[];
+}
+
+/** An interaction activity — generic UI tracking. */
+export interface InteractionActivity {
+  name: string;
+  properties_supported: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Double Three-Layer Entity Types
+// ---------------------------------------------------------------------------
+
+/** A product entity with lifecycle activities. */
+export interface ProductEntity {
+  id: string;
+  name: string;
+  description: string;
+  isHeartbeat: boolean;
+  properties: EntityProperty[];
+  activities: ProductActivity[];
+}
+
+/** A customer entity with derived journey activities. */
+export interface CustomerEntity {
+  name: string;
+  properties: EntityProperty[];
+  activities: CustomerActivity[];
+}
+
+/** An interaction entity with generic tracking activities. */
+export interface InteractionEntity {
+  name: string;
+  properties: EntityProperty[];
+  activities: InteractionActivity[];
+}
+
+/** A generated JSON Schema for an entity. */
+export interface EntityJsonSchema {
+  entityName: string;
+  perspective: Perspective;
+  schema: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,17 +218,14 @@ export interface TrackingEvent {
   category: string;
 }
 
-/** Complete measurement specification. */
+/** Complete measurement specification — Double Three-Layer Framework. */
 export interface MeasurementSpec {
-  entities: EntityDefinition[];
-  events: TrackingEvent[];
-  total_events: number;
-  coverage: {
-    activation_levels_covered: number[];
-    value_moments_covered: string[];
-    perspective_distribution: PerspectiveDistribution;
+  perspectives: {
+    customer: { entities: CustomerEntity[] };
+    product: { entities: ProductEntity[] };
+    interaction: { entities: InteractionEntity[] };
   };
-  userStateModel: UserState[];
+  jsonSchemas: EntityJsonSchema[];
   confidence: number;
   sources: string[];
   warnings?: string[];

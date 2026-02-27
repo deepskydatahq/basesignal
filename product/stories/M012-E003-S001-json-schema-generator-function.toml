@@ -1,0 +1,79 @@
+# Story: JSON Schema Generator Function
+# Implement generateEntityJsonSchemas that produces a JSON Schema per entity.
+
+id = "M012-E003-S001"
+epic = "M012-E003"
+title = "JSON Schema Generator Function"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E001-S003"]
+
+[outcome]
+description = """
+A pure function generateEntityJsonSchemas takes a parsed MeasurementSpec and produces
+an EntityJsonSchema[] — one JSON Schema per entity across all three perspectives.
+Each schema has activity names as an enum field, entity properties as typed fields,
+and additionalProperties: false. Follows the Silverton/Snowplow vendor-namespaced pattern.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "generateEntityJsonSchemas function exists in measurement-spec.ts (or a new json-schema.ts file)",
+    "Input: MeasurementSpec (the parsed perspectives structure)",
+    "Output: EntityJsonSchema[] — one per entity across all perspectives",
+    "Product entity schema: activity field as enum of activity names, entity properties as typed fields",
+    "Customer entity schema: activity field as enum of customer stage names, entity properties as fields",
+    "Interaction entity schema: activity field as enum (element_clicked, element_submitted), contextual properties as fields",
+    "Property type mapping: string→string, number→number, boolean→boolean, array→array, id→string, calculated→number",
+    "required array includes 'activity' and all isRequired entity properties",
+    "additionalProperties: false on all schemas",
+    "Schema $id follows pattern: basesignal/{perspective}/{entity_id}/v1.0.json",
+    "Schema has title (entity name) and description (entity description)",
+    "Activity-specific properties (activity_properties) included as optional fields in schema",
+    "Test: Miro-like product entities produce valid JSON Schemas",
+    "Test: Customer entity with derived stages produces valid JSON Schema",
+    "Test: Interaction entity produces schema with element_clicked/element_submitted enum",
+    "Test: isRequired=true properties appear in required array",
+    "Test: isRequired=false properties do NOT appear in required array",
+    "Test: empty entity (no activities) produces schema with empty activity enum",
+]
+
+[context]
+files_to_modify = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+]
+
+[notes]
+implementation_hints = """
+This is a pure function — no LLM calls, no I/O. Easy to test.
+
+Example output for a Board entity:
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "basesignal/product/board/v1.0.json",
+  "title": "Board",
+  "description": "A collaborative whiteboard in Miro",
+  "type": "object",
+  "properties": {
+    "activity": {
+      "type": "string",
+      "enum": ["created", "updated", "viewed", "shared", "presented", "deleted"],
+      "description": "The lifecycle activity performed on this entity"
+    },
+    "board_id": { "type": "string", "description": "Unique board identifier" },
+    "board_number_assets": { "type": "number", "description": "Number of assets" },
+    "board_number_access": { "type": "number", "description": "Users with access" },
+    "share_method": { "type": "string", "description": "How the board was shared" }
+  },
+  "required": ["activity", "board_id"],
+  "additionalProperties": false
+}
+
+Activity-specific properties (like share_method which only applies to 'shared')
+are included as optional fields. A more sophisticated approach using if/then/else
+is out of scope — keep it simple.
+
+The calculated type maps to number (it's computed at query time but stored as number).
+The experimental and temporary types map to any/string (loose, since they're transient).
+"""

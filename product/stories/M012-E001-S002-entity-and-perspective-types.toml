@@ -1,0 +1,61 @@
+# Story: Entity and Perspective Types
+# Define entity types (Product, Customer, Interaction) and the PerspectiveLayer
+# container type, plus EntityJsonSchema for JSON Schema output.
+
+id = "M012-E001-S002"
+epic = "M012-E001"
+title = "Entity and Perspective Types"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E001-S001"]
+
+[outcome]
+description = """
+New types and Zod schemas for the entity containers and perspective grouping:
+ProductEntity (id, name, description, isHeartbeat, properties[], activities[]),
+CustomerEntity (name, properties[], activities[]),
+InteractionEntity (name, properties[], activities[]),
+PerspectiveLayer<T> (entities array), and EntityJsonSchema (entityName, perspective, schema).
+"""
+
+[acceptance_criteria]
+criteria = [
+    "ProductEntity type has: id (string), name (string), description (string), isHeartbeat (boolean), properties (EntityProperty[]), activities (ProductActivity[])",
+    "ProductEntity Zod schema validates entities with nested activities and properties",
+    "CustomerEntity type has: name (string), properties (EntityProperty[]), activities (CustomerActivity[])",
+    "CustomerEntity Zod schema validates correctly",
+    "InteractionEntity type has: name (string), properties (EntityProperty[]), activities (InteractionActivity[])",
+    "InteractionEntity Zod schema validates correctly",
+    "EntityJsonSchema type has: entityName (string), perspective (Perspective), schema (Record<string, unknown>)",
+    "EntityJsonSchema Zod schema validates correctly",
+    "Type tests verify entity types with nested activities",
+    "Schema tests verify Zod validation for each entity type",
+    "A ProductEntity with activities that have properties_supported referencing entity property names type-checks correctly",
+]
+
+[context]
+files_to_modify = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/types/__tests__/outputs.test.ts",
+    "packages/core/src/schema/__tests__/outputs.test.ts",
+]
+
+[notes]
+implementation_hints = """
+Activities nest inside entities — this is the key structural difference from the old
+design where events were a separate flat array.
+
+ProductEntity replaces the old EntityDefinition but adds activities.
+The id field stays (lowercase, matching /^[a-z][a-z0-9_]*$/).
+
+EntityJsonSchema.schema is Record<string, unknown> because it holds an arbitrary
+JSON Schema object. The actual generation logic is in E003 — here we just define
+the container type.
+
+Note: PerspectiveLayer can be a simple type alias rather than a generic:
+{ entities: ProductEntity[] } for product,
+{ entities: CustomerEntity[] } for customer,
+{ entities: InteractionEntity[] } for interaction.
+Or use a discriminated structure. Keep it simple — three distinct types is fine.
+"""

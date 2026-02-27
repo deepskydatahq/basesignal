@@ -1,0 +1,55 @@
+# Story: MCP Tools and Final Validation
+# Update updateDefinition MCP tool, run full test suite, validate with real scan.
+
+id = "M012-E004-S003"
+epic = "M012-E004"
+title = "MCP Tools and Final Validation"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E004-S002"]
+
+[outcome]
+description = """
+The updateDefinition MCP tool handles the new measurement_spec shape. The full
+test suite passes (npm run test:run). npm run build succeeds across all packages.
+A real scan produces a measurement spec that follows the Double Three-Layer Framework.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "updateDefinition.ts recalculateCompleteness works with new measurement_spec shape",
+    "storage/src/types.ts measurement_spec field still works (Record<string, unknown>)",
+    "npm run build succeeds across all packages",
+    "npm run test:run passes across all packages",
+    "No TypeScript errors in any package",
+    "A scan output produces perspectives with product, customer, interaction keys",
+    "Product perspective has 3-7 entities with past-tense activities",
+    "Customer perspective has derived activities with derivation_rule",
+    "Interaction perspective has generic activities",
+    "jsonSchemas array contains one schema per entity",
+]
+
+[context]
+files_to_modify = [
+    "packages/mcp-server/src/tools/updateDefinition.ts",
+    "packages/storage/src/types.ts",
+]
+
+[notes]
+implementation_hints = """
+updateDefinition.ts line 130 references measurement_spec in recalculateCompleteness.
+It just checks for presence (truthy), so no logic change needed — just verify it
+works with the new shape.
+
+storage/src/types.ts has measurement_spec?: Record<string, unknown> — this is
+generic enough to handle any shape. No change needed.
+
+The real scan validation is the final check. Run:
+  npx basesignal scan https://amplitude.com
+And verify the output has the new structure. This is manual validation,
+not an automated test.
+
+If the real scan reveals issues with LLM output quality (wrong entity count,
+missing derivation rules, etc.), fix the system prompt or parser as needed.
+This story is the integration test for the entire mission.
+"""

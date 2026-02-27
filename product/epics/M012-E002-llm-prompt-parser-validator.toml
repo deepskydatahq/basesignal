@@ -1,0 +1,97 @@
+# Epic: LLM Prompt, Parser, and Validator
+# Rewrite the measurement spec system prompt, prompt builder, response parser,
+# and validator to generate and parse the new Double Three-Layer structure.
+
+id = "M012-E002"
+mission = "M012"
+title = "LLM Prompt, Parser, and Validator"
+status = "draft"
+created = 2026-02-27
+depends_on = ["M012-E001"]
+
+[outcome]
+description = """
+The measurement spec generator produces output following the Double Three-Layer Framework.
+The system prompt teaches the LLM the framework: three perspectives, entity-centric design,
+activities as past-tense lifecycle markers inside entities, entity-level properties with
+per-activity properties_supported, customer activities with derivation_rule, and interaction
+layer as generic element_clicked/element_submitted. The parser validates the new structure
+and computes coverage metrics. The prompt builder assembles framework-aware context from
+pipeline inputs. All measurement-spec.test.ts tests pass with updated fixtures.
+"""
+
+[scope]
+in_scope = [
+    "Rewrite MEASUREMENT_SPEC_SYSTEM_PROMPT to teach the Double Three-Layer Framework",
+    "System prompt includes: Miro reference example for product entities",
+    "System prompt includes: Customer activity derivation rules with examples",
+    "System prompt includes: Interaction layer definition (generic activities, contextual properties)",
+    "System prompt includes: Entity-level property design rules (catalog on entity, properties_supported on activity)",
+    "System prompt includes: Past-tense activity naming (created, shared, deleted — not clicked, viewed)",
+    "System prompt includes: Heartbeat entity requirement (exactly one in product perspective)",
+    "System prompt includes: Entity count guidance (3-7, justify each against unique ID + distinct lifecycle)",
+    "System prompt includes: Activity quality test ('Does this prove or unlock user value?')",
+    "System prompt includes: JSON output schema matching new MeasurementSpec type",
+    "Rewrite buildMeasurementSpecPrompt to assemble framework-aware context",
+    "Prompt builder passes value moments grouped by product surface for entity discovery",
+    "Prompt builder passes activation levels as input for customer activity derivation",
+    "Prompt builder passes lifecycle states for customer activity derivation",
+    "Rewrite parseMeasurementSpecResponse for new structure",
+    "Parser validates: perspectives object with customer, product, interaction keys",
+    "Parser validates: product entities have past-tense activities with properties_supported",
+    "Parser validates: exactly one heartbeat entity in product perspective",
+    "Parser validates: customer entity has derivation_rule on each activity",
+    "Parser validates: interaction entity has generic activities",
+    "Parser validates: entity properties referenced by properties_supported actually exist",
+    "Parser warns (not errors) when product entity count > 7",
+    "Update assembleMeasurementInput for new input structure",
+    "Update MeasurementInputData type if needed",
+    "Update all tests in measurement-spec.test.ts (~80+ tests)",
+    "Update test fixtures and mock data",
+]
+out_of_scope = [
+    "JSON Schema generation per entity (E003)",
+    "Pipeline orchestration changes (E004)",
+    "CLI display changes (E004)",
+]
+
+[testing]
+criteria = [
+    "System prompt references the Double Three-Layer Framework by name",
+    "System prompt includes Miro-like reference example with 5 product entities",
+    "System prompt requires customer activities to have derivation_rule",
+    "System prompt requires interaction activities to be element_clicked/element_submitted",
+    "parseMeasurementSpecResponse returns new MeasurementSpec type",
+    "Parser validates properties_supported references against entity property names",
+    "Parser warns when product entity count > 7",
+    "Parser rejects product activities that fail past-tense naming",
+    "assembleMeasurementInput produces correct input structure",
+    "All measurement-spec.test.ts tests pass",
+    "npm run build succeeds for mcp-server package",
+]
+
+[notes]
+considerations = """
+The system prompt is the most important piece — it teaches the LLM how to think
+about tracking design. Key framework principles to encode:
+
+1. Start from entities, not events. "What are the core objects users interact with?"
+2. For each entity, define its lifecycle as past-tense activities.
+3. Properties belong to entities. Activities pick which they support.
+4. Customer layer is derived: "First value created = Board shared (first time) OR
+   Asset created 30+ times" — this is a rule, not a directly tracked event.
+5. Interaction layer is generic: element_clicked + element_submitted with contextual
+   properties (element_type, element_text, element_position, element_container).
+6. The heartbeat entity is "the core object without which the product disappears."
+
+The prompt builder should group value moments by product surface to help the LLM
+discover entities. If moments mention "dashboard", "report", "experiment" — those
+are entity candidates.
+
+Temperature stays at 0.2 for consistency. maxTokens may need to increase given
+the richer output structure.
+
+Validation is stricter than current: properties_supported must reference actual
+entity property names (cross-reference check). This catches LLM hallucinations
+where it invents property names in properties_supported that don't exist on the entity.
+"""

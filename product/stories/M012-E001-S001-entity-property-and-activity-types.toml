@@ -1,0 +1,66 @@
+# Story: Entity Property and Activity Types
+# Define the building-block types for the Double Three-Layer Framework:
+# EntityProperty with rich type options, and the three activity types.
+
+id = "M012-E001-S001"
+epic = "M012-E001"
+title = "Entity Property and Activity Types"
+status = "ready"
+created = 2026-02-27
+depends_on = []
+
+[outcome]
+description = """
+New types and Zod schemas for the atomic building blocks of the framework:
+EntityProperty (with rich type enum including id, calculated, experimental, temporary),
+ProductActivity (past-tense name, properties_supported[], activity_properties[]),
+CustomerActivity (name, derivation_rule, properties_used[]),
+and InteractionActivity (name, properties_supported[]).
+"""
+
+[acceptance_criteria]
+criteria = [
+    "EntityProperty type has: name, type (string|number|boolean|array|id|calculated|experimental|temporary), description, isRequired, variations? (optional string)",
+    "EntityProperty Zod schema validates all 8 type enum values",
+    "EntityProperty Zod schema rejects unknown type values",
+    "ProductActivity type has: name (string), properties_supported (string[]), activity_properties (EntityProperty[])",
+    "ProductActivity Zod schema validates correctly",
+    "CustomerActivity type has: name (string), derivation_rule (string), properties_used (string[])",
+    "CustomerActivity Zod schema validates correctly",
+    "InteractionActivity type has: name (string), properties_supported (string[])",
+    "InteractionActivity Zod schema validates correctly",
+    "All types are defined in packages/core/src/types/outputs.ts",
+    "All Zod schemas are defined in packages/core/src/schema/outputs.ts",
+    "Type tests exist in types/__tests__/outputs.test.ts for each new type",
+    "Schema tests exist in schema/__tests__/outputs.test.ts for each new schema",
+]
+
+[context]
+files_to_modify = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/types/__tests__/outputs.test.ts",
+    "packages/core/src/schema/__tests__/outputs.test.ts",
+]
+
+[notes]
+implementation_hints = """
+Add the new types alongside the existing ones (don't remove old types yet — S003 does that).
+
+EntityProperty replaces EntityPropertyDef with a richer type enum from the book:
+- id: identifier fields (e.g., board_id, user_id)
+- calculated: computed at query time (e.g., board_number_assets)
+- experimental: temporary properties being tested
+- temporary: properties with a planned removal date
+- string/number/boolean/array: standard types
+
+The variations field on EntityProperty is optional and used for calculated properties
+(e.g., "1-30, 31-80, 81-150, 150+" for board_number_assets).
+
+ProductActivity.activity_properties captures event-specific additions that only make
+sense for that lifecycle transition (e.g., share_method on a 'shared' activity).
+
+CustomerActivity.derivation_rule is a human-readable string describing how this
+customer stage is derived from product activities, e.g.:
+"Board shared (first time) OR Asset created/updated (30+ times)"
+"""

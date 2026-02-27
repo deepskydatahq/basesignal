@@ -13,6 +13,15 @@ import {
   LifecycleStateSchema,
   StateTransitionSchema,
   LifecycleStatesResultSchema,
+  EntityPropertyTypeSchema,
+  EntityPropertySchema,
+  ProductActivitySchema,
+  CustomerActivitySchema,
+  InteractionActivitySchema,
+  ProductEntitySchema,
+  CustomerEntitySchema,
+  InteractionEntitySchema,
+  EntityJsonSchemaSchema,
 } from "../outputs";
 
 const validICPProfile = {
@@ -64,31 +73,58 @@ const validTrackingEvent = {
   category: "engagement",
 };
 
+const validEntityProperty = {
+  name: "board_id",
+  type: "id" as const,
+  description: "Unique board identifier",
+  isRequired: true,
+};
+
+const validProductEntity = {
+  id: "board",
+  name: "Board",
+  description: "A collaborative whiteboard",
+  isHeartbeat: true,
+  properties: [validEntityProperty],
+  activities: [
+    { name: "created", properties_supported: ["board_id"], activity_properties: [] },
+    {
+      name: "shared",
+      properties_supported: ["board_id"],
+      activity_properties: [
+        { name: "share_method", type: "string" as const, description: "How shared", isRequired: false },
+      ],
+    },
+  ],
+};
+
+const validCustomerEntity = {
+  name: "Customer",
+  properties: [{ name: "customer_id", type: "id" as const, description: "Customer ID", isRequired: true }],
+  activities: [
+    { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
+  ],
+};
+
+const validInteractionEntity = {
+  name: "Interaction",
+  properties: [{ name: "element_type", type: "string" as const, description: "Element type", isRequired: true }],
+  activities: [
+    { name: "element_clicked", properties_supported: ["element_type"] },
+    { name: "element_submitted", properties_supported: ["element_type"] },
+  ],
+};
+
 const validMeasurementSpec = {
-  entities: [
-    {
-      id: "ent-1",
-      name: "User",
-      description: "App user",
-      isHeartbeat: false,
-      properties: [validEntityPropDef],
-    },
-  ],
-  events: [validTrackingEvent],
-  total_events: 1,
-  coverage: {
-    activation_levels_covered: [1, 2],
-    value_moments_covered: ["vm-1"],
-    perspective_distribution: { customer: 0.5, product: 0.3, interaction: 0.2 },
+  perspectives: {
+    product: { entities: [validProductEntity] },
+    customer: { entities: [validCustomerEntity] },
+    interaction: { entities: [validInteractionEntity] },
   },
-  userStateModel: [
-    {
-      name: "Active",
-      definition: "Used in last 7 days",
-      criteria: [{ event_name: "page_view", condition: "count > 0" }],
-    },
+  jsonSchemas: [
+    { entityName: "Board", perspective: "product" as const, schema: { type: "object" } },
   ],
-  confidence: 0.8,
+  confidence: 0.85,
   sources: ["analysis"],
 };
 
@@ -186,6 +222,161 @@ describe("ValueMomentPrioritySchema", () => {
     expect(
       ValueMomentPrioritySchema.safeParse({ moment_id: "vm-1", priority: 4, relevance_reason: "R" })
         .success,
+    ).toBe(false);
+  });
+});
+
+// --- Double Three-Layer Framework Schemas ---
+
+describe("EntityPropertySchema", () => {
+  it.each(["string", "number", "boolean", "array", "id", "calculated", "experimental", "temporary"])(
+    "accepts type '%s'",
+    (val) => {
+      expect(
+        EntityPropertySchema.safeParse({ ...validEntityProperty, type: val }).success,
+      ).toBe(true);
+    },
+  );
+
+  it("rejects unknown type", () => {
+    expect(
+      EntityPropertySchema.safeParse({ ...validEntityProperty, type: "object" }).success,
+    ).toBe(false);
+  });
+
+  it("accepts optional variations", () => {
+    expect(
+      EntityPropertySchema.safeParse({ ...validEntityProperty, variations: "1-30, 31-80" }).success,
+    ).toBe(true);
+  });
+
+  it("accepts absent variations", () => {
+    expect(EntityPropertySchema.safeParse(validEntityProperty).success).toBe(true);
+  });
+
+  it("rejects empty name", () => {
+    expect(
+      EntityPropertySchema.safeParse({ ...validEntityProperty, name: "" }).success,
+    ).toBe(false);
+  });
+});
+
+describe("ProductActivitySchema", () => {
+  it("accepts valid activity with nested activity_properties", () => {
+    expect(
+      ProductActivitySchema.safeParse({
+        name: "shared",
+        properties_supported: ["board_id"],
+        activity_properties: [
+          { name: "share_method", type: "string", description: "How shared", isRequired: false },
+        ],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects empty name", () => {
+    expect(
+      ProductActivitySchema.safeParse({ name: "", properties_supported: [], activity_properties: [] }).success,
+    ).toBe(false);
+  });
+});
+
+describe("CustomerActivitySchema", () => {
+  it("accepts valid activity", () => {
+    expect(
+      CustomerActivitySchema.safeParse({
+        name: "first_value_created",
+        derivation_rule: "Board shared (first time)",
+        properties_used: ["customer_id"],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects empty derivation_rule", () => {
+    expect(
+      CustomerActivitySchema.safeParse({
+        name: "first_value_created",
+        derivation_rule: "",
+        properties_used: [],
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("InteractionActivitySchema", () => {
+  it("accepts valid activity", () => {
+    expect(
+      InteractionActivitySchema.safeParse({
+        name: "element_clicked",
+        properties_supported: ["element_type"],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects empty name", () => {
+    expect(
+      InteractionActivitySchema.safeParse({ name: "", properties_supported: [] }).success,
+    ).toBe(false);
+  });
+});
+
+describe("ProductEntitySchema", () => {
+  it("accepts valid entity", () => {
+    expect(ProductEntitySchema.safeParse(validProductEntity).success).toBe(true);
+  });
+
+  it("rejects invalid id format (uppercase)", () => {
+    expect(
+      ProductEntitySchema.safeParse({ ...validProductEntity, id: "Board" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects missing activities", () => {
+    const { activities, ...rest } = validProductEntity;
+    expect(ProductEntitySchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("CustomerEntitySchema", () => {
+  it("accepts valid entity", () => {
+    expect(CustomerEntitySchema.safeParse(validCustomerEntity).success).toBe(true);
+  });
+
+  it("rejects missing name", () => {
+    const { name, ...rest } = validCustomerEntity;
+    expect(CustomerEntitySchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("InteractionEntitySchema", () => {
+  it("accepts valid entity", () => {
+    expect(InteractionEntitySchema.safeParse(validInteractionEntity).success).toBe(true);
+  });
+
+  it("rejects missing name", () => {
+    const { name, ...rest } = validInteractionEntity;
+    expect(InteractionEntitySchema.safeParse(rest).success).toBe(false);
+  });
+});
+
+describe("EntityJsonSchemaSchema", () => {
+  it("accepts valid schema", () => {
+    expect(
+      EntityJsonSchemaSchema.safeParse({
+        entityName: "Board",
+        perspective: "product",
+        schema: { type: "object", properties: {} },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects invalid perspective", () => {
+    expect(
+      EntityJsonSchemaSchema.safeParse({
+        entityName: "Board",
+        perspective: "invalid",
+        schema: {},
+      }).success,
     ).toBe(false);
   });
 });

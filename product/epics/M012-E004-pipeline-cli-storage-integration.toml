@@ -1,0 +1,89 @@
+# Epic: Pipeline, CLI, and Storage Integration
+# Wire the new MeasurementSpec through the pipeline, CLI, storage, and MCP tools.
+
+id = "M012-E004"
+mission = "M012"
+title = "Pipeline, CLI, and Storage Integration"
+status = "draft"
+created = 2026-02-27
+depends_on = ["M012-E002", "M012-E003"]
+
+[outcome]
+description = """
+Running `basesignal scan <url>` produces the new Double Three-Layer measurement spec
+end-to-end. The pipeline generates it, the CLI persists it to outputs/measurement-spec.json,
+the profile includes it, completeness scoring accounts for it, CLI formatters render it
+in summary and markdown formats, and the updateDefinition MCP tool handles it. All
+integration tests, pipeline tests, CLI tests, and mock fixtures are updated. A real scan
+of amplitude.com produces a measurement spec following the framework.
+"""
+
+[scope]
+in_scope = [
+    "Update OutputsResult in outputs/index.ts for new MeasurementSpec type",
+    "Update generateAllOutputs to call generateMeasurementSpec with correct inputs",
+    "Update generateAllOutputs to call generateEntityJsonSchemas on the parsed result",
+    "Update pipeline.ts if any type changes needed",
+    "Update analysis/types.ts re-exports for new MeasurementSpec",
+    "Update CLI scan.ts: persist new measurement-spec.json structure",
+    "Update CLI scan.ts: include new MeasurementSpec in profile",
+    "Update CLI formatters.ts: render perspectives, entities, activities in summary format",
+    "Update CLI formatters.ts: render measurement spec in markdown format",
+    "Update completeness.ts: measurement_spec presence check works with new shape",
+    "Update completeness.test.ts",
+    "Update updateDefinition.ts MCP tool for new measurement_spec shape",
+    "Update storage/src/types.ts if needed (measurement_spec stays Record<string, unknown>)",
+    "Update generate-all-outputs.test.ts with new fixtures",
+    "Update pipeline.test.ts with new assertions",
+    "Update scan.test.ts with new measurement spec shape",
+    "Update mock-llm.ts fixtures for new output format",
+    "Validate with real scan (amplitude.com or similar)",
+]
+out_of_scope = [
+    "Core type definitions (E001)",
+    "LLM prompt/parser changes (E002)",
+    "JSON Schema generation logic (E003)",
+    "Migration tool for old profiles",
+]
+
+[testing]
+criteria = [
+    "generateAllOutputs returns new MeasurementSpec shape with perspectives and jsonSchemas",
+    "CLI saves measurement-spec.json with new structure",
+    "CLI summary format shows perspective breakdown (N product entities, M activities)",
+    "CLI markdown format renders entities with their activities",
+    "completeness score includes measurement_spec (still 1/6)",
+    "updateDefinition handles new measurement_spec shape without errors",
+    "All generate-all-outputs.test.ts tests pass",
+    "All pipeline.test.ts tests pass",
+    "All scan.test.ts tests pass",
+    "npm run build succeeds across all packages",
+    "npm run test:run passes",
+]
+
+[notes]
+considerations = """
+This is the integration epic that ties everything together. It depends on E002 (parser
+produces new types) and E003 (JSON Schema generation is available to call).
+
+Key integration points from exploration:
+1. outputs/index.ts line 103: generateMeasurementSpec call — update input assembly
+2. outputs/index.ts line 19: OutputsResult.measurement_spec type
+3. pipeline.ts line 96: measurement_spec initialization
+4. scan.ts lines 125-127: profile.measurement_spec assignment
+5. scan.ts lines 183-184: productDir.writeJson for measurement-spec.json
+6. completeness.ts line 39: measurement_spec presence check
+7. updateDefinition.ts line 130: measurement_spec reference
+8. formatters.ts: currently NO explicit measurement spec rendering — this epic ADDS it
+
+The CLI formatter addition is new work, not just updating existing code. The current
+summary and markdown formats don't render measurement spec at all. This epic adds:
+- Summary: "Measurement Spec: 5 product entities, 23 activities, 1 customer entity (11 stages)"
+- Markdown: Full perspective breakdown with entity names and activity lists
+
+Mock LLM fixtures need a complete new measurement spec response in the new format.
+This is the foundation for all integration tests.
+
+Storage stays as Record<string, unknown> — no type change needed in the storage package.
+The shape change is transparent to storage since it serializes as JSON.
+"""

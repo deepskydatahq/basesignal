@@ -1,0 +1,88 @@
+# Epic: Core Types and Zod Schemas
+# Replace MeasurementSpec type hierarchy with perspective-grouped, entity-centric structure.
+
+id = "M012-E001"
+mission = "M012"
+title = "Core Types and Zod Schemas"
+status = "draft"
+created = 2026-02-27
+depends_on = []
+
+[outcome]
+description = """
+The @basesignal/core package defines the new MeasurementSpec type following the Double
+Three-Layer Framework. The type is perspective-grouped (customer, product, interaction),
+entity-centric (activities nested inside entities), with entity-level properties and
+per-activity properties_supported declarations. Customer activities have derivation_rule
+fields. Interaction activities are generic with contextual properties. An EntityJsonSchema
+type represents the per-entity JSON Schema output. All types have matching Zod schemas.
+The old types (TrackingEvent, EventProperty, flat events array) are removed. All core
+package tests pass.
+"""
+
+[scope]
+in_scope = [
+    "New ProductEntity type: id, name, description, isHeartbeat, properties[], activities[]",
+    "New ProductActivity type: name (past-tense), properties_supported[] (refs to entity property names), activity_properties[] (activity-specific)",
+    "New CustomerEntity type: name, properties[], activities[]",
+    "New CustomerActivity type: name, derivation_rule (string describing composition from product activities), properties_used[]",
+    "New InteractionEntity type: name, properties[], activities[]",
+    "New InteractionActivity type: name, properties_supported[]",
+    "New EntityProperty type: name, type (string|number|boolean|array|id|calculated|experimental|temporary), description, isRequired, variations? (string)",
+    "New PerspectiveLayer type with entities array",
+    "New MeasurementSpec type: { perspectives: { customer, product, interaction }, jsonSchemas[], confidence, sources, warnings? }",
+    "New EntityJsonSchema type: { entityName, perspective, schema (JSON Schema object) }",
+    "Zod schemas for all new types",
+    "Remove old types: TrackingEvent, EventProperty, MapsTo, flat events/entities arrays",
+    "Keep: UserState, UserStateCriterion (still useful for lifecycle states reference)",
+    "Keep: Perspective type (still 'customer' | 'product' | 'interaction')",
+    "Update type exports in core/src/index.ts",
+    "Update schema exports in core/src/schema/index.ts",
+    "Update types/__tests__/outputs.test.ts",
+    "Update schema/__tests__/outputs.test.ts",
+]
+out_of_scope = [
+    "LLM prompt changes (E002)",
+    "Parser/validator changes (E002)",
+    "JSON Schema generation logic (E003)",
+    "Pipeline/CLI/storage integration (E004)",
+]
+
+[testing]
+criteria = [
+    "MeasurementSpec type has perspectives.customer, perspectives.product, perspectives.interaction",
+    "Each perspective has an entities array",
+    "ProductEntity has activities: ProductActivity[] with properties_supported",
+    "CustomerActivity has derivation_rule: string",
+    "InteractionActivity has properties_supported referencing entity properties",
+    "EntityJsonSchema type captures per-entity JSON Schema structure",
+    "All Zod schemas validate matching test fixtures",
+    "Old types (TrackingEvent, EventProperty, MapsTo) are removed",
+    "npm run build succeeds for @basesignal/core",
+    "Core package tests pass",
+]
+
+[notes]
+considerations = """
+Key finding from codebase exploration:
+
+Only MeasurementSpec is imported outside core. All sub-types (TrackingEvent,
+EntityDefinition, EventProperty, MapsTo, etc.) are internal — used only within
+core type definitions and mcp-server's parser. This means we can freely redesign
+the internal type hierarchy without breaking external consumers, as long as the
+top-level MeasurementSpec shape is correct.
+
+The EntityProperty type gains richer type options from the book:
+- id: identifier fields
+- calculated: computed at query time (e.g., board_number_assets)
+- experimental: temporary properties being tested
+- temporary: properties with a planned removal date
+- string/number/boolean/array: standard types
+
+Note: This epic will temporarily break mcp-server (parser expects old types).
+E002 fixes that. Build the types first so E002 has a target to parse into.
+
+PerspectiveDistribution changes from a counted metric to a structural fact:
+the distribution is determined by how many entities and activities exist
+in each perspective, not by counting flat events.
+"""

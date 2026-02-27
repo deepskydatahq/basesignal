@@ -168,141 +168,104 @@ export const ACTIVATION_MAP_RESPONSE = JSON.stringify({
 });
 
 export const MEASUREMENT_SPEC_RESPONSE = JSON.stringify({
-  entities: [
-    {
-      id: "board",
-      name: "Board",
-      description: "A project board for tracking work",
-      isHeartbeat: false,
-      properties: [
-        { name: "board_id", type: "string", description: "Unique board identifier", isRequired: true },
+  perspectives: {
+    product: {
+      entities: [
+        {
+          id: "board",
+          name: "Board",
+          description: "A project board for tracking work",
+          isHeartbeat: false,
+          properties: [
+            { name: "board_id", type: "id", description: "Unique board identifier", isRequired: true },
+            { name: "board_name", type: "string", description: "Board name", isRequired: false },
+          ],
+          activities: [
+            { name: "created", properties_supported: ["board_id", "board_name"], activity_properties: [] },
+            { name: "updated", properties_supported: ["board_id"], activity_properties: [] },
+            { name: "deleted", properties_supported: ["board_id"], activity_properties: [] },
+          ],
+        },
+        {
+          id: "issue",
+          name: "Issue",
+          description: "A trackable work item",
+          isHeartbeat: true,
+          properties: [
+            { name: "issue_id", type: "id", description: "Unique issue identifier", isRequired: true },
+            { name: "status", type: "string", description: "Current status", isRequired: true },
+            { name: "priority", type: "string", description: "Issue priority", isRequired: false },
+          ],
+          activities: [
+            { name: "created", properties_supported: ["issue_id", "status", "priority"], activity_properties: [] },
+            { name: "updated", properties_supported: ["issue_id", "status"], activity_properties: [] },
+            { name: "completed", properties_supported: ["issue_id", "status"], activity_properties: [] },
+            { name: "deleted", properties_supported: ["issue_id"], activity_properties: [] },
+          ],
+        },
+        {
+          id: "sprint",
+          name: "Sprint",
+          description: "A time-boxed iteration",
+          isHeartbeat: false,
+          properties: [
+            { name: "sprint_id", type: "id", description: "Unique sprint identifier", isRequired: true },
+            { name: "sprint_name", type: "string", description: "Sprint name", isRequired: false },
+          ],
+          activities: [
+            { name: "created", properties_supported: ["sprint_id", "sprint_name"], activity_properties: [] },
+            { name: "completed", properties_supported: ["sprint_id"], activity_properties: [] },
+          ],
+        },
+        {
+          id: "user",
+          name: "User",
+          description: "A product user",
+          isHeartbeat: false,
+          properties: [
+            { name: "user_id", type: "id", description: "Unique user identifier", isRequired: true },
+            { name: "user_role", type: "string", description: "User role", isRequired: false },
+          ],
+          activities: [
+            { name: "invited", properties_supported: ["user_id", "user_role"], activity_properties: [] },
+            { name: "created", properties_supported: ["user_id"], activity_properties: [] },
+            { name: "deleted", properties_supported: ["user_id"], activity_properties: [] },
+          ],
+        },
       ],
     },
-    {
-      id: "issue",
-      name: "Issue",
-      description: "A trackable work item",
-      isHeartbeat: true,
-      properties: [
-        { name: "issue_id", type: "string", description: "Unique issue identifier", isRequired: true },
-        { name: "status", type: "string", description: "Current status", isRequired: true },
+    customer: {
+      entities: [
+        {
+          name: "Customer",
+          properties: [
+            { name: "customer_id", type: "id", description: "Customer identifier", isRequired: true },
+          ],
+          activities: [
+            { name: "first_value_created", derivation_rule: "Issue created (first time) OR Board created (3+ times)", properties_used: ["customer_id"] },
+            { name: "value_repeated", derivation_rule: "Issue completed (5+ in last 30 days)", properties_used: ["customer_id"] },
+            { name: "expansion_started", derivation_rule: "User invited (first time)", properties_used: ["customer_id"] },
+          ],
+        },
       ],
     },
-    {
-      id: "sprint",
-      name: "Sprint",
-      description: "A time-boxed iteration",
-      isHeartbeat: false,
-      properties: [
-        { name: "sprint_id", type: "string", description: "Unique sprint identifier", isRequired: true },
+    interaction: {
+      entities: [
+        {
+          name: "Interaction",
+          properties: [
+            { name: "element_type", type: "string", description: "Type of UI element", isRequired: true },
+            { name: "element_text", type: "string", description: "Visible text", isRequired: false },
+            { name: "element_position", type: "string", description: "Location on page", isRequired: false },
+          ],
+          activities: [
+            { name: "element_clicked", properties_supported: ["element_type", "element_text", "element_position"] },
+            { name: "element_submitted", properties_supported: ["element_type", "element_text"] },
+          ],
+        },
       ],
     },
-    {
-      id: "report",
-      name: "Report",
-      description: "A status report artifact",
-      isHeartbeat: false,
-      properties: [
-        { name: "report_id", type: "string", description: "Unique report identifier", isRequired: true },
-      ],
-    },
-    {
-      id: "user",
-      name: "User",
-      description: "A product user",
-      isHeartbeat: false,
-      properties: [
-        { name: "user_id", type: "string", description: "Unique user identifier", isRequired: true },
-      ],
-    },
-  ],
-  events: [
-    {
-      name: "board_created",
-      entity_id: "board",
-      description: "User creates a new board",
-      perspective: "customer",
-      properties: [
-        { name: "board_name", type: "string", description: "Name of the board", required: true },
-        { name: "template_used", type: "boolean", description: "Whether a template was used", required: false },
-      ],
-      trigger_condition: "When user clicks Create Board",
-      maps_to: { type: "activation_level", activation_level: 1 },
-      category: "activation",
-    },
-    {
-      name: "issue_created",
-      entity_id: "issue",
-      description: "User creates a new issue",
-      perspective: "customer",
-      properties: [
-        { name: "issue_title", type: "string", description: "Title of the issue", required: true },
-        { name: "priority", type: "string", description: "Issue priority", required: false },
-      ],
-      trigger_condition: "When user creates an issue",
-      maps_to: { type: "value_moment", moment_id: "moment-cluster-0" },
-      category: "value",
-    },
-    {
-      name: "sprint_completed",
-      entity_id: "sprint",
-      description: "Sprint is completed",
-      perspective: "interaction",
-      properties: [
-        { name: "issues_completed", type: "number", description: "Number of issues completed", required: true },
-        { name: "velocity", type: "number", description: "Sprint velocity", required: false },
-      ],
-      trigger_condition: "When sprint end date is reached",
-      maps_to: { type: "both", moment_id: "moment-cluster-1", activation_level: 3 },
-      category: "value",
-    },
-    {
-      name: "report_exported",
-      entity_id: "report",
-      description: "Report is exported as PDF",
-      perspective: "product",
-      properties: [
-        { name: "format", type: "string", description: "Export format", required: true },
-        { name: "recipient_count", type: "number", description: "Number of recipients", required: false },
-      ],
-      trigger_condition: "When user clicks Export Report",
-      maps_to: { type: "value_moment", moment_id: "moment-cluster-2" },
-      category: "expansion",
-    },
-    {
-      name: "user_invited",
-      entity_id: "user",
-      description: "Team member invited",
-      perspective: "customer",
-      properties: [
-        { name: "invitee_role", type: "string", description: "Role of invited user", required: true },
-        { name: "invite_method", type: "string", description: "How the invite was sent", required: false },
-      ],
-      trigger_condition: "When user sends team invite",
-      maps_to: { type: "activation_level", activation_level: 2 },
-      category: "expansion",
-    },
-    {
-      name: "user_returned",
-      entity_id: "user",
-      description: "User returns to the product",
-      perspective: "interaction",
-      properties: [
-        { name: "days_since_last", type: "number", description: "Days since last session", required: true },
-        { name: "entry_point", type: "string", description: "Where the user entered", required: false },
-      ],
-      trigger_condition: "User opens app after > 24 hours",
-      maps_to: { type: "activation_level", activation_level: 2 },
-      category: "retention",
-    },
-  ],
-  userStateModel: [
-    { name: "new", definition: "Users who signed up but haven't created a board", criteria: [{ event_name: "board_created", condition: "no board_created event within 7 days of signup" }] },
-    { name: "activated", definition: "Users who have created a board and invited members", criteria: [{ event_name: "user_invited", condition: "at least 2 user_invited events" }] },
-    { name: "active", definition: "Users who complete issues regularly", criteria: [{ event_name: "issue_created", condition: "at least 3 issue_created events in last 7 days" }] },
-    { name: "at_risk", definition: "Users showing declining engagement", criteria: [{ event_name: "user_returned", condition: "days_since_last > 7 and < 30" }] },
-    { name: "dormant", definition: "Users who have stopped engaging", criteria: [{ event_name: "user_returned", condition: "days_since_last > 30" }] },
-  ],
+  },
   confidence: 0.7,
 });
 

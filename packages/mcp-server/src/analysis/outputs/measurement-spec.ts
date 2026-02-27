@@ -1,7 +1,12 @@
-// Measurement Spec generation.
+// Measurement Spec generation — Double Three-Layer Framework.
 
 import type { LlmProvider, ValueMoment, ICPProfile, LifecycleStatesResult } from "../types.js";
-import type { ActivationLevel, MeasurementSpec } from "@basesignal/core";
+import type {
+  ActivationLevel,
+  MeasurementSpec,
+  EntityJsonSchema,
+  EntityPropertyType,
+} from "@basesignal/core";
 import type { ActivationMapResult } from "./activation-map.js";
 import { extractJson } from "@basesignal/core";
 
@@ -33,125 +38,195 @@ interface ValueEventTemplate {
 
 // --- System Prompt ---
 
-export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification. You MUST define entities first, then generate events that reference those entities.
+export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification using the **Double Three-Layer Framework**.
 
-## Step 1: Define Entities (5-10)
-Before generating events, define the key entities in the product domain. Each entity represents a core object that users interact with.
+The Double Three-Layer Framework organizes tracking into three perspectives (Product, Customer, Interaction), each composed of three building blocks (Entities, Activities, Properties). Your task is to analyze the product context and produce a complete measurement specification.
+
+## Step 1: Discover Product Entities (3-7)
+
+Identify the core objects in the product domain. Each entity represents a thing with a unique ID and a distinct lifecycle.
 
 Entity schema:
-- id: lowercase identifier matching /^[a-z][a-z0-9_]*$/ (e.g., "issue", "board", "cycle")
-- name: human-readable name (e.g., "Issue", "Board", "Cycle")
+- id: lowercase identifier matching /^[a-z][a-z0-9_]*$/ (e.g., "board", "asset", "subscription")
+- name: human-readable name (e.g., "Board", "Asset", "Subscription")
 - description: what this entity represents in the product
-- isHeartbeat: true for exactly ONE entity that represents the core unit of value (e.g., "issue" for a project tracker)
-- properties: array of entity properties, each with:
-  - name: snake_case property name
-  - type: one of "string", "number", "boolean", "array"
-  - description: what this property captures
-  - isRequired: true or false
+- isHeartbeat: true for exactly ONE entity that represents the core unit of value (e.g., "board" for Miro)
+- properties: array of entity-level properties (see Step 3)
+- activities: array of lifecycle activities (see Step 2)
 
-Generate 5-10 entities that represent the core objects users interact with. Exactly one entity must have isHeartbeat: true.
+Quality test for each entity: "Does it have a unique ID and a distinct lifecycle?"
 
-## Step 2: Generate Events
-Every event MUST reference a defined entity via entity_id.
+Aim for 3-7 entities. If you find more than 7, challenge whether each truly has a distinct lifecycle. More than 7 is allowed but should be justified.
 
-### Event Naming Rules
-Every event name MUST match this regex: /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/
-This means: entity_action format using lowercase letters, digits, and underscores.
-Examples: issue_created, cycle_completed, board_column_moved, feature_flag_toggled
+## Step 2: Define Activities (past-tense lifecycle markers)
 
-### Event Perspective
-Each event must specify a perspective indicating the viewpoint:
-- "customer": tracks user-initiated actions (e.g., user creates issue, user invites team)
-- "product": tracks system/product-generated events (e.g., insight delivered, report generated)
-- "interaction": tracks the interaction between customer and product (e.g., feature adopted, workflow completed)
+Activities nest inside entities. Each entity defines its lifecycle through past-tense activity names.
 
-### Event Categories
-Each event must have exactly one category:
-- activation: User progresses toward activation (e.g., completes onboarding step, creates first item)
-- value: User experiences a value moment (e.g., shares dashboard, gets first insight)
-- retention: User returns or re-engages (e.g., opens app again, resumes workflow)
-- expansion: User deepens usage (e.g., invites team member, enables integration)
+ProductActivity schema:
+- name: past-tense lifecycle marker (e.g., "created", "shared", "deleted")
+- properties_supported: array of entity property names captured with this activity
+- activity_properties: array of EntityProperty objects specific to this activity only
 
-### maps_to Requirement
-Every event MUST map to a value moment, activation level, or both. Use this discriminated union format:
-- { "type": "value_moment", "moment_id": "<id>" } — maps to a specific value moment
-- { "type": "activation_level", "activation_level": <number> } — maps to an activation level
-- { "type": "both", "moment_id": "<id>", "activation_level": <number> } — maps to both
+Quality test for each activity: "Does this prove or unlock user value?"
+If the answer is no, it does NOT belong in the product layer.
 
-### Property Requirements
-Each event must include at least 2 properties. Each property has:
-- name: snake_case property name
-- type: one of "string", "number", "boolean", "array"
+IMPORTANT: Do NOT include UI-level interactions like clicked_button, viewed_page, scrolled_to, hovered_element. These belong in the Interaction layer (Step 5), not the Product layer.
+
+Examples of good product activities: created, updated, viewed, shared, presented, deleted, invited, canceled, commented, exported, imported, archived, published, merged.
+
+## Step 3: Design Properties (entity-level catalog)
+
+Properties live at the entity level, NOT per-activity. Activities declare which properties they support via properties_supported.
+
+EntityProperty schema:
+- name: snake_case property name (e.g., "board_id", "board_number_assets")
+- type: one of "id", "string", "number", "boolean", "array", "calculated", "experimental", "temporary"
 - description: what this property captures
-- required: true or false
+- isRequired: true or false
+- variations: (optional) for calculated properties, describe value ranges (e.g., "1-30, 31-80, 81-150, 150+")
 
-Event properties should be event-specific additions. Avoid duplicating property names from the parent entity.
+Property types explained:
+- id: identifier fields (board_id, user_id) — stored as string
+- string: text fields (board_name, share_method)
+- number: numeric fields (board_number_assets, asset_size)
+- boolean: true/false flags (is_public, is_template)
+- array: list fields (tags, collaborator_ids)
+- calculated: computed at query time (board_number_assets, days_since_created)
+- experimental: properties being tested, may be removed
+- temporary: properties with planned removal date
 
-### Target
-Generate 15-25 events that cover:
-- All activation level criteria (at least one event per level)
-- Key value moments (especially Tier 1 and Tier 2)
-- Retention signals (returning users, repeated engagement)
-- Expansion signals (team growth, feature adoption)
+Instruction: Support as many properties as possible within all activities. Each activity should declare in properties_supported which entity properties are relevant for that activity.
 
-### Perspective Balance
-You MUST include events from ALL three perspectives:
-- At least 40-60% customer perspective (user-initiated actions)
-- At least 15-25% product perspective (system/product-generated events)
-- At least 15-25% interaction perspective (user-product interaction outcomes)
+Activity-specific properties (activity_properties) are rare — only use them for properties that ONLY make sense for one specific activity (e.g., "share_method" only applies to "shared").
 
-If the input context is primarily user-experiential, infer product-generated events from
-the product surfaces and features mentioned. Every product that delivers value also has
-system-initiated behaviors (notifications, reports, recommendations, automations, alerts).
+## Step 4: Compose Customer Journey (derived activities)
 
-## Step 3: User State Model
-Define a user state model representing the user lifecycle. Each state has:
-- name: state identifier
-- definition: human-readable description of what this state means
-- criteria: array of { event_name, condition } pairs that define transitions into this state
+Define a single Customer entity with activities derived from product activities. Customer activities represent journey stages, not raw events.
 
-If lifecycle states are provided in the context below, derive your user state model from them.
-Otherwise, define 5 representative states: new, activated, active, at_risk, dormant.
+CustomerActivity schema:
+- name: journey stage name (e.g., "first_value_created", "value_repeated", "expansion_started")
+- derivation_rule: human-readable rule composed from product activities with filters/thresholds
+- properties_used: array of property names used in the derivation
+
+Derivation rule examples:
+- "Board viewed (first time, anonymous)" → user's first encounter
+- "Board shared (first time) OR Asset created/updated (30+ times)" → first value created
+- "Board shared (2+ times in last 30 days) AND Asset created (50+ times)" → value repeated
+- "User invited (first time)" → expansion started
+
+The customer entity should have its own properties (e.g., customer_id, signup_date, account_type).
+
+## Step 5: Define Interaction Layer (generic tracking)
+
+Define a single Interaction entity for UI-level tracking. This captures the interactions that Step 2 explicitly excludes from product entities.
+
+InteractionActivity schema:
+- name: generic interaction type (e.g., "element_clicked", "element_submitted")
+- properties_supported: array of contextual property names
+
+Standard interaction activities: element_clicked, element_submitted
+
+Standard contextual properties:
+- element_type: type of UI element (button, link, input, dropdown, etc.)
+- element_text: visible text or label of the element
+- element_position: location on page/screen (header, sidebar, main, footer)
+- element_target: navigation target or action endpoint
+- element_value: value of form fields or selected options
+- element_container: parent component or section containing the element
+
+## Reference Example: Miro
+
+Product perspective entities:
+- Account (created, updated, deleted) — properties: account_id, account_name, plan_type
+- User (invited, created, role_changed, removed_from_account, deleted) — properties: user_id, user_role, user_email
+- Board (joined, created, updated, viewed, shared, presented, deleted) — heartbeat — properties: board_id, board_name, board_number_assets, board_number_access
+- Asset (added, updated, deleted, commented) — properties: asset_id, asset_type, asset_size
+- Subscription (created, canceled, ended) — properties: subscription_id, plan_name, billing_cycle
+
+Customer perspective:
+- Customer (miro_experienced_first_time, first_value_created, value_repeated, expansion_started, ...)
+  - "first_value_created" derivation_rule: "Board shared (first time) OR Asset created/updated (30+ times)"
+  - "value_repeated" derivation_rule: "Board shared (2+ in last 30 days)"
+
+Interaction perspective:
+- Interaction (element_clicked, element_submitted) — properties: element_type, element_text, element_position, element_target, element_value, element_container
 
 ## Output Format
+
 Return a JSON object matching this exact schema:
 {
-  "entities": [
-    {
-      "id": "issue",
-      "name": "Issue",
-      "description": "A trackable work item",
-      "isHeartbeat": true,
-      "properties": [{ "name": "issue_id", "type": "string", "description": "Unique identifier", "isRequired": true }]
+  "perspectives": {
+    "product": {
+      "entities": [
+        {
+          "id": "board",
+          "name": "Board",
+          "description": "A collaborative whiteboard in Miro",
+          "isHeartbeat": true,
+          "properties": [
+            { "name": "board_id", "type": "id", "description": "Unique board identifier", "isRequired": true }
+          ],
+          "activities": [
+            {
+              "name": "created",
+              "properties_supported": ["board_id", "board_name"],
+              "activity_properties": []
+            },
+            {
+              "name": "shared",
+              "properties_supported": ["board_id", "board_name"],
+              "activity_properties": [
+                { "name": "share_method", "type": "string", "description": "How the board was shared", "isRequired": false }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "customer": {
+      "entities": [
+        {
+          "name": "Customer",
+          "properties": [
+            { "name": "customer_id", "type": "id", "description": "Customer identifier", "isRequired": true }
+          ],
+          "activities": [
+            {
+              "name": "first_value_created",
+              "derivation_rule": "Board shared (first time) OR Asset created/updated (30+ times)",
+              "properties_used": ["customer_id"]
+            }
+          ]
+        }
+      ]
+    },
+    "interaction": {
+      "entities": [
+        {
+          "name": "Interaction",
+          "properties": [
+            { "name": "element_type", "type": "string", "description": "Type of UI element", "isRequired": true },
+            { "name": "element_text", "type": "string", "description": "Visible text or label", "isRequired": false }
+          ],
+          "activities": [
+            { "name": "element_clicked", "properties_supported": ["element_type", "element_text"] },
+            { "name": "element_submitted", "properties_supported": ["element_type", "element_text"] }
+          ]
+        }
+      ]
     }
-  ],
-  "events": [
-    {
-      "name": "issue_created",
-      "entity_id": "issue",
-      "description": "What this event tracks",
-      "perspective": "customer",
-      "properties": [{ "name": "prop_name", "type": "string", "description": "...", "required": true }],
-      "trigger_condition": "When this event should fire",
-      "maps_to": { "type": "value_moment", "moment_id": "..." },
-      "category": "activation"
-    }
-  ],
-  "userStateModel": [
-    {
-      "name": "new",
-      "definition": "Users who signed up but haven't activated",
-      "criteria": [{ "event_name": "user_signed_up", "condition": "within last 7 days, no activation events" }]
-    }
-  ],
-  "confidence": 0.7
+  },
+  "confidence": 0.85
 }
 
 Rules:
 - Return ONLY valid JSON, no commentary before or after
 - confidence must be a number between 0 and 1
-- Every event.entity_id MUST reference a defined entity.id
-- Do NOT include total_events or coverage fields — they will be computed`;
+- Every product entity id must match /^[a-z][a-z0-9_]*$/
+- Exactly one product entity must have isHeartbeat: true
+- Every activity properties_supported entry must reference an entity property name
+- Every customer activity must have a derivation_rule
+- Do NOT include jsonSchemas — they will be computed`;
 
 // --- Prompt Builder ---
 
@@ -235,7 +310,7 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
 
   // Lifecycle States (when available from pipeline)
   if (input.lifecycle_states) {
-    sections.push("\n## Lifecycle States (use for userStateModel)");
+    sections.push("\n## Lifecycle States (use for customer journey derivation)");
     for (const state of input.lifecycle_states.states) {
       const criteria = state.entry_criteria
         .map((c) => `${c.event_name}: ${c.condition}`)
@@ -253,12 +328,7 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
   ];
 
   if (allProductSurfaces.length > 0 || input.identity) {
-    sections.push("\n## Product-Generated Events Guidance");
-    sections.push(
-      "The inputs above are primarily user-initiated (customer perspective). " +
-        "You MUST also generate product-perspective events — system-initiated actions " +
-        "that the product performs automatically. Aim for at least 3-5 product-perspective events.",
-    );
+    sections.push("\n## Product Context");
 
     if (allProductSurfaces.length > 0) {
       sections.push("\n**Product surfaces discovered from value moments:**");
@@ -266,9 +336,7 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
         sections.push(`- ${surface}`);
       }
       sections.push(
-        "\nFor each surface, consider what the product might do autonomously: " +
-          "generate reports, deliver insights, send notifications, compute recommendations, " +
-          "trigger automations, schedule digests, detect anomalies, etc.",
+        "\nUse these surfaces to identify product entities and their lifecycles.",
       );
     }
 
@@ -277,16 +345,11 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
         `\n**Product description (${input.identity.productName}):**`,
       );
       sections.push(input.identity.description);
-      sections.push(
-        "\nExtract any AI-powered, automated, or system-generated features mentioned above " +
-          "and create product-perspective events for them (e.g., insight_delivered, " +
-          "anomaly_detected, report_auto_generated, recommendation_surfaced).",
-      );
     }
   }
 
   sections.push(
-    "\nGenerate a measurement specification with trackable events based on the above inputs.",
+    "\nGenerate a measurement specification following the Double Three-Layer Framework based on the above inputs.",
   );
 
   return {
@@ -297,11 +360,8 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
 
 // --- Validation Constants ---
 const ENTITY_ID_RE = /^[a-z][a-z0-9_]*$/;
-const EVENT_NAME_RE = /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/;
-const VALID_PERSPECTIVES = new Set(["customer", "product", "interaction"]);
-const VALID_CATEGORIES = new Set(["activation", "value", "retention", "expansion"]);
 
-// --- Response Parser (simplified, trusts core types) ---
+// --- Response Parser ---
 
 export function parseMeasurementSpecResponse(
   responseText: string,
@@ -309,127 +369,289 @@ export function parseMeasurementSpecResponse(
   const parsed = extractJson(responseText) as Record<string, unknown>;
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Expected JSON object with entities and events arrays");
+    throw new Error("Expected JSON object with perspectives");
   }
 
-  if (!Array.isArray(parsed.entities)) {
-    throw new Error("Missing required field: entities (must be array)");
+  // Top-level structure
+  if (!parsed.perspectives || typeof parsed.perspectives !== "object") {
+    throw new Error("Missing required field: perspectives");
   }
-  if (!Array.isArray(parsed.events)) {
-    throw new Error("Missing required field: events (must be array)");
+
+  const perspectives = parsed.perspectives as Record<string, unknown>;
+
+  if (!perspectives.product || typeof perspectives.product !== "object") {
+    throw new Error("Missing required field: perspectives.product");
   }
+  if (!perspectives.customer || typeof perspectives.customer !== "object") {
+    throw new Error("Missing required field: perspectives.customer");
+  }
+  if (!perspectives.interaction || typeof perspectives.interaction !== "object") {
+    throw new Error("Missing required field: perspectives.interaction");
+  }
+
+  // Confidence
   if (typeof parsed.confidence !== "number") {
     throw new Error("Missing required field: confidence (must be number)");
   }
   if (parsed.confidence < 0 || parsed.confidence > 1) {
     throw new Error(`confidence must be between 0 and 1, got ${parsed.confidence}`);
   }
-  if (!Array.isArray(parsed.userStateModel)) {
-    throw new Error("Missing required field: userStateModel (must be array)");
+
+  const warnings: string[] = [];
+
+  // --- Validate product entities ---
+  const productPerspective = perspectives.product as Record<string, unknown>;
+  const productEntities = productPerspective.entities;
+  if (!Array.isArray(productEntities) || productEntities.length === 0) {
+    throw new Error("Product entities must be a non-empty array");
   }
 
-  // Minimal validation for entities
-  const entityIds = new Set<string>();
-  for (const entity of parsed.entities as Array<Record<string, unknown>>) {
+  for (const entity of productEntities as Array<Record<string, unknown>>) {
     if (typeof entity.id !== "string") {
-      throw new Error("Entity missing id");
+      throw new Error("Product entity missing id");
     }
-    entityIds.add(entity.id);
     if (!ENTITY_ID_RE.test(entity.id)) {
       throw new Error(
-        `Entity '${entity.id}': id must match /^[a-z][a-z0-9_]*$/ (lowercase, starts with letter, only letters/digits/underscores)`,
+        `Product entity '${entity.id}': id must match /^[a-z][a-z0-9_]*$/`,
       );
+    }
+
+    // Cross-reference: properties_supported must reference entity property names
+    const propertyNames = new Set(
+      (entity.properties as Array<Record<string, unknown>> || [])
+        .map((p) => p.name as string),
+    );
+    const activities = entity.activities as Array<Record<string, unknown>> || [];
+    for (const activity of activities) {
+      const supported = activity.properties_supported as string[] || [];
+      for (const propName of supported) {
+        if (!propertyNames.has(propName)) {
+          throw new Error(
+            `Product entity '${entity.id}', activity '${activity.name}': properties_supported references '${propName}' but no such property found on entity`,
+          );
+        }
+      }
     }
   }
 
-  // Heartbeat uniqueness validation
-  const heartbeatEntities = (parsed.entities as Array<Record<string, unknown>>)
+  // Heartbeat validation
+  const heartbeatEntities = (productEntities as Array<Record<string, unknown>>)
     .filter((e) => e.isHeartbeat === true);
   if (heartbeatEntities.length === 0) {
-    throw new Error("Exactly one entity must have isHeartbeat: true, but none found");
+    throw new Error("Exactly one product entity must have isHeartbeat: true, but none found");
   }
   if (heartbeatEntities.length > 1) {
     const ids = heartbeatEntities.map((e) => e.id).join(", ");
     throw new Error(
-      `Exactly one entity must have isHeartbeat: true, but found ${heartbeatEntities.length}: ${ids}`,
+      `Exactly one product entity must have isHeartbeat: true, but found ${heartbeatEntities.length}: ${ids}`,
     );
   }
 
-  // Minimal validation for events
-  for (const event of parsed.events as Array<Record<string, unknown>>) {
-    if (typeof event.name !== "string") {
-      throw new Error("Event missing name");
-    }
-    if (typeof event.entity_id !== "string" || !entityIds.has(event.entity_id)) {
-      throw new Error(`Event '${event.name}': entity_id '${event.entity_id}' not in defined entities`);
-    }
-    if (!EVENT_NAME_RE.test(event.name)) {
-      throw new Error(
-        `Event '${event.name}': name must match /^[a-z][a-z0-9]*_[a-z][a-z0-9_]*$/ (entity_action format)`,
-      );
-    }
-    const perspective = event.perspective as string;
-    if (!VALID_PERSPECTIVES.has(perspective)) {
-      throw new Error(
-        `Event '${event.name}': perspective must be one of [customer, product, interaction], got '${perspective}'`,
-      );
-    }
-    const category = event.category as string;
-    if (!VALID_CATEGORIES.has(category)) {
-      throw new Error(
-        `Event '${event.name}': category must be one of [activation, value, retention, expansion], got '${category}'`,
-      );
+  // Entity count warning
+  if (productEntities.length > 7) {
+    warnings.push(
+      `Product entity count (${productEntities.length}) exceeds recommended maximum of 7`,
+    );
+  }
+
+  // --- Validate customer entities ---
+  const customerPerspective = perspectives.customer as Record<string, unknown>;
+  const customerEntities = customerPerspective.entities;
+  if (!Array.isArray(customerEntities)) {
+    throw new Error("Customer entities must be an array");
+  }
+  for (const entity of customerEntities as Array<Record<string, unknown>>) {
+    const activities = entity.activities as Array<Record<string, unknown>> || [];
+    for (const activity of activities) {
+      if (typeof activity.derivation_rule !== "string" || !activity.derivation_rule) {
+        throw new Error(
+          `Customer activity '${activity.name}': derivation_rule is required`,
+        );
+      }
     }
   }
 
-  // Compute coverage
-  const events = parsed.events as Array<Record<string, unknown>>;
-  const activationLevelsCovered = [
-    ...new Set(
-      events
-        .filter((e) => {
-          const mt = e.maps_to as Record<string, unknown> | undefined;
-          return mt?.type === "activation_level" || mt?.type === "both";
-        })
-        .map((e) => (e.maps_to as Record<string, unknown>).activation_level as number)
-        .filter((n) => n !== undefined),
-    ),
-  ].sort((a, b) => a - b);
-
-  const valueMomentsCovered = [
-    ...new Set(
-      events
-        .filter((e) => {
-          const mt = e.maps_to as Record<string, unknown> | undefined;
-          return mt?.type === "value_moment" || mt?.type === "both";
-        })
-        .map((e) => (e.maps_to as Record<string, unknown>).moment_id as string)
-        .filter((s) => s !== undefined),
-    ),
-  ];
-
-  // Compute perspective distribution
-  const perspectiveDist = { customer: 0, product: 0, interaction: 0 };
-  for (const e of events) {
-    const p = e.perspective as string;
-    if (p in perspectiveDist) {
-      perspectiveDist[p as keyof typeof perspectiveDist]++;
+  // --- Validate interaction entities ---
+  const interactionPerspective = perspectives.interaction as Record<string, unknown>;
+  const interactionEntities = interactionPerspective.entities;
+  if (!Array.isArray(interactionEntities)) {
+    throw new Error("Interaction entities must be an array");
+  }
+  for (const entity of interactionEntities as Array<Record<string, unknown>>) {
+    const activities = entity.activities as Array<Record<string, unknown>> || [];
+    if (activities.length === 0) {
+      throw new Error(
+        `Interaction entity '${entity.name}': must have at least one activity`,
+      );
     }
   }
 
   return {
-    entities: parsed.entities as MeasurementSpec["entities"],
-    events: parsed.events as MeasurementSpec["events"],
-    total_events: events.length,
-    coverage: {
-      activation_levels_covered: activationLevelsCovered,
-      value_moments_covered: valueMomentsCovered,
-      perspective_distribution: perspectiveDist,
-    },
-    userStateModel: parsed.userStateModel as MeasurementSpec["userStateModel"],
+    perspectives: parsed.perspectives as MeasurementSpec["perspectives"],
+    jsonSchemas: [],
     confidence: parsed.confidence as number,
     sources: [],
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
+}
+
+// --- JSON Schema Generator ---
+
+function mapPropertyType(type: EntityPropertyType): Record<string, unknown> {
+  switch (type) {
+    case "string":
+    case "id":
+      return { type: "string" };
+    case "number":
+    case "calculated":
+      return { type: "number" };
+    case "boolean":
+      return { type: "boolean" };
+    case "array":
+      return { type: "array" };
+    case "experimental":
+    case "temporary":
+      return {};
+    default:
+      return { type: "string" };
+  }
+}
+
+export function generateEntityJsonSchemas(spec: MeasurementSpec): EntityJsonSchema[] {
+  const results: EntityJsonSchema[] = [];
+
+  // Product entities
+  for (const entity of spec.perspectives.product.entities) {
+    const properties: Record<string, unknown> = {
+      activity: {
+        type: "string",
+        enum: entity.activities.map((a) => a.name),
+        description: "The lifecycle activity performed on this entity",
+      },
+    };
+
+    // Entity-level properties
+    for (const prop of entity.properties) {
+      properties[prop.name] = {
+        ...mapPropertyType(prop.type),
+        description: prop.description,
+      };
+    }
+
+    // Activity-specific properties (deduplicated)
+    const activityPropsSeen = new Set<string>();
+    for (const activity of entity.activities) {
+      for (const prop of activity.activity_properties) {
+        if (!activityPropsSeen.has(prop.name)) {
+          activityPropsSeen.add(prop.name);
+          properties[prop.name] = {
+            ...mapPropertyType(prop.type),
+            description: prop.description,
+          };
+        }
+      }
+    }
+
+    const required = [
+      "activity",
+      ...entity.properties.filter((p) => p.isRequired).map((p) => p.name),
+    ];
+
+    results.push({
+      entityName: entity.name,
+      perspective: "product",
+      schema: {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        $id: `basesignal/product/${entity.id}/v1.0.json`,
+        title: entity.name,
+        description: entity.description,
+        type: "object",
+        properties,
+        required,
+        additionalProperties: false,
+      },
+    });
+  }
+
+  // Customer entities
+  for (const entity of spec.perspectives.customer.entities) {
+    const entityId = entity.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    const properties: Record<string, unknown> = {
+      activity: {
+        type: "string",
+        enum: entity.activities.map((a) => a.name),
+        description: "The customer journey stage",
+      },
+    };
+
+    for (const prop of entity.properties) {
+      properties[prop.name] = {
+        ...mapPropertyType(prop.type),
+        description: prop.description,
+      };
+    }
+
+    const required = [
+      "activity",
+      ...entity.properties.filter((p) => p.isRequired).map((p) => p.name),
+    ];
+
+    results.push({
+      entityName: entity.name,
+      perspective: "customer",
+      schema: {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        $id: `basesignal/customer/${entityId}/v1.0.json`,
+        title: entity.name,
+        description: `Customer journey entity: ${entity.name}`,
+        type: "object",
+        properties,
+        required,
+        additionalProperties: false,
+      },
+    });
+  }
+
+  // Interaction entities
+  for (const entity of spec.perspectives.interaction.entities) {
+    const entityId = entity.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    const properties: Record<string, unknown> = {
+      activity: {
+        type: "string",
+        enum: entity.activities.map((a) => a.name),
+        description: "The type of interaction",
+      },
+    };
+
+    for (const prop of entity.properties) {
+      properties[prop.name] = {
+        ...mapPropertyType(prop.type),
+        description: prop.description,
+      };
+    }
+
+    const required = [
+      "activity",
+      ...entity.properties.filter((p) => p.isRequired).map((p) => p.name),
+    ];
+
+    results.push({
+      entityName: entity.name,
+      perspective: "interaction",
+      schema: {
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        $id: `basesignal/interaction/${entityId}/v1.0.json`,
+        title: entity.name,
+        description: `Interaction tracking entity: ${entity.name}`,
+        type: "object",
+        properties,
+        required,
+        additionalProperties: false,
+      },
+    });
+  }
+
+  return results;
 }
 
 // --- Input assembly ---
@@ -495,5 +717,8 @@ export async function generateMeasurementSpec(
     ],
     { temperature: 0.2, maxTokens: 16384 },
   );
-  return parseMeasurementSpecResponse(responseText);
+  const spec = parseMeasurementSpecResponse(responseText);
+  // Populate JSON schemas
+  spec.jsonSchemas = generateEntityJsonSchemas(spec);
+  return spec;
 }

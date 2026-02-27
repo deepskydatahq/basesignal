@@ -81,6 +81,16 @@ export type {
   ActivationLevel,
   MeasurementInputData,
   OutputGenerationResult,
+  // Double Three-Layer Framework types
+  EntityPropertyType,
+  EntityProperty,
+  ProductActivity,
+  CustomerActivity,
+  InteractionActivity,
+  ProductEntity,
+  CustomerEntity,
+  InteractionEntity,
+  EntityJsonSchema,
 } from "./types/outputs";
 
 // --- Zod Runtime Validation Schemas ---

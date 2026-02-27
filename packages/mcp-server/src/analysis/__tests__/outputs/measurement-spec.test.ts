@@ -3,9 +3,10 @@ import {
   parseMeasurementSpecResponse,
   assembleMeasurementInput,
   buildMeasurementSpecPrompt,
+  generateEntityJsonSchemas,
   MEASUREMENT_SPEC_SYSTEM_PROMPT,
 } from "../../outputs/measurement-spec.js";
-import type { ActivationLevel, LifecycleStatesResult } from "@basesignal/core";
+import type { ActivationLevel, LifecycleStatesResult, MeasurementSpec } from "@basesignal/core";
 import type { ValueMoment, ICPProfile } from "../../types.js";
 
 const sampleLevels: ActivationLevel[] = [
@@ -73,6 +74,68 @@ const sampleICPs: ICPProfile[] = [
   },
 ];
 
+// --- Valid new-format spec JSON ---
+
+function makeValidSpecJson(overrides: Partial<{
+  productEntities: unknown[];
+  customerEntities: unknown[];
+  interactionEntities: unknown[];
+  confidence: number;
+}> = {}): string {
+  const defaultProductEntity = {
+    id: "board",
+    name: "Board",
+    description: "A collaborative whiteboard",
+    isHeartbeat: true,
+    properties: [
+      { name: "board_id", type: "id", description: "Unique board identifier", isRequired: true },
+      { name: "board_name", type: "string", description: "Board name", isRequired: false },
+    ],
+    activities: [
+      { name: "created", properties_supported: ["board_id", "board_name"], activity_properties: [] },
+      {
+        name: "shared",
+        properties_supported: ["board_id"],
+        activity_properties: [
+          { name: "share_method", type: "string", description: "How shared", isRequired: false },
+        ],
+      },
+    ],
+  };
+
+  const defaultCustomerEntity = {
+    name: "Customer",
+    properties: [
+      { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
+    ],
+    activities: [
+      { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
+    ],
+  };
+
+  const defaultInteractionEntity = {
+    name: "Interaction",
+    properties: [
+      { name: "element_type", type: "string", description: "Element type", isRequired: true },
+    ],
+    activities: [
+      { name: "element_clicked", properties_supported: ["element_type"] },
+      { name: "element_submitted", properties_supported: ["element_type"] },
+    ],
+  };
+
+  return JSON.stringify({
+    perspectives: {
+      product: { entities: overrides.productEntities ?? [defaultProductEntity] },
+      customer: { entities: overrides.customerEntities ?? [defaultCustomerEntity] },
+      interaction: { entities: overrides.interactionEntities ?? [defaultInteractionEntity] },
+    },
+    confidence: overrides.confidence ?? 0.85,
+  });
+}
+
+// --- assembleMeasurementInput ---
+
 describe("assembleMeasurementInput", () => {
   it("builds input data with event templates", () => {
     const input = assembleMeasurementInput(
@@ -87,24 +150,52 @@ describe("assembleMeasurementInput", () => {
     expect(input.icp_profiles).toHaveLength(1);
     expect(input.activation_map).toBeNull();
 
-    // Activation event templates
     expect(input.activation_event_templates).toHaveLength(1);
     expect(input.activation_event_templates[0].level).toBe(1);
     expect(input.activation_event_templates[0].suggested_event_name).toContain("activation_l1");
 
-    // Value event templates (only tier 1 and 2)
     expect(input.value_event_templates).toHaveLength(2);
     expect(input.value_event_templates[0].tier).toBeLessThanOrEqual(2);
     expect(input.value_event_templates[1].tier).toBeLessThanOrEqual(2);
   });
+
+  it("includes lifecycle_states when provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+      sampleLifecycleStates,
+    );
+    expect(input.lifecycle_states).toBeDefined();
+    expect(input.lifecycle_states!.states).toHaveLength(7);
+  });
+
+  it("lifecycle_states is undefined when not provided", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    expect(input.lifecycle_states).toBeUndefined();
+  });
+
+  it("includes identity when provided", () => {
+    const identity = { productName: "Linear", description: "Issue tracking tool" };
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null, undefined, identity);
+    expect(input.identity).toEqual(identity);
+  });
+
+  it("identity is undefined when not provided", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    expect(input.identity).toBeUndefined();
+  });
 });
+
+// --- buildMeasurementSpecPrompt ---
 
 describe("buildMeasurementSpecPrompt", () => {
   it("includes all sections in prompt", () => {
     const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
     const { system, user } = buildMeasurementSpecPrompt(input);
 
-    expect(system).toContain("measurement specification");
+    expect(system).toContain("Double Three-Layer Framework");
     expect(user).toContain("Value Moments Reference");
     expect(user).toContain("Activation Levels Reference");
     expect(user).toContain("ICP Profiles");
@@ -117,160 +208,480 @@ describe("buildMeasurementSpecPrompt", () => {
     const { user } = buildMeasurementSpecPrompt(input);
     expect(user).not.toContain("## ICP Profiles");
   });
+
+  it("includes lifecycle states section when provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments, sampleLevels, sampleICPs, null, sampleLifecycleStates,
+    );
+    const { user } = buildMeasurementSpecPrompt(input);
+    expect(user).toContain("## Lifecycle States");
+    expect(user).toContain("**new**: Just signed up");
+    expect(user).toContain("Entry criteria: signup: account created");
+  });
+
+  it("omits lifecycle states section when not provided", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    const { user } = buildMeasurementSpecPrompt(input);
+    expect(user).not.toContain("## Lifecycle States");
+  });
+
+  it("includes product context when surfaces exist", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    const { user } = buildMeasurementSpecPrompt(input);
+    expect(user).toContain("## Product Context");
+    expect(user).toContain("Sprint Planning");
+  });
+
+  it("includes identity description when provided", () => {
+    const input = assembleMeasurementInput(
+      sampleMoments, sampleLevels, sampleICPs, null, undefined,
+      { productName: "Amplitude", description: "Digital analytics platform" },
+    );
+    const { user } = buildMeasurementSpecPrompt(input);
+    expect(user).toContain("Amplitude");
+    expect(user).toContain("Digital analytics platform");
+  });
+
+  it("omits product context when no surfaces and no identity", () => {
+    const noSurfaceMoments = sampleMoments.map((m) => ({ ...m, product_surfaces: [] }));
+    const input = assembleMeasurementInput(noSurfaceMoments, sampleLevels, [], null);
+    const { user } = buildMeasurementSpecPrompt(input);
+    expect(user).not.toContain("## Product Context");
+  });
 });
 
+// --- MEASUREMENT_SPEC_SYSTEM_PROMPT ---
+
+describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
+  it("names the framework", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Double Three-Layer Framework");
+  });
+
+  it("has Step 1: Discover Product Entities", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 1: Discover Product Entities");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("3-7");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("heartbeat");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("/^[a-z][a-z0-9_]*$/");
+  });
+
+  it("has Step 2: Define Activities with quality test", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 2: Define Activities");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("past-tense");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Does this prove or unlock user value");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("clicked_button");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("viewed_page");
+  });
+
+  it("has Step 3: Design Properties with all 8 types", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 3: Design Properties");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("properties_supported");
+    for (const type of ["id", "string", "number", "boolean", "array", "calculated", "experimental", "temporary"]) {
+      expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(type);
+    }
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Support as many properties as possible");
+  });
+
+  it("has Step 4: Customer Journey with derivation_rule", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 4: Compose Customer Journey");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("derivation_rule");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Board shared (first time)");
+  });
+
+  it("has Step 5: Interaction Layer", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 5: Define Interaction Layer");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_clicked");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_submitted");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_type");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_text");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_position");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_target");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_container");
+  });
+
+  it("includes Miro reference example", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Miro");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Account");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("User");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Board");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Asset");
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Subscription");
+  });
+
+  it("includes output JSON schema with perspectives", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"perspectives"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"product"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"customer"');
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"interaction"');
+  });
+
+  it("instructs JSON-only output", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("ONLY valid JSON");
+  });
+});
+
+// --- parseMeasurementSpecResponse ---
+
 describe("parseMeasurementSpecResponse", () => {
-  it("parses valid measurement spec JSON", () => {
-    const input = JSON.stringify({
-      entities: [
-        {
-          id: "issue",
-          name: "Issue",
-          description: "A trackable work item",
-          isHeartbeat: true,
-          properties: [{ name: "issue_id", type: "string", description: "ID", isRequired: true }],
-        },
-      ],
-      events: [
-        {
-          name: "issue_created",
-          entity_id: "issue",
-          description: "User creates issue",
-          perspective: "customer",
-          properties: [
-            { name: "title", type: "string", description: "Title", required: true },
-            { name: "priority", type: "string", description: "Priority", required: false },
-          ],
-          trigger_condition: "When user creates issue",
-          maps_to: { type: "value_moment", moment_id: "vm-1" },
-          category: "value",
-        },
-      ],
-      userStateModel: [
-        { name: "new", definition: "Just signed up", criteria: [{ event_name: "issue_created", condition: "none yet" }] },
-        { name: "activated", definition: "Created first item", criteria: [{ event_name: "issue_created", condition: "at least 1" }] },
-        { name: "active", definition: "Regular user", criteria: [{ event_name: "issue_created", condition: "3+ per week" }] },
-        { name: "at_risk", definition: "Declining", criteria: [{ event_name: "issue_created", condition: "none in 7 days" }] },
-        { name: "dormant", definition: "Gone", criteria: [{ event_name: "issue_created", condition: "none in 30 days" }] },
-      ],
-      confidence: 0.7,
-    });
-
-    const result = parseMeasurementSpecResponse(input);
-    expect(result.entities).toHaveLength(1);
-    expect(result.events).toHaveLength(1);
-    expect(result.total_events).toBe(1);
-    expect(result.userStateModel).toHaveLength(5);
-    expect(result.confidence).toBe(0.7);
-    expect(result.coverage.value_moments_covered).toContain("vm-1");
+  it("parses valid new-format measurement spec", () => {
+    const result = parseMeasurementSpecResponse(makeValidSpecJson());
+    expect(result.perspectives.product.entities).toHaveLength(1);
+    expect(result.perspectives.customer.entities).toHaveLength(1);
+    expect(result.perspectives.interaction.entities).toHaveLength(1);
+    expect(result.confidence).toBe(0.85);
+    expect(result.jsonSchemas).toHaveLength(0); // populated by generateEntityJsonSchemas
+    expect(result.sources).toHaveLength(0);
   });
 
-  it("computes coverage from events", () => {
-    const input = JSON.stringify({
-      entities: [
-        { id: "board", name: "Board", description: "D", isHeartbeat: true, properties: [] },
-      ],
-      events: [
-        {
-          name: "board_created",
-          entity_id: "board",
-          description: "D",
-          perspective: "customer",
-          properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "boolean", description: "d", required: false }],
-          trigger_condition: "T",
-          maps_to: { type: "activation_level", activation_level: 1 },
-          category: "activation",
-        },
-        {
-          name: "board_shared",
-          entity_id: "board",
-          description: "D",
-          perspective: "interaction",
-          properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "c", type: "number", description: "d", required: false }],
-          trigger_condition: "T",
-          maps_to: { type: "both", moment_id: "vm-1", activation_level: 2 },
-          category: "value",
-        },
-      ],
-      userStateModel: [
-        { name: "new", definition: "D", criteria: [] },
-        { name: "activated", definition: "D", criteria: [] },
-        { name: "active", definition: "D", criteria: [] },
-        { name: "at_risk", definition: "D", criteria: [] },
-        { name: "dormant", definition: "D", criteria: [] },
-      ],
-      confidence: 0.5,
-    });
-
-    const result = parseMeasurementSpecResponse(input);
-    expect(result.coverage.activation_levels_covered).toEqual([1, 2]);
-    expect(result.coverage.value_moments_covered).toEqual(["vm-1"]);
-    expect(result.coverage.perspective_distribution.customer).toBe(1);
-    expect(result.coverage.perspective_distribution.interaction).toBe(1);
+  it("rejects missing perspectives", () => {
+    const json = JSON.stringify({ confidence: 0.5 });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives");
   });
 
-  it("rejects missing entities", () => {
-    const input = JSON.stringify({
-      events: [],
-      userStateModel: [],
+  it("rejects missing perspectives.product", () => {
+    const json = JSON.stringify({
+      perspectives: { customer: { entities: [] }, interaction: { entities: [] } },
       confidence: 0.5,
     });
-    expect(() => parseMeasurementSpecResponse(input)).toThrow("Missing required field: entities");
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives.product");
   });
 
-  it("rejects missing events", () => {
-    const input = JSON.stringify({
-      entities: [],
-      userStateModel: [],
+  it("rejects missing perspectives.customer", () => {
+    const json = JSON.stringify({
+      perspectives: { product: { entities: [] }, interaction: { entities: [] } },
       confidence: 0.5,
     });
-    expect(() => parseMeasurementSpecResponse(input)).toThrow("Missing required field: events");
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives.customer");
   });
 
-  it("rejects event with invalid entity_id", () => {
-    const input = JSON.stringify({
-      entities: [
-        { id: "board", name: "Board", description: "D", isHeartbeat: true, properties: [] },
-      ],
-      events: [
-        {
-          name: "task_created",
-          entity_id: "task",
-          description: "D",
-          perspective: "customer",
-          properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "p", type: "string", description: "d", required: false }],
-          trigger_condition: "T",
-          maps_to: { type: "value_moment", moment_id: "vm-1" },
-          category: "value",
-        },
-      ],
-      userStateModel: [],
+  it("rejects missing perspectives.interaction", () => {
+    const json = JSON.stringify({
+      perspectives: { product: { entities: [] }, customer: { entities: [] } },
       confidence: 0.5,
     });
-    expect(() => parseMeasurementSpecResponse(input)).toThrow("not in defined entities");
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives.interaction");
+  });
+
+  it("rejects empty product entities", () => {
+    const json = makeValidSpecJson({ productEntities: [] });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("Product entities must be a non-empty array");
   });
 
   it("rejects missing confidence", () => {
-    const input = JSON.stringify({
-      entities: [],
-      events: [],
-      userStateModel: [],
+    const json = JSON.stringify({
+      perspectives: {
+        product: { entities: [] },
+        customer: { entities: [] },
+        interaction: { entities: [] },
+      },
     });
-    expect(() => parseMeasurementSpecResponse(input)).toThrow("Missing required field: confidence");
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: confidence");
   });
 
   it("rejects confidence out of range", () => {
-    const input = JSON.stringify({
-      entities: [],
-      events: [],
-      userStateModel: [],
-      confidence: 1.5,
-    });
-    expect(() => parseMeasurementSpecResponse(input)).toThrow("confidence must be between 0 and 1");
+    const json = makeValidSpecJson({ confidence: 1.5 });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("confidence must be between 0 and 1");
   });
 });
 
-// --- Lifecycle States Integration Tests ---
+describe("parseMeasurementSpecResponse — entity ID validation", () => {
+  it("rejects entity ID starting with digit", () => {
+    const json = makeValidSpecJson({
+      productEntities: [{
+        id: "1board", name: "Board", description: "D", isHeartbeat: true,
+        properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
+  });
+
+  it("rejects entity ID with uppercase", () => {
+    const json = makeValidSpecJson({
+      productEntities: [{
+        id: "Board", name: "Board", description: "D", isHeartbeat: true,
+        properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
+  });
+
+  it("accepts valid entity ID with underscores", () => {
+    const json = makeValidSpecJson({
+      productEntities: [{
+        id: "project_board", name: "Board", description: "D", isHeartbeat: true,
+        properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
+  });
+});
+
+describe("parseMeasurementSpecResponse — heartbeat validation", () => {
+  it("rejects zero heartbeat entities", () => {
+    const json = makeValidSpecJson({
+      productEntities: [{
+        id: "board", name: "Board", description: "D", isHeartbeat: false,
+        properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("none found");
+  });
+
+  it("rejects multiple heartbeat entities", () => {
+    const json = makeValidSpecJson({
+      productEntities: [
+        { id: "board", name: "Board", description: "D", isHeartbeat: true, properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }] },
+        { id: "asset", name: "Asset", description: "D", isHeartbeat: true, properties: [], activities: [{ name: "added", properties_supported: [], activity_properties: [] }] },
+      ],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("found 2");
+  });
+
+  it("accepts exactly one heartbeat entity", () => {
+    expect(() => parseMeasurementSpecResponse(makeValidSpecJson())).not.toThrow();
+  });
+});
+
+describe("parseMeasurementSpecResponse — cross-reference validation", () => {
+  it("rejects properties_supported referencing non-existent property", () => {
+    const json = makeValidSpecJson({
+      productEntities: [{
+        id: "board", name: "Board", description: "D", isHeartbeat: true,
+        properties: [{ name: "board_id", type: "id", description: "ID", isRequired: true }],
+        activities: [{ name: "created", properties_supported: ["board_id", "nonexistent"], activity_properties: [] }],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("properties_supported references");
+  });
+
+  it("accepts valid properties_supported references", () => {
+    expect(() => parseMeasurementSpecResponse(makeValidSpecJson())).not.toThrow();
+  });
+});
+
+describe("parseMeasurementSpecResponse — customer validation", () => {
+  it("rejects customer activity without derivation_rule", () => {
+    const json = makeValidSpecJson({
+      customerEntities: [{
+        name: "Customer",
+        properties: [],
+        activities: [{ name: "activated", properties_used: [] }],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("derivation_rule");
+  });
+});
+
+describe("parseMeasurementSpecResponse — interaction validation", () => {
+  it("rejects interaction entity with zero activities", () => {
+    const json = makeValidSpecJson({
+      interactionEntities: [{
+        name: "Interaction",
+        properties: [],
+        activities: [],
+      }],
+    });
+    expect(() => parseMeasurementSpecResponse(json)).toThrow("must have at least one activity");
+  });
+});
+
+describe("parseMeasurementSpecResponse — warnings", () => {
+  it("warns but does not throw when entity count exceeds 7", () => {
+    const entities = Array.from({ length: 8 }, (_, i) => ({
+      id: `entity_${i}`,
+      name: `Entity ${i}`,
+      description: "D",
+      isHeartbeat: i === 0,
+      properties: [],
+      activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+    }));
+    const json = makeValidSpecJson({ productEntities: entities });
+    const result = parseMeasurementSpecResponse(json);
+    expect(result.warnings).toBeDefined();
+    expect(result.warnings![0]).toContain("exceeds recommended maximum of 7");
+  });
+});
+
+// --- generateEntityJsonSchemas ---
+
+describe("generateEntityJsonSchemas", () => {
+  const spec: MeasurementSpec = {
+    perspectives: {
+      product: {
+        entities: [{
+          id: "board",
+          name: "Board",
+          description: "A collaborative whiteboard",
+          isHeartbeat: true,
+          properties: [
+            { name: "board_id", type: "id", description: "Unique board identifier", isRequired: true },
+            { name: "board_name", type: "string", description: "Board name", isRequired: false },
+          ],
+          activities: [
+            { name: "created", properties_supported: ["board_id", "board_name"], activity_properties: [] },
+            {
+              name: "shared",
+              properties_supported: ["board_id"],
+              activity_properties: [
+                { name: "share_method", type: "string", description: "How shared", isRequired: false },
+              ],
+            },
+          ],
+        }],
+      },
+      customer: {
+        entities: [{
+          name: "Customer",
+          properties: [
+            { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
+          ],
+          activities: [
+            { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
+          ],
+        }],
+      },
+      interaction: {
+        entities: [{
+          name: "Interaction",
+          properties: [
+            { name: "element_type", type: "string", description: "Element type", isRequired: true },
+          ],
+          activities: [
+            { name: "element_clicked", properties_supported: ["element_type"] },
+            { name: "element_submitted", properties_supported: ["element_type"] },
+          ],
+        }],
+      },
+    },
+    jsonSchemas: [],
+    confidence: 0.85,
+    sources: [],
+  };
+
+  it("produces one schema per entity across all perspectives", () => {
+    const schemas = generateEntityJsonSchemas(spec);
+    expect(schemas).toHaveLength(3); // 1 product + 1 customer + 1 interaction
+  });
+
+  it("product schema has activity enum and entity properties", () => {
+    const schemas = generateEntityJsonSchemas(spec);
+    const boardSchema = schemas.find((s) => s.entityName === "Board")!;
+    expect(boardSchema.perspective).toBe("product");
+    const schema = boardSchema.schema as Record<string, unknown>;
+    expect(schema.$id).toBe("basesignal/product/board/v1.0.json");
+    expect(schema.additionalProperties).toBe(false);
+
+    const props = schema.properties as Record<string, Record<string, unknown>>;
+    expect(props.activity.enum).toEqual(["created", "shared"]);
+    expect(props.board_id.type).toBe("string"); // id maps to string
+    expect(props.board_name.type).toBe("string");
+    expect(props.share_method.type).toBe("string"); // activity-specific property
+
+    const required = schema.required as string[];
+    expect(required).toContain("activity");
+    expect(required).toContain("board_id");
+    expect(required).not.toContain("board_name"); // not required
+  });
+
+  it("customer schema has activity enum with journey stages", () => {
+    const schemas = generateEntityJsonSchemas(spec);
+    const customerSchema = schemas.find((s) => s.entityName === "Customer")!;
+    expect(customerSchema.perspective).toBe("customer");
+    const schema = customerSchema.schema as Record<string, unknown>;
+    expect(schema.$id).toBe("basesignal/customer/customer/v1.0.json");
+
+    const props = schema.properties as Record<string, Record<string, unknown>>;
+    expect(props.activity.enum).toEqual(["first_value_created"]);
+    expect(props.customer_id.type).toBe("string");
+  });
+
+  it("interaction schema has activity enum with element types", () => {
+    const schemas = generateEntityJsonSchemas(spec);
+    const interactionSchema = schemas.find((s) => s.entityName === "Interaction")!;
+    expect(interactionSchema.perspective).toBe("interaction");
+    const schema = interactionSchema.schema as Record<string, unknown>;
+
+    const props = schema.properties as Record<string, Record<string, unknown>>;
+    expect(props.activity.enum).toEqual(["element_clicked", "element_submitted"]);
+    expect(props.element_type.type).toBe("string");
+  });
+
+  it("isRequired=true properties appear in required array", () => {
+    const schemas = generateEntityJsonSchemas(spec);
+    const boardSchema = schemas.find((s) => s.entityName === "Board")!;
+    const required = (boardSchema.schema as Record<string, unknown>).required as string[];
+    expect(required).toContain("board_id");
+  });
+
+  it("isRequired=false properties do NOT appear in required array", () => {
+    const schemas = generateEntityJsonSchemas(spec);
+    const boardSchema = schemas.find((s) => s.entityName === "Board")!;
+    const required = (boardSchema.schema as Record<string, unknown>).required as string[];
+    expect(required).not.toContain("board_name");
+    expect(required).not.toContain("share_method");
+  });
+
+  it("empty entity (no activities) produces schema with empty activity enum", () => {
+    const emptySpec: MeasurementSpec = {
+      perspectives: {
+        product: {
+          entities: [{
+            id: "thing", name: "Thing", description: "Empty", isHeartbeat: true,
+            properties: [], activities: [],
+          }],
+        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
+      },
+      jsonSchemas: [],
+      confidence: 0.5,
+      sources: [],
+    };
+    const schemas = generateEntityJsonSchemas(emptySpec);
+    expect(schemas).toHaveLength(1);
+    const props = (schemas[0].schema as Record<string, unknown>).properties as Record<string, Record<string, unknown>>;
+    expect(props.activity.enum).toEqual([]);
+  });
+
+  it("maps all property types correctly", () => {
+    const typedSpec: MeasurementSpec = {
+      perspectives: {
+        product: {
+          entities: [{
+            id: "test", name: "Test", description: "Test", isHeartbeat: true,
+            properties: [
+              { name: "p_id", type: "id", description: "d", isRequired: true },
+              { name: "p_str", type: "string", description: "d", isRequired: false },
+              { name: "p_num", type: "number", description: "d", isRequired: false },
+              { name: "p_bool", type: "boolean", description: "d", isRequired: false },
+              { name: "p_arr", type: "array", description: "d", isRequired: false },
+              { name: "p_calc", type: "calculated", description: "d", isRequired: false },
+              { name: "p_exp", type: "experimental", description: "d", isRequired: false },
+              { name: "p_temp", type: "temporary", description: "d", isRequired: false },
+            ],
+            activities: [],
+          }],
+        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
+      },
+      jsonSchemas: [],
+      confidence: 0.5,
+      sources: [],
+    };
+    const schemas = generateEntityJsonSchemas(typedSpec);
+    const props = (schemas[0].schema as Record<string, unknown>).properties as Record<string, Record<string, unknown>>;
+    expect(props.p_id.type).toBe("string");
+    expect(props.p_str.type).toBe("string");
+    expect(props.p_num.type).toBe("number");
+    expect(props.p_bool.type).toBe("boolean");
+    expect(props.p_arr.type).toBe("array");
+    expect(props.p_calc.type).toBe("number");
+    expect(props.p_exp.type).toBeUndefined(); // experimental → {}
+    expect(props.p_temp.type).toBeUndefined(); // temporary → {}
+  });
+});
+
+// --- Lifecycle States ---
 
 const sampleLifecycleStates: LifecycleStatesResult = {
   states: [
@@ -329,377 +740,3 @@ const sampleLifecycleStates: LifecycleStatesResult = {
   confidence: 0.75,
   sources: ["activation_levels", "value_moments"],
 };
-
-describe("assembleMeasurementInput — lifecycle states", () => {
-  it("includes lifecycle_states when provided", () => {
-    const input = assembleMeasurementInput(
-      sampleMoments,
-      sampleLevels,
-      sampleICPs,
-      null,
-      sampleLifecycleStates,
-    );
-
-    expect(input.lifecycle_states).toBeDefined();
-    expect(input.lifecycle_states!.states).toHaveLength(7);
-    expect(input.lifecycle_states!.confidence).toBe(0.75);
-  });
-
-  it("lifecycle_states is undefined when not provided", () => {
-    const input = assembleMeasurementInput(
-      sampleMoments,
-      sampleLevels,
-      sampleICPs,
-      null,
-    );
-
-    expect(input.lifecycle_states).toBeUndefined();
-  });
-});
-
-describe("buildMeasurementSpecPrompt — lifecycle states", () => {
-  it("includes lifecycle states section when provided", () => {
-    const input = assembleMeasurementInput(
-      sampleMoments,
-      sampleLevels,
-      sampleICPs,
-      null,
-      sampleLifecycleStates,
-    );
-    const { user } = buildMeasurementSpecPrompt(input);
-
-    expect(user).toContain("## Lifecycle States (use for userStateModel)");
-    expect(user).toContain("**new**: Just signed up");
-    expect(user).toContain("**engaged**: Regular user");
-    expect(user).toContain("**churned**: Gone for 60+ days");
-    expect(user).toContain("**resurrected**: Returned after churn");
-  });
-
-  it("includes entry criteria in lifecycle states section", () => {
-    const input = assembleMeasurementInput(
-      sampleMoments,
-      sampleLevels,
-      sampleICPs,
-      null,
-      sampleLifecycleStates,
-    );
-    const { user } = buildMeasurementSpecPrompt(input);
-
-    expect(user).toContain("Entry criteria: signup: account created");
-    expect(user).toContain("Entry criteria: daily_use: 3+ days/week");
-  });
-
-  it("omits lifecycle states section when not provided", () => {
-    const input = assembleMeasurementInput(
-      sampleMoments,
-      sampleLevels,
-      sampleICPs,
-      null,
-    );
-    const { user } = buildMeasurementSpecPrompt(input);
-
-    expect(user).not.toContain("## Lifecycle States");
-  });
-});
-
-describe("buildMeasurementSpecPrompt — product-perspective guidance", () => {
-  it("includes product-generated events guidance when product surfaces exist", () => {
-    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
-    const { user } = buildMeasurementSpecPrompt(input);
-
-    expect(user).toContain("## Product-Generated Events Guidance");
-    expect(user).toContain("Sprint Planning");
-    expect(user).toContain("product-perspective events");
-  });
-
-  it("includes identity description when provided", () => {
-    const input = assembleMeasurementInput(
-      sampleMoments,
-      sampleLevels,
-      sampleICPs,
-      null,
-      undefined,
-      { productName: "Amplitude", description: "Digital analytics platform with AI-powered insights" },
-    );
-    const { user } = buildMeasurementSpecPrompt(input);
-
-    expect(user).toContain("Amplitude");
-    expect(user).toContain("AI-powered insights");
-    expect(user).toContain("product-perspective events");
-  });
-
-  it("omits guidance section when no surfaces and no identity", () => {
-    const noSurfaceMoments = sampleMoments.map((m) => ({
-      ...m,
-      product_surfaces: [],
-    }));
-    const input = assembleMeasurementInput(noSurfaceMoments, sampleLevels, [], null);
-    const { user } = buildMeasurementSpecPrompt(input);
-
-    expect(user).not.toContain("## Product-Generated Events Guidance");
-  });
-});
-
-describe("assembleMeasurementInput — identity", () => {
-  it("includes identity when provided", () => {
-    const identity = { productName: "Linear", description: "Issue tracking tool" };
-    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null, undefined, identity);
-    expect(input.identity).toEqual(identity);
-  });
-
-  it("identity is undefined when not provided", () => {
-    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
-    expect(input.identity).toBeUndefined();
-  });
-});
-
-describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — perspective balance", () => {
-  it("includes perspective balance guidance", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Perspective Balance");
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("product perspective");
-  });
-});
-
-// --- Format Validation Tests ---
-
-function makeValidSpecJson(overrides: {
-  entities?: Array<Record<string, unknown>>;
-  events?: Array<Record<string, unknown>>;
-} = {}): string {
-  const defaultEntity = {
-    id: "issue", name: "Issue", description: "Work item",
-    isHeartbeat: true,
-    properties: [{ name: "issue_id", type: "string", description: "ID", isRequired: true }],
-  };
-  const defaultEvent = {
-    name: "issue_created", entity_id: "issue", description: "Created",
-    perspective: "customer",
-    properties: [
-      { name: "title", type: "string", description: "T", required: true },
-      { name: "p", type: "string", description: "P", required: false },
-    ],
-    trigger_condition: "When created",
-    maps_to: { type: "value_moment", moment_id: "vm-1" },
-    category: "activation",
-  };
-  return JSON.stringify({
-    entities: overrides.entities ?? [defaultEntity],
-    events: overrides.events ?? [defaultEvent],
-    userStateModel: [
-      { name: "new", definition: "D", criteria: [] },
-    ],
-    confidence: 0.7,
-  });
-}
-
-describe("parseMeasurementSpecResponse — entity ID format validation", () => {
-  it("rejects entity ID starting with digit", () => {
-    const json = makeValidSpecJson({
-      entities: [{ id: "1issue", name: "Issue", description: "D", isHeartbeat: true, properties: [] }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
-  });
-
-  it("rejects entity ID with uppercase", () => {
-    const json = makeValidSpecJson({
-      entities: [{ id: "Issue", name: "Issue", description: "D", isHeartbeat: true, properties: [] }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
-  });
-
-  it("rejects entity ID with hyphens", () => {
-    const json = makeValidSpecJson({
-      entities: [{ id: "my-entity", name: "Entity", description: "D", isHeartbeat: true, properties: [] }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("id must match");
-  });
-
-  it("accepts valid entity ID with underscores", () => {
-    const json = makeValidSpecJson({
-      entities: [{ id: "project_board", name: "Board", description: "D", isHeartbeat: true, properties: [] }],
-      events: [{
-        name: "project_board_created", entity_id: "project_board", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
-  });
-});
-
-describe("parseMeasurementSpecResponse — heartbeat uniqueness validation", () => {
-  it("rejects zero heartbeat entities", () => {
-    const json = makeValidSpecJson({
-      entities: [
-        { id: "issue", name: "Issue", description: "D", isHeartbeat: false, properties: [] },
-      ],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("none found");
-  });
-
-  it("rejects multiple heartbeat entities", () => {
-    const json = makeValidSpecJson({
-      entities: [
-        { id: "issue", name: "Issue", description: "D", isHeartbeat: true, properties: [] },
-        { id: "board", name: "Board", description: "D", isHeartbeat: true, properties: [] },
-      ],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("found 2");
-  });
-
-  it("accepts exactly one heartbeat entity", () => {
-    const json = makeValidSpecJson();
-    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
-  });
-});
-
-describe("parseMeasurementSpecResponse — event name format validation", () => {
-  it("rejects event name without underscore", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "issuecreated", entity_id: "issue", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
-  });
-
-  it("rejects event name starting with uppercase", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "Issue_created", entity_id: "issue", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
-  });
-
-  it("rejects event name starting with underscore", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "_issue_created", entity_id: "issue", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
-  });
-
-  it("accepts valid multi-segment event name", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "board_column_moved", entity_id: "issue", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
-  });
-
-  it("rejects event name with only prefix and no action", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "issue_", entity_id: "issue", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("name must match");
-  });
-
-  it("accepts event name with digits in entity prefix", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "v2board_created", entity_id: "issue", description: "D",
-        perspective: "customer", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).not.toThrow();
-  });
-});
-
-describe("parseMeasurementSpecResponse — perspective enum validation", () => {
-  it("rejects invalid perspective", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "issue_created", entity_id: "issue", description: "D",
-        perspective: "user", category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("perspective must be one of");
-  });
-
-  it("rejects missing perspective", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "issue_created", entity_id: "issue", description: "D",
-        category: "activation",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("perspective must be one of");
-  });
-});
-
-describe("parseMeasurementSpecResponse — category enum validation", () => {
-  it("rejects invalid category", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "issue_created", entity_id: "issue", description: "D",
-        perspective: "customer", category: "engagement",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("category must be one of");
-  });
-
-  it("rejects missing category", () => {
-    const json = makeValidSpecJson({
-      events: [{
-        name: "issue_created", entity_id: "issue", description: "D",
-        perspective: "customer",
-        properties: [{ name: "n", type: "string", description: "d", required: true }, { name: "t", type: "string", description: "d", required: false }],
-        trigger_condition: "T", maps_to: { type: "value_moment", moment_id: "vm-1" },
-      }],
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("category must be one of");
-  });
-});
-
-describe("MEASUREMENT_SPEC_SYSTEM_PROMPT — softened Step 3", () => {
-  it("does not mandate exactly 5 states", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain("exactly 5 states");
-  });
-
-  it("instructs to derive from lifecycle states when provided", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
-      "If lifecycle states are provided in the context below, derive your user state model from them.",
-    );
-  });
-
-  it("provides 5-state fallback when lifecycle states not available", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain(
-      "Otherwise, define 5 representative states: new, activated, active, at_risk, dormant.",
-    );
-  });
-
-  it("does not mandate specific state names", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).not.toContain(
-      'name: one of "new", "activated", "active", "at_risk", "dormant"',
-    );
-  });
-});

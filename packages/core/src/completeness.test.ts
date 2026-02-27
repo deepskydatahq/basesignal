@@ -15,7 +15,7 @@ describe("computeCompleteness", () => {
       icp_profiles: [{ id: "icp-1" }],
       activation_map: { stages: [] },
       lifecycle_states: { states: [] },
-      measurement_spec: { events: [] },
+      measurement_spec: { perspectives: {}, confidence: 0.5 },
     });
     expect(result.completeness).toBe(1);
   });

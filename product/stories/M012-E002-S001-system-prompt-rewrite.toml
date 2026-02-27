@@ -1,0 +1,73 @@
+# Story: System Prompt Rewrite
+# Rewrite MEASUREMENT_SPEC_SYSTEM_PROMPT to teach the Double Three-Layer Framework.
+
+id = "M012-E002-S001"
+epic = "M012-E002"
+title = "System Prompt Rewrite"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E001-S003"]
+
+[outcome]
+description = """
+The MEASUREMENT_SPEC_SYSTEM_PROMPT constant is rewritten to teach the LLM the Double
+Three-Layer Framework. It guides the LLM through a structured process: discover product
+entities, define their lifecycle activities, design entity-level properties, compose
+customer journey stages as derivation rules, and define generic interaction tracking.
+Includes a Miro reference example showing the complete matrix.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "System prompt names the framework: 'Double Three-Layer Framework'",
+    "Step 1: Discover Product Entities — identify 3-7 core objects with unique IDs and distinct lifecycles",
+    "Step 1 requires exactly one heartbeat entity",
+    "Step 1 requires entity_id matching /^[a-z][a-z0-9_]*$/",
+    "Step 2: Define Activities — past-tense lifecycle markers per entity (created, shared, deleted)",
+    "Step 2 includes the quality test: 'Does this prove or unlock user value?'",
+    "Step 2 explicitly excludes UI-level interactions (clicked_button, viewed_page)",
+    "Step 3: Design Properties — catalog at entity level, activities declare properties_supported",
+    "Step 3 explains property types: id, string, number, boolean, array, calculated, experimental, temporary",
+    "Step 3 instructs: 'Support as many properties as possible within all activities'",
+    "Step 4: Compose Customer Journey — single Customer entity with derived activities",
+    "Step 4 requires derivation_rule on each customer activity with examples",
+    "Step 4 shows derivation example: 'Board shared (first time) OR Asset created (30+ times)'",
+    "Step 5: Define Interaction Layer — single Interaction entity with element_clicked, element_submitted",
+    "Step 5 lists contextual properties: element_type, element_text, element_position, element_target, element_container",
+    "Includes Miro reference example with 5 product entities and their activities",
+    "Includes output JSON schema matching the new MeasurementSpec type from E001",
+    "Instructs LLM to return ONLY valid JSON, no commentary",
+    "System prompt test verifies all key sections exist",
+]
+
+[context]
+files_to_modify = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+]
+
+[notes]
+implementation_hints = """
+The current system prompt is 154 lines. The new one will likely be 200-250 lines
+given the richer framework. Structure it as 5 clear steps:
+
+Step 1: Discover Product Entities (3-7)
+Step 2: Define Activities (past-tense lifecycle markers)
+Step 3: Design Properties (entity-level catalog)
+Step 4: Compose Customer Journey (derived activities)
+Step 5: Define Interaction Layer (generic tracking)
+
+The Miro reference example should show:
+- Account (created, updated, deleted)
+- User (invited, created, role_changed, removed_from_account, deleted)
+- Board (joined, created, updated, viewed, shared, presented, deleted) — heartbeat
+- Asset (added, updated, deleted, commented)
+- Subscription (created, canceled, ended)
+
+Customer: "First value created" = derivation_rule: "Board shared (first time) OR Asset created/updated (30+ times)"
+
+Interaction: element_clicked, element_submitted with properties:
+element_type, element_text, element_position, element_target, element_value, element_container
+
+The output schema in the prompt MUST match the new MeasurementSpec type exactly.
+"""

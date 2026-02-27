@@ -21,6 +21,15 @@ import type {
   ValueMoment,
   ValueMomentTier,
   SignalStrength,
+  EntityPropertyType,
+  EntityProperty,
+  ProductActivity,
+  CustomerActivity,
+  InteractionActivity,
+  ProductEntity,
+  CustomerEntity,
+  InteractionEntity,
+  EntityJsonSchema,
 } from "../outputs";
 
 describe("ValueMomentPriority", () => {
@@ -130,6 +139,147 @@ describe("EntityPropertyDef and EntityDefinition", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Double Three-Layer Framework Types
+// ---------------------------------------------------------------------------
+
+describe("EntityProperty", () => {
+  it("supports all 8 property types", () => {
+    const types: EntityPropertyType[] = [
+      "string", "number", "boolean", "array",
+      "id", "calculated", "experimental", "temporary",
+    ];
+    expect(types).toHaveLength(8);
+  });
+
+  it("has all required fields", () => {
+    const prop: EntityProperty = {
+      name: "board_id",
+      type: "id",
+      description: "Unique board identifier",
+      isRequired: true,
+    };
+    expect(prop.name).toBe("board_id");
+    expect(prop.type).toBe("id");
+  });
+
+  it("supports optional variations field", () => {
+    const prop: EntityProperty = {
+      name: "board_number_assets",
+      type: "calculated",
+      description: "Number of assets",
+      isRequired: false,
+      variations: "1-30, 31-80, 81-150, 150+",
+    };
+    expect(prop.variations).toBe("1-30, 31-80, 81-150, 150+");
+  });
+});
+
+describe("ProductActivity", () => {
+  it("has all required fields", () => {
+    const activity: ProductActivity = {
+      name: "shared",
+      properties_supported: ["board_id", "board_number_assets"],
+      activity_properties: [
+        { name: "share_method", type: "string", description: "How the board was shared", isRequired: false },
+      ],
+    };
+    expect(activity.name).toBe("shared");
+    expect(activity.properties_supported).toHaveLength(2);
+    expect(activity.activity_properties).toHaveLength(1);
+  });
+});
+
+describe("CustomerActivity", () => {
+  it("has derivation_rule", () => {
+    const activity: CustomerActivity = {
+      name: "first_value_created",
+      derivation_rule: "Board shared (first time) OR Asset created/updated (30+ times)",
+      properties_used: ["customer_id"],
+    };
+    expect(activity.derivation_rule).toContain("Board shared");
+    expect(activity.properties_used).toHaveLength(1);
+  });
+});
+
+describe("InteractionActivity", () => {
+  it("has properties_supported", () => {
+    const activity: InteractionActivity = {
+      name: "element_clicked",
+      properties_supported: ["element_type", "element_text"],
+    };
+    expect(activity.name).toBe("element_clicked");
+    expect(activity.properties_supported).toHaveLength(2);
+  });
+});
+
+describe("ProductEntity", () => {
+  it("has activities nested inside", () => {
+    const entity: ProductEntity = {
+      id: "board",
+      name: "Board",
+      description: "A collaborative whiteboard",
+      isHeartbeat: true,
+      properties: [
+        { name: "board_id", type: "id", description: "Unique board identifier", isRequired: true },
+      ],
+      activities: [
+        { name: "created", properties_supported: ["board_id"], activity_properties: [] },
+        { name: "shared", properties_supported: ["board_id"], activity_properties: [
+          { name: "share_method", type: "string", description: "How shared", isRequired: false },
+        ]},
+      ],
+    };
+    expect(entity.isHeartbeat).toBe(true);
+    expect(entity.activities).toHaveLength(2);
+    expect(entity.properties).toHaveLength(1);
+  });
+});
+
+describe("CustomerEntity", () => {
+  it("has derived activities", () => {
+    const entity: CustomerEntity = {
+      name: "Customer",
+      properties: [
+        { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
+      ],
+      activities: [
+        { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
+      ],
+    };
+    expect(entity.activities).toHaveLength(1);
+    expect(entity.activities[0].derivation_rule).toContain("Board shared");
+  });
+});
+
+describe("InteractionEntity", () => {
+  it("has generic activities", () => {
+    const entity: InteractionEntity = {
+      name: "Interaction",
+      properties: [
+        { name: "element_type", type: "string", description: "Type of element", isRequired: true },
+      ],
+      activities: [
+        { name: "element_clicked", properties_supported: ["element_type"] },
+        { name: "element_submitted", properties_supported: ["element_type"] },
+      ],
+    };
+    expect(entity.activities).toHaveLength(2);
+  });
+});
+
+describe("EntityJsonSchema", () => {
+  it("has perspective and schema", () => {
+    const schema: EntityJsonSchema = {
+      entityName: "Board",
+      perspective: "product",
+      schema: { type: "object", properties: {} },
+    };
+    expect(schema.perspective).toBe("product");
+    expect(schema.schema).toHaveProperty("type");
+  });
+});
+
 describe("EventProperty", () => {
   it("supports all property types", () => {
     const types: EventProperty["type"][] = ["string", "number", "boolean", "array"];
@@ -215,38 +365,55 @@ describe("UserStateCriterion and UserState", () => {
 });
 
 describe("MeasurementSpec", () => {
-  it("has all required fields including coverage", () => {
+  it("has perspective-grouped structure", () => {
     const spec: MeasurementSpec = {
-      entities: [{ id: "item", name: "Item", description: "An item", isHeartbeat: true, properties: [] }],
-      events: [],
-      total_events: 0,
-      coverage: {
-        activation_levels_covered: [1, 2],
-        value_moments_covered: ["vm-001"],
-        perspective_distribution: { customer: 0, product: 0, interaction: 0 },
+      perspectives: {
+        product: {
+          entities: [{
+            id: "board",
+            name: "Board",
+            description: "A whiteboard",
+            isHeartbeat: true,
+            properties: [{ name: "board_id", type: "id", description: "ID", isRequired: true }],
+            activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
+          }],
+        },
+        customer: {
+          entities: [{
+            name: "Customer",
+            properties: [{ name: "customer_id", type: "id", description: "ID", isRequired: true }],
+            activities: [{ name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] }],
+          }],
+        },
+        interaction: {
+          entities: [{
+            name: "Interaction",
+            properties: [{ name: "element_type", type: "string", description: "Type", isRequired: true }],
+            activities: [{ name: "element_clicked", properties_supported: ["element_type"] }],
+          }],
+        },
       },
-      userStateModel: [{ name: "new", definition: "New user", criteria: [] }],
-      confidence: 0.8,
+      jsonSchemas: [],
+      confidence: 0.85,
       sources: ["https://example.com"],
     };
-    expect(spec.coverage.activation_levels_covered).toEqual([1, 2]);
+    expect(spec.perspectives.product.entities).toHaveLength(1);
+    expect(spec.perspectives.customer.entities).toHaveLength(1);
+    expect(spec.perspectives.interaction.entities).toHaveLength(1);
     expect(spec.warnings).toBeUndefined();
   });
 
   it("supports optional warnings", () => {
     const spec: MeasurementSpec = {
-      entities: [],
-      events: [],
-      total_events: 0,
-      coverage: {
-        activation_levels_covered: [],
-        value_moments_covered: [],
-        perspective_distribution: { customer: 0, product: 0, interaction: 0 },
+      perspectives: {
+        product: { entities: [] },
+        customer: { entities: [] },
+        interaction: { entities: [] },
       },
-      userStateModel: [],
+      jsonSchemas: [],
       confidence: 0.5,
       sources: [],
-      warnings: ["Low coverage"],
+      warnings: ["Product entity count exceeds recommended maximum"],
     };
     expect(spec.warnings).toHaveLength(1);
   });
@@ -310,15 +477,12 @@ describe("OutputGenerationResult", () => {
         sources: [],
       },
       measurement_spec: {
-        entities: [],
-        events: [],
-        total_events: 0,
-        coverage: {
-          activation_levels_covered: [],
-          value_moments_covered: [],
-          perspective_distribution: { customer: 0, product: 0, interaction: 0 },
+        perspectives: {
+          product: { entities: [] },
+          customer: { entities: [] },
+          interaction: { entities: [] },
         },
-        userStateModel: [],
+        jsonSchemas: [],
         confidence: 0.6,
         sources: [],
       },

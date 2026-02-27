@@ -1,0 +1,65 @@
+# Story: Prompt Builder and Input Assembly
+# Rewrite buildMeasurementSpecPrompt and assembleMeasurementInput for framework-aware context.
+
+id = "M012-E002-S002"
+epic = "M012-E002"
+title = "Prompt Builder and Input Assembly"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E002-S001"]
+
+[outcome]
+description = """
+The prompt builder assembles framework-aware context from pipeline inputs. Value moments
+are grouped by product surface to help entity discovery. Activation levels and lifecycle
+states inform customer activity derivation. The input assembly function is updated to
+match the new structure. The prompt guides the LLM to produce entity-centric output.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "buildMeasurementSpecPrompt returns { system, user } with framework-aware sections",
+    "User prompt groups value moments by product surface for entity discovery",
+    "User prompt includes activation levels for customer activity derivation",
+    "User prompt includes lifecycle states (when available) for customer journey composition",
+    "User prompt includes ICP profiles for context",
+    "User prompt includes identity for product context",
+    "assembleMeasurementInput builds correct input structure from pipeline data",
+    "Old activation_event_templates and value_event_templates are removed (no longer needed)",
+    "MeasurementInputData type updated to remove old template fields",
+    "Prompt builder test verifies all sections are included",
+    "Prompt builder test verifies value moments are grouped by surface",
+    "Prompt builder test verifies conditional sections (lifecycle states, identity) are included when available",
+    "Prompt builder test verifies conditional sections are omitted when unavailable",
+]
+
+[context]
+files_to_modify = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+]
+
+[notes]
+implementation_hints = """
+The key insight: value moments grouped by product surface help the LLM discover entities.
+If moments mention 'dashboard', 'report', 'experiment', 'session' — those surface names
+hint at the core product entities.
+
+Group format example:
+## Product Surfaces → Entity Candidates
+**Dashboard** (5 value moments):
+- View real-time user journey flows (Tier 1)
+- Generate behavioral analysis reports (Tier 2)
+...
+**Experiment** (3 value moments):
+- Deploy A/B tests across platforms (Tier 1)
+...
+
+This replaces the old activation_event_templates and value_event_templates which
+pre-computed event suggestions. In the new framework, we don't suggest events —
+we provide context for entity and activity discovery.
+
+The activation levels and lifecycle states feed into the Customer perspective:
+the LLM should derive customer journey stages FROM these inputs (not generate them
+independently).
+"""

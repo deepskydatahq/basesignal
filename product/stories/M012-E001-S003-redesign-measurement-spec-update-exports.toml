@@ -1,0 +1,92 @@
+# Story: Redesign MeasurementSpec and Update Exports
+# Replace the MeasurementSpec type with the new perspective-grouped structure,
+# remove old types, and update all exports across core.
+
+id = "M012-E001-S003"
+epic = "M012-E001"
+title = "Redesign MeasurementSpec and Update Exports"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E001-S002"]
+
+[outcome]
+description = """
+The MeasurementSpec type is redesigned to: { perspectives: { customer, product,
+interaction }, jsonSchemas[], confidence, sources, warnings? }. The old types
+(TrackingEvent, EventProperty, MapsTo, PerspectiveDistribution, flat EntityDefinition)
+are removed. All exports in core/src/index.ts and core/src/schema/index.ts are updated.
+OutputGenerationResult and MeasurementInputData are updated. All core type tests and
+schema tests pass. npm run build succeeds for @basesignal/core.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "MeasurementSpec type has: perspectives (object with customer, product, interaction keys)",
+    "perspectives.customer has: entities: CustomerEntity[]",
+    "perspectives.product has: entities: ProductEntity[]",
+    "perspectives.interaction has: entities: InteractionEntity[]",
+    "MeasurementSpec has: jsonSchemas: EntityJsonSchema[]",
+    "MeasurementSpec has: confidence: number, sources: string[], warnings?: string[]",
+    "MeasurementSpec does NOT have: events[], total_events, coverage, userStateModel[]",
+    "MeasurementSpecSchema Zod validates the new structure",
+    "Old types removed: TrackingEvent, EventProperty, MapsTo, PerspectiveDistribution",
+    "Old schemas removed: TrackingEventSchema, MapsToSchema, PerspectiveDistributionSchema",
+    "Perspective type kept: 'customer' | 'product' | 'interaction'",
+    "UserState and UserStateCriterion kept (used by lifecycle states)",
+    "core/src/index.ts exports new types: ProductEntity, ProductActivity, CustomerEntity, CustomerActivity, InteractionEntity, InteractionActivity, EntityProperty, EntityJsonSchema",
+    "core/src/index.ts removes old type exports: TrackingEvent, EventProperty, MapsTo, PerspectiveDistribution, EntityDefinition, EntityPropertyDef",
+    "core/src/schema/index.ts exports new schemas and removes old schemas",
+    "OutputGenerationResult.measurement_spec uses new MeasurementSpec type",
+    "Type test for MeasurementSpec uses new perspective-grouped fixture",
+    "Schema test for MeasurementSpecSchema validates new structure",
+    "Tests for removed types (TrackingEvent, MapsTo, EventProperty, PerspectiveDistribution) are removed",
+    "npm run build succeeds for @basesignal/core",
+]
+
+[context]
+files_to_modify = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/schema/index.ts",
+    "packages/core/src/types/__tests__/outputs.test.ts",
+    "packages/core/src/schema/__tests__/outputs.test.ts",
+]
+
+[notes]
+implementation_hints = """
+This is the story that actually swaps the MeasurementSpec shape. After this story,
+the mcp-server package will NOT compile (it still references old types). That's
+expected — E002 fixes the parser/generator.
+
+Types to REMOVE:
+- TrackingEvent, TrackingEventSchema
+- EventProperty (replaced by EntityProperty from S001)
+- MapsTo, MapsToSchema (events no longer exist as flat array)
+- PerspectiveDistribution, PerspectiveDistributionSchema (distribution is structural now)
+- EntityDefinition, EntityDefinitionSchema (replaced by ProductEntity from S002)
+- EntityPropertyDef, EntityPropertyDefSchema (replaced by EntityProperty from S001)
+
+Types to KEEP:
+- Perspective ('customer' | 'product' | 'interaction') — still the enum
+- PerspectiveSchema — still valid
+- UserState, UserStateCriterion — used by lifecycle states output
+- UserStateSchema, UserStateCriterionSchema — used by lifecycle states
+
+New exports to ADD:
+- EntityProperty, EntityPropertySchema
+- ProductActivity, ProductActivitySchema
+- CustomerActivity, CustomerActivitySchema
+- InteractionActivity, InteractionActivitySchema
+- ProductEntity, ProductEntitySchema
+- CustomerEntity, CustomerEntitySchema
+- InteractionEntity, InteractionEntitySchema
+- EntityJsonSchema, EntityJsonSchemaSchema
+
+The coverage object is gone — perspective distribution is now a structural fact
+(count entities/activities per perspective) computed downstream, not stored in the type.
+The total_events field is gone — activities are nested inside entities.
+
+After this story: run `npm run build` in packages/core only (not full monorepo,
+since mcp-server will break until E002).
+"""

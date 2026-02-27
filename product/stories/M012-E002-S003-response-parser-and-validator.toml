@@ -1,0 +1,74 @@
+# Story: Response Parser and Validator
+# Rewrite parseMeasurementSpecResponse for the new structure with cross-reference validation.
+
+id = "M012-E002-S003"
+epic = "M012-E002"
+title = "Response Parser and Validator"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E002-S001"]
+
+[outcome]
+description = """
+parseMeasurementSpecResponse validates and parses the LLM response into the new
+MeasurementSpec type. It validates perspective structure, entity/activity types,
+properties_supported cross-references, heartbeat uniqueness, and produces warnings
+for entity count > 7. The parser handles LLM quirks (missing optional fields,
+extra whitespace) gracefully while being strict on structural requirements.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "parseMeasurementSpecResponse accepts valid new-format JSON and returns MeasurementSpec",
+    "Validates: top-level perspectives object with customer, product, interaction keys",
+    "Validates: perspectives.product.entities is non-empty array",
+    "Validates: exactly one product entity has isHeartbeat: true",
+    "Validates: product entity id matches /^[a-z][a-z0-9_]*$/",
+    "Validates: product activities exist (at least 1 per entity)",
+    "Validates: properties_supported entries reference actual entity property names",
+    "Validates: customer entity has at least 1 activity with derivation_rule",
+    "Validates: interaction entity has activities",
+    "Validates: confidence is number between 0 and 1",
+    "Warns (adds to warnings[], does not throw) when product entity count > 7",
+    "Throws descriptive error for missing perspectives object",
+    "Throws descriptive error for missing product entities",
+    "Throws descriptive error for invalid entity id format",
+    "Throws descriptive error for heartbeat count != 1",
+    "Throws descriptive error for properties_supported referencing non-existent property",
+    "Throws descriptive error for missing customer derivation_rule",
+    "Parser test: valid Miro-like input parses successfully",
+    "Parser test: missing perspectives throws",
+    "Parser test: invalid entity id throws",
+    "Parser test: no heartbeat throws",
+    "Parser test: multiple heartbeats throws",
+    "Parser test: properties_supported mismatch throws",
+    "Parser test: entity count > 7 adds warning but succeeds",
+    "Parser test: missing derivation_rule on customer activity throws",
+]
+
+[context]
+files_to_modify = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+]
+
+[notes]
+implementation_hints = """
+The cross-reference validation for properties_supported is the most important new check.
+For each activity in a product entity:
+1. Collect the entity's property names into a Set
+2. For each name in activity.properties_supported, verify it exists in that Set
+3. If not, throw with: "Activity 'shared' on entity 'board': properties_supported
+   references 'board_size' which is not a defined property on entity 'board'"
+
+The parser no longer computes coverage (total_events, activation_levels_covered,
+value_moments_covered, perspective_distribution) — those concepts don't exist in
+the new structure. Activities are structural, not counted like flat events.
+
+The jsonSchemas field should be initialized as empty array [] by the parser.
+E003's generateEntityJsonSchemas populates it after parsing. The parser's job
+is to validate the LLM output; JSON Schema generation is a separate step.
+
+For entity count warning: add to the warnings array on MeasurementSpec, don't
+throw. This matches the existing warnings? optional field pattern.
+"""

@@ -1,0 +1,67 @@
+# Story: CLI Persistence and Formatting
+# Update scan command persistence, completeness scoring, and CLI formatters.
+
+id = "M012-E004-S002"
+epic = "M012-E004"
+title = "CLI Persistence and Formatting"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E004-S001"]
+
+[outcome]
+description = """
+The CLI scan command persists the new measurement spec structure to
+outputs/measurement-spec.json and profile.json. Completeness scoring works with
+the new shape. CLI formatters render the measurement spec in summary and markdown
+formats showing perspectives, entities, and activity counts.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "scan.ts persists new measurement-spec.json with perspectives structure",
+    "scan.ts includes new measurement_spec in profile.json",
+    "computeCompleteness still detects measurement_spec presence (truthy check)",
+    "completeness.test.ts passes with new measurement spec shape",
+    "formatSummary shows measurement spec: 'Measurement Spec: N product entities, M activities'",
+    "formatMarkdown renders perspective breakdown with entity names and activity lists",
+    "formatMarkdown renders product entities with their activities",
+    "formatMarkdown renders customer entity with derived stages",
+    "scan.test.ts passes with new measurement spec fixtures",
+    "npm run build succeeds across all packages",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/commands/scan.test.ts",
+    "packages/cli/src/formatters.ts",
+    "packages/core/src/completeness.ts",
+    "packages/core/src/completeness.test.ts",
+]
+
+[notes]
+implementation_hints = """
+Completeness scoring: the existing check is !!input.measurement_spec — this still
+works with the new shape (truthy check on object). No logic change needed, just
+update test fixtures to use new shape.
+
+CLI summary format — add a measurement spec line after lifecycle states:
+"Measurement Spec: 5 product entities (23 activities), 1 customer entity (11 stages)"
+
+CLI markdown format — add a new section:
+## Measurement Specification
+
+### Product Layer
+**Board** (heartbeat) — created, updated, viewed, shared, presented, deleted
+**Asset** — added, updated, deleted, commented
+...
+
+### Customer Journey
+**Customer** — 11 derived stages
+- First value created: Board shared (first time) OR Asset created (30+ times)
+- Value repeated: Board shared (2+ in last 30 days)
+...
+
+### Interaction Tracking
+**Interaction** — element_clicked, element_submitted
+"""

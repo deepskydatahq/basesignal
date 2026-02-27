@@ -1,0 +1,64 @@
+# Story: Pipeline and Output Orchestration
+# Wire the new measurement spec generator through generateAllOutputs and the pipeline.
+
+id = "M012-E004-S001"
+epic = "M012-E004"
+title = "Pipeline and Output Orchestration"
+status = "ready"
+created = 2026-02-27
+depends_on = ["M012-E002-S003", "M012-E003-S001"]
+
+[outcome]
+description = """
+generateAllOutputs calls the updated generateMeasurementSpec, then calls
+generateEntityJsonSchemas to populate jsonSchemas on the result. OutputsResult type
+uses the new MeasurementSpec. Pipeline types are updated. Progress callbacks and
+error handling work correctly. Integration tests pass with new fixtures.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "OutputsResult.measurement_spec uses new MeasurementSpec type",
+    "generateAllOutputs calls generateMeasurementSpec with correct inputs",
+    "generateAllOutputs calls generateEntityJsonSchemas on the parsed result",
+    "jsonSchemas array is populated on the returned MeasurementSpec",
+    "Progress callbacks fire: outputs_measurement_spec started/completed/failed",
+    "Error handling: measurement spec failure doesn't block other outputs",
+    "Error handling: measurement spec failure results in null measurement_spec",
+    "analysis/types.ts re-exports updated MeasurementSpec type",
+    "generate-all-outputs.test.ts tests pass with new mock LLM response fixture",
+    "pipeline.test.ts tests pass with updated assertions",
+    "Mock LLM fixture in mock-llm.ts returns new-format measurement spec JSON",
+]
+
+[context]
+files_to_modify = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/pipeline.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/fixtures/mock-llm.ts",
+]
+
+[notes]
+implementation_hints = """
+The key change in generateAllOutputs (outputs/index.ts):
+
+1. assembleMeasurementInput still takes the same pipeline data
+2. generateMeasurementSpec returns new MeasurementSpec (with empty jsonSchemas)
+3. NEW: call generateEntityJsonSchemas(result) to populate jsonSchemas
+4. Assign result.measurement_spec with populated jsonSchemas
+
+The mock LLM fixture needs a complete new-format response:
+{
+  "perspectives": {
+    "product": { "entities": [...] },
+    "customer": { "entities": [...] },
+    "interaction": { "entities": [...] }
+  },
+  "confidence": 0.85
+}
+
+This fixture is used by generate-all-outputs.test.ts and pipeline.test.ts.
+"""

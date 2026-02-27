@@ -54,6 +54,16 @@ export {
   LifecycleStateSchema,
   StateTransitionSchema,
   LifecycleStatesResultSchema,
+  // Double Three-Layer Framework schemas
+  EntityPropertyTypeSchema,
+  EntityPropertySchema,
+  ProductActivitySchema,
+  CustomerActivitySchema,
+  InteractionActivitySchema,
+  ProductEntitySchema,
+  CustomerEntitySchema,
+  InteractionEntitySchema,
+  EntityJsonSchemaSchema,
 } from "./outputs";
 export type {
   ICPProfile,
@@ -74,6 +84,16 @@ export type {
   LifecycleState,
   StateTransition,
   LifecycleStatesResult,
+  // Double Three-Layer Framework types
+  EntityPropertyType,
+  EntityProperty,
+  ProductActivity,
+  CustomerActivity,
+  InteractionActivity,
+  ProductEntity,
+  CustomerEntity,
+  InteractionEntity,
+  EntityJsonSchema,
 } from "./outputs";
 
 // Lens types

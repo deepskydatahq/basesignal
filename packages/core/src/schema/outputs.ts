@@ -62,6 +62,82 @@ export const EntityDefinitionSchema = z.object({
 });
 export type EntityDefinition = z.infer<typeof EntityDefinitionSchema>;
 
+// --- Double Three-Layer Building Blocks ---
+
+export const EntityPropertyTypeSchema = z.enum([
+  "string",
+  "number",
+  "boolean",
+  "array",
+  "id",
+  "calculated",
+  "experimental",
+  "temporary",
+]);
+export type EntityPropertyType = z.infer<typeof EntityPropertyTypeSchema>;
+
+export const EntityPropertySchema = z.object({
+  name: z.string().min(1),
+  type: EntityPropertyTypeSchema,
+  description: z.string().min(1),
+  isRequired: z.boolean(),
+  variations: z.string().optional(),
+});
+export type EntityProperty = z.infer<typeof EntityPropertySchema>;
+
+export const ProductActivitySchema = z.object({
+  name: z.string().min(1),
+  properties_supported: z.array(z.string()),
+  activity_properties: z.array(EntityPropertySchema),
+});
+export type ProductActivity = z.infer<typeof ProductActivitySchema>;
+
+export const CustomerActivitySchema = z.object({
+  name: z.string().min(1),
+  derivation_rule: z.string().min(1),
+  properties_used: z.array(z.string()),
+});
+export type CustomerActivity = z.infer<typeof CustomerActivitySchema>;
+
+export const InteractionActivitySchema = z.object({
+  name: z.string().min(1),
+  properties_supported: z.array(z.string()),
+});
+export type InteractionActivity = z.infer<typeof InteractionActivitySchema>;
+
+// --- Double Three-Layer Entity Types ---
+
+export const ProductEntitySchema = z.object({
+  id: z.string().min(1).regex(/^[a-z][a-z0-9_]*$/),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  isHeartbeat: z.boolean(),
+  properties: z.array(EntityPropertySchema),
+  activities: z.array(ProductActivitySchema),
+});
+export type ProductEntity = z.infer<typeof ProductEntitySchema>;
+
+export const CustomerEntitySchema = z.object({
+  name: z.string().min(1),
+  properties: z.array(EntityPropertySchema),
+  activities: z.array(CustomerActivitySchema),
+});
+export type CustomerEntity = z.infer<typeof CustomerEntitySchema>;
+
+export const InteractionEntitySchema = z.object({
+  name: z.string().min(1),
+  properties: z.array(EntityPropertySchema),
+  activities: z.array(InteractionActivitySchema),
+});
+export type InteractionEntity = z.infer<typeof InteractionEntitySchema>;
+
+export const EntityJsonSchemaSchema = z.object({
+  entityName: z.string().min(1),
+  perspective: PerspectiveSchema,
+  schema: z.record(z.string(), z.unknown()),
+});
+export type EntityJsonSchema = z.infer<typeof EntityJsonSchemaSchema>;
+
 // --- Activation Stages / Map ---
 
 export const ActivationStageSchema = z.object({
@@ -158,15 +234,12 @@ export type TrackingEvent = z.infer<typeof TrackingEventSchema>;
 // --- Measurement Spec ---
 
 export const MeasurementSpecSchema = z.object({
-  entities: z.array(EntityDefinitionSchema),
-  events: z.array(TrackingEventSchema),
-  total_events: z.number().int().min(0),
-  coverage: z.object({
-    activation_levels_covered: z.array(z.number()),
-    value_moments_covered: z.array(z.string()),
-    perspective_distribution: PerspectiveDistributionSchema,
+  perspectives: z.object({
+    customer: z.object({ entities: z.array(CustomerEntitySchema) }),
+    product: z.object({ entities: z.array(ProductEntitySchema) }),
+    interaction: z.object({ entities: z.array(InteractionEntitySchema) }),
   }),
-  userStateModel: z.array(UserStateSchema),
+  jsonSchemas: z.array(EntityJsonSchemaSchema),
   confidence: z.number(),
   sources: z.array(z.string()),
   warnings: z.array(z.string()).optional(),

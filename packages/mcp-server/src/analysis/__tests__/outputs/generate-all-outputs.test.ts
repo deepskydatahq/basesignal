@@ -114,26 +114,44 @@ const validLifecycleStatesResponse = JSON.stringify({
 });
 
 const validMeasurementSpecResponse = JSON.stringify({
-  entities: [{ id: "project", name: "Project", description: "A project", isHeartbeat: true, properties: [] }],
-  events: [
-    {
-      name: "project_created",
-      entity_id: "project",
-      description: "Created a project",
-      perspective: "customer",
-      properties: [{ name: "name", type: "string", description: "Name", required: true }, { name: "template", type: "string", description: "T", required: false }],
-      trigger_condition: "User creates project",
-      maps_to: { type: "value_moment", moment_id: "vm-1" },
-      category: "activation",
+  perspectives: {
+    product: {
+      entities: [{
+        id: "project",
+        name: "Project",
+        description: "A project",
+        isHeartbeat: true,
+        properties: [
+          { name: "project_id", type: "id", description: "Project ID", isRequired: true },
+        ],
+        activities: [
+          { name: "created", properties_supported: ["project_id"], activity_properties: [] },
+        ],
+      }],
     },
-  ],
-  userStateModel: [
-    { name: "new", definition: "D", criteria: [] },
-    { name: "activated", definition: "D", criteria: [] },
-    { name: "active", definition: "D", criteria: [] },
-    { name: "at_risk", definition: "D", criteria: [] },
-    { name: "dormant", definition: "D", criteria: [] },
-  ],
+    customer: {
+      entities: [{
+        name: "Customer",
+        properties: [
+          { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
+        ],
+        activities: [
+          { name: "first_value_created", derivation_rule: "Project created (first time)", properties_used: ["customer_id"] },
+        ],
+      }],
+    },
+    interaction: {
+      entities: [{
+        name: "Interaction",
+        properties: [
+          { name: "element_type", type: "string", description: "Element type", isRequired: true },
+        ],
+        activities: [
+          { name: "element_clicked", properties_supported: ["element_type"] },
+        ],
+      }],
+    },
+  },
   confidence: 0.7,
 });
 

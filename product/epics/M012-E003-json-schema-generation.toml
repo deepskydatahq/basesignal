@@ -1,0 +1,78 @@
+# Epic: JSON Schema Generation
+# Generate a JSON Schema per entity from the parsed measurement spec.
+
+id = "M012-E003"
+mission = "M012"
+title = "JSON Schema Generation"
+status = "draft"
+created = 2026-02-27
+depends_on = ["M012-E001"]
+
+[outcome]
+description = """
+A generateEntityJsonSchemas function takes the parsed MeasurementSpec and produces a
+JSON Schema for each entity across all three perspectives. Each schema has: the entity's
+activity names as an enum field, entity properties as schema fields with correct types,
+and additionalProperties: false. The schemas follow the Silverton/Snowplow pattern
+(vendor-namespaced, typed, strict). The jsonSchemas array is populated in the
+MeasurementSpec output. An engineer can use these schemas as the tracking contract
+to validate events at instrumentation time.
+"""
+
+[scope]
+in_scope = [
+    "generateEntityJsonSchemas function in a new file or within measurement-spec.ts",
+    "Input: parsed MeasurementSpec (perspectives with entities, activities, properties)",
+    "Output: EntityJsonSchema[] — one per entity across all perspectives",
+    "Schema structure: activity as enum, entity properties as fields, additionalProperties: false",
+    "Property type mapping: string→string, number→number, boolean→boolean, array→array, id→string, calculated→number, experimental→any, temporary→any",
+    "Activity-specific properties included conditionally (when the activity is selected)",
+    "Schema $id follows pattern: basesignal/{perspective}/{entity_name}/v1.0.json",
+    "Schema includes title, description from entity definition",
+    "required array includes activity field and all isRequired entity properties",
+    "Unit tests for generateEntityJsonSchemas with product, customer, interaction entities",
+    "Test: Miro-like input produces valid JSON Schemas for Board, Account, Asset, etc.",
+]
+out_of_scope = [
+    "Publishing schemas to a registry",
+    "Schema versioning beyond v1.0",
+    "Validation of incoming events against schemas (that's consumer-side)",
+    "LLM prompt changes (E002 handles what the LLM generates)",
+]
+
+[testing]
+criteria = [
+    "generateEntityJsonSchemas produces one schema per entity",
+    "Product entity schema has activity enum with past-tense values",
+    "Customer entity schema has activity enum with derived stage names",
+    "Interaction entity schema has activity enum with element_clicked, element_submitted",
+    "Entity properties appear as schema fields with correct JSON Schema types",
+    "additionalProperties: false on all schemas",
+    "required array includes activity and isRequired properties",
+    "Schema $id follows basesignal/{perspective}/{entity}/v1.0.json pattern",
+    "All tests pass",
+]
+
+[notes]
+considerations = """
+This epic is relatively self-contained — it takes the already-parsed MeasurementSpec
+and transforms it into JSON Schemas. It doesn't depend on E002 (the parser) directly;
+it depends on E001 (the types) so it knows the shape to work with.
+
+The JSON Schema generation is a pure function: MeasurementSpec → EntityJsonSchema[].
+No LLM calls, no I/O. Easy to test thoroughly.
+
+Key design decision: activity-specific properties (activity_properties on ProductActivity)
+should be represented in the schema. One approach: use JSON Schema's if/then/else or
+oneOf to conditionally include properties based on the activity enum value. Simpler
+approach: include all properties (entity + all activity-specific) and note in description
+which properties apply to which activities. Start with the simpler approach.
+
+The Silverton/Snowplow reference shows the pattern:
+- $schema pointing to a meta-schema
+- $id as vendor-namespaced identifier
+- self object with vendor, namespace, version
+- properties with types and descriptions
+- required array
+- additionalProperties: false
+"""
