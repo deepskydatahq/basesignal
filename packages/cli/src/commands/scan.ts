@@ -120,7 +120,21 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
 
     // Attach available sections
     if (pipelineResult.outputs.activation_map) {
-      profile.journey = pipelineResult.outputs.activation_map;
+      const am = pipelineResult.outputs.activation_map;
+      const confidenceMap: Record<string, number> = {
+        low: 0.33,
+        medium: 0.67,
+        high: 0.9,
+      };
+      profile.journey = {
+        stages: am.stages.map((s) => ({
+          name: s.name,
+          description: `${s.signal_strength} signal — triggers: ${s.trigger_events.join(", ")}; unlocks: ${s.value_moments_unlocked.join(", ") || "none"}`,
+          order: s.level,
+        })),
+        confidence: confidenceMap[am.confidence] ?? 0.5,
+        evidence: (am.sources ?? []).map((src) => ({ url: src, excerpt: "" })),
+      };
     }
     if (pipelineResult.outputs.measurement_spec) {
       profile.measurement_spec = pipelineResult.outputs.measurement_spec;
