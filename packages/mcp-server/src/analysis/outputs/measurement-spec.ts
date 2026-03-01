@@ -21,6 +21,7 @@ export interface MeasurementInputData {
   value_event_templates: ValueEventTemplate[];
   lifecycle_states?: LifecycleStatesResult;
   identity?: { description: string; productName: string };
+  sources?: string[];
 }
 
 interface ActivationEventTemplate {
@@ -667,6 +668,7 @@ export function assembleMeasurementInput(
   activationMap: ActivationMapResult | null,
   lifecycleStates?: LifecycleStatesResult,
   identity?: { description: string; productName: string },
+  sources?: string[],
 ): MeasurementInputData {
   // Build activation event templates from activation level criteria
   const activationEventTemplates: ActivationEventTemplate[] = activationLevels.map((level) => ({
@@ -700,6 +702,7 @@ export function assembleMeasurementInput(
     value_event_templates: valueEventTemplates,
     lifecycle_states: lifecycleStates,
     identity,
+    sources,
   };
 }
 
@@ -718,6 +721,8 @@ export async function generateMeasurementSpec(
     { temperature: 0.2, maxTokens: 16384 },
   );
   const spec = parseMeasurementSpecResponse(responseText);
+  // Populate sources from crawled page URLs (deduplicated)
+  spec.sources = [...new Set(inputData.sources ?? [])];
   // Populate JSON schemas
   spec.jsonSchemas = generateEntityJsonSchemas(spec);
   return spec;

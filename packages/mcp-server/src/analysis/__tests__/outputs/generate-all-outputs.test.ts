@@ -362,3 +362,72 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
     expect(capturedMessages[1].content).toContain("explorer");
   });
 });
+
+describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () => {
+  it("populates measurement_spec.sources from pageUrls parameter", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+    ]);
+
+    const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com/pricing"];
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      undefined,
+      pageUrls,
+    );
+
+    expect(result.measurement_spec).not.toBeNull();
+    expect(result.measurement_spec!.sources).toEqual(pageUrls);
+  });
+
+  it("measurement_spec.sources is empty when pageUrls not provided", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+    ]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+    );
+
+    expect(result.measurement_spec).not.toBeNull();
+    expect(result.measurement_spec!.sources).toEqual([]);
+  });
+
+  it("deduplicates pageUrls in measurement_spec.sources", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+    ]);
+
+    const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com"];
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      undefined,
+      pageUrls,
+    );
+
+    expect(result.measurement_spec).not.toBeNull();
+    expect(result.measurement_spec!.sources).toEqual(["https://example.com", "https://example.com/features"]);
+  });
+});

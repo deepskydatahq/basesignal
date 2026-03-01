@@ -43,25 +43,6 @@ export const ICPProfileSchema = z.object({
 });
 export type ICPProfile = z.infer<typeof ICPProfileSchema>;
 
-// --- Entity Property / Entity Definition ---
-
-export const EntityPropertyDefSchema = z.object({
-  name: z.string().min(1),
-  type: z.enum(["string", "number", "boolean", "array"]),
-  description: z.string().min(1),
-  isRequired: z.boolean(),
-});
-export type EntityPropertyDef = z.infer<typeof EntityPropertyDefSchema>;
-
-export const EntityDefinitionSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  description: z.string().min(1),
-  isHeartbeat: z.boolean(),
-  properties: z.array(EntityPropertyDefSchema),
-});
-export type EntityDefinition = z.infer<typeof EntityDefinitionSchema>;
-
 // --- Double Three-Layer Building Blocks ---
 
 export const EntityPropertyTypeSchema = z.enum([
@@ -217,6 +198,16 @@ export const LifecycleStatesResultSchema = z.object({
 });
 export type LifecycleStatesResult = z.infer<typeof LifecycleStatesResultSchema>;
 
+// --- Event Property (for Tracking Events) ---
+
+export const EventPropertySchema = z.object({
+  name: z.string().min(1),
+  type: z.enum(["string", "number", "boolean", "array"]),
+  description: z.string().min(1),
+  isRequired: z.boolean(),
+});
+export type EventProperty = z.infer<typeof EventPropertySchema>;
+
 // --- Tracking Event ---
 
 export const TrackingEventSchema = z.object({
@@ -224,7 +215,7 @@ export const TrackingEventSchema = z.object({
   entity_id: z.string().min(1),
   description: z.string().min(1),
   perspective: PerspectiveSchema,
-  properties: z.array(EntityPropertyDefSchema),
+  properties: z.array(EventPropertySchema),
   trigger_condition: z.string().min(1),
   maps_to: MapsToSchema,
   category: z.string().min(1),

@@ -221,6 +221,147 @@ describe("formatProfileSummary", () => {
     expect(result).toContain("**Score:** 86%");
     expect(result).toContain("**Overall Confidence:** 92%");
   });
+
+  it("renders measurement spec with all three perspectives", () => {
+    const profile: FormattableProfile = {
+      url: "https://example.com",
+      measurement_spec: {
+        perspectives: {
+          product: {
+            entities: [
+              {
+                id: "project",
+                name: "Project",
+                description: "A project container",
+                isHeartbeat: true,
+                properties: [
+                  { name: "project_id", type: "id", description: "Unique ID", isRequired: true },
+                  { name: "name", type: "string", description: "Project name", isRequired: true },
+                ],
+                activities: [{ name: "project_created" }, { name: "project_archived" }],
+              },
+            ],
+          },
+          customer: {
+            entities: [
+              {
+                name: "User",
+                properties: [
+                  { name: "user_id", type: "id", description: "User ID", isRequired: true },
+                ],
+                activities: [
+                  { name: "signed_up", derivation_rule: "account_created" },
+                  { name: "activated", derivation_rule: "first_project_created" },
+                ],
+              },
+            ],
+          },
+          interaction: {
+            entities: [
+              {
+                name: "PageView",
+                properties: [
+                  { name: "page_url", type: "string", description: "URL visited", isRequired: true },
+                ],
+                activities: [{ name: "page_viewed" }],
+              },
+            ],
+          },
+        },
+        confidence: 0.85,
+      },
+      completeness: 0.7,
+      overallConfidence: 0.8,
+    };
+    const result = formatProfileSummary(profile, "p-6");
+
+    // Section headings
+    expect(result).toContain("## Measurement Spec");
+    expect(result).toContain("### Product Entities");
+    expect(result).toContain("### Customer Entities");
+    expect(result).toContain("### Interaction Entities");
+
+    // Product entity details
+    expect(result).toContain("**Project** [heartbeat]: A project container");
+    expect(result).toContain("Properties: project_id, name");
+    expect(result).toContain("Activities: project_created, project_archived");
+
+    // Customer entity details
+    expect(result).toContain("**User**");
+    expect(result).toContain("signed_up (account_created)");
+    expect(result).toContain("activated (first_project_created)");
+
+    // Interaction entity details
+    expect(result).toContain("**PageView**");
+    expect(result).toContain("Activities: page_viewed");
+
+    // Confidence
+    expect(result).toContain("85%");
+  });
+
+  it("skips empty perspective sub-sections", () => {
+    const profile: FormattableProfile = {
+      url: "https://example.com",
+      measurement_spec: {
+        perspectives: {
+          product: {
+            entities: [
+              {
+                id: "task",
+                name: "Task",
+                description: "A work item",
+                isHeartbeat: false,
+                properties: [],
+                activities: [],
+              },
+            ],
+          },
+          customer: { entities: [] },
+          interaction: { entities: [] },
+        },
+        confidence: 0.7,
+      },
+      completeness: 0.5,
+      overallConfidence: 0.6,
+    };
+    const result = formatProfileSummary(profile, "p-7");
+
+    expect(result).toContain("## Measurement Spec");
+    expect(result).toContain("### Product Entities");
+    expect(result).not.toContain("### Customer Entities");
+    expect(result).not.toContain("### Interaction Entities");
+    // Non-heartbeat entity should not have [heartbeat] marker
+    expect(result).toContain("**Task**:");
+    expect(result).not.toContain("[heartbeat]");
+  });
+
+  it("omits measurement spec section when not present", () => {
+    const profile: FormattableProfile = {
+      url: "https://example.com",
+      completeness: 0.5,
+      overallConfidence: 0.6,
+    };
+    const result = formatProfileSummary(profile, "p-8");
+    expect(result).not.toContain("## Measurement Spec");
+  });
+
+  it("omits measurement spec section when all perspectives are empty", () => {
+    const profile: FormattableProfile = {
+      url: "https://example.com",
+      measurement_spec: {
+        perspectives: {
+          product: { entities: [] },
+          customer: { entities: [] },
+          interaction: { entities: [] },
+        },
+        confidence: 0.5,
+      },
+      completeness: 0.5,
+      overallConfidence: 0.6,
+    };
+    const result = formatProfileSummary(profile, "p-9");
+    expect(result).not.toContain("## Measurement Spec");
+  });
 });
 
 // ---------------------------------------------------------------------------

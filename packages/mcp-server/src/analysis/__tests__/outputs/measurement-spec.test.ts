@@ -4,10 +4,11 @@ import {
   assembleMeasurementInput,
   buildMeasurementSpecPrompt,
   generateEntityJsonSchemas,
+  generateMeasurementSpec,
   MEASUREMENT_SPEC_SYSTEM_PROMPT,
 } from "../../outputs/measurement-spec.js";
 import type { ActivationLevel, LifecycleStatesResult, MeasurementSpec } from "@basesignal/core";
-import type { ValueMoment, ICPProfile } from "../../types.js";
+import type { ValueMoment, ICPProfile, LlmProvider } from "../../types.js";
 
 const sampleLevels: ActivationLevel[] = [
   {
@@ -185,6 +186,17 @@ describe("assembleMeasurementInput", () => {
   it("identity is undefined when not provided", () => {
     const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
     expect(input.identity).toBeUndefined();
+  });
+
+  it("includes sources when provided", () => {
+    const sources = ["https://example.com", "https://example.com/about"];
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null, undefined, undefined, sources);
+    expect(input.sources).toEqual(sources);
+  });
+
+  it("sources is undefined when not provided", () => {
+    const input = assembleMeasurementInput(sampleMoments, sampleLevels, sampleICPs, null);
+    expect(input.sources).toBeUndefined();
   });
 });
 
@@ -678,6 +690,45 @@ describe("generateEntityJsonSchemas", () => {
     expect(props.p_calc.type).toBe("number");
     expect(props.p_exp.type).toBeUndefined(); // experimental → {}
     expect(props.p_temp.type).toBeUndefined(); // temporary → {}
+  });
+});
+
+// --- generateMeasurementSpec ---
+
+describe("generateMeasurementSpec — sources population", () => {
+  it("populates spec.sources from inputData.sources with deduplication", async () => {
+    const mockLlm: LlmProvider = {
+      complete: async () => makeValidSpecJson(),
+    } as LlmProvider;
+
+    const inputData = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+      undefined,
+      undefined,
+      ["https://example.com", "https://example.com/about", "https://example.com"],
+    );
+
+    const spec = await generateMeasurementSpec(inputData, mockLlm);
+    expect(spec.sources).toEqual(["https://example.com", "https://example.com/about"]);
+  });
+
+  it("populates spec.sources as empty array when no sources provided", async () => {
+    const mockLlm: LlmProvider = {
+      complete: async () => makeValidSpecJson(),
+    } as LlmProvider;
+
+    const inputData = assembleMeasurementInput(
+      sampleMoments,
+      sampleLevels,
+      sampleICPs,
+      null,
+    );
+
+    const spec = await generateMeasurementSpec(inputData, mockLlm);
+    expect(spec.sources).toEqual([]);
   });
 });
 

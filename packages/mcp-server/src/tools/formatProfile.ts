@@ -27,14 +27,53 @@ interface ProfileRevenue {
   confidence: number;
 }
 
-interface ProfileEntity {
+interface ProfileEntityProperty {
   name: string;
   type: string;
-  properties: string[];
+  description: string;
+  isRequired: boolean;
 }
 
-interface ProfileEntities {
-  items: ProfileEntity[];
+interface ProfileProductActivity {
+  name: string;
+}
+
+interface ProfileCustomerActivity {
+  name: string;
+  derivation_rule: string;
+}
+
+interface ProfileInteractionActivity {
+  name: string;
+}
+
+interface ProfileProductEntity {
+  id: string;
+  name: string;
+  description: string;
+  isHeartbeat: boolean;
+  properties: ProfileEntityProperty[];
+  activities: ProfileProductActivity[];
+}
+
+interface ProfileCustomerEntity {
+  name: string;
+  properties: ProfileEntityProperty[];
+  activities: ProfileCustomerActivity[];
+}
+
+interface ProfileInteractionEntity {
+  name: string;
+  properties: ProfileEntityProperty[];
+  activities: ProfileInteractionActivity[];
+}
+
+interface ProfileMeasurementSpec {
+  perspectives: {
+    product: { entities: ProfileProductEntity[] };
+    customer: { entities: ProfileCustomerEntity[] };
+    interaction: { entities: ProfileInteractionEntity[] };
+  };
   confidence: number;
 }
 
@@ -75,7 +114,7 @@ export interface FormattableProfile {
   url: string;
   identity?: ProfileIdentity | null;
   revenue?: ProfileRevenue | null;
-  entities?: ProfileEntities | null;
+  measurement_spec?: ProfileMeasurementSpec | null;
   journey?: ProfileJourney | null;
   outcomes?: ProfileOutcomes | null;
   metrics?: ProfileMetrics | null;
@@ -124,14 +163,65 @@ export function formatProfileSummary(
     lines.push("");
   }
 
-  // Entity Model
-  if (profile.entities && profile.entities.items.length > 0) {
-    lines.push("## Entities");
-    for (const entity of profile.entities.items) {
-      lines.push(`- **${entity.name}** (${entity.type}): ${entity.properties.join(", ")}`);
+  // Measurement Spec
+  if (profile.measurement_spec) {
+    const spec = profile.measurement_spec;
+    const { product, customer, interaction } = spec.perspectives;
+    const hasEntities =
+      product.entities.length > 0 ||
+      customer.entities.length > 0 ||
+      interaction.entities.length > 0;
+
+    if (hasEntities) {
+      lines.push("## Measurement Spec");
+      lines.push("");
+
+      if (product.entities.length > 0) {
+        lines.push("### Product Entities");
+        for (const entity of product.entities) {
+          const heartbeat = entity.isHeartbeat ? " [heartbeat]" : "";
+          lines.push(`- **${entity.name}**${heartbeat}: ${entity.description}`);
+          if (entity.properties.length > 0) {
+            lines.push(`  - Properties: ${entity.properties.map((p) => p.name).join(", ")}`);
+          }
+          if (entity.activities.length > 0) {
+            lines.push(`  - Activities: ${entity.activities.map((a) => a.name).join(", ")}`);
+          }
+        }
+        lines.push("");
+      }
+
+      if (customer.entities.length > 0) {
+        lines.push("### Customer Entities");
+        for (const entity of customer.entities) {
+          lines.push(`- **${entity.name}**`);
+          if (entity.properties.length > 0) {
+            lines.push(`  - Properties: ${entity.properties.map((p) => p.name).join(", ")}`);
+          }
+          if (entity.activities.length > 0) {
+            lines.push(`  - Activities: ${entity.activities.map((a) => `${a.name} (${a.derivation_rule})`).join(", ")}`);
+          }
+        }
+        lines.push("");
+      }
+
+      if (interaction.entities.length > 0) {
+        lines.push("### Interaction Entities");
+        for (const entity of interaction.entities) {
+          lines.push(`- **${entity.name}**`);
+          if (entity.properties.length > 0) {
+            lines.push(`  - Properties: ${entity.properties.map((p) => p.name).join(", ")}`);
+          }
+          if (entity.activities.length > 0) {
+            lines.push(`  - Activities: ${entity.activities.map((a) => a.name).join(", ")}`);
+          }
+        }
+        lines.push("");
+      }
+
+      lines.push(`- **Confidence:** ${pct(spec.confidence)}`);
+      lines.push("");
     }
-    lines.push(`- **Confidence:** ${pct(profile.entities.confidence)}`);
-    lines.push("");
   }
 
   // Journey

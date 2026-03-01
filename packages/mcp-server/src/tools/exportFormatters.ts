@@ -154,6 +154,41 @@ export function exportProfileAsMarkdown(
   // Entity Model
   lines.push("## Entity Model");
   lines.push("");
+
+  // New measurement_spec perspectives format
+  const measurementSpec = profile.measurement_spec as
+    | {
+        perspectives?: {
+          product?: {
+            entities?: Array<{
+              id?: string;
+              name: string;
+              description?: string;
+              isHeartbeat?: boolean;
+              properties?: Array<{ name: string; type: string; description: string; isRequired?: boolean }>;
+              activities?: Array<{ name: string; properties_supported?: string[]; activity_properties?: Array<{ name: string }> }>;
+            }>;
+          };
+          customer?: {
+            entities?: Array<{
+              name: string;
+              properties?: Array<{ name: string; type: string; description: string; isRequired?: boolean }>;
+              activities?: Array<{ name: string; derivation_rule?: string; properties_used?: string[] }>;
+            }>;
+          };
+          interaction?: {
+            entities?: Array<{
+              name: string;
+              properties?: Array<{ name: string; type: string; description: string; isRequired?: boolean }>;
+              activities?: Array<{ name: string; properties_supported?: string[] }>;
+            }>;
+          };
+        };
+        confidence?: number;
+      }
+    | undefined;
+
+  // Legacy entities format
   const entities = profile.entities as
     | {
         items?: Array<{ name: string; type: string; properties: string[] }>;
@@ -162,7 +197,67 @@ export function exportProfileAsMarkdown(
         evidence?: Evidence;
       }
     | undefined;
-  if (entities) {
+
+  if (measurementSpec?.perspectives) {
+    const persp = measurementSpec.perspectives;
+
+    // Product Entities
+    if (persp.product?.entities && persp.product.entities.length > 0) {
+      lines.push("### Product Entities");
+      lines.push("");
+      for (const ent of persp.product.entities) {
+        const heartbeat = ent.isHeartbeat ? " (heartbeat)" : "";
+        const props = ent.properties?.map((p) => p.name).join(", ") ?? "";
+        lines.push(`- **${ent.name}**${heartbeat}: ${props}`);
+        if (ent.activities && ent.activities.length > 0) {
+          for (const act of ent.activities) {
+            lines.push(`  - Activity: ${act.name}`);
+          }
+        }
+      }
+      lines.push("");
+    }
+
+    // Customer Entities
+    if (persp.customer?.entities && persp.customer.entities.length > 0) {
+      lines.push("### Customer Entities");
+      lines.push("");
+      for (const ent of persp.customer.entities) {
+        const props = ent.properties?.map((p) => p.name).join(", ") ?? "";
+        lines.push(`- **${ent.name}**: ${props}`);
+        if (ent.activities && ent.activities.length > 0) {
+          for (const act of ent.activities) {
+            const rule = act.derivation_rule
+              ? ` (derived: ${act.derivation_rule})`
+              : "";
+            lines.push(`  - Activity: ${act.name}${rule}`);
+          }
+        }
+      }
+      lines.push("");
+    }
+
+    // Interaction Entities
+    if (persp.interaction?.entities && persp.interaction.entities.length > 0) {
+      lines.push("### Interaction Entities");
+      lines.push("");
+      for (const ent of persp.interaction.entities) {
+        const props = ent.properties?.map((p) => p.name).join(", ") ?? "";
+        lines.push(`- **${ent.name}**: ${props}`);
+        if (ent.activities && ent.activities.length > 0) {
+          for (const act of ent.activities) {
+            lines.push(`  - Activity: ${act.name}`);
+          }
+        }
+      }
+      lines.push("");
+    }
+
+    if (measurementSpec.confidence !== undefined)
+      lines.push(
+        `**Confidence:** ${Math.round(measurementSpec.confidence * 100)}%`
+      );
+  } else if (entities) {
     if (entities.items && entities.items.length > 0) {
       lines.push("**Entities:**");
       for (const item of entities.items) {

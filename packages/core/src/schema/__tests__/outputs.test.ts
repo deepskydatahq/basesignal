@@ -5,7 +5,7 @@ import {
   ActivationStageSchema,
   ActivationMapSchema,
   MeasurementSpecSchema,
-  EntityPropertyDefSchema,
+  EventPropertySchema,
   ValueMomentPrioritySchema,
   TrackingEventSchema,
   PerspectiveSchema,
@@ -55,7 +55,7 @@ const validActivationMap = {
   sources: ["analysis"],
 };
 
-const validEntityPropDef = {
+const validEventProperty = {
   name: "email",
   type: "string" as const,
   description: "User email",
@@ -67,7 +67,7 @@ const validTrackingEvent = {
   entity_id: "ent-1",
   description: "User views a page",
   perspective: "customer" as const,
-  properties: [validEntityPropDef],
+  properties: [validEventProperty],
   trigger_condition: "page loads",
   maps_to: { type: "value_moment" as const, moment_id: "vm-1" },
   category: "engagement",
@@ -196,16 +196,16 @@ describe("TrackingEventSchema", () => {
   });
 });
 
-describe("EntityPropertyDefSchema", () => {
+describe("EventPropertySchema", () => {
   it.each(["string", "number", "boolean", "array"])("accepts type '%s'", (val) => {
     expect(
-      EntityPropertyDefSchema.safeParse({ ...validEntityPropDef, type: val }).success,
+      EventPropertySchema.safeParse({ ...validEventProperty, type: val }).success,
     ).toBe(true);
   });
 
   it("rejects invalid type", () => {
     expect(
-      EntityPropertyDefSchema.safeParse({ ...validEntityPropDef, type: "object" }).success,
+      EventPropertySchema.safeParse({ ...validEventProperty, type: "object" }).success,
     ).toBe(false);
   });
 });

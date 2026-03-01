@@ -29,6 +29,7 @@ export async function generateAllOutputs(
   llm: LlmProvider,
   progress?: OnProgress,
   errors?: PipelineError[],
+  pageUrls?: string[],
 ): Promise<OutputsResult> {
   const result: OutputsResult = {
     icp_profiles: [],
@@ -99,6 +100,7 @@ export async function generateAllOutputs(
         result.activation_map,
         result.lifecycle_states ?? undefined,
         identity ? { description: identity.description, productName: identity.productName } : undefined,
+        pageUrls,
       );
       result.measurement_spec = await generateMeasurementSpec(inputData, llm);
       progress?.({ phase: "outputs_measurement_spec", status: "completed" });

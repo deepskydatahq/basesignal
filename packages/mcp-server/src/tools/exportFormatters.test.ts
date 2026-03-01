@@ -40,14 +40,63 @@ const fullProfile: ProductProfile = {
       { url: "https://acme.io/pricing", excerpt: "Starting at $0" },
     ],
   },
-  entities: {
-    items: [
-      { name: "User", type: "actor", properties: ["email", "role"] },
-      { name: "Project", type: "resource", properties: ["name", "status"] },
-    ],
-    relationships: [{ from: "User", to: "Project", type: "owns" }],
+  measurement_spec: {
+    perspectives: {
+      product: {
+        entities: [
+          {
+            id: "user",
+            name: "User",
+            description: "Primary product user",
+            isHeartbeat: true,
+            properties: [
+              { name: "email", type: "string", description: "User email", isRequired: true },
+              { name: "role", type: "string", description: "User role", isRequired: false },
+            ],
+            activities: [
+              { name: "user_created", properties_supported: ["email"], activity_properties: [] },
+            ],
+          },
+          {
+            id: "project",
+            name: "Project",
+            description: "A workspace project",
+            isHeartbeat: false,
+            properties: [
+              { name: "name", type: "string", description: "Project name", isRequired: true },
+            ],
+            activities: [],
+          },
+        ],
+      },
+      customer: {
+        entities: [
+          {
+            name: "Account",
+            properties: [
+              { name: "plan", type: "string", description: "Subscription plan", isRequired: true },
+            ],
+            activities: [
+              { name: "account_upgraded", derivation_rule: "plan changed to higher tier", properties_used: ["plan"] },
+            ],
+          },
+        ],
+      },
+      interaction: {
+        entities: [
+          {
+            name: "PageView",
+            properties: [
+              { name: "url", type: "string", description: "Page URL", isRequired: true },
+            ],
+            activities: [
+              { name: "page_viewed", properties_supported: ["url"] },
+            ],
+          },
+        ],
+      },
+    },
     confidence: 0.8,
-    evidence: [],
   },
   journey: {
     stages: [
@@ -215,9 +264,43 @@ describe("exportProfileAsMarkdown", () => {
     expect(md).toContain("| Setup | Configure first project |");
   });
 
-  it("renders entity relationships", () => {
+  it("renders measurement_spec perspectives", () => {
     const md = exportProfileAsMarkdown(fullProfile);
+    // Product entities with heartbeat flag
+    expect(md).toContain("### Product Entities");
+    expect(md).toContain("**User** (heartbeat)");
+    expect(md).toContain("**Project**:");
+    // Product entity activities
+    expect(md).toContain("Activity: user_created");
+    // Customer entities with derivation rules
+    expect(md).toContain("### Customer Entities");
+    expect(md).toContain("**Account**:");
+    expect(md).toContain("(derived: plan changed to higher tier)");
+    // Interaction entities
+    expect(md).toContain("### Interaction Entities");
+    expect(md).toContain("**PageView**:");
+    // Confidence
+    expect(md).toContain("**Confidence:** 80%");
+  });
+
+  it("falls back to old entities format when measurement_spec is absent", () => {
+    const legacyProfile: ProductProfile = {
+      completeness: 0.5,
+      overallConfidence: 0.6,
+      entities: {
+        items: [
+          { name: "User", type: "actor", properties: ["email", "role"] },
+          { name: "Project", type: "resource", properties: ["name", "status"] },
+        ],
+        relationships: [{ from: "User", to: "Project", type: "owns" }],
+        confidence: 0.8,
+        evidence: [],
+      },
+    };
+    const md = exportProfileAsMarkdown(legacyProfile);
     expect(md).toContain("User -> Project (owns)");
+    expect(md).toContain("**User** (actor)");
+    expect(md).not.toContain("### Product Entities");
   });
 
   it("renders outcomes with linked features", () => {

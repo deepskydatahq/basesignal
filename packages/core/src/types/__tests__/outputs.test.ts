@@ -5,8 +5,6 @@ import type {
   ActivationStage,
   StageTransition,
   ActivationMap,
-  EntityPropertyDef,
-  EntityDefinition,
   UserStateCriterion,
   UserState,
   EventProperty,
@@ -116,26 +114,6 @@ describe("ActivationMap", () => {
     expect(map.stages).toHaveLength(1);
     expect(map.transitions).toHaveLength(1);
     expect(map.primary_activation_level).toBe(2);
-  });
-});
-
-describe("EntityPropertyDef and EntityDefinition", () => {
-  it("defines entities with properties", () => {
-    const prop: EntityPropertyDef = {
-      name: "email",
-      type: "string",
-      description: "User email",
-      isRequired: true,
-    };
-    const entity: EntityDefinition = {
-      id: "user",
-      name: "User",
-      description: "A product user",
-      isHeartbeat: true,
-      properties: [prop],
-    };
-    expect(entity.properties).toHaveLength(1);
-    expect(entity.isHeartbeat).toBe(true);
   });
 });
 

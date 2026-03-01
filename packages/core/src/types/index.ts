@@ -55,8 +55,6 @@ export type {
   ActivationStage,
   StageTransition,
   ActivationMap,
-  EntityPropertyDef,
-  EntityDefinition,
   UserStateCriterion,
   UserState,
   EventProperty,

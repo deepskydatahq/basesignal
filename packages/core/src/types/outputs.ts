@@ -62,27 +62,6 @@ export interface ActivationMap {
 }
 
 // ---------------------------------------------------------------------------
-// Entity / Property Types
-// ---------------------------------------------------------------------------
-
-/** @deprecated Use EntityProperty instead. */
-export interface EntityPropertyDef {
-  name: string;
-  type: "string" | "number" | "boolean" | "array";
-  description: string;
-  isRequired: boolean;
-}
-
-/** @deprecated Use ProductEntity instead. */
-export interface EntityDefinition {
-  id: string;
-  name: string;
-  description: string;
-  isHeartbeat: boolean;
-  properties: EntityPropertyDef[];
-}
-
-// ---------------------------------------------------------------------------
 // Double Three-Layer Building Blocks
 // ---------------------------------------------------------------------------
 
