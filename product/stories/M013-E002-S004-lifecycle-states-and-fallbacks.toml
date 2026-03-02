@@ -1,0 +1,72 @@
+# Story: Lifecycle States Section and Missing Section Handling
+# Render lifecycle states with transitions and ensure all missing sections are graceful.
+
+id = "M013-E002-S004"
+epic = "M013-E002"
+title = "Lifecycle States Section and Missing Section Handling"
+status = "ready"
+created = 2026-03-02
+depends_on = ["M013-E002-S001"]
+
+[outcome]
+description = """
+The product report page includes a Lifecycle States section showing each user
+state with its definition, entry criteria, exit triggers, and time window.
+State transitions are rendered showing the flow between states. All six report
+sections now have consistent 'Not yet analyzed' fallback behavior. The report
+page is complete — all sections from the epic criteria are rendered.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "Lifecycle States section renders each state: name, definition, time window",
+    "Each state shows entry criteria: event name and condition",
+    "Each state shows exit triggers: event name and condition",
+    "State transitions render as a list or table: from → to, trigger conditions, typical timeframe",
+    "Confidence score displayed as percentage",
+    "Data loaded from outputs/lifecycle-states.json",
+    "When lifecycle states file is missing, shows 'Not yet analyzed'",
+    "All six sections (identity, journey, ICPs, value moments, measurement spec, lifecycle states) render consistently",
+    "A profile with no output files at all shows all sections as 'Not yet analyzed' without errors",
+    "Tests verify: lifecycle state names render, transitions render, empty profile handled gracefully",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[notes]
+implementation_hints = """
+Lifecycle states data shape (from outputs/lifecycle-states.json):
+
+states[]:
+  - name: string (e.g., "new", "activated", "engaged", "at_risk", "dormant", "churned", "resurrected")
+  - definition: string (long-form)
+  - entry_criteria[]: { event_name, condition, threshold? }
+  - exit_triggers[]: { event_name, condition, threshold? }
+  - time_window: string (e.g., "0-7 days")
+
+transitions[]:
+  - from_state, to_state: string
+  - trigger_conditions[]: string[]
+  - typical_timeframe: string
+
+confidence: number (0-1)
+sources: string[]
+
+Rendering approach:
+- Each state as a card with name as heading
+- Entry criteria and exit triggers as compact lists
+- Time window as a badge or label
+- Transitions as a table: From | To | Triggers | Timeframe
+- State names could be color-coded: positive states (activated, engaged) in green tones,
+  negative states (at_risk, churned) in red/orange tones — but keep it subtle
+
+Also verify the "empty profile" edge case — create a test with a ProductDirectory
+that has a slug directory but no profile.json or output files. All six section
+renderers should return their "Not yet analyzed" fallback without throwing.
+"""

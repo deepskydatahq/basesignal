@@ -1,0 +1,97 @@
+# Story: Report Scaffold, Identity, and Journey Sections
+# Wire the report page into the slug route and render the first two sections.
+
+id = "M013-E002-S001"
+epic = "M013-E002"
+title = "Report Scaffold, Identity, and Journey Sections"
+status = "ready"
+created = 2026-03-02
+depends_on = []
+
+[outcome]
+description = """
+GET /{slug} renders a full product report page instead of the placeholder.
+The page has a header with product name, URL, scan date, completeness, and
+overall confidence. Below that, the Identity section shows description, target
+customer, business model, industry, and company stage. The Journey section
+renders activation map stages as a table with level, name, signal strength,
+triggers, value moments unlocked, and drop-off risk. Stage transitions are
+shown below. Missing sections display 'Not yet analyzed'. Each section with
+a confidence score shows it as a percentage.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "GET /{slug} returns a full report HTML page (replaces placeholder from E001)",
+    "Report header shows: product name (h1), URL as link, scan date, completeness %, overall confidence %",
+    "Identity section renders: description, target customer, business model, industry, company stage",
+    "Identity section shows confidence as percentage",
+    "Journey section renders activation map stages as a table: level, name, signal strength, triggers, value moments unlocked, drop-off risk",
+    "Journey section renders transitions: from → to, trigger events, typical timeframe",
+    "Journey section shows primary activation level highlighted or labeled",
+    "When identity is missing from profile, shows 'Not yet analyzed'",
+    "When activation map output file is missing, shows 'Not yet analyzed'",
+    "Data is loaded from ProductDirectory: profile.json for identity, outputs/activation-map.json for journey",
+    "renderProductReport function is extracted and exported for testing",
+    "Tests verify: report contains identity fields, journey stages render, missing sections handled",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[notes]
+implementation_hints = """
+This story establishes the rendering pattern all other stories follow.
+
+Data loading — read from ProductDirectory per section:
+```typescript
+const profile = productDir.readJson<Record<string, unknown>>(slug, "profile.json");
+const activationMap = productDir.readJson<Record<string, unknown>>(slug, "outputs/activation-map.json");
+```
+
+Report assembly pattern:
+```typescript
+export function renderProductReport(slug: string, productDir: ProductDirectory): string {
+  const profile = productDir.readJson<Record<string, unknown>>(slug, "profile.json");
+  const activationMap = productDir.readJson<Record<string, unknown>>(slug, "outputs/activation-map.json");
+
+  const identity = profile?.identity as { productName?: string; ... } | undefined;
+  const metadata = profile?.metadata as { url?: string; scannedAt?: number } | undefined;
+
+  const sections = [
+    renderReportHeader(identity, metadata, profile),
+    renderIdentitySection(identity),
+    renderJourneySection(activationMap),
+    // ... more sections in later stories
+  ];
+
+  return renderPage(identity?.productName ?? slug, sections.join("\n"));
+}
+```
+
+Each section renderer is a pure function returning an HTML string fragment.
+
+Section HTML pattern:
+```html
+<section id="identity">
+  <h2>Identity</h2>
+  <!-- content or "Not yet analyzed" -->
+  <p class="confidence">Confidence: 85%</p>
+</section>
+```
+
+Activation map data shape — key fields:
+- stages[].level, .name, .signal_strength, .trigger_events[], .value_moments_unlocked[], .drop_off_risk.level/.reason
+- transitions[].from_level, .to_level, .trigger_events[], .typical_timeframe
+- primary_activation_level (number)
+- confidence is a STRING ("low"/"medium"/"high"), not a number! Display as-is.
+
+Update the slug route handler to call renderProductReport instead of the placeholder.
+
+For tests, write mock profile.json and outputs/activation-map.json to a temp ProductDirectory.
+"""

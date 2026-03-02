@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { exec } from "node:child_process";
 import type { ProductDirectory } from "@basesignal/storage";
@@ -44,6 +44,34 @@ export function renderPage(title: string, body: string): string {
     th { font-weight: 600; color: #374151; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
     tr:hover { background: #f9fafb; }
     .empty-state { color: #6b7280; margin-top: 2rem; }
+    .back-link { display: inline-block; margin-bottom: 1rem; font-size: 0.9rem; }
+    section { margin-bottom: 2.5rem; }
+    section h2 { font-size: 1.35rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.4rem; margin-bottom: 1rem; }
+    .confidence { font-size: 0.85rem; color: #6b7280; margin-top: 0.75rem; }
+    .not-analyzed { color: #9ca3af; font-style: italic; }
+    .report-header { margin-bottom: 2rem; }
+    .report-header .meta { font-size: 0.9rem; color: #6b7280; display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem; }
+    .report-header .meta a { color: #6b7280; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0; }
+    dt { font-weight: 600; color: #374151; }
+    dd { margin: 0; }
+    .badge { display: inline-block; font-size: 0.75rem; padding: 0.1em 0.5em; border-radius: 3px; background: #dbeafe; color: #1e40af; font-weight: 500; }
+    .badge-primary { background: #fef3c7; color: #92400e; }
+    .risk-low { color: #059669; }
+    .risk-medium { color: #d97706; }
+    .risk-high { color: #dc2626; }
+    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card h3, .card h4 { margin-top: 0.5rem; margin-bottom: 0.25rem; }
+    .card h3:first-child { margin-top: 0; }
+    .card ul { margin: 0.25rem 0 0.5rem 0; padding-left: 1.25rem; }
+    .card p { margin: 0.25rem 0; }
+    .card table { margin-top: 0.5rem; font-size: 0.9rem; }
+    h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+    h4 { font-size: 0.95rem; color: #374151; }
+    h5 { font-size: 0.85rem; color: #6b7280; margin: 0.5rem 0 0.25rem; }
+    .warnings { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; }
+    .warnings h4 { color: #92400e; margin: 0; }
+    .warnings ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
   </style>
 </head>
 <body>
@@ -120,6 +148,455 @@ ${rows}
 }
 
 // ---------------------------------------------------------------------------
+// Product report
+// ---------------------------------------------------------------------------
+
+function renderReportHeader(
+  identity: Record<string, unknown> | undefined,
+  metadata: Record<string, unknown> | undefined,
+  profile: Record<string, unknown> | null,
+): string {
+  const name = (identity?.productName as string) ?? "Unknown Product";
+  const url = metadata?.url as string | undefined;
+  const scannedAt = metadata?.scannedAt as number | undefined;
+  const completeness = profile?.completeness as number | undefined;
+  const overallConfidence = profile?.overallConfidence as number | undefined;
+
+  const metaParts: string[] = [];
+  if (url) metaParts.push(`<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`);
+  if (scannedAt) metaParts.push(`Scanned: ${new Date(scannedAt).toISOString().split("T")[0]}`);
+  if (completeness != null) metaParts.push(`Completeness: ${Math.round(completeness * 100)}%`);
+  if (overallConfidence != null) metaParts.push(`Confidence: ${Math.round(overallConfidence * 100)}%`);
+
+  return `<div class="report-header">
+  <h1>${escapeHtml(name)}</h1>
+  ${metaParts.length > 0 ? `<div class="meta">${metaParts.map((p) => `<span>${p}</span>`).join("")}</div>` : ""}
+</div>`;
+}
+
+function renderIdentitySection(identity: Record<string, unknown> | undefined): string {
+  if (!identity) {
+    return `<section id="identity">
+  <h2>Identity</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const fields: Array<[string, string | undefined]> = [
+    ["Description", identity.description as string | undefined],
+    ["Target Customer", identity.targetCustomer as string | undefined],
+    ["Business Model", identity.businessModel as string | undefined],
+    ["Industry", identity.industry as string | undefined],
+    ["Company Stage", identity.companyStage as string | undefined],
+  ];
+
+  const items = fields
+    .filter(([, v]) => v)
+    .map(([label, value]) => `    <dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value!)}</dd>`)
+    .join("\n");
+
+  const confidence = identity.confidence as number | undefined;
+  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+
+  return `<section id="identity">
+  <h2>Identity</h2>
+  <dl>
+${items}
+  </dl>${confLine}
+</section>`;
+}
+
+function renderJourneySection(activationMap: Record<string, unknown> | null): string {
+  if (!activationMap) {
+    return `<section id="journey">
+  <h2>Activation Journey</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const stages = (activationMap.stages ?? []) as Array<Record<string, unknown>>;
+  const transitions = (activationMap.transitions ?? []) as Array<Record<string, unknown>>;
+  const primaryLevel = activationMap.primary_activation_level as number | undefined;
+  const confidence = activationMap.confidence as string | number | undefined;
+
+  // Stage rows
+  const stageRows = stages
+    .map((s) => {
+      const level = s.level as number;
+      const name = s.name as string;
+      const signal = s.signal_strength as string;
+      const triggers = (s.trigger_events as string[]) ?? [];
+      const moments = (s.value_moments_unlocked as string[]) ?? [];
+      const dropOff = s.drop_off_risk as { level?: string; reason?: string } | string | undefined;
+      const riskLevel = typeof dropOff === "object" ? dropOff?.level : dropOff;
+      const riskClass = riskLevel === "high" ? "risk-high" : riskLevel === "medium" ? "risk-medium" : "risk-low";
+      const isPrimary = level === primaryLevel;
+
+      return `      <tr>
+        <td>${level}${isPrimary ? ' <span class="badge badge-primary">primary</span>' : ""}</td>
+        <td>${escapeHtml(name)}</td>
+        <td><span class="badge">${escapeHtml(signal ?? "")}</span></td>
+        <td>${triggers.map((t) => escapeHtml(t)).join(", ")}</td>
+        <td>${moments.length > 0 ? moments.length + " moment" + (moments.length > 1 ? "s" : "") : "—"}</td>
+        <td><span class="${riskClass}">${escapeHtml(riskLevel ?? "—")}</span></td>
+      </tr>`;
+    })
+    .join("\n");
+
+  const stageTable = stages.length > 0
+    ? `  <table>
+    <thead>
+      <tr><th>Level</th><th>Name</th><th>Signal</th><th>Triggers</th><th>Value Moments</th><th>Drop-off Risk</th></tr>
+    </thead>
+    <tbody>
+${stageRows}
+    </tbody>
+  </table>`
+    : "";
+
+  // Transition rows
+  let transitionHtml = "";
+  if (transitions.length > 0) {
+    const transRows = transitions
+      .map((t) => {
+        const from = t.from_level as number;
+        const to = t.to_level as number;
+        const triggers = (t.trigger_events as string[]) ?? [];
+        const timeframe = (t.typical_timeframe as string) ?? "—";
+        return `      <tr>
+        <td>Level ${from} &rarr; Level ${to}</td>
+        <td>${triggers.map((e) => escapeHtml(e)).join(", ")}</td>
+        <td>${escapeHtml(timeframe)}</td>
+      </tr>`;
+      })
+      .join("\n");
+
+    transitionHtml = `
+  <h3>Transitions</h3>
+  <table>
+    <thead>
+      <tr><th>Transition</th><th>Trigger Events</th><th>Timeframe</th></tr>
+    </thead>
+    <tbody>
+${transRows}
+    </tbody>
+  </table>`;
+  }
+
+  // Confidence — can be string ("high") or number
+  let confLine = "";
+  if (confidence != null) {
+    const display = typeof confidence === "number"
+      ? `${Math.round(confidence * 100)}%`
+      : String(confidence);
+    confLine = `\n  <p class="confidence">Confidence: ${escapeHtml(display)}</p>`;
+  }
+
+  return `<section id="journey">
+  <h2>Activation Journey</h2>
+${stageTable}${transitionHtml}${confLine}
+</section>`;
+}
+
+function renderIcpSection(icpProfiles: Array<Record<string, unknown>> | null): string {
+  if (!icpProfiles || icpProfiles.length === 0) {
+    return `<section id="icp-profiles">
+  <h2>ICP Profiles</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const cards = icpProfiles
+    .map((p) => {
+      const name = p.name as string;
+      const description = p.description as string | undefined;
+      const confidence = p.confidence as number | undefined;
+      const painPoints = (p.pain_points as string[]) ?? [];
+      const triggers = (p.activation_triggers as string[]) ?? [];
+      const metrics = (p.success_metrics as string[]) ?? [];
+      const priorities = (p.value_moment_priorities as Array<Record<string, unknown>>) ?? [];
+
+      const renderList = (items: string[]) =>
+        items.length > 0
+          ? `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+          : "";
+
+      let prioritiesHtml = "";
+      if (priorities.length > 0) {
+        const rows = priorities
+          .map((pr) => `        <li>P${pr.priority}: ${escapeHtml(pr.relevance_reason as string)}</li>`)
+          .join("\n");
+        prioritiesHtml = `\n      <h4>Value Moment Priorities</h4>\n      <ul>\n${rows}\n      </ul>`;
+      }
+
+      const confLine = confidence != null ? `\n      <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+
+      return `    <div class="card">
+      <h3>${escapeHtml(name)}</h3>
+      ${description ? `<p>${escapeHtml(description)}</p>` : ""}
+      ${painPoints.length > 0 ? `<h4>Pain Points</h4>\n      ${renderList(painPoints)}` : ""}
+      ${triggers.length > 0 ? `<h4>Activation Triggers</h4>\n      ${renderList(triggers)}` : ""}
+      ${metrics.length > 0 ? `<h4>Success Metrics</h4>\n      ${renderList(metrics)}` : ""}${prioritiesHtml}${confLine}
+    </div>`;
+    })
+    .join("\n");
+
+  return `<section id="icp-profiles">
+  <h2>ICP Profiles</h2>
+${cards}
+</section>`;
+}
+
+function renderValueMomentsSection(valueMoments: Array<Record<string, unknown>> | null): string {
+  if (!valueMoments || valueMoments.length === 0) {
+    return `<section id="value-moments">
+  <h2>Value Moments</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const tierLabels: Record<number, string> = { 1: "Core Value Moments", 2: "Important", 3: "Supporting" };
+  const grouped: Record<number, Array<Record<string, unknown>>> = {};
+  for (const m of valueMoments) {
+    const tier = (m.tier as number) ?? 3;
+    (grouped[tier] ??= []).push(m);
+  }
+
+  const totalLenses = 7;
+  const tierSections = [1, 2, 3]
+    .filter((t) => grouped[t]?.length)
+    .map((t) => {
+      const label = tierLabels[t] ?? `Tier ${t}`;
+      const items = grouped[t]
+        .map((m) => {
+          const name = m.name as string;
+          const description = m.description as string | undefined;
+          const lenses = (m.lenses as string[]) ?? [];
+          const lensCount = (m.lens_count as number) ?? lenses.length;
+          const roles = (m.roles as string[]) ?? [];
+          const surfaces = (m.product_surfaces as string[]) ?? [];
+          const details: string[] = [];
+          if (lensCount > 0) details.push(`${lensCount} of ${totalLenses} lenses`);
+          if (roles.length > 0) details.push(`Roles: ${roles.map((r) => escapeHtml(r)).join(", ")}`);
+          if (surfaces.length > 0) details.push(`Surfaces: ${surfaces.map((s) => escapeHtml(s)).join(", ")}`);
+          return `      <div class="card">
+        <h4>${escapeHtml(name)}</h4>
+        ${description ? `<p>${escapeHtml(description)}</p>` : ""}
+        ${details.length > 0 ? `<p class="confidence">${details.join(" &middot; ")}</p>` : ""}
+      </div>`;
+        })
+        .join("\n");
+      return `    <h3>${escapeHtml(label)}</h3>\n${items}`;
+    })
+    .join("\n");
+
+  return `<section id="value-moments">
+  <h2>Value Moments</h2>
+${tierSections}
+</section>`;
+}
+
+function renderMeasurementSpecSection(spec: Record<string, unknown> | null): string {
+  if (!spec) {
+    return `<section id="measurement-spec">
+  <h2>Measurement Spec</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const perspectives = spec.perspectives as Record<string, Record<string, unknown>> | undefined;
+  const confidence = spec.confidence as number | undefined;
+  const warnings = (spec.warnings as string[]) ?? [];
+
+  const renderEntities = (
+    entities: Array<Record<string, unknown>>,
+    perspective: string,
+  ): string => {
+    if (entities.length === 0) return "<p>No entities defined.</p>";
+
+    return entities
+      .map((e) => {
+        const name = e.name as string;
+        const description = e.description as string | undefined;
+        const isHeartbeat = e.isHeartbeat as boolean | undefined;
+        const properties = (e.properties as Array<Record<string, unknown>>) ?? [];
+        const activities = (e.activities as Array<Record<string, unknown>>) ?? [];
+
+        const heartbeatBadge = isHeartbeat ? ' <span class="badge">heartbeat</span>' : "";
+
+        // Properties table
+        let propsHtml = "";
+        if (properties.length > 0) {
+          const propRows = properties
+            .map((p) => {
+              const pName = p.name as string;
+              const pType = p.type as string;
+              const pDesc = (p.description as string) ?? "";
+              const pReq = p.isRequired ? "yes" : "";
+              return `          <tr><td>${escapeHtml(pName)}</td><td><span class="badge">${escapeHtml(pType)}</span></td><td>${escapeHtml(pReq)}</td><td>${escapeHtml(pDesc)}</td></tr>`;
+            })
+            .join("\n");
+          propsHtml = `
+        <table>
+          <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+${propRows}
+          </tbody>
+        </table>`;
+        }
+
+        // Activities
+        let activitiesHtml = "";
+        if (activities.length > 0) {
+          const actItems = activities
+            .map((a) => {
+              const aName = a.name as string;
+              if (perspective === "customer") {
+                const rule = (a.derivation_rule as string) ?? "";
+                return `<li>${escapeHtml(aName)}${rule ? ` — <em>${escapeHtml(rule)}</em>` : ""}</li>`;
+              }
+              const supported = (a.properties_supported as string[]) ?? [];
+              return `<li>${escapeHtml(aName)}${supported.length > 0 ? ` (${supported.map((s) => escapeHtml(s)).join(", ")})` : ""}</li>`;
+            })
+            .join("");
+          activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
+        }
+
+        return `      <div class="card">
+        <h4>${escapeHtml(name)}${heartbeatBadge}</h4>
+        ${description ? `<p>${escapeHtml(description)}</p>` : ""}${propsHtml}${activitiesHtml}
+      </div>`;
+      })
+      .join("\n");
+  };
+
+  const perspectiveOrder = ["product", "customer", "interaction"] as const;
+  const perspectiveLabels: Record<string, string> = {
+    product: "Product Perspective",
+    customer: "Customer Perspective",
+    interaction: "Interaction Perspective",
+  };
+
+  let perspectivesHtml = "";
+  if (perspectives) {
+    perspectivesHtml = perspectiveOrder
+      .map((p) => {
+        const entities = ((perspectives[p] as Record<string, unknown>)?.entities as Array<Record<string, unknown>>) ?? [];
+        return `    <h3>${perspectiveLabels[p]}</h3>\n${renderEntities(entities, p)}`;
+      })
+      .join("\n");
+  }
+
+  let warningsHtml = "";
+  if (warnings.length > 0) {
+    warningsHtml = `\n  <div class="warnings"><h4>Warnings</h4><ul>${warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul></div>`;
+  }
+
+  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+
+  return `<section id="measurement-spec">
+  <h2>Measurement Spec</h2>
+${perspectivesHtml}${warningsHtml}${confLine}
+</section>`;
+}
+
+function renderLifecycleStatesSection(lifecycleData: Record<string, unknown> | null): string {
+  if (!lifecycleData) {
+    return `<section id="lifecycle-states">
+  <h2>Lifecycle States</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const states = (lifecycleData.states as Array<Record<string, unknown>>) ?? [];
+  const transitions = (lifecycleData.transitions as Array<Record<string, unknown>>) ?? [];
+  const confidence = lifecycleData.confidence as number | undefined;
+
+  const stateCards = states
+    .map((s) => {
+      const name = s.name as string;
+      const definition = (s.definition as string) ?? "";
+      const timeWindow = (s.time_window as string) ?? "";
+      const entryCriteria = (s.entry_criteria as Array<Record<string, unknown>>) ?? [];
+      const exitTriggers = (s.exit_triggers as Array<Record<string, unknown>>) ?? [];
+
+      const renderCriteria = (criteria: Array<Record<string, unknown>>) =>
+        criteria.length > 0
+          ? `<ul>${criteria.map((c) => `<li>${escapeHtml(c.event_name as string)}: ${escapeHtml(c.condition as string)}</li>`).join("")}</ul>`
+          : "";
+
+      return `    <div class="card">
+      <h3>${escapeHtml(name)}${timeWindow ? ` <span class="badge">${escapeHtml(timeWindow)}</span>` : ""}</h3>
+      <p>${escapeHtml(definition)}</p>
+      ${entryCriteria.length > 0 ? `<h4>Entry Criteria</h4>\n      ${renderCriteria(entryCriteria)}` : ""}
+      ${exitTriggers.length > 0 ? `<h4>Exit Triggers</h4>\n      ${renderCriteria(exitTriggers)}` : ""}
+    </div>`;
+    })
+    .join("\n");
+
+  let transitionsHtml = "";
+  if (transitions.length > 0) {
+    const transRows = transitions
+      .map((t) => {
+        const from = t.from_state as string;
+        const to = t.to_state as string;
+        const conditions = (t.trigger_conditions as string[]) ?? [];
+        const timeframe = (t.typical_timeframe as string) ?? "—";
+        return `      <tr>
+        <td>${escapeHtml(from)} &rarr; ${escapeHtml(to)}</td>
+        <td>${conditions.map((c) => escapeHtml(c)).join(", ")}</td>
+        <td>${escapeHtml(timeframe)}</td>
+      </tr>`;
+      })
+      .join("\n");
+
+    transitionsHtml = `
+  <h3>Transitions</h3>
+  <table>
+    <thead><tr><th>Transition</th><th>Trigger Conditions</th><th>Timeframe</th></tr></thead>
+    <tbody>
+${transRows}
+    </tbody>
+  </table>`;
+  }
+
+  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+
+  return `<section id="lifecycle-states">
+  <h2>Lifecycle States</h2>
+${stateCards}${transitionsHtml}${confLine}
+</section>`;
+}
+
+export function renderProductReport(slug: string, productDir: ProductDirectory): string {
+  const profile = productDir.readJson<Record<string, unknown>>(slug, "profile.json");
+  const activationMap = productDir.readJson<Record<string, unknown>>(slug, "outputs/activation-map.json");
+  const icpProfiles = productDir.readJson<Array<Record<string, unknown>>>(slug, "outputs/icp-profiles.json");
+  const valueMoments = productDir.readJson<Array<Record<string, unknown>>>(slug, "convergence/value-moments.json");
+  const measurementSpec = productDir.readJson<Record<string, unknown>>(slug, "outputs/measurement-spec.json");
+  const lifecycleStates = productDir.readJson<Record<string, unknown>>(slug, "outputs/lifecycle-states.json");
+
+  const identity = profile?.identity as Record<string, unknown> | undefined;
+  const metadata = profile?.metadata as Record<string, unknown> | undefined;
+
+  const sections = [
+    `<p class="back-link"><a href="/">&larr; Back to product list</a></p>`,
+    renderReportHeader(identity, metadata, profile),
+    renderIdentitySection(identity),
+    renderJourneySection(activationMap),
+    renderIcpSection(icpProfiles),
+    renderValueMomentsSection(valueMoments),
+    renderMeasurementSpecSection(measurementSpec),
+    renderLifecycleStatesSection(lifecycleStates),
+  ];
+
+  return renderPage(
+    (identity?.productName as string) ?? slug,
+    sections.join("\n"),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Slug validation
 // ---------------------------------------------------------------------------
 
@@ -166,15 +643,8 @@ function handleRequest(
   // Slug routing: /{slug}
   const slug = decodeURIComponent(pathname.slice(1));
   if (isValidSlug(slug) && productDir.exists(slug)) {
-    const profile = productDir.readJson<Record<string, unknown>>(slug, "profile.json");
-    const name = (profile?.identity as { productName?: string } | undefined)?.productName ?? slug;
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(
-      renderPage(
-        name,
-        `<p><a href="/">&larr; Back to product list</a></p>\n<h1>${escapeHtml(name)}</h1>\n<p>Full report coming soon.</p>`,
-      ),
-    );
+    res.end(renderProductReport(slug, productDir));
     return;
   }
 

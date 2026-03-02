@@ -1,0 +1,77 @@
+# Story: Measurement Spec Section
+# Render the Double Three-Layer measurement specification with all perspectives.
+
+id = "M013-E002-S003"
+epic = "M013-E002"
+title = "Measurement Spec Section"
+status = "ready"
+created = 2026-03-02
+depends_on = ["M013-E002-S001"]
+
+[outcome]
+description = """
+The product report page includes a Measurement Spec section organized by the
+three perspectives: Product, Customer, and Interaction. Product entities show
+name, description, heartbeat indicator, properties with types, and activities
+with properties_supported. Customer entities show derived activities with
+derivation rules. Interaction entities show generic activities. The section
+also shows warnings if present and confidence score.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "Measurement Spec section is organized by three perspective sub-sections: Product, Customer, Interaction",
+    "Product perspective lists each entity with: name, description, heartbeat badge if isHeartbeat",
+    "Product entities show properties as a table: name, type, description, required indicator",
+    "Product entities show activities with their properties_supported list",
+    "Activity-specific properties (activity_properties) are shown when present",
+    "Customer perspective shows entity with derived activities: name, derivation_rule, properties_used",
+    "Interaction perspective shows entity with generic activities: name, properties_supported",
+    "Confidence score displayed as percentage",
+    "Warnings displayed if measurement spec has warnings array",
+    "Data loaded from outputs/measurement-spec.json",
+    "When measurement spec file is missing, shows 'Not yet analyzed'",
+    "Tests verify: perspective headings render, entity names appear, missing section handled",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[notes]
+implementation_hints = """
+Measurement spec data shape (from outputs/measurement-spec.json):
+
+perspectives.product.entities[]:
+  - id, name, description, isHeartbeat (boolean)
+  - properties[]: { name, type, description, isRequired, variations? }
+  - activities[]: { name, properties_supported[], activity_properties[]? }
+
+perspectives.customer.entities[]:
+  - name, properties[], activities[]: { name, derivation_rule?, properties_used[] }
+
+perspectives.interaction.entities[]:
+  - name, properties[], activities[]: { name, properties_supported[] }
+
+Also: jsonSchemas[] (EntityJsonSchema), confidence (number), sources[], warnings[]?
+
+EntityPropertyType values: "string", "number", "boolean", "array", "id", "calculated", "experimental", "temporary"
+
+Rendering approach:
+- Each perspective as h3 sub-section
+- Entities as cards with name + description
+- Properties as a compact table (name | type | required | description)
+- Activities listed below properties
+- Heartbeat entity gets a subtle badge/indicator
+- Derivation rules shown in italics or a distinct style
+- Keep jsonSchemas out of the visual report (too technical) — just show entity count
+
+Type badges for properties:
+```css
+.type-badge { font-size: 0.75rem; padding: 0.1em 0.4em; border-radius: 3px; background: #f3f4f6; }
+```
+"""

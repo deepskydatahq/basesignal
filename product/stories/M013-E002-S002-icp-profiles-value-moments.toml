@@ -1,0 +1,70 @@
+# Story: ICP Profiles and Value Moments Sections
+# Render ICP profiles as cards and value moments grouped by tier.
+
+id = "M013-E002-S002"
+epic = "M013-E002"
+title = "ICP Profiles and Value Moments Sections"
+status = "ready"
+created = 2026-03-02
+depends_on = ["M013-E002-S001"]
+
+[outcome]
+description = """
+The product report page now includes ICP Profiles and Value Moments sections.
+ICP profiles render as distinct cards showing name, description, pain points,
+activation triggers, success metrics, value moment priorities, and confidence.
+Value moments are grouped by tier (Core / Important / Supporting) and show
+name, description, contributing lenses, roles, and product surfaces.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "ICP Profiles section renders each profile as a visual card/block",
+    "Each ICP card shows: name, description, confidence percentage",
+    "Each ICP card lists: pain points, activation triggers, success metrics as bullet lists",
+    "Each ICP card shows value moment priorities with priority level and relevance reason",
+    "Value Moments section groups moments by tier: Tier 1 (Core), Tier 2 (Important), Tier 3 (Supporting)",
+    "Each value moment shows: name, description, contributing lenses, roles, product surfaces",
+    "Value moment lens count is displayed (e.g., '6 of 7 lenses converged')",
+    "Data loaded from: outputs/icp-profiles.json and convergence/value-moments.json",
+    "When ICP profiles file is missing or empty, shows 'Not yet analyzed'",
+    "When value moments file is missing or empty, shows 'Not yet analyzed'",
+    "Tests verify: ICP names render, value moments grouped by tier, missing sections handled",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[notes]
+implementation_hints = """
+ICP Profile data shape (from outputs/icp-profiles.json):
+- Array of ~3 profiles
+- Each: id, name, description, confidence (number 0-1)
+- value_moment_priorities[]: { moment_id, priority (1|2|3), relevance_reason }
+- activation_triggers[]: string[] (typically 4)
+- pain_points[]: string[] (typically 4)
+- success_metrics[]: string[] (typically 4)
+- sources[]: string[] (usually empty)
+
+Value Moment data shape (from convergence/value-moments.json):
+- Array of moments
+- Each: id, name, description, tier (1|2|3), lenses[], lens_count, roles[], product_surfaces[], contributing_candidates[]
+- tier 1 = Core (highest convergence), tier 2 = Important, tier 3 = Supporting
+
+Rendering approach:
+- ICP profiles as cards with a subtle border/background
+- Pain points, triggers, metrics as compact bullet lists
+- Value moments grouped: first render tier 1, then 2, then 3
+- Show tier label: "Core Value Moments", "Important", "Supporting"
+
+Add CSS for cards:
+```css
+.card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+.card h3 { margin-top: 0; }
+```
+"""
