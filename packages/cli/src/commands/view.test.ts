@@ -6,6 +6,8 @@ import { ProductDirectory } from "@basesignal/storage";
 import {
   escapeHtml,
   renderPage,
+  progressBar,
+  confidenceBadge,
   isValidSlug,
   loadProductList,
   renderProductList,
@@ -45,6 +47,53 @@ describe("renderPage", () => {
   it("escapes the title", () => {
     const html = renderPage("<script>bad</script>", "body");
     expect(html).toContain("<title>&lt;script&gt;bad&lt;/script&gt;</title>");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: visual indicators
+// ---------------------------------------------------------------------------
+
+describe("progressBar", () => {
+  it("renders a progress bar with percentage", () => {
+    const html = progressBar(0.83);
+    expect(html).toContain("progress-bar");
+    expect(html).toContain("progress-fill");
+    expect(html).toContain('width:83%');
+    expect(html).toContain("83%");
+  });
+
+  it("renders a mini progress bar without label", () => {
+    const html = progressBar(0.5, true);
+    expect(html).toContain("progress-bar-mini");
+    expect(html).toContain('width:50%');
+    expect(html).not.toContain("progress-label");
+  });
+});
+
+describe("confidenceBadge", () => {
+  it("renders high confidence as green badge", () => {
+    const html = confidenceBadge(0.85);
+    expect(html).toContain("conf-high");
+    expect(html).toContain("85%");
+  });
+
+  it("renders medium confidence as yellow badge", () => {
+    const html = confidenceBadge(0.5);
+    expect(html).toContain("conf-med");
+    expect(html).toContain("50%");
+  });
+
+  it("renders low confidence as gray badge", () => {
+    const html = confidenceBadge(0.3);
+    expect(html).toContain("conf-low");
+    expect(html).toContain("30%");
+  });
+
+  it("handles string confidence values", () => {
+    expect(confidenceBadge("high")).toContain("conf-high");
+    expect(confidenceBadge("medium")).toContain("conf-med");
+    expect(confidenceBadge("low")).toContain("conf-low");
   });
 });
 
@@ -172,6 +221,14 @@ describe("renderProductList", () => {
     expect(html).toContain("83%");
   });
 
+  it("renders mini progress bars for completeness", () => {
+    const html = renderProductList([
+      { slug: "test", name: "Test", url: "", scannedAt: "unknown", completeness: 0.6 },
+    ]);
+    expect(html).toContain("progress-bar-mini");
+    expect(html).toContain("60%");
+  });
+
   it("escapes product names to prevent XSS", () => {
     const html = renderProductList([
       { slug: "evil", name: '<script>alert("xss")</script>', url: "", scannedAt: "unknown", completeness: 0 },
@@ -286,8 +343,9 @@ describe("renderProductReport", () => {
     expect(html).toContain("Level 1");
     expect(html).toContain("Level 2");
     expect(html).toContain("3-5 days");
-    // Confidence as string
-    expect(html).toContain("Confidence: high");
+    // Confidence as string badge
+    expect(html).toContain("conf-high");
+    expect(html).toContain(">high</span>");
   });
 
   it("shows 'Not yet analyzed' when identity is missing", () => {
@@ -546,6 +604,80 @@ describe("renderProductReport", () => {
     expect(html).toContain("Transitions");
     expect(html).toContain("3-5 days");
     expect(html).toContain("75%");
+  });
+
+  it("includes section navigation bar with links to all sections", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("section-nav");
+    expect(html).toContain('href="#identity"');
+    expect(html).toContain('href="#journey"');
+    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#value-moments"');
+    expect(html).toContain('href="#measurement-spec"');
+    expect(html).toContain('href="#lifecycle-states"');
+  });
+
+  it("dims nav links for sections without data", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // Only identity has data, all other sections are missing
+
+    const html = renderProductReport("test-app", productDir);
+    // Identity link should NOT be dimmed
+    expect(html).toMatch(/href="#identity" class=""/);
+    // Journey link should be dimmed (no activation-map.json)
+    expect(html).toMatch(/href="#journey" class=" dimmed"/);
+  });
+
+  it("includes scroll-spy script", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("<script>");
+    expect(html).toContain("IntersectionObserver");
+  });
+
+  it("uses progress bar for completeness in header", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+      completeness: 0.75,
+      overallConfidence: 0.85,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("progress-bar");
+    expect(html).toContain("progress-fill");
+    expect(html).toContain("conf-badge");
+    expect(html).toContain("conf-high");
+  });
+
+  it("marks sections without data with no-data class", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Journey section should have no-data class
+    expect(html).toContain('id="journey" class="no-data"');
+    // Identity section should NOT have no-data class
+    expect(html).not.toContain('id="identity" class="no-data"');
   });
 
   it("renders all six sections as 'Not yet analyzed' for empty profile", () => {

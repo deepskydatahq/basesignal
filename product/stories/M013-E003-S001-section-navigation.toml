@@ -1,0 +1,95 @@
+# Story: Section Navigation
+# Add a sticky navigation bar with links to all report sections.
+
+id = "M013-E003-S001"
+epic = "M013-E003"
+title = "Section Navigation"
+status = "ready"
+created = 2026-03-02
+depends_on = []
+
+[outcome]
+description = """
+The product report page has a sticky navigation bar at the top that lists all
+six report sections. Clicking a nav link scrolls to the corresponding section.
+The layout adjusts so the nav bar stays visible while scrolling. The nav bar
+shows which sections have data and which are "not yet analyzed". A minimal
+IntersectionObserver script highlights the currently visible section in the nav.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "Report page has a <nav> element with links to all six sections: Identity, Journey, ICP Profiles, Value Moments, Measurement Spec, Lifecycle States",
+    "Each nav link uses href='#section-id' anchors matching the existing section IDs",
+    "Nav bar uses sticky positioning (position: sticky; top: 0) so it stays visible while scrolling",
+    "Nav bar has a clean, compact design — single horizontal row of links",
+    "Nav bar has a subtle background/border to visually separate it from content",
+    "A small inline <script> uses IntersectionObserver to highlight the current section's nav link",
+    "The active nav link has a distinct visual style (bold, underline, or color change)",
+    "Nav links for sections with 'Not yet analyzed' content are visually dimmed",
+    "renderPage accepts an optional nav parameter to include the nav bar only on report pages",
+    "Product list page does NOT show the section nav bar",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[notes]
+implementation_hints = """
+The nav bar should be a horizontal bar at the top of the report, below the
+back link but above the report header:
+
+```html
+<nav class="section-nav">
+  <a href="#identity" class="active">Identity</a>
+  <a href="#journey">Journey</a>
+  <a href="#icp-profiles">ICP Profiles</a>
+  <a href="#value-moments">Value Moments</a>
+  <a href="#measurement-spec">Measurement Spec</a>
+  <a href="#lifecycle-states" class="dimmed">Lifecycle States</a>
+</nav>
+```
+
+CSS:
+```css
+.section-nav {
+  position: sticky; top: 0; z-index: 10;
+  background: #fff; border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem 0; margin-bottom: 1.5rem;
+  display: flex; gap: 1.25rem; flex-wrap: wrap;
+}
+.section-nav a { color: #6b7280; font-size: 0.85rem; font-weight: 500; }
+.section-nav a.active { color: #2563eb; border-bottom: 2px solid #2563eb; }
+.section-nav a.dimmed { color: #d1d5db; }
+```
+
+IntersectionObserver script (inline, minimal):
+```javascript
+const nav = document.querySelector('.section-nav');
+if (nav) {
+  const links = nav.querySelectorAll('a[href^="#"]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const link = nav.querySelector(`a[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+}
+```
+
+To know which sections are analyzed, renderProductReport should track this
+as it builds sections. Pass a list of analyzed section IDs to the nav renderer.
+
+Approach: add a `renderSectionNav(analyzedSections: string[])` function that
+builds the nav bar. Each section renderer already returns different HTML for
+present vs missing data — extract a check or pass flags to renderProductReport.
+"""

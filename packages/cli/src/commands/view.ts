@@ -18,7 +18,7 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export function renderPage(title: string, body: string): string {
+export function renderPage(title: string, body: string, options?: { script?: string }): string {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -42,15 +42,18 @@ export function renderPage(title: string, body: string): string {
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
     th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e7eb; }
     th { font-weight: 600; color: #374151; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
-    tr:hover { background: #f9fafb; }
+    tbody tr:nth-child(even) { background: #f9fafb; }
+    tbody tr:hover { background: #f3f4f6; }
     .empty-state { color: #6b7280; margin-top: 2rem; }
     .back-link { display: inline-block; margin-bottom: 1rem; font-size: 0.9rem; }
     section { margin-bottom: 2.5rem; }
     section h2 { font-size: 1.35rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.4rem; margin-bottom: 1rem; }
+    section h2::before { content: '\\2713  '; color: #059669; font-size: 0.9em; }
+    section.no-data h2::before { content: '\\2014  '; color: #9ca3af; }
     .confidence { font-size: 0.85rem; color: #6b7280; margin-top: 0.75rem; }
     .not-analyzed { color: #9ca3af; font-style: italic; }
     .report-header { margin-bottom: 2rem; }
-    .report-header .meta { font-size: 0.9rem; color: #6b7280; display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem; }
+    .report-header .meta { font-size: 0.9rem; color: #6b7280; display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem; align-items: center; }
     .report-header .meta a { color: #6b7280; }
     dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0; }
     dt { font-weight: 600; color: #374151; }
@@ -60,7 +63,8 @@ export function renderPage(title: string, body: string): string {
     .risk-low { color: #059669; }
     .risk-medium { color: #d97706; }
     .risk-high { color: #dc2626; }
-    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
+    .card:hover { border-color: #d1d5db; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .card h3, .card h4 { margin-top: 0.5rem; margin-bottom: 0.25rem; }
     .card h3:first-child { margin-top: 0; }
     .card ul { margin: 0.25rem 0 0.5rem 0; padding-left: 1.25rem; }
@@ -72,13 +76,72 @@ export function renderPage(title: string, body: string): string {
     .warnings { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 0.75rem 1rem; margin-top: 0.75rem; }
     .warnings h4 { color: #92400e; margin: 0; }
     .warnings ul { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+    .section-nav { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0.5rem 0; margin-bottom: 1.5rem; display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .section-nav a { color: #6b7280; font-size: 0.85rem; font-weight: 500; padding-bottom: 0.25rem; border-bottom: 2px solid transparent; }
+    .section-nav a:hover { color: #374151; text-decoration: none; }
+    .section-nav a.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .section-nav a.dimmed { color: #d1d5db; }
+    .progress-bar { position: relative; height: 1.25rem; background: #f3f4f6; border-radius: 4px; overflow: hidden; min-width: 80px; }
+    .progress-fill { height: 100%; background: #3b82f6; border-radius: 4px; transition: width 0.3s; }
+    .progress-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
+    .progress-bar-mini { display: inline-block; width: 60px; height: 0.75rem; vertical-align: middle; margin-right: 0.35rem; }
+    .progress-bar-mini .progress-fill { border-radius: 3px; }
+    .conf-badge { display: inline-block; font-size: 0.8rem; padding: 0.1em 0.5em; border-radius: 3px; font-weight: 500; }
+    .conf-high { background: #d1fae5; color: #065f46; }
+    .conf-med { background: #fef3c7; color: #92400e; }
+    .conf-low { background: #f3f4f6; color: #6b7280; }
   </style>
 </head>
 <body>
-${body}
+${body}${options?.script ? `\n<script>${options.script}</script>` : ""}
 </body>
 </html>`;
 }
+
+// ---------------------------------------------------------------------------
+// Visual indicator helpers
+// ---------------------------------------------------------------------------
+
+export function progressBar(value: number, mini = false): string {
+  const pct = Math.round(value * 100);
+  const cls = mini ? "progress-bar progress-bar-mini" : "progress-bar";
+  return `<div class="${cls}"><div class="progress-fill" style="width:${pct}%"></div>${mini ? "" : `<span class="progress-label">${pct}%</span>`}</div>`;
+}
+
+export function confidenceBadge(value: number | string): string {
+  if (typeof value === "string") {
+    const cls = value === "high" ? "conf-high" : value === "medium" ? "conf-med" : "conf-low";
+    return `<span class="conf-badge ${cls}">${escapeHtml(value)}</span>`;
+  }
+  const pct = Math.round(value * 100);
+  const cls = pct >= 70 ? "conf-high" : pct >= 40 ? "conf-med" : "conf-low";
+  return `<span class="conf-badge ${cls}">${pct}%</span>`;
+}
+
+// ---------------------------------------------------------------------------
+// Section navigation
+// ---------------------------------------------------------------------------
+
+const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
+  { id: "identity", label: "Identity" },
+  { id: "journey", label: "Journey" },
+  { id: "icp-profiles", label: "ICP Profiles" },
+  { id: "value-moments", label: "Value Moments" },
+  { id: "measurement-spec", label: "Measurement Spec" },
+  { id: "lifecycle-states", label: "Lifecycle States" },
+];
+
+function renderSectionNav(analyzedSections: Set<string>): string {
+  const links = SECTION_NAV_ITEMS
+    .map((item) => {
+      const cls = analyzedSections.has(item.id) ? "" : " dimmed";
+      return `<a href="#${item.id}" class="${cls}">${escapeHtml(item.label)}</a>`;
+    })
+    .join("");
+  return `<nav class="section-nav">${links}</nav>`;
+}
+
+const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.section-nav');if(!n)return;var ls=n.querySelectorAll('a[href^=\"#\"]');var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){ls.forEach(function(l){l.classList.remove('active')});var a=n.querySelector('a[href=\"#'+e.target.id+'\"]');if(a)a.classList.add('active')}})},{rootMargin:'-20% 0px -70% 0px'});document.querySelectorAll('section[id]').forEach(function(s){o.observe(s)})})();`;
 
 // ---------------------------------------------------------------------------
 // Product list
@@ -128,7 +191,7 @@ export function renderProductList(products: ProductListItem[]): string {
         <td><a href="/${escapeHtml(p.slug)}">${escapeHtml(p.name)}</a></td>
         <td>${escapeHtml(p.url)}</td>
         <td>${escapeHtml(p.scannedAt)}</td>
-        <td>${Math.round(p.completeness * 100)}%</td>
+        <td>${progressBar(p.completeness, true)} ${Math.round(p.completeness * 100)}%</td>
       </tr>`,
     )
     .join("\n");
@@ -165,8 +228,8 @@ function renderReportHeader(
   const metaParts: string[] = [];
   if (url) metaParts.push(`<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`);
   if (scannedAt) metaParts.push(`Scanned: ${new Date(scannedAt).toISOString().split("T")[0]}`);
-  if (completeness != null) metaParts.push(`Completeness: ${Math.round(completeness * 100)}%`);
-  if (overallConfidence != null) metaParts.push(`Confidence: ${Math.round(overallConfidence * 100)}%`);
+  if (completeness != null) metaParts.push(`${progressBar(completeness)}`);
+  if (overallConfidence != null) metaParts.push(`Confidence: ${confidenceBadge(overallConfidence)}`);
 
   return `<div class="report-header">
   <h1>${escapeHtml(name)}</h1>
@@ -176,7 +239,7 @@ function renderReportHeader(
 
 function renderIdentitySection(identity: Record<string, unknown> | undefined): string {
   if (!identity) {
-    return `<section id="identity">
+    return `<section id="identity" class="no-data">
   <h2>Identity</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
@@ -196,7 +259,7 @@ function renderIdentitySection(identity: Record<string, unknown> | undefined): s
     .join("\n");
 
   const confidence = identity.confidence as number | undefined;
-  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${confidenceBadge(confidence)}</p>` : "";
 
   return `<section id="identity">
   <h2>Identity</h2>
@@ -208,7 +271,7 @@ ${items}
 
 function renderJourneySection(activationMap: Record<string, unknown> | null): string {
   if (!activationMap) {
-    return `<section id="journey">
+    return `<section id="journey" class="no-data">
   <h2>Activation Journey</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
@@ -286,10 +349,7 @@ ${transRows}
   // Confidence — can be string ("high") or number
   let confLine = "";
   if (confidence != null) {
-    const display = typeof confidence === "number"
-      ? `${Math.round(confidence * 100)}%`
-      : String(confidence);
-    confLine = `\n  <p class="confidence">Confidence: ${escapeHtml(display)}</p>`;
+    confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(confidence)}</p>`;
   }
 
   return `<section id="journey">
@@ -300,7 +360,7 @@ ${stageTable}${transitionHtml}${confLine}
 
 function renderIcpSection(icpProfiles: Array<Record<string, unknown>> | null): string {
   if (!icpProfiles || icpProfiles.length === 0) {
-    return `<section id="icp-profiles">
+    return `<section id="icp-profiles" class="no-data">
   <h2>ICP Profiles</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
@@ -329,7 +389,7 @@ function renderIcpSection(icpProfiles: Array<Record<string, unknown>> | null): s
         prioritiesHtml = `\n      <h4>Value Moment Priorities</h4>\n      <ul>\n${rows}\n      </ul>`;
       }
 
-      const confLine = confidence != null ? `\n      <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+      const confLine = confidence != null ? `\n      <p class="confidence">Confidence: ${confidenceBadge(confidence)}</p>` : "";
 
       return `    <div class="card">
       <h3>${escapeHtml(name)}</h3>
@@ -349,7 +409,7 @@ ${cards}
 
 function renderValueMomentsSection(valueMoments: Array<Record<string, unknown>> | null): string {
   if (!valueMoments || valueMoments.length === 0) {
-    return `<section id="value-moments">
+    return `<section id="value-moments" class="no-data">
   <h2>Value Moments</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
@@ -398,7 +458,7 @@ ${tierSections}
 
 function renderMeasurementSpecSection(spec: Record<string, unknown> | null): string {
   if (!spec) {
-    return `<section id="measurement-spec">
+    return `<section id="measurement-spec" class="no-data">
   <h2>Measurement Spec</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
@@ -492,7 +552,7 @@ ${propRows}
     warningsHtml = `\n  <div class="warnings"><h4>Warnings</h4><ul>${warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul></div>`;
   }
 
-  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${confidenceBadge(confidence)}</p>` : "";
 
   return `<section id="measurement-spec">
   <h2>Measurement Spec</h2>
@@ -502,7 +562,7 @@ ${perspectivesHtml}${warningsHtml}${confLine}
 
 function renderLifecycleStatesSection(lifecycleData: Record<string, unknown> | null): string {
   if (!lifecycleData) {
-    return `<section id="lifecycle-states">
+    return `<section id="lifecycle-states" class="no-data">
   <h2>Lifecycle States</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
@@ -560,7 +620,7 @@ ${transRows}
   </table>`;
   }
 
-  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${Math.round(confidence * 100)}%</p>` : "";
+  const confLine = confidence != null ? `\n  <p class="confidence">Confidence: ${confidenceBadge(confidence)}</p>` : "";
 
   return `<section id="lifecycle-states">
   <h2>Lifecycle States</h2>
@@ -579,9 +639,19 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   const identity = profile?.identity as Record<string, unknown> | undefined;
   const metadata = profile?.metadata as Record<string, unknown> | undefined;
 
+  // Track which sections have data for nav styling
+  const analyzed = new Set<string>();
+  if (identity) analyzed.add("identity");
+  if (activationMap) analyzed.add("journey");
+  if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
+  if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
+  if (measurementSpec) analyzed.add("measurement-spec");
+  if (lifecycleStates) analyzed.add("lifecycle-states");
+
   const sections = [
     `<p class="back-link"><a href="/">&larr; Back to product list</a></p>`,
     renderReportHeader(identity, metadata, profile),
+    renderSectionNav(analyzed),
     renderIdentitySection(identity),
     renderJourneySection(activationMap),
     renderIcpSection(icpProfiles),
@@ -593,6 +663,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   return renderPage(
     (identity?.productName as string) ?? slug,
     sections.join("\n"),
+    { script: SCROLL_SPY_SCRIPT },
   );
 }
 
