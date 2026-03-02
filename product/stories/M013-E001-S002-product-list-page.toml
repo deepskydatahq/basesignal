@@ -1,0 +1,123 @@
+# Story: Product List Page
+# Load scanned products from ProductDirectory and render an HTML product list.
+
+id = "M013-E001-S002"
+epic = "M013-E001"
+title = "Product List Page"
+status = "in-progress"
+created = 2026-03-01
+depends_on = ["M013-E001-S001"]
+
+[outcome]
+description = """
+GET / on the view server returns an HTML page listing all scanned products.
+For each product, the list shows: product name, URL, scan date, and completeness
+percentage. Each row links to /{slug} for the product report. When no products
+have been scanned, a helpful empty state message is shown. The page has basic
+inline CSS for readability (polished styling comes in E003).
+"""
+
+[acceptance_criteria]
+criteria = [
+    "GET / calls ProductDirectory.listProducts() to get all product slugs",
+    "For each slug, reads profile.json to extract identity.productName, metadata.url, metadata.scannedAt, completeness",
+    "Renders an HTML page with a list/table of products",
+    "Each product row shows: name (or slug as fallback), URL, scan date formatted as YYYY-MM-DD, completeness as N%",
+    "Each product row links to /{slug}",
+    "When listProducts() returns empty, shows 'No products scanned yet. Run basesignal scan <url> to get started.'",
+    "When profile.json is missing or unreadable for a slug, the product still appears with fallback values",
+    "HTML includes <title>Basesignal</title> and proper charset/viewport meta tags",
+    "Basic inline CSS makes the list readable (clean font, table formatting, link styling)",
+    "Tests verify: product list renders expected product names, links point to correct slugs, empty state is shown when no products exist",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+]
+
+[notes]
+implementation_hints = """
+Data loading for product list:
+
+```typescript
+interface ProductListItem {
+  slug: string;
+  name: string;
+  url: string;
+  scannedAt: string;  // formatted date
+  completeness: number;
+}
+
+function loadProductList(productDir: ProductDirectory): ProductListItem[] {
+  const slugs = productDir.listProducts();
+  return slugs.map((slug) => {
+    const profile = productDir.readJson<ProductProfile>(slug, "profile.json");
+    return {
+      slug,
+      name: profile?.identity?.productName ?? slug,
+      url: profile?.metadata?.url ?? "",
+      scannedAt: profile?.metadata?.scannedAt
+        ? new Date(profile.metadata.scannedAt).toISOString().split("T")[0]
+        : "unknown",
+      completeness: profile?.completeness ?? 0,
+    };
+  });
+}
+```
+
+Note: ProductProfile fields are typed as Record<string, unknown> in the
+storage type, so use optional chaining and type narrowing:
+  (profile?.identity as { productName?: string })?.productName ?? slug
+
+HTML template function:
+
+```typescript
+function renderProductList(products: ProductListItem[]): string {
+  if (products.length === 0) {
+    return renderPage("Basesignal", `
+      <h1>Basesignal</h1>
+      <p>No products scanned yet.</p>
+      <p>Run <code>basesignal scan &lt;url&gt;</code> to get started.</p>
+    `);
+  }
+  const rows = products.map(p => `
+    <tr>
+      <td><a href="/${p.slug}">${escapeHtml(p.name)}</a></td>
+      <td>${escapeHtml(p.url)}</td>
+      <td>${p.scannedAt}</td>
+      <td>${Math.round(p.completeness * 100)}%</td>
+    </tr>
+  `).join("");
+  return renderPage("Basesignal", `
+    <h1>Basesignal</h1>
+    <table>
+      <thead><tr><th>Product</th><th>URL</th><th>Scanned</th><th>Completeness</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `);
+}
+```
+
+Important: escape HTML in user-derived content (product names, URLs) to
+prevent XSS. A simple escapeHtml function handles &, <, >, ", '.
+
+Extract a renderPage(title, body) helper that wraps content in <!doctype>,
+<html>, <head> (with meta, title, inline <style>), <body>. This helper
+will be reused by the product report page (E002).
+
+For tests, create a temporary directory with mock product data:
+```typescript
+const tmpDir = mkdtempSync(join(tmpdir(), "bs-test-"));
+const productDir = new ProductDirectory({ root: tmpDir });
+productDir.writeJson("test-product", "profile.json", {
+  identity: { productName: "Test Product" },
+  metadata: { url: "https://test.com", scannedAt: Date.now() },
+  completeness: 0.83,
+});
+```
+Then start the server with that productDir, fetch GET /, and assert the
+HTML contains "Test Product", "https://test.com", and "83%".
+"""

@@ -1,0 +1,112 @@
+# Story: View Command and HTTP Server
+# Register the `basesignal view` command, start an HTTP server, and handle shutdown.
+
+id = "M013-E001-S001"
+epic = "M013-E001"
+title = "View Command and HTTP Server"
+status = "in-progress"
+created = 2026-03-01
+depends_on = []
+
+[outcome]
+description = """
+A new `basesignal view [slug]` command is registered in the CLI. When run, it
+starts a local HTTP server on port 3700 (overridable with --port), prints the
+URL to stderr, and shuts down cleanly on Ctrl+C / SIGINT. The server responds
+to GET / with a placeholder HTML page (product list comes in S002). Unknown
+routes return a 404 page. The command is wired into program.ts following the
+existing registration pattern.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "packages/cli/src/commands/view.ts exists with a registerViewCommand function",
+    "registerViewCommand is called in program.ts alongside the other register* calls",
+    "The command accepts an optional [slug] positional argument",
+    "The command has a --port <number> option defaulting to 3700",
+    "Running the command starts an HTTP server using Node built-in http module",
+    "Server listens on localhost at the configured port",
+    "Server prints 'Listening on http://localhost:<port>' to stderr",
+    "GET / responds with 200 and an HTML page (placeholder content is fine)",
+    "GET /unknown responds with 404 and an HTML error page",
+    "Ctrl+C / SIGINT closes the server and exits the process cleanly",
+    "Tests verify: server starts on a random port, GET / returns 200 HTML, GET /unknown returns 404, server.close() works",
+    "npm run build succeeds across all packages",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/program.ts",
+]
+
+[notes]
+implementation_hints = """
+Command registration pattern — follow export.ts:
+
+```typescript
+import type { Command } from "commander";
+import { loadConfig } from "../config.js";
+
+export function registerViewCommand(program: Command): void {
+  program
+    .command("view [slug]")
+    .description("View scan results in the browser")
+    .option("-p, --port <number>", "Server port", "3700")
+    .action(async (slug: string | undefined, opts: { port: string }) => {
+      const config = loadConfig({ verbose: program.opts().verbose });
+      const { ProductDirectory } = await import("@basesignal/storage");
+      const productDir = new ProductDirectory({
+        root: config.storagePath + "/products",
+      });
+      // ... start server
+    });
+}
+```
+
+In program.ts, add:
+```typescript
+import { registerViewCommand } from "./commands/view.js";
+// ...
+registerViewCommand(program);
+```
+
+Note: the view command does NOT need getStorage (FileStorage). It uses
+ProductDirectory directly, which it creates itself from config.storagePath.
+This is simpler than passing a factory — keep the same pattern as scan.ts
+which also creates its own ProductDirectory.
+
+HTTP server setup:
+```typescript
+import { createServer } from "node:http";
+
+const server = createServer((req, res) => {
+  const url = new URL(req.url ?? "/", `http://localhost:${port}`);
+  // Route: GET /
+  // Route: GET /:slug (S002)
+  // Else: 404
+});
+
+server.listen(port, "127.0.0.1", () => {
+  console.error(`Listening on http://localhost:${port}`);
+});
+
+// Clean shutdown
+const shutdown = () => { server.close(() => process.exit(0)); };
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+```
+
+For tests, use port 0 to get a random available port:
+```typescript
+server.listen(0, "127.0.0.1", () => {
+  const addr = server.address();
+  const port = typeof addr === "object" ? addr?.port : 0;
+  // ... run assertions against http://localhost:${port}
+});
+```
+
+Keep HTML minimal for now — a simple page with <h1>Basesignal</h1> and
+placeholder content. S002 adds the real product list.
+"""

@@ -1,0 +1,103 @@
+# Epic: Product Report Page — Render all profile sections as HTML
+# Build the full product report page that renders every analysis section.
+
+id = "M013-E002"
+parent = "M013"
+title = "Product Report Page"
+status = "draft"
+created = 2026-03-01
+
+[outcome]
+description = """
+Navigating to /{slug} in the view server renders a comprehensive product report.
+Every profile section — identity, journey/activation map, ICP profiles, measurement
+spec, lifecycle states, and value moments — is rendered as readable HTML. Each section
+shows confidence scores where available. Missing sections display a clear 'not yet
+analyzed' indicator rather than broken HTML. The page reads like a product brief
+that a non-technical PM can understand.
+"""
+
+job_story = """
+When I've just scanned a product and want to see the full analysis,
+I want to open the product report in my browser and read through each section,
+so that I understand the product's growth profile without parsing JSON.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "GET /{slug} returns HTML containing the product's full report",
+    "Identity section renders: product name, description, target customer, business model, industry, company stage, confidence",
+    "Journey section renders: activation map stages with level, name, signal strength, trigger events, value moments unlocked, drop-off risk",
+    "Journey section renders: stage transitions with trigger events and typical timeframe",
+    "ICP Profiles section renders: each profile with name, description, pain points, activation triggers, success metrics, confidence",
+    "ICP Profiles section renders: value moment priorities per profile",
+    "Measurement Spec section renders: product entities with properties, activities, and heartbeat indicator",
+    "Measurement Spec section renders: customer entity with derived activities and derivation rules",
+    "Measurement Spec section renders: interaction entity with generic activities",
+    "Lifecycle States section renders: each state with definition, entry criteria, exit triggers, time window",
+    "Lifecycle States section renders: state transitions with conditions and timeframes",
+    "Value Moments section renders: moments grouped or sorted by tier, with contributing lenses and roles",
+    "Each section shows confidence score as a percentage where data includes one",
+    "Missing sections (null or absent in data) show 'Not yet analyzed' rather than errors or empty space",
+    "GET /{nonexistent-slug} returns a 404 page with a link back to the product list",
+    "Tests verify: report route responds, HTML contains expected section headings, missing sections handled gracefully",
+    "`npm run build` succeeds",
+    "All existing tests pass (`npm run test:run`)",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view.ts",
+    "packages/storage/src/product-directory.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/formatters.ts",
+    "packages/mcp-server/src/tools/exportFormatters.ts",
+    "packages/storage/src/types.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+]
+dependencies = ["M013-E001"]
+
+[notes]
+considerations = """
+Data loading strategy:
+
+The view server loads data from ProductDirectory, not from the profile.json alone.
+profile.json has the combined profile, but the individual output files have the
+full structured data:
+
+  outputs/icp-profiles.json      → ICPProfile[] with pain_points, success_metrics
+  outputs/activation-map.json    → ActivationMapResult with stages, transitions
+  outputs/measurement-spec.json  → MeasurementSpec with perspectives (product/customer/interaction)
+  outputs/lifecycle-states.json  → LifecycleStatesResult with states, transitions
+  convergence/value-moments.json → ValueMoment[] with tier, lenses, roles
+
+For each section, read the specific output file for full detail. Fall back to
+profile.json fields if output files don't exist (older scans).
+
+Section rendering approach:
+- Each section is a pure function: renderIdentity(data) → string (HTML)
+- Functions return HTML fragments, assembled into a full page with layout
+- Use the existing type definitions for reference but read as unknown/any from JSON
+  and handle missing fields defensively
+- Confidence scores: render as "85% confidence" with a subtle visual indicator
+- Tables for structured data (stages, entity properties, state transitions)
+- Cards/blocks for ICP profiles (each profile as a distinct visual unit)
+- Value moments: group by tier (Core / Important / Supporting)
+
+Reference the exportFormatters.ts for section ordering and field access patterns —
+the markdown export already handles all these sections. The HTML version follows
+the same structure but with richer visual presentation.
+
+Story breakdown suggestion:
+S001: Identity + Journey/Activation Map sections
+S002: ICP Profiles + Value Moments sections
+S003: Measurement Spec section (product/customer/interaction perspectives)
+S004: Lifecycle States section + 404 handling + missing section fallbacks
+"""
+
+estimated_stories = 4

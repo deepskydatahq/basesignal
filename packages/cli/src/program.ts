@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { registerScanCommand } from "./commands/scan.js";
 import { registerExportCommand } from "./commands/export.js";
 import { registerServeCommand } from "./commands/serve.js";
+import { registerViewCommand } from "./commands/view.js";
 import { registerInitCommand } from "./commands/init.js";
 import { loadConfig } from "./config.js";
 import type { StorageAdapter, LlmProvider } from "@basesignal/mcp-server";
@@ -31,6 +32,7 @@ export function createProgram(): Command {
   registerScanCommand(program);
   registerExportCommand(program, getStorage);
   registerServeCommand(program, getStorage, getProvider);
+  registerViewCommand(program);
 
   return program;
 }

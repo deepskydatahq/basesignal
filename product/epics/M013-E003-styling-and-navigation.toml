@@ -1,0 +1,87 @@
+# Epic: Styling & Navigation — Make the report look good and easy to navigate
+# Add visual design, in-page navigation, and overall polish.
+
+id = "M013-E003"
+parent = "M013"
+title = "Styling & Navigation"
+status = "draft"
+created = 2026-03-01
+
+[outcome]
+description = """
+The product list and report pages look clean and professional. A sticky navigation
+sidebar or top bar lets users jump between report sections. Completeness and
+confidence scores have visual indicators (progress bars or color coding). The
+design uses a neutral, readable color scheme that works well for reading dense
+information — no flashy design, just clear typography and good spacing. The
+overall experience feels like opening a well-formatted report, not a developer tool.
+"""
+
+job_story = """
+When I'm reviewing a long product report with many sections,
+I want to quickly jump to the section I care about and visually scan confidence levels,
+so that I can focus on the insights that matter without scrolling through everything.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Product list page has a clean layout with clear visual hierarchy",
+    "Product report page has a navigation element (sidebar or top bar) with links to each section",
+    "Clicking a nav link scrolls to or jumps to the corresponding section",
+    "The navigation element stays visible while scrolling (sticky positioning)",
+    "Completeness scores have a visual indicator (progress bar, colored badge, or similar)",
+    "Confidence percentages have subtle color coding (green for high, yellow for medium, gray for low)",
+    "Typography is readable — appropriate font sizes, line heights, and spacing for dense content",
+    "Tables are well-formatted with alternating row colors or clear borders",
+    "The page header shows product name, URL, and scan date prominently",
+    "Back-to-list navigation is available from the report page",
+    "All CSS is inline (no external stylesheet dependencies)",
+    "The page renders correctly in Chrome, Firefox, and Safari",
+    "`npm run build` succeeds",
+    "All existing tests pass (`npm run test:run`)",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view.ts",
+]
+dependencies = ["M013-E001", "M013-E002"]
+
+[notes]
+considerations = """
+Styling approach:
+
+- All CSS is inline in the HTML output (in a <style> tag in <head>)
+- No external CDN, Google Fonts, or stylesheet links — fully self-contained
+- Use system font stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, etc.
+- Color scheme: neutral grays + one accent color for links/active states
+- Content width capped at ~900px centered for readability
+- Section anchors use id attributes, nav links use href="#section-name"
+
+Navigation design:
+- Sticky sidebar on desktop (left side, shows section names)
+- Falls back to a compact top bar on narrower screens
+- Highlights current section as user scrolls (optional, requires minimal JS)
+- Scroll-spy can be done with a small inline <script> using IntersectionObserver
+
+Visual indicators:
+- Completeness: horizontal progress bar with percentage label
+- Confidence: colored dot or badge (green ≥70%, yellow ≥40%, gray <40%)
+- Section completeness: subtle checkmark/dash icons for analyzed vs not-analyzed sections
+
+Keep it minimal — the goal is readability, not a design showcase.
+The templates are TypeScript functions returning HTML strings, so iteration
+on styling is fast (change CSS, rebuild, refresh).
+
+Story breakdown suggestion:
+S001: Base CSS — typography, layout, colors, tables, cards
+S002: Navigation — sticky sidebar, section anchors, back-to-list link
+S003: Visual indicators — completeness bars, confidence badges, section status icons
+"""
+
+estimated_stories = 3

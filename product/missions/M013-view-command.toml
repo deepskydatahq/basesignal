@@ -1,0 +1,138 @@
+# Mission: View Command — Browser-Based Profile Viewing
+# A `basesignal view` command that starts a local HTTP server and opens
+# scan results in the browser, making profiles easy to review.
+
+id = "M013"
+title = "View Command — Browser-Based Profile Viewing"
+status = "draft"
+created = 2026-03-01
+depends_on = []
+
+[outcome]
+description = """
+Running `basesignal view` starts a tiny local HTTP server and opens the browser
+to a product list page showing all scanned products. Running `basesignal view <slug>`
+opens directly to that product's report. The report renders all profile sections —
+identity, journey stages, ICP profiles, activation map, measurement spec, lifecycle
+states, and value moments — in a clean, readable HTML page that a non-technical PM
+can understand without explanation. The server runs until Ctrl+C and requires no
+external services or accounts.
+"""
+
+user_progress = "From 'scan results are JSON files I can only read in the terminal' to 'scan results open in my browser as a clean, navigable report'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "`basesignal view` starts an HTTP server on a local port and opens the default browser",
+    "`basesignal view` with no arguments shows a product list page with all scanned products",
+    "`basesignal view <slug>` opens directly to that product's report",
+    "Product list shows product name, URL, scan date, and completeness for each product",
+    "Product report renders Identity section (name, description, target customer, business model, confidence)",
+    "Product report renders Journey/Activation Map section (stages, signal strength, triggers, drop-off risk)",
+    "Product report renders ICP Profiles section (name, description, pain points, activation triggers, success metrics)",
+    "Product report renders Measurement Spec section (product/customer/interaction entities with properties and activities)",
+    "Product report renders Lifecycle States section (states, entry/exit criteria, transitions)",
+    "Product report renders Value Moments section (tiered, with contributing lenses)",
+    "Each section shows confidence scores where available",
+    "Missing sections show a clear 'not yet analyzed' indicator, not broken HTML",
+    "In-page navigation lets users jump between sections",
+    "Server responds to Ctrl+C with clean shutdown",
+    "The view command is registered and works after `npm run build`",
+    "All existing tests pass (`npm run test:run`)",
+    "`npm run build` succeeds across all packages",
+    "A non-technical person can understand the report without needing the terminal",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/program.ts",
+    "packages/cli/package.json",
+    "packages/storage/src/product-directory.ts",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "VALUES.md",
+]
+relevant_paths = [
+    "packages/cli/src/program.ts",
+    "packages/cli/src/commands/",
+    "packages/cli/src/formatters.ts",
+    "packages/cli/package.json",
+    "packages/cli/tsup.config.ts",
+    "packages/storage/src/product-directory.ts",
+    "packages/storage/src/types.ts",
+    "packages/mcp-server/src/tools/exportFormatters.ts",
+    "packages/mcp-server/src/tools/types.ts",
+]
+
+[scope]
+in_scope = [
+    "New `basesignal view` CLI command with optional slug/id argument",
+    "Local HTTP server using Node built-in http module (no Express/Fastify dependency)",
+    "Product list page — shows all scanned products from ProductDirectory",
+    "Product report page — renders all profile sections as clean HTML",
+    "Inline CSS styling — no external stylesheets or CDN dependencies",
+    "In-page navigation (section links/anchors)",
+    "Browser auto-open on server start",
+    "Clean server shutdown on Ctrl+C / SIGINT",
+    "Port selection (default port with --port override)",
+    "Register command in program.ts",
+    "Tests for the view command (server starts, routes respond, HTML contains expected sections)",
+]
+out_of_scope = [
+    "Modifying existing console/summary/markdown formatters",
+    "Editing or updating profiles from the browser UI",
+    "Real-time updates, live reload, or WebSocket connections",
+    "Authentication, user accounts, or access control",
+    "Sharing or hosting reports externally",
+    "Static HTML file generation (potential separate feature)",
+    "Changing the scan pipeline, storage format, or analysis outputs",
+    "Client-side JavaScript framework (React, Vue, etc.)",
+    "Mobile-optimized responsive design (desktop-first is fine)",
+]
+acceptable_breakage = [
+    "None — this is a purely additive feature with no changes to existing commands or data",
+]
+
+[notes]
+considerations = """
+Codebase exploration findings (2026-03-01):
+
+**Current state:**
+- Three text output formats exist: summary (terminal), markdown, json
+- No HTML generation anywhere in the codebase
+- No HTTP server — serve command is MCP-over-stdio only
+- No web dependencies in CLI package
+- ProductDirectory stores rich structured data in ~/.basesignal/products/{slug}/
+- FileStorage stores profile JSON in ~/.basesignal/profiles/{id}.json
+- Two parallel formatter systems exist (CLI formatters + MCP export formatters)
+
+**Available data per product:**
+- profile.json (combined profile with identity, journey, completeness)
+- outputs/icp-profiles.json, activation-map.json, measurement-spec.json, lifecycle-states.json
+- convergence/value-moments.json
+- lenses/*.json (7 lens results)
+- crawl/pages.json, metadata.json
+
+**Technology choices:**
+- Node built-in `http` module for server (zero new dependencies for HTTP)
+- Template literal functions for HTML generation (no templating library)
+- Inline CSS for styling (no build step for assets, self-contained)
+- `open` npm package or child_process for browser auto-open
+- ProductDirectory.readJson() and listProducts() for data access
+
+**Architecture:**
+- New file: packages/cli/src/commands/view.ts
+- Server-rendered HTML approach (not SPA — no client-side JS framework needed)
+- Template functions: renderProductList(products), renderProductReport(slug, data)
+- HTML templates can be extracted to separate files if they grow large
+- Route structure: GET / (product list), GET /:slug (product report)
+
+**Epic breakdown suggestion:**
+E001: Command scaffolding + HTTP server + product list page
+E002: Product report page with all sections rendered
+E003: Styling, navigation, and polish
+"""

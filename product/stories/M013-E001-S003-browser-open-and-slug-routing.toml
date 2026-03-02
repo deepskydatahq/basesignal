@@ -1,0 +1,99 @@
+# Story: Browser Auto-Open and Slug Routing
+# Auto-open the browser on server start and route slug URLs to the report page.
+
+id = "M013-E001-S003"
+epic = "M013-E001"
+title = "Browser Auto-Open and Slug Routing"
+status = "in-progress"
+created = 2026-03-01
+depends_on = ["M013-E001-S002"]
+
+[outcome]
+description = """
+When the view server starts, it automatically opens the user's default browser.
+If a slug argument was provided (`basesignal view linear-app`), it opens directly
+to that product's report page. Otherwise it opens the product list. GET /{slug}
+routes are wired up to return a placeholder report page (full rendering in E002).
+If the slug doesn't exist in ProductDirectory, a 404 page with a back-to-list
+link is returned. The browser open can be suppressed with --no-open.
+"""
+
+[acceptance_criteria]
+criteria = [
+    "Server auto-opens the default browser to http://localhost:<port>/ after starting",
+    "When slug argument is provided, browser opens to http://localhost:<port>/<slug> instead",
+    "The --no-open flag suppresses browser auto-open (useful for testing/scripting)",
+    "GET /<existing-slug> returns 200 with an HTML page (placeholder body, full report in E002)",
+    "GET /<nonexistent-slug> returns 404 with an HTML page containing 'Product not found' and a link back to /",
+    "ProductDirectory.exists(slug) is used to check slug validity",
+    "Browser open uses child_process to call platform-appropriate open command (no new npm dependency)",
+    "Tests verify: slug route returns 200 for existing product, 404 for nonexistent slug, 404 page contains back link",
+    "npm run build succeeds",
+    "All existing tests pass (npm run test:run)",
+]
+
+[context]
+files_to_modify = [
+    "packages/cli/src/commands/view.ts",
+]
+
+[notes]
+implementation_hints = """
+Browser auto-open without adding a dependency — use child_process.exec:
+
+```typescript
+import { exec } from "node:child_process";
+
+function openBrowser(url: string): void {
+  const cmd = process.platform === "darwin"
+    ? `open "${url}"`
+    : process.platform === "win32"
+      ? `start "" "${url}"`
+      : `xdg-open "${url}"`;
+  exec(cmd, (err) => {
+    if (err) console.error("Could not open browser automatically. Visit:", url);
+  });
+}
+```
+
+Call after server.listen callback:
+```typescript
+server.listen(port, "127.0.0.1", () => {
+  const url = slug
+    ? `http://localhost:${port}/${slug}`
+    : `http://localhost:${port}`;
+  console.error(`Listening on http://localhost:${port}`);
+  if (!opts.noOpen) openBrowser(url);
+});
+```
+
+Add --no-open flag to the command:
+```typescript
+.option("--no-open", "Don't open browser automatically")
+```
+Commander auto-parses --no-X flags as opts.open = false.
+
+Slug routing in the request handler:
+```typescript
+const pathname = url.pathname.replace(/^\//, "");
+if (pathname === "" || pathname === "/") {
+  // Product list (S002)
+} else if (productDir.exists(pathname)) {
+  // Product report placeholder (E002 fills this in)
+  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+  res.end(renderPage(pathname, `<h1>${escapeHtml(pathname)}</h1><p>Report coming soon.</p><p><a href="/">Back to list</a></p>`));
+} else {
+  // 404
+  res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+  res.end(renderPage("Not Found", `<h1>Product not found</h1><p>No product with slug "${escapeHtml(pathname)}" exists.</p><p><a href="/">Back to product list</a></p>`));
+}
+```
+
+Important: sanitize the slug from the URL before passing to
+ProductDirectory.exists() — the slug should only contain [a-z0-9-].
+Reject anything else as 404 to prevent path traversal.
+
+For tests, don't test the actual browser open (it would open a real browser).
+Instead, extract openBrowser as a separate function and test the routing logic
+independently. Or pass --no-open in test scenarios.
+"""

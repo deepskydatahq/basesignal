@@ -1,0 +1,84 @@
+# Epic: View Command & HTTP Server — CLI scaffolding and product list
+# Wire up the `basesignal view` command, HTTP server, browser open, and product list page.
+
+id = "M013-E001"
+parent = "M013"
+title = "View Command & HTTP Server"
+status = "draft"
+created = 2026-03-01
+
+[outcome]
+description = """
+Running `basesignal view` starts a local HTTP server, opens the default browser,
+and shows a product list page. The list displays every product scanned via
+ProductDirectory — name, URL, scan date, and completeness. Clicking a product
+navigates to its report page (rendered in E002). The server shuts down cleanly
+on Ctrl+C. A --port flag overrides the default port.
+"""
+
+job_story = """
+When I've scanned several products with basesignal,
+I want to run `basesignal view` and see them listed in my browser,
+so that I can quickly find and open the one I want to review.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "`basesignal view` is a registered CLI command (appears in --help)",
+    "Running the command starts an HTTP server on localhost (default port 3700)",
+    "The --port flag overrides the default port",
+    "The server auto-opens the default browser to the product list URL",
+    "GET / returns HTML with a list of all products from ProductDirectory.listProducts()",
+    "Each product row shows: product name, URL, scan date, completeness percentage",
+    "Each product row links to /{slug} for the product report",
+    "An empty product list shows a helpful message ('No products scanned yet')",
+    "Ctrl+C / SIGINT shuts down the server cleanly without hanging",
+    "The command is registered in program.ts following the existing pattern",
+    "Tests verify: server starts, product list route responds with HTML, shutdown works",
+    "`npm run build` succeeds",
+    "All existing tests pass (`npm run test:run`)",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/program.ts",
+    "packages/cli/package.json",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/program.ts",
+    "packages/cli/src/commands/serve.ts",
+    "packages/cli/src/commands/export.ts",
+    "packages/cli/package.json",
+    "packages/storage/src/product-directory.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Architecture decisions:
+
+- Use Node built-in `http` module — zero new HTTP dependencies
+- For browser auto-open: use `open` npm package (cross-platform, lightweight)
+  or `child_process.exec` with platform detection (avoids adding a dependency)
+- ProductDirectory provides: listProducts() → string[], readJson(slug, path) → T | null,
+  exists(slug) → boolean
+- Product list data: for each slug, read profile.json to get identity.productName,
+  metadata.url, metadata.scannedAt, and completeness
+- Route structure: GET / → product list, GET /{slug} → product report (E002)
+- Command registration follows existing pattern:
+  registerViewCommand(program, getStorage) in program.ts
+- The view command needs ProductDirectory, not FileStorage (artifacts are in products/)
+- Default port 3700 (unlikely to conflict with common dev servers)
+- HTML is generated via template literal functions, not a templating library
+- CSS is inline in the HTML output
+
+Story breakdown suggestion:
+S001: Register view command, start HTTP server, handle --port, Ctrl+C shutdown
+S002: Product list page — load data from ProductDirectory, render HTML list
+S003: Browser auto-open and polish (error handling for missing products dir, etc.)
+"""
+
+estimated_stories = 3
