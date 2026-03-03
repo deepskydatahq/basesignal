@@ -58,6 +58,7 @@ export function renderPage(title: string, body: string, options?: { script?: str
     details > summary { cursor: pointer; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; padding: 0.25rem 0; list-style: revert; }
     details > summary .badge { font-size: 0.7rem; vertical-align: middle; }
     .vm-tier-1 { border-left: 3px solid #2563eb; }
+    .vm-tier-2 { border-left: 3px solid #94a3b8; }
     .vm-tier-3 { border-color: #e5e7eb; color: #6b7280; }
     .vm-tier-3 h4 { font-size: 0.9rem; }
     .vm-crossrefs { font-size: 0.8rem; margin-top: 0.35rem; }

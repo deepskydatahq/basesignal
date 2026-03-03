@@ -90,6 +90,17 @@ export function collectTriggers(
 }
 
 // ---------------------------------------------------------------------------
+// Shared vocabulary formatting
+// ---------------------------------------------------------------------------
+
+/** Format event vocabulary entries as human-readable lines for LLM prompts. */
+export function formatVocabulary(vocabulary: EventVocabularyEntry[]): string {
+  return vocabulary
+    .map((v) => `- ${v.event} (${v.perspective}: ${v.entity} → ${v.activity})`)
+    .join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Reconciliation prompt
 // ---------------------------------------------------------------------------
 
@@ -127,9 +138,7 @@ function buildReconciliationUserPrompt(
   vocabulary: EventVocabularyEntry[],
   triggers: string[],
 ): string {
-  const vocabLines = vocabulary
-    .map((v) => `- ${v.event} (${v.perspective}: ${v.entity} → ${v.activity})`)
-    .join("\n");
+  const vocabLines = formatVocabulary(vocabulary);
 
   const triggerLines = triggers.map((t) => `- ${t}`).join("\n");
 

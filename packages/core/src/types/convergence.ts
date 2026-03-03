@@ -1,12 +1,16 @@
-/** Experiential lens type — the 7 experience-oriented lenses used in convergence. */
-export type ExperientialLensType =
-  | "jtbd"
-  | "outcomes"
-  | "pains"
-  | "gains"
-  | "alternatives"
-  | "workflows"
-  | "emotions";
+/** All experiential lens values — the experience-oriented lenses used in convergence. */
+export const EXPERIENTIAL_LENS_TYPES = [
+  "jtbd",
+  "outcomes",
+  "pains",
+  "gains",
+  "alternatives",
+  "workflows",
+  "emotions",
+] as const;
+
+/** Experiential lens type — derived from the lens values array. */
+export type ExperientialLensType = (typeof EXPERIENTIAL_LENS_TYPES)[number];
 
 /** Validation status for a candidate after quality checks. */
 export type ValidationStatus = "valid" | "rewritten" | "removed";

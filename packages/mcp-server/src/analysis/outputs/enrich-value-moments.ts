@@ -3,7 +3,7 @@
 import type { MeasurementSpec, LifecycleStatesResult, ValueMoment } from "@basesignal/core";
 import { extractJson } from "@basesignal/core";
 import type { LlmProvider } from "../types.js";
-import { buildEventVocabulary, type EventVocabularyEntry } from "./reconcile.js";
+import { buildEventVocabulary, formatVocabulary, type EventVocabularyEntry } from "./reconcile.js";
 
 // ---------------------------------------------------------------------------
 // Enrichment prompt
@@ -53,9 +53,7 @@ function buildEnrichmentUserPrompt(
     .map((vm) => `- id: ${vm.id} | name: ${vm.name} | tier: ${vm.tier} | surfaces: ${vm.product_surfaces.join(", ") || "none"}\n  description: ${vm.description}`)
     .join("\n");
 
-  const vocabLines = vocabulary
-    .map((v) => `- ${v.event} (${v.perspective}: ${v.entity} → ${v.activity})`)
-    .join("\n");
+  const vocabLines = formatVocabulary(vocabulary);
 
   const stateLines = lifecycleStates
     ? lifecycleStates.states

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { buildEventVocabulary, collectTriggers, reconcileOutputs, parseReconciliationResponse, type EventVocabularyEntry } from "../../outputs/reconcile.js";
 import type { MeasurementSpec, LifecycleStatesResult } from "@basesignal/core";
 import type { LlmProvider } from "../../types.js";
@@ -464,7 +464,10 @@ describe("reconcileOutputs", () => {
       }),
     });
 
-    const result = await reconcileOutputs(outputs, mockLlm("should not be called"));
+    const completeSpy = vi.fn();
+    const llm = { complete: completeSpy } as unknown as LlmProvider;
+    const result = await reconcileOutputs(outputs, llm);
     expect(result).toBe(outputs);
+    expect(completeSpy).not.toHaveBeenCalled();
   });
 });

@@ -57,6 +57,8 @@ export type {
   ConvergenceResult,
 } from "./types/convergence";
 
+export { EXPERIENTIAL_LENS_TYPES } from "./types/convergence";
+
 // Output types
 export type {
   ValueMomentPriority,

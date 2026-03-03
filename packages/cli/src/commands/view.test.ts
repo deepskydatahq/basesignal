@@ -791,6 +791,36 @@ describe("renderProductReport", () => {
     expect(bodyContent).not.toContain("Metrics:");
   });
 
+  it("hides cross-reference sections when enrichment fields are empty arrays", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/value-moments.json", [
+      {
+        id: "m1",
+        name: "Quick setup",
+        description: "Set up fast",
+        tier: 1,
+        lenses: ["jtbd"],
+        lens_count: 1,
+        roles: [],
+        product_surfaces: [],
+        contributing_candidates: [],
+        measurement_references: [],
+        lifecycle_relevance: [],
+        suggested_metrics: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("Tracks:");
+    expect(bodyContent).not.toContain("Lifecycle:");
+    expect(bodyContent).not.toContain("Metrics:");
+  });
+
   it("renders measurement spec activities before properties", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;

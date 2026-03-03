@@ -15,6 +15,7 @@ import type {
   EntityProperty,
   ValueMoment,
 } from "@basesignal/core";
+import { EXPERIENTIAL_LENS_TYPES } from "@basesignal/core";
 import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
 
 // ---------------------------------------------------------------------------
@@ -273,7 +274,7 @@ function renderValueMomentsSection(valueMoments: ValueMoment[] | null): string {
     (grouped[tier] ??= []).push(m);
   }
 
-  const totalLenses = 7;
+  const totalLenses = EXPERIENTIAL_LENS_TYPES.length;
   const tierSections = [1, 2, 3]
     .filter((t) => grouped[t]?.length)
     .map((t) => {
