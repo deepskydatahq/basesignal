@@ -4,7 +4,7 @@
 id = "M014-E003"
 mission = "M014"
 title = "Visual Polish"
-status = "draft"
+status = "complete"
 depends_on = ["M014-E001", "M014-E002"]
 
 [outcome]

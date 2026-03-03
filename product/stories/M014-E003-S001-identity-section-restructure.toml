@@ -4,7 +4,7 @@
 id = "M014-E003-S001"
 epic = "M014-E003"
 title = "Restructure identity section for scannability"
-status = "in-progress"
+status = "complete"
 depends_on = []
 
 [acceptance]

@@ -3,7 +3,7 @@
 
 id = "M014"
 title = "Output Alignment & Polish"
-status = "draft"
+status = "complete"
 created = 2026-03-03
 depends_on = ["M012", "M013"]
 

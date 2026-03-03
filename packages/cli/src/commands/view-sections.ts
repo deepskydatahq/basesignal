@@ -8,7 +8,6 @@ import type {
   MeasurementSpec,
   ProductEntity,
   CustomerEntity,
-  InteractionEntity,
   LifecycleStatesResult,
   LifecycleState,
   StateTransition,
@@ -41,7 +40,7 @@ function renderSectionNav(analyzedSections: Set<string>): string {
   return `<nav class="section-nav">${links}</nav>`;
 }
 
-const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.section-nav');if(!n)return;var ls=n.querySelectorAll('a[href^=\"#\"]');var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){ls.forEach(function(l){l.classList.remove('active')});var a=n.querySelector('a[href=\"#'+e.target.id+'\"]');if(a)a.classList.add('active')}})},{rootMargin:'-20% 0px -70% 0px'});document.querySelectorAll('section[id]').forEach(function(s){o.observe(s)})})();`;
+const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.section-nav');if(!n)return;var ls=n.querySelectorAll('a[href^=\"#\"]');var cur=null;var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){cur=e.target.id}});if(cur){ls.forEach(function(l){l.classList.remove('active')});var a=n.querySelector('a[href=\"#'+cur+'\"]');if(a)a.classList.add('active')}},{rootMargin:'-10% 0px -50% 0px',threshold:[0,0.1]});document.querySelectorAll('section[id]').forEach(function(s){o.observe(s)})})();`;
 
 // ---------------------------------------------------------------------------
 // Report header
@@ -78,26 +77,33 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
 </section>`;
   }
 
-  const fields: Array<[string, string | undefined]> = [
-    ["Description", identity.description],
-    ["Target Customer", identity.targetCustomer],
-    ["Business Model", identity.businessModel],
-    ["Industry", identity.industry],
-    ["Company Stage", identity.companyStage],
-  ];
+  const descHtml = identity.description
+    ? `<p class="identity-description">${escapeHtml(identity.description)}</p>`
+    : "";
 
-  const items = fields
-    .filter(([, v]) => v)
-    .map(([label, value]) => `    <dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value!)}</dd>`)
-    .join("\n");
+  const targetHtml = identity.targetCustomer
+    ? `<div class="identity-target"><span class="identity-target-label">Target Customer</span> <span class="identity-target-value">${escapeHtml(identity.targetCustomer)}</span></div>`
+    : "";
 
-  const confLine = identity.confidence != null ? `\n  <p class="confidence">Confidence: ${confidenceBadge(identity.confidence)}</p>` : "";
+  const contextBadges: string[] = [];
+  if (identity.businessModel) contextBadges.push(escapeHtml(identity.businessModel));
+  if (identity.industry) contextBadges.push(escapeHtml(identity.industry));
+  if (identity.companyStage) contextBadges.push(escapeHtml(identity.companyStage));
+  const contextHtml = contextBadges.length > 0
+    ? `<div class="identity-context">${contextBadges.map((b) => `<span class="badge">${b}</span>`).join(" ")}</div>`
+    : "";
+
+  const confLine = identity.confidence != null
+    ? `\n  <p class="confidence">Confidence: ${confidenceBadge(identity.confidence)}</p>`
+    : "";
 
   return `<section id="identity">
   <h2>Identity</h2>
-  <dl>
-${items}
-  </dl>${confLine}
+  <div class="identity-card">
+    ${descHtml}
+    ${targetHtml}
+    ${contextHtml}${confLine}
+  </div>
 </section>`;
 }
 
@@ -224,6 +230,33 @@ ${cards}
 // Value Moments
 // ---------------------------------------------------------------------------
 
+function renderValueMomentCrossRefs(m: ValueMoment): string {
+  const parts: string[] = [];
+
+  if (m.measurement_references && m.measurement_references.length > 0) {
+    const badges = m.measurement_references
+      .map((r) => `<span class="badge badge-measurement">${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</span>`)
+      .join(" ");
+    parts.push(`<div class="vm-crossrefs"><span class="vm-crossref-label">Tracks:</span> ${badges}</div>`);
+  }
+
+  if (m.lifecycle_relevance && m.lifecycle_relevance.length > 0) {
+    const badges = m.lifecycle_relevance
+      .map((s) => `<span class="badge badge-lifecycle">${escapeHtml(s)}</span>`)
+      .join(" ");
+    parts.push(`<div class="vm-crossrefs"><span class="vm-crossref-label">Lifecycle:</span> ${badges}</div>`);
+  }
+
+  if (m.suggested_metrics && m.suggested_metrics.length > 0) {
+    const items = m.suggested_metrics
+      .map((s) => `<code>${escapeHtml(s)}</code>`)
+      .join(", ");
+    parts.push(`<div class="vm-crossrefs"><span class="vm-crossref-label">Metrics:</span> ${items}</div>`);
+  }
+
+  return parts.join("\n        ");
+}
+
 function renderValueMomentsSection(valueMoments: ValueMoment[] | null): string {
   if (!valueMoments || valueMoments.length === 0) {
     return `<section id="value-moments" class="no-data">
@@ -233,6 +266,7 @@ function renderValueMomentsSection(valueMoments: ValueMoment[] | null): string {
   }
 
   const tierLabels: Record<number, string> = { 1: "Core Value Moments", 2: "Important", 3: "Supporting" };
+  const tierClasses: Record<number, string> = { 1: "vm-tier-1", 2: "vm-tier-2", 3: "vm-tier-3" };
   const grouped: Record<number, ValueMoment[]> = {};
   for (const m of valueMoments) {
     const tier = m.tier ?? 3;
@@ -244,20 +278,24 @@ function renderValueMomentsSection(valueMoments: ValueMoment[] | null): string {
     .filter((t) => grouped[t]?.length)
     .map((t) => {
       const label = tierLabels[t] ?? `Tier ${t}`;
+      const tierClass = tierClasses[t] ?? "";
+      const isOpen = t <= 2;
       const items = grouped[t]
         .map((m: ValueMoment) => {
           const details: string[] = [];
           if (m.lens_count > 0) details.push(`${m.lens_count} of ${totalLenses} lenses`);
           if (m.roles.length > 0) details.push(`Roles: ${m.roles.map((r) => escapeHtml(r)).join(", ")}`);
           if (m.product_surfaces.length > 0) details.push(`Surfaces: ${m.product_surfaces.map((s) => escapeHtml(s)).join(", ")}`);
-          return `      <div class="card">
+          const crossRefs = renderValueMomentCrossRefs(m);
+          return `      <div class="card ${tierClass}">
         <h4>${escapeHtml(m.name)}</h4>
         ${m.description ? `<p>${escapeHtml(m.description)}</p>` : ""}
         ${details.length > 0 ? `<p class="confidence">${details.join(" &middot; ")}</p>` : ""}
+        ${crossRefs}
       </div>`;
         })
         .join("\n");
-      return `    <h3>${escapeHtml(label)}</h3>\n${items}`;
+      return `    <details${isOpen ? " open" : ""}>\n      <summary>${escapeHtml(label)} <span class="badge">${grouped[t].length}</span></summary>\n${items}\n    </details>`;
     })
     .join("\n");
 
@@ -299,7 +337,7 @@ function renderProductEntities(entities: ProductEntity[]): string {
       }
       return `      <div class="card">
         <h4>${escapeHtml(e.name)}${heartbeatBadge}</h4>
-        ${e.description ? `<p>${escapeHtml(e.description)}</p>` : ""}${renderPropertyTable(e.properties)}${activitiesHtml}
+        ${e.description ? `<p>${escapeHtml(e.description)}</p>` : ""}${activitiesHtml}${renderPropertyTable(e.properties)}
       </div>`;
     })
     .join("\n");
@@ -317,29 +355,12 @@ function renderCustomerEntities(entities: CustomerEntity[]): string {
         activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
       }
       return `      <div class="card">
-        <h4>${escapeHtml(e.name)}</h4>${renderPropertyTable(e.properties)}${activitiesHtml}
+        <h4>${escapeHtml(e.name)}</h4>${activitiesHtml}${renderPropertyTable(e.properties)}
       </div>`;
     })
     .join("\n");
 }
 
-function renderInteractionEntities(entities: InteractionEntity[]): string {
-  if (entities.length === 0) return "<p>No entities defined.</p>";
-  return entities
-    .map((e) => {
-      let activitiesHtml = "";
-      if (e.activities.length > 0) {
-        const actItems = e.activities
-          .map((a) => `<li>${escapeHtml(a.name)}${a.properties_supported.length > 0 ? ` (${a.properties_supported.map((s) => escapeHtml(s)).join(", ")})` : ""}</li>`)
-          .join("");
-        activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
-      }
-      return `      <div class="card">
-        <h4>${escapeHtml(e.name)}</h4>${renderPropertyTable(e.properties)}${activitiesHtml}
-      </div>`;
-    })
-    .join("\n");
-}
 
 function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
   if (!spec) {
@@ -352,7 +373,6 @@ function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
   const perspectivesHtml = [
     `    <h3>Product Perspective</h3>\n${renderProductEntities(spec.perspectives.product.entities)}`,
     `    <h3>Customer Perspective</h3>\n${renderCustomerEntities(spec.perspectives.customer.entities)}`,
-    `    <h3>Interaction Perspective</h3>\n${renderInteractionEntities(spec.perspectives.interaction.entities)}`,
   ].join("\n");
 
   let warningsHtml = "";

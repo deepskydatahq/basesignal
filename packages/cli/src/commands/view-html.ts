@@ -48,9 +48,22 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .report-header { margin-bottom: 2rem; }
     .report-header .meta { font-size: 0.9rem; color: #6b7280; display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem; align-items: center; }
     .report-header .meta a { color: #6b7280; }
-    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0; }
-    dt { font-weight: 600; color: #374151; }
-    dd { margin: 0; }
+    .identity-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; }
+    .identity-description { font-size: 1.05rem; line-height: 1.7; margin: 0 0 1rem; }
+    .identity-target { margin-bottom: 0.75rem; }
+    .identity-target-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; }
+    .identity-target-value { font-weight: 600; color: #1e40af; }
+    .identity-context { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    details { margin-bottom: 0.5rem; }
+    details > summary { cursor: pointer; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; padding: 0.25rem 0; list-style: revert; }
+    details > summary .badge { font-size: 0.7rem; vertical-align: middle; }
+    .vm-tier-1 { border-left: 3px solid #2563eb; }
+    .vm-tier-3 { border-color: #e5e7eb; color: #6b7280; }
+    .vm-tier-3 h4 { font-size: 0.9rem; }
+    .vm-crossrefs { font-size: 0.8rem; margin-top: 0.35rem; }
+    .vm-crossref-label { color: #6b7280; font-weight: 500; margin-right: 0.25rem; }
+    .badge-measurement { background: #dbeafe; color: #1e40af; }
+    .badge-lifecycle { background: #d1fae5; color: #065f46; }
     .badge { display: inline-block; font-size: 0.75rem; padding: 0.1em 0.5em; border-radius: 3px; background: #dbeafe; color: #1e40af; font-weight: 500; }
     .badge-primary { background: #fef3c7; color: #92400e; }
     .risk-low { color: #059669; }

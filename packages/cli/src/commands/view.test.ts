@@ -483,6 +483,13 @@ describe("renderProductReport", () => {
     expect(html).toContain("2 of 7 lenses");
     expect(html).toContain("developer");
     expect(html).toContain("editor");
+    // Tier 1 uses details open, Tier 3 collapsed
+    expect(html).toMatch(/<details open>\s*<summary>Core Value Moments/);
+    expect(html).toMatch(/<details>\s*<summary>Supporting/);
+    // Tier 1 card has accent class
+    expect(html).toContain("vm-tier-1");
+    // Tier 3 card has muted class
+    expect(html).toContain("vm-tier-3");
   });
 
   it("renders measurement spec with perspectives and entities", () => {
@@ -542,15 +549,16 @@ describe("renderProductReport", () => {
     expect(html).toContain("Measurement Spec");
     expect(html).toContain("Product Perspective");
     expect(html).toContain("Customer Perspective");
-    expect(html).toContain("Interaction Perspective");
+    // Interaction perspective is hidden from the view
+    expect(html).not.toContain("Interaction Perspective");
+    expect(html).not.toContain("PageView");
+    expect(html).not.toContain("viewed_page");
     expect(html).toContain("User");
     expect(html).toContain("heartbeat");
     expect(html).toContain("user_id");
     expect(html).toContain("signed_up");
     expect(html).toContain("converted");
     expect(html).toContain("When user upgrades");
-    expect(html).toContain("PageView");
-    expect(html).toContain("viewed_page");
     expect(html).toContain("80%");
     expect(html).toContain("Missing event coverage for onboarding");
   });
@@ -697,6 +705,125 @@ describe("renderProductReport", () => {
     // Count "Not yet analyzed" — should appear 6 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
     expect(matches).toHaveLength(6);
+  });
+
+  it("renders identity as card layout with description and context badges", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        industry: "DevTools",
+        companyStage: "Growth",
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("identity-card");
+    expect(html).toContain("identity-description");
+    expect(html).toContain("identity-target");
+    expect(html).toContain("identity-context");
+    // No <dl> or <dt> — uses card layout
+    expect(html).not.toMatch(/<dl>/);
+    expect(html).not.toMatch(/<dt>/);
+  });
+
+  it("renders value moment cross-references when enrichment data present", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "convergence/value-moments.json", [
+      {
+        id: "m1",
+        name: "Quick setup",
+        description: "Set up fast",
+        tier: 1,
+        lenses: ["jtbd"],
+        lens_count: 1,
+        roles: ["Developer"],
+        product_surfaces: ["Onboarding"],
+        contributing_candidates: [],
+        measurement_references: [{ entity: "project", activity: "created" }],
+        lifecycle_relevance: ["new", "activated"],
+        suggested_metrics: ["projects_created_per_user"],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("badge-measurement");
+    expect(html).toContain("project.created");
+    expect(html).toContain("badge-lifecycle");
+    expect(html).toContain("activated");
+    expect(html).toContain("projects_created_per_user");
+  });
+
+  it("hides cross-reference sections when enrichment fields are absent", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "convergence/value-moments.json", [
+      {
+        id: "m1",
+        name: "Quick setup",
+        description: "Set up fast",
+        tier: 1,
+        lenses: ["jtbd"],
+        lens_count: 1,
+        roles: [],
+        product_surfaces: [],
+        contributing_candidates: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    // Extract body content (after </style>) to avoid matching CSS class definitions
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("Tracks:");
+    expect(bodyContent).not.toContain("Lifecycle:");
+    expect(bodyContent).not.toContain("Metrics:");
+  });
+
+  it("renders measurement spec activities before properties", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/measurement-spec.json", {
+      perspectives: {
+        product: {
+          entities: [{
+            id: "board",
+            name: "Board",
+            description: "A whiteboard",
+            isHeartbeat: true,
+            properties: [{ name: "board_id", type: "id", description: "Board ID", isRequired: true }],
+            activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
+          }],
+        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
+      },
+      jsonSchemas: [],
+      confidence: 0.8,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Activities should appear before properties in the HTML
+    const activitiesIdx = html.indexOf("Activities");
+    const propertiesIdx = html.indexOf("Property");
+    expect(activitiesIdx).toBeGreaterThan(-1);
+    expect(propertiesIdx).toBeGreaterThan(-1);
+    expect(activitiesIdx).toBeLessThan(propertiesIdx);
   });
 });
 
