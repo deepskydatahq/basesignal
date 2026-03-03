@@ -814,6 +814,14 @@ describe("view server", () => {
     expect(body).toContain("&amp;");
   });
 
+  it("GET /favicon.ico returns 204 with no body", async () => {
+    handle = await createServerWithProducts([]);
+    const res = await fetch(`${handle.url}/favicon.ico`);
+    expect(res.status).toBe(204);
+    const body = await res.text();
+    expect(body).toBe("");
+  });
+
   it("close() shuts down the server", async () => {
     handle = await createServerWithProducts([]);
     const url = handle.url;

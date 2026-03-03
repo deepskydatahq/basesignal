@@ -704,6 +704,12 @@ function handleRequest(
 ): void {
   const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
 
+  if (pathname === "/favicon.ico") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (pathname === "/") {
     const products = loadProductList(productDir);
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
