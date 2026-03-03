@@ -1,0 +1,58 @@
+# Story: Implement value moment enrichment function
+# LLM-based cross-referencing of value moments to measurement spec entities, lifecycle states, and metrics
+
+id = "M014-E002-S002"
+epic = "M014-E002"
+title = "Implement value moment enrichment function"
+status = "ready"
+depends_on = ["M014-E002-S001"]
+
+[acceptance]
+criteria = [
+    "An enrichValueMoments() function exists in a new file packages/mcp-server/src/analysis/outputs/enrich-value-moments.ts",
+    "Takes value moments, measurement spec, lifecycle states (nullable), and LlmProvider as input",
+    "Makes a single LLM call to cross-reference all value moments with the measurement spec vocabulary and lifecycle states",
+    "Returns enriched ValueMoment[] with measurement_references, lifecycle_relevance, and suggested_metrics populated",
+    "Preserves all existing ValueMoment fields (additive enrichment only)",
+    "Returns original value moments unchanged when measurement spec is null",
+    "Returns original value moments unchanged when measurement spec has no entities",
+    "Uses temperature 0.1 for deterministic mapping",
+    "Uses extractJson from @basesignal/core to parse LLM response",
+    "Tests verify enrichment populates all three cross-reference fields",
+    "Tests verify no-op when measurement spec is null or empty",
+    "Tests verify original fields are preserved after enrichment",
+    "Exported from the outputs barrel (index.ts)",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/core/src/types/convergence.ts",
+    "packages/core/src/types/outputs.ts",
+]
+
+notes = """
+Follow the pattern established by reconcile.ts: build context from the measurement spec
+vocabulary (using buildEventVocabulary from reconcile.ts), present value moments and
+lifecycle states to the LLM, and parse the structured JSON response.
+
+The LLM prompt should present:
+1. The measurement spec event vocabulary (entity.activity pairs)
+2. The lifecycle state names and definitions (if available)
+3. Each value moment with its name, description, tier, and product_surfaces
+4. Ask the LLM to return a JSON array of enrichment objects, one per value moment
+
+Expected LLM response format:
+[
+  {
+    "id": "vm-1",
+    "measurement_references": [{ "entity": "board", "activity": "shared" }],
+    "lifecycle_relevance": ["activated", "engaged"],
+    "suggested_metrics": ["boards_shared_per_user", "time_to_first_share"]
+  },
+  ...
+]
+
+The function then merges these enrichments back onto the original value moments by id.
+"""

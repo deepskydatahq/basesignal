@@ -1,0 +1,50 @@
+# Story: Wire value moment enrichment into generateAllOutputs pipeline
+# Add enrichment as step 6 after reconciliation, store enriched value moments in OutputsResult
+
+id = "M014-E002-S003"
+epic = "M014-E002"
+title = "Wire value moment enrichment into generateAllOutputs pipeline"
+status = "ready"
+depends_on = ["M014-E002-S002"]
+
+[acceptance]
+criteria = [
+    "OutputsResult interface gains value_moments: ValueMoment[] field (enriched value moments)",
+    "generateAllOutputs() calls enrichValueMoments() after reconciliation (step 6)",
+    "Enriched value moments are stored in result.value_moments",
+    "When enrichment is skipped or fails, result.value_moments contains the original convergence value moments (graceful degradation)",
+    "Progress callbacks fire for enrichment phase: outputs_enrichment started/completed/failed",
+    "Error is pushed to errors array if enrichment throws",
+    "Enrichment is skipped when measurement spec is null",
+    "Existing generateAllOutputs tests still pass (mock LLM now receives 6 calls when full pipeline runs)",
+    "New tests verify enriched value moments appear in OutputsResult",
+    "New tests verify graceful degradation when enrichment fails",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-value-moments.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+]
+
+notes = """
+Follows the same wiring pattern as S003 from E001 (reconciliation wiring):
+- Guard check (measurement spec must exist)
+- progress?.({ phase: 'outputs_enrichment', status: 'started' })
+- try/catch with error handling
+- Store enriched value moments in result
+
+Adding value_moments to OutputsResult makes the enriched value moments available to
+the rendering layer (view-sections.ts) without changing the convergence result. The
+renderer can use result.value_moments instead of convergence.value_moments to display
+the cross-references.
+
+Important: the result.value_moments should always be populated — either with enriched
+value moments (when enrichment succeeds) or with the original convergence value moments
+(when enrichment is skipped or fails). This ensures downstream consumers always have
+value moments available.
+
+The existing tests use createSequentialMockLlm with 5 responses (after E001). After
+this change, tests that exercise the full pipeline need a 6th response for enrichment.
+"""

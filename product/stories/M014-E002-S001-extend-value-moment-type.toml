@@ -1,0 +1,40 @@
+# Story: Extend ValueMoment type and schema with enrichment fields
+# Add optional cross-reference fields to ValueMoment for measurement spec, lifecycle, and metrics
+
+id = "M014-E002-S001"
+epic = "M014-E002"
+title = "Extend ValueMoment type and schema with enrichment fields"
+status = "ready"
+depends_on = []
+
+[acceptance]
+criteria = [
+    "ValueMoment interface in types/convergence.ts gains optional measurement_references: Array<{ entity: string; activity: string }>",
+    "ValueMoment interface gains optional lifecycle_relevance: string[] (lifecycle state names where this moment applies)",
+    "ValueMoment interface gains optional suggested_metrics: string[] (derivable metric descriptions)",
+    "ValueMomentSchema in schema/convergence.ts updated with .optional() for all three new fields",
+    "Existing data without enrichment fields still passes schema validation (fields are optional)",
+    "Data with enrichment fields passes schema validation",
+    "Existing tests pass unchanged (additive change only)",
+    "New schema tests verify optional field parsing and validation",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/convergence.ts",
+    "packages/core/src/schema/convergence.ts",
+]
+
+notes = """
+This is a pure type/schema extension — no runtime logic changes. The three new fields
+are all optional so existing ValueMoment data remains valid without modification.
+
+The measurement_references field links a value moment to specific entity.activity pairs
+from the measurement spec (e.g., [{ entity: 'board', activity: 'shared' }]).
+
+The lifecycle_relevance field lists lifecycle state names where this value moment is
+relevant (e.g., ['activated', 'engaged']).
+
+The suggested_metrics field provides human-readable derivable metric descriptions
+(e.g., ['boards_shared_per_user', 'time_to_first_share']).
+"""
