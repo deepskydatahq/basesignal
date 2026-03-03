@@ -4,7 +4,7 @@
 id = "M014-E003-S003"
 epic = "M014-E003"
 title = "Measurement spec visual refinements"
-status = "ready"
+status = "in-progress"
 depends_on = []
 
 [acceptance]

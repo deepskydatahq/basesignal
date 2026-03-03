@@ -4,7 +4,7 @@
 id = "M014-E003-S002"
 epic = "M014-E003"
 title = "Value moments tier hierarchy, collapse/expand, and cross-references"
-status = "ready"
+status = "in-progress"
 depends_on = ["M014-E003-S001"]
 
 [acceptance]

@@ -4,7 +4,7 @@
 id = "M014-E003-S004"
 epic = "M014-E003"
 title = "Fix scroll-spy navigation jumping"
-status = "ready"
+status = "in-progress"
 depends_on = []
 
 [acceptance]
