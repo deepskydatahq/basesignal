@@ -4,7 +4,7 @@
 id = "M014-E002-S003"
 epic = "M014-E002"
 title = "Wire value moment enrichment into generateAllOutputs pipeline"
-status = "in-progress"
+status = "complete"
 depends_on = ["M014-E002-S002"]
 
 [acceptance]

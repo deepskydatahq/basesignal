@@ -66,6 +66,12 @@ export interface ValueMoment {
   product_surfaces: string[];
   /** IDs of candidates that contributed. */
   contributing_candidates: string[];
+  /** Measurement spec entity.activity pairs that can measure this moment. */
+  measurement_references?: Array<{ entity: string; activity: string }>;
+  /** Lifecycle state names where this moment is relevant. */
+  lifecycle_relevance?: string[];
+  /** Derivable metric descriptions (e.g., 'boards_shared_per_user'). */
+  suggested_metrics?: string[];
 }
 
 /** Quality check status. */

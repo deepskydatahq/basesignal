@@ -164,6 +164,14 @@ const validReconciliationResponse = JSON.stringify({
   session_started: "session_started",
 });
 
+// Value moment enrichment response
+const validEnrichmentResponse = JSON.stringify([{
+  id: "vm-1",
+  measurement_references: [{ entity: "project", activity: "created" }],
+  lifecycle_relevance: ["new", "activated"],
+  suggested_metrics: ["projects_created_per_user", "time_to_first_project"],
+}]);
+
 // The LLM gets called in order: ICP, activation map, lifecycle states, measurement spec
 // We track call index to return the right response
 function createSequentialMockLlm(responses: string[]): LlmProvider {
@@ -186,7 +194,7 @@ function createFailingLlm(failOnCall: number): LlmProvider {
         throw new Error(`LLM call ${current} failed`);
       }
       // Return appropriate responses for other calls
-      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse];
+      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse, validEnrichmentResponse];
       return responses[current] ?? "";
     },
   } as LlmProvider;
@@ -202,6 +210,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -236,6 +245,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
       validActivationMapResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -280,6 +290,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     await generateAllOutputs(
@@ -353,7 +364,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
           // Lifecycle states call
           capturedMessages = messages as Array<{ role: string; content: string }>;
         }
-        const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse];
+        const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse, validEnrichmentResponse];
         return responses[current] ?? "";
       },
     } as LlmProvider;
@@ -383,6 +394,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com/pricing"];
@@ -408,6 +420,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -428,6 +441,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com"];
@@ -455,6 +469,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -494,6 +509,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
+      validEnrichmentResponse,
     ]);
 
     await generateAllOutputs(
@@ -571,5 +587,113 @@ describe("generateAllOutputs — reconciliation wiring", () => {
 
     const reconcileEvents = events.filter(e => e.phase === "outputs_reconciliation");
     expect(reconcileEvents).toHaveLength(0);
+  });
+});
+
+describe("generateAllOutputs — value moment enrichment wiring", () => {
+  it("enriches value moments with measurement references", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+      validEnrichmentResponse,
+    ]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+    );
+
+    expect(result.value_moments).toHaveLength(1);
+    expect(result.value_moments[0].measurement_references).toEqual([{ entity: "project", activity: "created" }]);
+    expect(result.value_moments[0].lifecycle_relevance).toEqual(["new", "activated"]);
+    expect(result.value_moments[0].suggested_metrics).toEqual(["projects_created_per_user", "time_to_first_project"]);
+  });
+
+  it("preserves original value moments when measurement spec is null", async () => {
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      null, // no activation levels → no measurement spec
+      sampleIdentity,
+      llm,
+    );
+
+    // value_moments should contain the original convergence value moments
+    expect(result.value_moments).toHaveLength(1);
+    expect(result.value_moments[0].name).toBe("Quick setup");
+    expect(result.value_moments[0].measurement_references).toBeUndefined();
+  });
+
+  it("preserves original value moments when enrichment fails (graceful degradation)", async () => {
+    // Fail on enrichment call (call index 5)
+    const llm = createFailingLlm(5);
+    const errors: PipelineError[] = [];
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      errors,
+    );
+
+    // value_moments should still be the original convergence value moments
+    expect(result.value_moments).toHaveLength(1);
+    expect(result.value_moments[0].name).toBe("Quick setup");
+    expect(result.value_moments[0].measurement_references).toBeUndefined();
+
+    const enrichErrors = errors.filter(e => e.step === "enrichment");
+    expect(enrichErrors).toHaveLength(1);
+    expect(enrichErrors[0].message).toContain("LLM call 5 failed");
+  });
+
+  it("fires progress callbacks for enrichment on success", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+      validEnrichmentResponse,
+    ]);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
+    );
+
+    const enrichEvents = events.filter(e => e.phase === "outputs_enrichment");
+    expect(enrichEvents).toHaveLength(2);
+    expect(enrichEvents[0].status).toBe("started");
+    expect(enrichEvents[1].status).toBe("completed");
+  });
+
+  it("does not fire enrichment progress when measurement spec is null", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      null,
+      sampleIdentity,
+      llm,
+      progress,
+    );
+
+    const enrichEvents = events.filter(e => e.phase === "outputs_enrichment");
+    expect(enrichEvents).toHaveLength(0);
   });
 });

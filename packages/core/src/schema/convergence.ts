@@ -43,6 +43,9 @@ export const ValueMomentSchema = z.object({
   roles: z.array(z.string()),
   product_surfaces: z.array(z.string()),
   contributing_candidates: z.array(z.string()),
+  measurement_references: z.array(z.object({ entity: z.string(), activity: z.string() })).optional(),
+  lifecycle_relevance: z.array(z.string()).optional(),
+  suggested_metrics: z.array(z.string()).optional(),
 });
 export type ValueMoment = z.infer<typeof ValueMomentSchema>;
 

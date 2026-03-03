@@ -73,6 +73,7 @@ function makeLifecycleStates(overrides?: Partial<LifecycleStatesResult>): Lifecy
 function makeOutputs(overrides?: Partial<OutputsResult>): OutputsResult {
   return {
     icp_profiles: [],
+    value_moments: [],
     activation_map: makeActivationMap(),
     lifecycle_states: makeLifecycleStates(),
     measurement_spec: makeSpec({

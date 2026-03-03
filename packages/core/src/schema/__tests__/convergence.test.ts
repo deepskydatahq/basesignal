@@ -66,6 +66,38 @@ describe("ValueMomentSchema", () => {
   it("rejects invalid tier (4)", () => {
     expect(ValueMomentSchema.safeParse({ ...validValueMoment, tier: 4 }).success).toBe(false);
   });
+
+  it("accepts value moment without enrichment fields", () => {
+    expect(ValueMomentSchema.safeParse(validValueMoment).success).toBe(true);
+  });
+
+  it("accepts value moment with enrichment fields", () => {
+    const enriched = {
+      ...validValueMoment,
+      measurement_references: [{ entity: "task", activity: "completed" }],
+      lifecycle_relevance: ["activated", "engaged"],
+      suggested_metrics: ["tasks_completed_per_user", "time_to_first_completion"],
+    };
+    expect(ValueMomentSchema.safeParse(enriched).success).toBe(true);
+  });
+
+  it("accepts value moment with empty enrichment arrays", () => {
+    const enriched = {
+      ...validValueMoment,
+      measurement_references: [],
+      lifecycle_relevance: [],
+      suggested_metrics: [],
+    };
+    expect(ValueMomentSchema.safeParse(enriched).success).toBe(true);
+  });
+
+  it("rejects measurement_references with missing fields", () => {
+    const bad = {
+      ...validValueMoment,
+      measurement_references: [{ entity: "task" }], // missing activity
+    };
+    expect(ValueMomentSchema.safeParse(bad).success).toBe(false);
+  });
 });
 
 describe("CandidateClusterSchema", () => {

@@ -93,7 +93,7 @@ export async function runAnalysisPipeline(
   }
 
   // Phase 4: Output generation
-  let outputs: OutputsResult = { icp_profiles: [], activation_map: null, measurement_spec: null, lifecycle_states: null };
+  let outputs: OutputsResult = { icp_profiles: [], activation_map: null, measurement_spec: null, lifecycle_states: null, value_moments: [] };
   if (convergence) {
     const pageUrls = input.pages.map(p => p.url);
     outputs = await generateAllOutputs(convergence, activation_levels, identity, llm, progress, errors, pageUrls);

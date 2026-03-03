@@ -4,7 +4,7 @@
 id = "M014-E002-S001"
 epic = "M014-E002"
 title = "Extend ValueMoment type and schema with enrichment fields"
-status = "in-progress"
+status = "complete"
 depends_on = []
 
 [acceptance]

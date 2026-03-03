@@ -4,7 +4,7 @@
 id = "M014-E002"
 mission = "M014"
 title = "Value Moment Enrichment"
-status = "draft"
+status = "complete"
 depends_on = ["M014-E001"]
 
 [outcome]

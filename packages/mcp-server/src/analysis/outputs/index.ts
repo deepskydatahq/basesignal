@@ -1,11 +1,12 @@
 // Output generation orchestration: ICP profiles, activation map, measurement spec, lifecycle states.
 
-import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec, LifecycleStatesResult } from "../types.js";
+import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec, LifecycleStatesResult, ValueMoment } from "../types.js";
 import { generateICPProfiles } from "./icp-profiles.js";
 import { generateActivationMap, type ActivationMapResult } from "./activation-map.js";
 import { generateLifecycleStates } from "./lifecycle-states.js";
 import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
 import { reconcileOutputs } from "./reconcile.js";
+import { enrichValueMoments } from "./enrich-value-moments.js";
 
 // Re-export
 export { generateICPProfiles } from "./icp-profiles.js";
@@ -13,12 +14,14 @@ export { generateActivationMap } from "./activation-map.js";
 export { generateLifecycleStates } from "./lifecycle-states.js";
 export { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
 export { reconcileOutputs, buildEventVocabulary } from "./reconcile.js";
+export { enrichValueMoments } from "./enrich-value-moments.js";
 
 export interface OutputsResult {
   icp_profiles: ICPProfile[];
   activation_map: ActivationMapResult | null;
   lifecycle_states: LifecycleStatesResult | null;
   measurement_spec: MeasurementSpec | null;
+  value_moments: ValueMoment[];
 }
 
 /**
@@ -38,6 +41,7 @@ export async function generateAllOutputs(
     activation_map: null,
     lifecycle_states: null,
     measurement_spec: null,
+    value_moments: convergence.value_moments,
   };
 
   // 1. ICP profiles
@@ -123,6 +127,23 @@ export async function generateAllOutputs(
     } catch (e) {
       progress?.({ phase: "outputs_reconciliation", status: "failed", detail: String(e) });
       errors?.push({ phase: "outputs", step: "reconciliation", message: String(e) });
+    }
+  }
+
+  // 6. Value moment enrichment (cross-reference with measurement spec and lifecycle states)
+  if (result.measurement_spec) {
+    progress?.({ phase: "outputs_enrichment", status: "started" });
+    try {
+      result.value_moments = await enrichValueMoments(
+        convergence.value_moments,
+        result.measurement_spec,
+        result.lifecycle_states,
+        llm,
+      );
+      progress?.({ phase: "outputs_enrichment", status: "completed" });
+    } catch (e) {
+      progress?.({ phase: "outputs_enrichment", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "enrichment", message: String(e) });
     }
   }
 
