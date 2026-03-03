@@ -4,7 +4,7 @@
 id = "M013-E002-S003"
 epic = "M013-E002"
 title = "Measurement Spec Section"
-status = "ready"
+status = "complete"
 created = 2026-03-02
 depends_on = ["M013-E002-S001"]
 

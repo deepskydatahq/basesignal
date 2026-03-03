@@ -4,7 +4,7 @@
 id = "M013-E001-S003"
 epic = "M013-E001"
 title = "Browser Auto-Open and Slug Routing"
-status = "in-progress"
+status = "complete"
 created = 2026-03-01
 depends_on = ["M013-E001-S002"]
 

@@ -4,7 +4,7 @@
 id = "M013-E002-S004"
 epic = "M013-E002"
 title = "Lifecycle States Section and Missing Section Handling"
-status = "ready"
+status = "complete"
 created = 2026-03-02
 depends_on = ["M013-E002-S001"]
 

@@ -4,7 +4,7 @@
 id = "M013-E002-S002"
 epic = "M013-E002"
 title = "ICP Profiles and Value Moments Sections"
-status = "ready"
+status = "complete"
 created = 2026-03-02
 depends_on = ["M013-E002-S001"]
 

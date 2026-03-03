@@ -4,7 +4,7 @@
 
 id = "M013"
 title = "View Command — Browser-Based Profile Viewing"
-status = "draft"
+status = "complete"
 created = 2026-03-01
 depends_on = []
 

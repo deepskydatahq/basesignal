@@ -4,7 +4,7 @@
 id = "M013-E003-S002"
 epic = "M013-E003"
 title = "Visual Indicators and Polish"
-status = "ready"
+status = "complete"
 created = 2026-03-02
 depends_on = ["M013-E003-S001"]
 
