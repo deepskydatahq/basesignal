@@ -1,0 +1,39 @@
+# Story: Restructure identity section for scannability
+# Replace flat definition list with a card-based grouped layout
+
+id = "M014-E003-S001"
+epic = "M014-E003"
+title = "Restructure identity section for scannability"
+status = "ready"
+depends_on = []
+
+[acceptance]
+criteria = [
+    "Identity section in renderIdentitySection (view-sections.ts) uses a card-based layout instead of <dl>",
+    "Description is displayed as a prominent paragraph at the top, not a definition list item",
+    "Related fields are visually grouped (e.g., Business Model + Industry + Company Stage together)",
+    "Product name shown as the section heading or prominent title, not just a dt/dd pair",
+    "Target Customer is visually distinct (separate card or highlighted badge)",
+    "Confidence badge remains visible",
+    "Existing view tests pass (update assertions for new HTML structure)",
+    "New tests verify the restructured identity layout contains expected elements",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+notes = """
+Current: renderIdentitySection uses a <dl> with dt/dd pairs for Description, Target Customer,
+Business Model, Industry, Company Stage. The dl has CSS grid (auto 1fr) styling.
+
+Target: Card-based layout where the description is a prominent paragraph, product name is
+the section title, and business context (model, industry, stage) is grouped in a compact
+badge or metadata row. Target Customer should stand out since it's the most actionable field.
+
+CSS changes go in view-html.ts (renderPage has the style block).
+HTML changes go in view-sections.ts (renderIdentitySection function).
+"""

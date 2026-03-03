@@ -1,0 +1,38 @@
+# Story: Fix scroll-spy navigation jumping
+# Tune IntersectionObserver to prevent unpredictable active section changes
+
+id = "M014-E003-S004"
+epic = "M014-E003"
+title = "Fix scroll-spy navigation jumping"
+status = "ready"
+depends_on = []
+
+[acceptance]
+criteria = [
+    "Scroll-spy IntersectionObserver rootMargin is tuned to prevent jumpy behavior",
+    "Active section in nav changes smoothly when scrolling down through sections",
+    "Active section stays highlighted while majority of section is visible",
+    "No rapid flickering between adjacent sections during scroll",
+    "SCROLL_SPY_SCRIPT in view-sections.ts is updated with new observer configuration",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+]
+
+notes = """
+Current rootMargin: '-20% 0px -70% 0px'
+
+This creates a very narrow active zone (only 10% of viewport height between 20% and 30%
+from top). When scrolling, sections quickly enter and leave this zone, causing jumpy
+behavior where the active nav link rapidly switches between sections.
+
+Fix options:
+1. Widen the active zone: '-10% 0px -50% 0px' (active zone is top 40% of viewport)
+2. Add threshold: threshold: [0, 0.25, 0.5] to track partial visibility
+3. Debounce approach: Track most-visible section instead of first-intersecting
+
+Option 1 is simplest and should resolve most jumping. Can also add a small JS debounce
+or use 'entries.filter(e => e.isIntersecting)' with largest intersectionRatio logic.
+"""

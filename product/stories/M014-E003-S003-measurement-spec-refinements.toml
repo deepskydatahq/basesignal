@@ -1,0 +1,41 @@
+# Story: Measurement spec visual refinements
+# Show activities before properties, hide interaction perspective
+
+id = "M014-E003-S003"
+epic = "M014-E003"
+title = "Measurement spec visual refinements"
+status = "ready"
+depends_on = []
+
+[acceptance]
+criteria = [
+    "Product entity rendering shows activities table/list before properties table",
+    "Customer entity rendering shows activities list before properties table",
+    "Interaction perspective is not rendered in the HTML view (no h3, no entities)",
+    "renderInteractionEntities call is removed or guarded from renderMeasurementSpecSection",
+    "Existing view tests pass (update assertions that referenced interaction perspective)",
+    "New tests verify activities appear before properties in rendered HTML",
+    "New tests verify interaction perspective is absent from rendered output",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+notes = """
+Current order in renderProductEntities/renderCustomerEntities:
+1. Entity name/description
+2. Properties table (renderPropertyTable)
+3. Activities list
+
+Target order:
+1. Entity name/description
+2. Activities list (more important — what users track)
+3. Properties table (supporting detail)
+
+Also: remove the 'Interaction Perspective' h3 and renderInteractionEntities call from
+renderMeasurementSpecSection. Interaction events (element_clicked, page_viewed) are
+low-level instrumentation that clutters the strategic view.
+"""

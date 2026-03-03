@@ -1,0 +1,49 @@
+# Story: Value moments tier hierarchy, collapse/expand, and cross-references
+# Add collapse/expand with tier differentiation and display enrichment cross-references
+
+id = "M014-E003-S002"
+epic = "M014-E003"
+title = "Value moments tier hierarchy, collapse/expand, and cross-references"
+status = "ready"
+depends_on = ["M014-E003-S001"]
+
+[acceptance]
+criteria = [
+    "Each tier group uses HTML <details>/<summary> for collapse/expand",
+    "Tier 1 (Core) and Tier 2 (Important) sections are open by default",
+    "Tier 3 (Supporting) section is collapsed by default (no 'open' attribute)",
+    "Tier 1 cards have accent left border and visually more prominent heading",
+    "Tier 2 cards have standard styling",
+    "Tier 3 cards have reduced visual weight (lighter border, smaller text or muted colors)",
+    "Value moment cards show measurement_references as small entity.activity badges when present",
+    "Value moment cards show lifecycle_relevance as state name badges when present",
+    "Value moment cards show suggested_metrics as a compact list when present",
+    "Cross-reference display is graceful when enrichment fields are absent (no empty sections)",
+    "Existing view tests pass (update assertions for new HTML structure)",
+    "New tests verify collapse/expand, tier styling classes, and cross-reference rendering",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+notes = """
+Current: renderValueMomentsSection groups by tier with h3 headers and flat cards.
+No collapse/expand. All tiers equally styled.
+
+Target: Use <details open>/<summary> for Tier 1 and 2, <details>/<summary> (no open) for Tier 3.
+Tier 1 cards get a left border accent (e.g., 3px solid blue) and slightly larger h4.
+Tier 3 cards get lighter borders and smaller font or muted colors.
+
+Cross-references from E002 enrichment (measurement_references, lifecycle_relevance,
+suggested_metrics) should render as compact badge/tag rows below the existing card content.
+Only render each cross-reference section if the field exists and is non-empty.
+
+The renderProductReport function currently reads value moments from convergence/value-moments.json.
+After E002, enriched value moments are in OutputsResult.value_moments. The renderer may need
+to read from outputs/ or the caller needs to pass enriched value moments. Check how
+renderProductReport receives data.
+"""
