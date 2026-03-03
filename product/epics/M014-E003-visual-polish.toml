@@ -1,0 +1,61 @@
+# Epic: Visual Polish
+# Refine HTML view for scannability, hierarchy, and navigation
+
+id = "M014-E003"
+mission = "M014"
+title = "Visual Polish"
+status = "draft"
+depends_on = ["M014-E001", "M014-E002"]
+
+[outcome]
+description = """
+The HTML view presents output with clear visual hierarchy and improved navigation.
+Identity is scannable at a glance, value moments use collapse/expand with tier
+differentiation, measurement spec shows activities before properties with interaction
+perspective hidden, and scroll-spy works predictably.
+"""
+
+[acceptance]
+criteria = [
+    "Identity section uses a structured card/grouped layout instead of flat definition list",
+    "Value moments section uses collapse/expand — Tier 3 (Supporting) collapsed by default",
+    "Tier 1 value moments are visually more prominent (larger cards, accent border/background)",
+    "Tier 2 and Tier 3 have progressively reduced visual weight",
+    "Value moment cards show cross-references from E002 (measurement links, lifecycle relevance, metrics)",
+    "Measurement spec renders activities in a table before properties table for each entity",
+    "Interaction perspective is not rendered in the HTML view",
+    "Scroll-spy IntersectionObserver does not jump unpredictably when scrolling",
+    "All existing view tests pass",
+    "New tests cover the updated renderers",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+notes = """
+Visual changes are entirely in the CLI package. Key changes:
+
+1. Identity: Replace <dl> with a card-based layout — group related fields,
+   use description as a prominent paragraph rather than a definition list item.
+
+2. Value moments: Use HTML <details>/<summary> for collapse/expand (no JS framework needed).
+   Tier 1 cards get accent left border + slightly larger heading. Tier 3 section collapsed
+   by default via no 'open' attribute on <details>.
+
+3. Measurement spec: Reorder renderProductEntities/renderCustomerEntities to show
+   activities table first, then properties table below. Remove renderInteractionEntities
+   call and the 'Interaction Perspective' h3.
+
+4. Scroll-spy: The current rootMargin '-20% 0px -70% 0px' likely causes jumps because
+   the active zone is only 10% of viewport. Widen to something like '-10% 0px -50% 0px'
+   or use threshold-based approach.
+
+5. Value moment cross-references (from E002): Show measurement_references as small badges
+   linking to measurement spec section, lifecycle_relevance as state badges,
+   suggested_metrics as a compact list.
+"""

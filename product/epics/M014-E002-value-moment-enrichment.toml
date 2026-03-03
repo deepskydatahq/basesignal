@@ -1,0 +1,49 @@
+# Epic: Value Moment Enrichment
+# Connect value moments to measurement spec entities, lifecycle states, and derivable metrics
+
+id = "M014-E002"
+mission = "M014"
+title = "Value Moment Enrichment"
+status = "draft"
+depends_on = ["M014-E001"]
+
+[outcome]
+description = """
+Each value moment includes cross-references to the measurement spec entities/activities
+that can measure it, the lifecycle states where it's relevant, and suggested metrics
+that can be derived from the tracking data. Value moments become the connective tissue
+between all output artifacts rather than an isolated list.
+"""
+
+[acceptance]
+criteria = [
+    "ValueMoment type gains optional measurement_references field linking to spec entity.activity pairs",
+    "ValueMoment type gains optional lifecycle_relevance field indicating which states it applies to",
+    "ValueMoment type gains optional suggested_metrics field with derivable metric descriptions",
+    "The enrichment runs as part of the reconciliation pass (after measurement spec is generated)",
+    "Enrichment is additive — existing ValueMoment fields are preserved",
+    "Schema/Zod validation updated for new optional fields",
+    "Tests verify enrichment populates cross-references correctly",
+    "Tests verify enrichment handles missing measurement spec/lifecycle data gracefully",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/convergence.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/schema/convergence.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+
+notes = """
+ValueMoment is currently defined in types/convergence.ts and re-exported from types/outputs.ts.
+It has no downstream cross-references today. The enrichment pass should add optional fields so
+existing data remains valid. The enrichment logic can be part of the reconciliation function
+from E001 or a separate step called right after it.
+
+Example enrichment for a value moment 'Share board with teammate':
+- measurement_references: [{ entity: 'board', activity: 'shared' }]
+- lifecycle_relevance: ['activated', 'engaged']
+- suggested_metrics: ['boards_shared_per_user', 'time_to_first_share']
+"""

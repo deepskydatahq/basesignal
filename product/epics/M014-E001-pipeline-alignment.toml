@@ -1,0 +1,59 @@
+# Epic: Pipeline Alignment
+# Add reconciliation pass so all output triggers reference measurement spec entity.activity names
+
+id = "M014-E001"
+mission = "M014"
+title = "Pipeline Alignment"
+status = "draft"
+depends_on = []
+
+[outcome]
+description = """
+After all outputs are generated, a reconciliation pass rewrites activation map
+trigger_events and lifecycle state entry_criteria/exit_triggers to reference
+actual measurement spec entity.activity names (e.g., 'board.created' instead of
+'creates a board'). The measurement spec becomes the canonical event vocabulary
+that all other outputs reference.
+"""
+
+[acceptance]
+criteria = [
+    "A reconcileOutputs() function exists that takes all generated outputs and rewrites trigger references",
+    "Activation map stage trigger_events use entity.activity format matching measurement spec",
+    "Activation map transition trigger_events use entity.activity format matching measurement spec",
+    "Lifecycle state entry_criteria event_names reference measurement spec entity.activity names",
+    "Lifecycle state exit_triggers event_names reference measurement spec entity.activity names",
+    "generateAllOutputs() calls the reconciliation pass after all outputs are generated",
+    "Original LLM-generated text is preserved somewhere for debugging (e.g., original_trigger field or logged)",
+    "Tests verify reconciliation maps free-text triggers to spec events",
+    "Tests verify reconciliation handles missing measurement spec gracefully (no-op)",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+]
+
+notes = """
+Current pipeline: ICP → Activation Map → Lifecycle States → Measurement Spec.
+The measurement spec is generated last. Rather than reordering the pipeline (high risk),
+add a post-generation reconciliation pass that uses the measurement spec's entity.activity
+vocabulary to rewrite trigger_events in the activation map and entry_criteria/exit_triggers
+in lifecycle states. This is an LLM call that maps free-text events to structured spec events.
+
+Key types to consider:
+- ActivationStage.trigger_events: string[] — currently free-text like 'create_first_board'
+- StageTransition.trigger_events: string[] — same
+- StateCriterion.event_name: string — currently free-text
+- MeasurementSpec.perspectives.product.entities[].activities[].name — canonical event names
+
+The reconciliation needs to:
+1. Build a vocabulary from measurement spec (all entity.activity combos)
+2. Map each free-text trigger to the closest spec event
+3. Replace in-place on activation map and lifecycle states
+"""
