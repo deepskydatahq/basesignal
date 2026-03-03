@@ -1,0 +1,116 @@
+# Mission: Output Alignment & Polish
+# Connect all output artifacts through measurement spec and refine the viewing experience
+
+id = "M014"
+title = "Output Alignment & Polish"
+status = "draft"
+created = 2026-03-03
+depends_on = ["M012", "M013"]
+
+[outcome]
+description = """
+All output artifacts (activation map, lifecycle states, value moments) reference
+actual measurement spec entity.activity names instead of independently-invented
+event names. Value moments connect to measurement spec entities, lifecycle states,
+and derivable metrics. The HTML view presents information with clear visual hierarchy:
+identity is scannable, value moments are collapsible with tier differentiation,
+measurement spec shows activities before properties, and scroll-spy navigation
+works predictably.
+"""
+
+user_progress = "From 'outputs are independently generated islands' to 'a coherent, cross-referenced growth intelligence system with polished visualization'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Activation map trigger_events match measurement spec entity.activity names (e.g., 'board.created' not 'creates a board')",
+    "Lifecycle state entry_criteria and exit_triggers reference measurement spec events",
+    "Value moments include references to related measurement spec entities and derivable metrics",
+    "Identity section uses structured layout (not a plain text wall of description list items)",
+    "Value moments section has collapse/expand — supporting tier is collapsed by default",
+    "Tier 1 value moments are visually more prominent than Tier 2 and Tier 3",
+    "Measurement spec shows activities table before properties table for each entity",
+    "Interaction perspective is not rendered in the HTML view",
+    "Scroll-spy navigation does not jump unpredictably when scrolling",
+    "All existing tests pass after changes",
+    "New tests cover the alignment logic and updated renderers",
+]
+
+validator_context = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/core/src/types/outputs.ts",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "VALUES.md",
+]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+]
+
+[scope]
+in_scope = [
+    "Pipeline alignment: add reconciliation pass so activation map and lifecycle state triggers reference measurement spec entity.activity names",
+    "Value moment enrichment: connect value moments to measurement spec entities, applicable lifecycle states, and derivable metrics",
+    "Identity section: restructure for scannability (card-based or grouped layout instead of flat definition list)",
+    "Value moments: collapse/expand with tier visual hierarchy — Tier 3 collapsed by default, Tier 1 most prominent",
+    "Measurement spec: render activities table before properties table, hide interaction perspective from view",
+    "Scroll-spy: fix IntersectionObserver rootMargin or implementation to prevent unpredictable jumps",
+]
+out_of_scope = [
+    "ICP profiles rendering (already good)",
+    "Convergence or analytical lens pipeline changes",
+    "New output types beyond what exists",
+    "Export formats (MD, JSON, PDF)",
+    "Retroactive update of previously-generated scan output files",
+]
+acceptable_breakage = [
+    "Output JSON structure may gain new fields (value moment cross-references) — additive, not breaking",
+    "Existing scan outputs will not be retroactively aligned — only new scans produce aligned data",
+    "Scroll-spy highlight behavior will change from current implementation",
+]
+
+[notes]
+considerations = """
+PIPELINE ARCHITECTURE:
+Current order: ICP Profiles → Activation Map → Lifecycle States → Measurement Spec.
+The measurement spec is generated LAST but should be the vocabulary that all other
+outputs reference. Two approaches:
+  (a) Two-pass: generate a draft measurement spec early, feed it into activation map
+      and lifecycle states, then finalize the measurement spec with full context.
+  (b) Post-alignment: keep current order, add a reconciliation pass that rewrites
+      trigger events in activation map and lifecycle states to reference measurement
+      spec entity.activity names after all outputs are generated.
+Option (b) is lower risk but may feel mechanical. Option (a) produces more natural
+output but requires pipeline restructuring.
+
+VISUAL REFINEMENTS:
+Identity restructuring is straightforward CSS/HTML work in view-sections.ts.
+Value moment collapse/expand needs a small JavaScript addition (no framework needed,
+vanilla JS details/summary elements or similar). Tier hierarchy can use visual
+weight (border, background color, size). Measurement spec activity-before-property
+reordering is a renderer change. Hiding interaction perspective is a conditional
+render. Scroll-spy fix likely needs rootMargin tuning or threshold adjustment.
+
+SEQUENCING RECOMMENDATION:
+Epic 1: Data alignment (pipeline reconciliation)
+Epic 2: Value moment enrichment (cross-references)
+Epic 3: Visual refinements (identity, value moments, measurement spec, scroll-spy)
+
+The data alignment epic should come first because it changes the output data structure
+that the visual refinements will render. Value moment enrichment adds new data that
+the visual layer needs to display.
+"""
