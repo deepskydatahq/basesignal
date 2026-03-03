@@ -133,6 +133,7 @@ const pipelineResult = {
     activation_map: null,
     measurement_spec: null,
     lifecycle_states: null,
+    value_moments: [],
   },
   errors: [],
   execution_time_ms: 500,
@@ -305,6 +306,7 @@ describe("runScan", () => {
         activation_map: { stages: [] },
         measurement_spec: { perspectives: { product: { entities: [] }, customer: { entities: [] }, interaction: { entities: [] } }, jsonSchemas: [], confidence: 0.5, sources: [] },
         lifecycle_states: { states: [] },
+        value_moments: [],
       },
     };
     mockRunAnalysisPipeline.mockReset();

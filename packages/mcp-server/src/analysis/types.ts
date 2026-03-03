@@ -26,6 +26,8 @@ import type {
   LifecycleStatesResult,
 } from "@basesignal/core";
 
+import type { ActivationMapResult } from "./outputs/activation-map.js";
+
 // Re-export for convenience within the analysis package
 export type {
   LlmProvider,
@@ -41,6 +43,7 @@ export type {
   MeasurementSpec,
   ActivationLevel,
   LifecycleStatesResult,
+  ActivationMapResult,
 };
 
 // --- Pipeline-specific types ---
@@ -125,13 +128,13 @@ export interface PipelineIntermediates {
   quality_report: ConvergenceResult["quality"] | null;
 }
 
-// Pipeline output artifacts (activation_map uses LLM-generated strings rather than core literal types)
+// Pipeline output artifacts
 export interface PipelineOutputs {
   icp_profiles: ICPProfile[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  activation_map: any;
+  activation_map: ActivationMapResult | null;
   measurement_spec: MeasurementSpec | null;
   lifecycle_states: LifecycleStatesResult | null;
+  value_moments: ValueMoment[];
 }
 
 // Pipeline result

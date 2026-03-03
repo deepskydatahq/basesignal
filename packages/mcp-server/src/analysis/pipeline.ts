@@ -44,7 +44,7 @@ export async function runAnalysisPipeline(
       lens_candidates: [],
       convergence: null,
       intermediates: { lens_results: [], validated_candidates: [], clusters: null, quality_report: null },
-      outputs: { icp_profiles: [], activation_map: null, measurement_spec: null, lifecycle_states: null },
+      outputs: { icp_profiles: [], activation_map: null, measurement_spec: null, lifecycle_states: null, value_moments: [] },
       errors: [{ phase: "input", step: "validate", message: "No pages provided" }],
       execution_time_ms: Date.now() - start,
     };

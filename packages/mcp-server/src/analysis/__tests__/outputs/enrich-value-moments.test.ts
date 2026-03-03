@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { enrichValueMoments } from "../../outputs/enrich-value-moments.js";
+import { enrichValueMoments, parseEnrichmentResponse } from "../../outputs/enrich-value-moments.js";
 import type { MeasurementSpec, LifecycleStatesResult, ValueMoment } from "@basesignal/core";
 import type { LlmProvider } from "../../types.js";
 
@@ -78,6 +78,76 @@ function mockLlm(response: string): LlmProvider {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe("parseEnrichmentResponse", () => {
+  it("parses a valid enrichment array", () => {
+    const result = parseEnrichmentResponse(JSON.stringify([{
+      id: "vm-1",
+      measurement_references: [{ entity: "project", activity: "created" }],
+      lifecycle_relevance: ["activated"],
+      suggested_metrics: ["setup_rate"],
+    }]));
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("vm-1");
+    expect(result[0].measurement_references).toEqual([{ entity: "project", activity: "created" }]);
+  });
+
+  it("returns empty array for empty JSON array", () => {
+    expect(parseEnrichmentResponse("[]")).toEqual([]);
+  });
+
+  it("throws on object input", () => {
+    expect(() => parseEnrichmentResponse("{}")).toThrow("Expected JSON array");
+  });
+
+  it("throws on entry missing id", () => {
+    expect(() => parseEnrichmentResponse(JSON.stringify([{
+      measurement_references: [],
+      lifecycle_relevance: [],
+      suggested_metrics: [],
+    }]))).toThrow("entry 0 missing required field: id");
+  });
+
+  it("defaults missing arrays to empty", () => {
+    const result = parseEnrichmentResponse(JSON.stringify([{
+      id: "vm-1",
+    }]));
+    expect(result[0].measurement_references).toEqual([]);
+    expect(result[0].lifecycle_relevance).toEqual([]);
+    expect(result[0].suggested_metrics).toEqual([]);
+  });
+
+  it("filters out invalid measurement_references entries", () => {
+    const result = parseEnrichmentResponse(JSON.stringify([{
+      id: "vm-1",
+      measurement_references: [
+        { entity: "project", activity: "created" },
+        { entity: 42 },
+        "invalid",
+      ],
+      lifecycle_relevance: [],
+      suggested_metrics: [],
+    }]));
+    expect(result[0].measurement_references).toEqual([{ entity: "project", activity: "created" }]);
+  });
+
+  it("filters out non-string lifecycle_relevance entries", () => {
+    const result = parseEnrichmentResponse(JSON.stringify([{
+      id: "vm-1",
+      measurement_references: [],
+      lifecycle_relevance: ["activated", 42, null],
+      suggested_metrics: [],
+    }]));
+    expect(result[0].lifecycle_relevance).toEqual(["activated"]);
+  });
+
+  it("handles markdown-wrapped JSON", () => {
+    const wrapped = '```json\n[{"id": "vm-1"}]\n```';
+    const result = parseEnrichmentResponse(wrapped);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("vm-1");
+  });
+});
 
 describe("enrichValueMoments", () => {
   it("enriches value moments with measurement references, lifecycle relevance, and metrics", async () => {

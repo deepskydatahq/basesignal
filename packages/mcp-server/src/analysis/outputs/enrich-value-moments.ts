@@ -80,11 +80,56 @@ ${stateLines}`;
 // Enrichment result type
 // ---------------------------------------------------------------------------
 
-interface EnrichmentEntry {
+export interface EnrichmentEntry {
   id: string;
   measurement_references: Array<{ entity: string; activity: string }>;
   lifecycle_relevance: string[];
   suggested_metrics: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Response parser
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse and validate the LLM enrichment response.
+ *
+ * Expects a JSON array of EnrichmentEntry objects.
+ * Throws on non-array input or entries missing required fields.
+ */
+export function parseEnrichmentResponse(responseText: string): EnrichmentEntry[] {
+  const parsed = extractJson(responseText);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Expected JSON array of enrichment entries");
+  }
+
+  return parsed.map((entry: unknown, i: number) => {
+    if (!entry || typeof entry !== "object") {
+      throw new Error(`Enrichment entry ${i} must be an object`);
+    }
+    const obj = entry as Record<string, unknown>;
+
+    if (typeof obj.id !== "string" || !obj.id) {
+      throw new Error(`Enrichment entry ${i} missing required field: id (must be non-empty string)`);
+    }
+
+    const measurement_references = Array.isArray(obj.measurement_references)
+      ? obj.measurement_references.filter(
+          (r: unknown) => r && typeof r === "object" && typeof (r as Record<string, unknown>).entity === "string" && typeof (r as Record<string, unknown>).activity === "string",
+        ) as Array<{ entity: string; activity: string }>
+      : [];
+
+    const lifecycle_relevance = Array.isArray(obj.lifecycle_relevance)
+      ? obj.lifecycle_relevance.filter((s: unknown) => typeof s === "string") as string[]
+      : [];
+
+    const suggested_metrics = Array.isArray(obj.suggested_metrics)
+      ? obj.suggested_metrics.filter((s: unknown) => typeof s === "string") as string[]
+      : [];
+
+    return { id: obj.id, measurement_references, lifecycle_relevance, suggested_metrics };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -119,7 +164,7 @@ export async function enrichValueMoments(
     { temperature: 0.1 },
   );
 
-  const enrichments = extractJson(responseText) as EnrichmentEntry[];
+  const enrichments = parseEnrichmentResponse(responseText);
 
   // Build lookup by id
   const enrichmentMap = new Map<string, EnrichmentEntry>();

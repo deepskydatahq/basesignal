@@ -184,6 +184,34 @@ function applyMappingToLifecycleStates(
 }
 
 // ---------------------------------------------------------------------------
+// Response parser
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse and validate the LLM reconciliation response.
+ *
+ * Expects a JSON object mapping trigger strings to canonical event strings.
+ * Throws on non-object input, array input, or non-string values.
+ */
+export function parseReconciliationResponse(responseText: string): Record<string, string> {
+  const parsed = extractJson(responseText) as Record<string, unknown>;
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Expected JSON object mapping triggers to canonical events");
+  }
+
+  const mapping: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value !== "string") {
+      throw new Error(`Expected string value for trigger "${key}", got ${typeof value}`);
+    }
+    mapping[key] = value;
+  }
+
+  return mapping;
+}
+
+// ---------------------------------------------------------------------------
 // Main reconciliation
 // ---------------------------------------------------------------------------
 
@@ -215,7 +243,7 @@ export async function reconcileOutputs(
     { temperature: 0.1 },
   );
 
-  const mapping = extractJson(responseText) as Record<string, string>;
+  const mapping = parseReconciliationResponse(responseText);
 
   const result: OutputsResult = { ...outputs };
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildEventVocabulary, collectTriggers, reconcileOutputs, type EventVocabularyEntry } from "../../outputs/reconcile.js";
+import { buildEventVocabulary, collectTriggers, reconcileOutputs, parseReconciliationResponse, type EventVocabularyEntry } from "../../outputs/reconcile.js";
 import type { MeasurementSpec, LifecycleStatesResult } from "@basesignal/core";
 import type { LlmProvider } from "../../types.js";
 import type { ActivationMapResult } from "../../outputs/activation-map.js";
@@ -113,6 +113,48 @@ function mockLlm(response: string): LlmProvider {
     complete: async () => response,
   } as LlmProvider;
 }
+
+// ---------------------------------------------------------------------------
+// parseReconciliationResponse
+// ---------------------------------------------------------------------------
+
+describe("parseReconciliationResponse", () => {
+  it("parses a valid mapping object", () => {
+    const result = parseReconciliationResponse(JSON.stringify({
+      create_project: "project.created",
+      signup: "customer.activated",
+    }));
+    expect(result).toEqual({
+      create_project: "project.created",
+      signup: "customer.activated",
+    });
+  });
+
+  it("returns empty object for empty JSON object", () => {
+    expect(parseReconciliationResponse("{}")).toEqual({});
+  });
+
+  it("throws on array input", () => {
+    expect(() => parseReconciliationResponse("[]")).toThrow("Expected JSON object");
+  });
+
+  it("throws on non-string values", () => {
+    expect(() => parseReconciliationResponse(JSON.stringify({
+      create_project: 42,
+    }))).toThrow('Expected string value for trigger "create_project"');
+  });
+
+  it("throws on nested object values", () => {
+    expect(() => parseReconciliationResponse(JSON.stringify({
+      create_project: { event: "project.created" },
+    }))).toThrow('Expected string value for trigger "create_project"');
+  });
+
+  it("handles markdown-wrapped JSON", () => {
+    const wrapped = "```json\n{\"a\": \"b\"}\n```";
+    expect(parseReconciliationResponse(wrapped)).toEqual({ a: "b" });
+  });
+});
 
 // ---------------------------------------------------------------------------
 // buildEventVocabulary

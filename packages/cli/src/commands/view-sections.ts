@@ -454,7 +454,8 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   const profile = productDir.readJson<ProductProfile>(slug, "profile.json");
   const activationMap = productDir.readJson<ActivationMap>(slug, "outputs/activation-map.json");
   const icpProfiles = productDir.readJson<ICPProfile[]>(slug, "outputs/icp-profiles.json");
-  const valueMoments = productDir.readJson<ValueMoment[]>(slug, "convergence/value-moments.json");
+  const valueMoments = productDir.readJson<ValueMoment[]>(slug, "outputs/value-moments.json")
+    ?? productDir.readJson<ValueMoment[]>(slug, "convergence/value-moments.json");
   const measurementSpec = productDir.readJson<MeasurementSpec>(slug, "outputs/measurement-spec.json");
   const lifecycleStates = productDir.readJson<LifecycleStatesResult>(slug, "outputs/lifecycle-states.json");
 

@@ -145,8 +145,13 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     if (pipelineResult.outputs.icp_profiles && pipelineResult.outputs.icp_profiles.length > 0) {
       profile.outputs = pipelineResult.outputs;
     }
-    if (pipelineResult.convergence?.value_moments && pipelineResult.convergence.value_moments.length > 0) {
-      profile.value_moments = pipelineResult.convergence.value_moments;
+    // Prefer enriched value moments (with cross-references) over raw convergence data
+    const enrichedVMs = pipelineResult.outputs.value_moments;
+    const rawVMs = pipelineResult.convergence?.value_moments;
+    if (enrichedVMs && enrichedVMs.length > 0) {
+      profile.value_moments = enrichedVMs;
+    } else if (rawVMs && rawVMs.length > 0) {
+      profile.value_moments = rawVMs;
     }
 
     // 7. PHASE 3 -- SAVE
@@ -199,6 +204,9 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     }
     if (pipelineResult.outputs.lifecycle_states) {
       productDir.writeJson(slug, "outputs/lifecycle-states.json", pipelineResult.outputs.lifecycle_states);
+    }
+    if (pipelineResult.outputs.value_moments.length > 0) {
+      productDir.writeJson(slug, "outputs/value-moments.json", pipelineResult.outputs.value_moments);
     }
 
     // Combined profile
