@@ -4,7 +4,7 @@
 id = "M014-E002-S002"
 epic = "M014-E002"
 title = "Implement value moment enrichment function"
-status = "ready"
+status = "in-progress"
 depends_on = ["M014-E002-S001"]
 
 [acceptance]
