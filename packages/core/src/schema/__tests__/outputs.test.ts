@@ -44,14 +44,14 @@ const validActivationStage = {
   signal_strength: "weak" as const,
   trigger_events: ["create_account"],
   value_moments_unlocked: ["vm-1"],
-  drop_off_risk: "medium" as const,
+  drop_off_risk: { level: "medium" as const, reason: "Users may not complete setup" },
 };
 
 const validActivationMap = {
   stages: [validActivationStage],
   transitions: [{ from_level: 1, to_level: 2, trigger_events: ["invite_team"] }],
   primary_activation_level: 2,
-  confidence: 0.85,
+  confidence: "high" as const,
   sources: ["analysis"],
 };
 

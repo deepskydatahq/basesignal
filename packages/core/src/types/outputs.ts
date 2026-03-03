@@ -33,6 +33,12 @@ export interface ICPProfile {
 // Activation Map Types
 // ---------------------------------------------------------------------------
 
+/** Drop-off risk assessment for an activation stage. */
+export interface DropOffRisk {
+  level: "low" | "medium" | "high";
+  reason: string;
+}
+
 /** A single stage in the activation progression. */
 export interface ActivationStage {
   level: number;
@@ -40,8 +46,7 @@ export interface ActivationStage {
   signal_strength: SignalStrength;
   trigger_events: string[];
   value_moments_unlocked: string[];
-  drop_off_risk: "low" | "medium" | "high";
-  drop_off_reasons?: string[];
+  drop_off_risk: DropOffRisk;
 }
 
 /** Transition between two activation stages. */
@@ -57,7 +62,7 @@ export interface ActivationMap {
   stages: ActivationStage[];
   transitions: StageTransition[];
   primary_activation_level: number;
-  confidence: number;
+  confidence: "low" | "medium" | "high";
   sources: string[];
 }
 

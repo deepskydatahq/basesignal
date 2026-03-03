@@ -121,14 +121,19 @@ export type EntityJsonSchema = z.infer<typeof EntityJsonSchemaSchema>;
 
 // --- Activation Stages / Map ---
 
+export const DropOffRiskSchema = z.object({
+  level: z.enum(["low", "medium", "high"]),
+  reason: z.string().min(1),
+});
+export type DropOffRisk = z.infer<typeof DropOffRiskSchema>;
+
 export const ActivationStageSchema = z.object({
   level: z.number(),
   name: z.string().min(1),
   signal_strength: z.enum(["weak", "medium", "strong", "very_strong"]),
   trigger_events: z.array(z.string()),
   value_moments_unlocked: z.array(z.string()),
-  drop_off_risk: z.enum(["low", "medium", "high"]),
-  drop_off_reasons: z.array(z.string()).optional(),
+  drop_off_risk: DropOffRiskSchema,
 });
 export type ActivationStage = z.infer<typeof ActivationStageSchema>;
 
@@ -144,7 +149,7 @@ export const ActivationMapSchema = z.object({
   stages: z.array(ActivationStageSchema),
   transitions: z.array(StageTransitionSchema),
   primary_activation_level: z.number(),
-  confidence: z.number(),
+  confidence: z.enum(["low", "medium", "high"]),
   sources: z.array(z.string()),
 });
 export type ActivationMap = z.infer<typeof ActivationMapSchema>;

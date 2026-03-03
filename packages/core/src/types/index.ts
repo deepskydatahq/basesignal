@@ -52,6 +52,7 @@ export type {
 export type {
   ValueMomentPriority,
   ICPProfile,
+  DropOffRisk,
   ActivationStage,
   StageTransition,
   ActivationMap,

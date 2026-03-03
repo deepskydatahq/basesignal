@@ -63,19 +63,19 @@ describe("ICPProfile", () => {
 });
 
 describe("ActivationStage", () => {
-  it("has required fields and optional drop_off_reasons", () => {
+  it("has required fields with drop_off_risk as object", () => {
     const stage: ActivationStage = {
       level: 1,
       name: "Explorer",
       signal_strength: "weak",
       trigger_events: ["signup"],
       value_moments_unlocked: ["vm-001"],
-      drop_off_risk: "high",
-      drop_off_reasons: ["complex onboarding"],
+      drop_off_risk: { level: "high", reason: "complex onboarding" },
     };
     expect(stage.level).toBe(1);
     expect(stage.signal_strength).toBe("weak");
-    expect(stage.drop_off_reasons).toHaveLength(1);
+    expect(stage.drop_off_risk.level).toBe("high");
+    expect(stage.drop_off_risk.reason).toBe("complex onboarding");
   });
 });
 
@@ -103,17 +103,18 @@ describe("ActivationMap", () => {
           signal_strength: "weak",
           trigger_events: ["signup"],
           value_moments_unlocked: [],
-          drop_off_risk: "high",
+          drop_off_risk: { level: "high", reason: "complex onboarding" },
         },
       ],
       transitions: [{ from_level: 1, to_level: 2, trigger_events: ["tutorial_done"] }],
       primary_activation_level: 2,
-      confidence: 0.75,
+      confidence: "high",
       sources: ["https://example.com"],
     };
     expect(map.stages).toHaveLength(1);
     expect(map.transitions).toHaveLength(1);
     expect(map.primary_activation_level).toBe(2);
+    expect(map.confidence).toBe("high");
   });
 });
 
@@ -451,7 +452,7 @@ describe("OutputGenerationResult", () => {
         stages: [],
         transitions: [],
         primary_activation_level: 1,
-        confidence: 0.7,
+        confidence: "high",
         sources: [],
       },
       measurement_spec: {
@@ -482,7 +483,7 @@ describe("MeasurementInputData", () => {
         stages: [],
         transitions: [],
         primary_activation_level: 1,
-        confidence: 0.5,
+        confidence: "medium",
         sources: [],
       },
     };
