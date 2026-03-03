@@ -4,7 +4,7 @@
 id = "M014-E001-S003"
 epic = "M014-E001"
 title = "Wire reconciliation into generateAllOutputs pipeline"
-status = "ready"
+status = "in-progress"
 depends_on = ["M014-E001-S002"]
 
 [acceptance]
