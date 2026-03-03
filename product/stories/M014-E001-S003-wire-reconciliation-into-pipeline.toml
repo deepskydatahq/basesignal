@@ -1,0 +1,42 @@
+# Story: Wire reconciliation into generateAllOutputs pipeline
+# Add reconciliation as step 5 after measurement spec generation
+
+id = "M014-E001-S003"
+epic = "M014-E001"
+title = "Wire reconciliation into generateAllOutputs pipeline"
+status = "ready"
+depends_on = ["M014-E001-S002"]
+
+[acceptance]
+criteria = [
+    "generateAllOutputs() calls reconcileOutputs() after measurement spec generation (step 5)",
+    "Progress callbacks fire for reconciliation phase: outputs_reconciliation started/completed/failed",
+    "If reconciliation fails, original outputs are preserved (graceful degradation)",
+    "Error is pushed to errors array if reconciliation throws",
+    "Reconciliation is skipped when measurement spec is null",
+    "reconcile.ts is exported from the outputs index.ts barrel",
+    "Existing generateAllOutputs tests still pass (mock LLM now receives 5 calls instead of 4 when reconciliation runs)",
+    "New integration test verifies end-to-end: 4 generators + reconciliation produces aligned trigger events",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+]
+
+notes = """
+The reconciliation step follows the same pattern as existing steps in generateAllOutputs:
+- Guard check (measurement spec must exist)
+- progress?.({ phase: 'outputs_reconciliation', status: 'started' })
+- try/catch with error handling
+- Apply reconciled results back to result object
+
+The existing test uses createSequentialMockLlm with 4 responses. After this change,
+tests that exercise the full pipeline need a 5th response for the reconciliation LLM call.
+The reconciliation response is a JSON mapping object.
+
+Important: update the existing tests to provide the reconciliation response,
+or ensure reconciliation no-ops gracefully when the LLM response is empty/missing.
+"""

@@ -1,0 +1,40 @@
+# Story: Extract event vocabulary from measurement spec
+# Pure function that builds a canonical event list from measurement spec entities/activities
+
+id = "M014-E001-S001"
+epic = "M014-E001"
+title = "Extract event vocabulary from measurement spec"
+status = "ready"
+depends_on = []
+
+[acceptance]
+criteria = [
+    "A buildEventVocabulary(spec: MeasurementSpec) function exists in packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "Returns an array of { event: string, entity: string, activity: string, perspective: Perspective } objects",
+    "Product entity events use format 'entity_id.activity_name' (e.g., 'board.created', 'board.shared')",
+    "Customer entity events use format 'customer.activity_name' (e.g., 'customer.first_value_created')",
+    "Interaction perspective entities are excluded from the vocabulary",
+    "Function returns empty array when spec has no entities",
+    "Tests verify vocabulary extraction for product, customer, and mixed specs",
+    "Tests verify interaction entities are excluded",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/core/src/types/outputs.ts",
+]
+
+notes = """
+This is a pure function with no LLM dependency. It extracts the canonical event
+vocabulary that other stories will use for mapping.
+
+Product entities have an id field (e.g., 'board') and activities with name field
+(e.g., 'created'). The vocabulary entry would be 'board.created'.
+
+Customer entities don't have an id field — use 'customer' as the entity prefix.
+Their activities have name + derivation_rule.
+
+Interaction entities are excluded — they're generic UI tracking not relevant for
+trigger alignment.
+"""

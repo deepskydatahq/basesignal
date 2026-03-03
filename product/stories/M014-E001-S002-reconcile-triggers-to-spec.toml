@@ -1,0 +1,49 @@
+# Story: Reconcile triggers to measurement spec events
+# LLM-based mapping of free-text trigger events to structured spec event names
+
+id = "M014-E001-S002"
+epic = "M014-E001"
+title = "Reconcile triggers to measurement spec events"
+status = "ready"
+depends_on = ["M014-E001-S001"]
+
+[acceptance]
+criteria = [
+    "A reconcileOutputs(outputs: OutputsResult, llm: LlmProvider) function exists in reconcile.ts",
+    "Builds event vocabulary from measurement spec using buildEventVocabulary from S001",
+    "Makes a single LLM call with all free-text triggers and the vocabulary to produce a mapping",
+    "Rewrites activation map stage trigger_events to use entity.activity format",
+    "Rewrites activation map transition trigger_events to use entity.activity format",
+    "Rewrites lifecycle state entry_criteria event_name fields to use entity.activity format",
+    "Rewrites lifecycle state exit_triggers event_name fields to use entity.activity format",
+    "Returns the modified outputs (does not mutate the input)",
+    "Returns outputs unchanged when measurement spec is null (no-op)",
+    "Returns outputs unchanged when vocabulary is empty",
+    "Tests verify trigger mapping with mock LLM response",
+    "Tests verify no-op when measurement spec is missing",
+    "Tests verify activation map and lifecycle states are both reconciled",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/activation-map.ts",
+    "packages/mcp-server/src/analysis/outputs/lifecycle-states.ts",
+]
+
+notes = """
+The LLM prompt should present:
+1. The vocabulary (all entity.activity event names with descriptions)
+2. All free-text triggers collected from activation map + lifecycle states
+3. Ask the LLM to map each free-text trigger to the best matching vocabulary event
+
+Expected LLM response format: a JSON object mapping original text → entity.activity name.
+Example: { "create_project": "project.created", "daily_use": "session.started" }
+
+If a trigger doesn't map to any vocabulary event, keep the original text.
+The function should collect all unique triggers first, do one LLM call, then apply
+the mapping to both activation map and lifecycle states.
+
+Use temperature 0.1 for deterministic mapping.
+"""
