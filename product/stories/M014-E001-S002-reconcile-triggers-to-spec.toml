@@ -4,7 +4,7 @@
 id = "M014-E001-S002"
 epic = "M014-E001"
 title = "Reconcile triggers to measurement spec events"
-status = "in-progress"
+status = "complete"
 depends_on = ["M014-E001-S001"]
 
 [acceptance]

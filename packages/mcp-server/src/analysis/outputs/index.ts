@@ -5,12 +5,14 @@ import { generateICPProfiles } from "./icp-profiles.js";
 import { generateActivationMap, type ActivationMapResult } from "./activation-map.js";
 import { generateLifecycleStates } from "./lifecycle-states.js";
 import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
+import { reconcileOutputs } from "./reconcile.js";
 
 // Re-export
 export { generateICPProfiles } from "./icp-profiles.js";
 export { generateActivationMap } from "./activation-map.js";
 export { generateLifecycleStates } from "./lifecycle-states.js";
 export { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
+export { reconcileOutputs, buildEventVocabulary } from "./reconcile.js";
 
 export interface OutputsResult {
   icp_profiles: ICPProfile[];
@@ -107,6 +109,20 @@ export async function generateAllOutputs(
     } catch (e) {
       progress?.({ phase: "outputs_measurement_spec", status: "failed", detail: String(e) });
       errors?.push({ phase: "outputs", step: "measurement_spec", message: String(e) });
+    }
+  }
+
+  // 5. Reconciliation (align trigger events to measurement spec vocabulary)
+  if (result.measurement_spec) {
+    progress?.({ phase: "outputs_reconciliation", status: "started" });
+    try {
+      const reconciled = await reconcileOutputs(result, llm);
+      result.activation_map = reconciled.activation_map;
+      result.lifecycle_states = reconciled.lifecycle_states;
+      progress?.({ phase: "outputs_reconciliation", status: "completed" });
+    } catch (e) {
+      progress?.({ phase: "outputs_reconciliation", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "reconciliation", message: String(e) });
     }
   }
 

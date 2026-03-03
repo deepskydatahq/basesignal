@@ -4,7 +4,7 @@
 id = "M014-E001-S001"
 epic = "M014-E001"
 title = "Extract event vocabulary from measurement spec"
-status = "in-progress"
+status = "complete"
 depends_on = []
 
 [acceptance]

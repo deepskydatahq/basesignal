@@ -4,7 +4,7 @@
 id = "M014-E001"
 mission = "M014"
 title = "Pipeline Alignment"
-status = "draft"
+status = "complete"
 depends_on = []
 
 [outcome]

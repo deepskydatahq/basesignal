@@ -155,6 +155,15 @@ const validMeasurementSpecResponse = JSON.stringify({
   confidence: 0.7,
 });
 
+// Reconciliation mapping: maps free-text triggers to entity.activity vocabulary
+const validReconciliationResponse = JSON.stringify({
+  create_project: "project.created",
+  signup: "customer.first_value_created",
+  daily_use: "daily_use",
+  session_gap: "session_gap",
+  session_started: "session_started",
+});
+
 // The LLM gets called in order: ICP, activation map, lifecycle states, measurement spec
 // We track call index to return the right response
 function createSequentialMockLlm(responses: string[]): LlmProvider {
@@ -177,7 +186,7 @@ function createFailingLlm(failOnCall: number): LlmProvider {
         throw new Error(`LLM call ${current} failed`);
       }
       // Return appropriate responses for other calls
-      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse];
+      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse];
       return responses[current] ?? "";
     },
   } as LlmProvider;
@@ -192,6 +201,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
       validActivationMapResponse,
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
+      validReconciliationResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -225,6 +235,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
       validICPResponse,
       validActivationMapResponse,
       validMeasurementSpecResponse,
+      validReconciliationResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -268,6 +279,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
       validActivationMapResponse,
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
+      validReconciliationResponse,
     ]);
 
     await generateAllOutputs(
@@ -341,7 +353,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
           // Lifecycle states call
           capturedMessages = messages as Array<{ role: string; content: string }>;
         }
-        const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse];
+        const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse];
         return responses[current] ?? "";
       },
     } as LlmProvider;
@@ -370,6 +382,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
       validActivationMapResponse,
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
+      validReconciliationResponse,
     ]);
 
     const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com/pricing"];
@@ -394,6 +407,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
       validActivationMapResponse,
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
+      validReconciliationResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -413,6 +427,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
       validActivationMapResponse,
       validLifecycleStatesResponse,
       validMeasurementSpecResponse,
+      validReconciliationResponse,
     ]);
 
     const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com"];
@@ -429,5 +444,132 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
 
     expect(result.measurement_spec).not.toBeNull();
     expect(result.measurement_spec!.sources).toEqual(["https://example.com", "https://example.com/features"]);
+  });
+});
+
+describe("generateAllOutputs — reconciliation wiring", () => {
+  it("reconciles trigger events to measurement spec vocabulary", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+    ]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+    );
+
+    // Activation map triggers should be mapped
+    expect(result.activation_map!.stages[0].trigger_events).toEqual(["project.created"]);
+    // Lifecycle state entry_criteria should be mapped
+    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("customer.first_value_created");
+    // create_project mapped in exit_triggers
+    expect(result.lifecycle_states!.states[0].exit_triggers[0].event_name).toBe("project.created");
+  });
+
+  it("skips reconciliation when measurement spec is null", async () => {
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      null, // no activation levels → no measurement spec
+      sampleIdentity,
+      llm,
+    );
+
+    expect(result.measurement_spec).toBeNull();
+  });
+
+  it("fires progress callbacks for reconciliation on success", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+    ]);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
+    );
+
+    const reconcileEvents = events.filter(e => e.phase === "outputs_reconciliation");
+    expect(reconcileEvents).toHaveLength(2);
+    expect(reconcileEvents[0].status).toBe("started");
+    expect(reconcileEvents[1].status).toBe("completed");
+  });
+
+  it("preserves original outputs when reconciliation fails (graceful degradation)", async () => {
+    // Fail on reconciliation call (call index 4)
+    const llm = createFailingLlm(4);
+    const errors: PipelineError[] = [];
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      errors,
+    );
+
+    // Outputs still present — reconciliation failure doesn't lose data
+    expect(result.activation_map).not.toBeNull();
+    expect(result.lifecycle_states).not.toBeNull();
+    expect(result.measurement_spec).not.toBeNull();
+    // Original trigger events preserved (not mapped)
+    expect(result.activation_map!.stages[0].trigger_events).toEqual(["create_project"]);
+
+    const reconcileErrors = errors.filter(e => e.step === "reconciliation");
+    expect(reconcileErrors).toHaveLength(1);
+    expect(reconcileErrors[0].message).toContain("LLM call 4 failed");
+  });
+
+  it("fires progress 'failed' when reconciliation throws", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createFailingLlm(4);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
+      [],
+    );
+
+    const reconcileEvents = events.filter(e => e.phase === "outputs_reconciliation");
+    expect(reconcileEvents).toHaveLength(2);
+    expect(reconcileEvents[0].status).toBe("started");
+    expect(reconcileEvents[1].status).toBe("failed");
+  });
+
+  it("does not fire reconciliation progress when measurement spec is null", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      null,
+      sampleIdentity,
+      llm,
+      progress,
+    );
+
+    const reconcileEvents = events.filter(e => e.phase === "outputs_reconciliation");
+    expect(reconcileEvents).toHaveLength(0);
   });
 });
