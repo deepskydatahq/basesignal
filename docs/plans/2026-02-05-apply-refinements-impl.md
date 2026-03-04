@@ -857,7 +857,7 @@ EOF
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
 
-const client = new ConvexHttpClient(process.env.CONVEX_URL || "https://woozy-kangaroo-701.convex.cloud");
+const client = new ConvexHttpClient(process.env.CONVEX_URL || "https://<your-deployment>.convex.cloud");
 
 // Test products with expected activation patterns
 const TEST_PRODUCTS = [

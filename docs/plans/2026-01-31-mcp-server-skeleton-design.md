@@ -168,7 +168,7 @@ This client will be used by future tools to call Convex queries and mutations. F
 # Required
 CLERK_PUBLISHABLE_KEY=pk_test_...   # Same as web app
 CLERK_SECRET_KEY=sk_test_...         # Same as web app
-CONVEX_URL=https://woozy-kangaroo-701.convex.cloud
+CONVEX_URL=https://<your-deployment>.convex.cloud
 
 # Optional
 PORT=3001                            # Default 3001

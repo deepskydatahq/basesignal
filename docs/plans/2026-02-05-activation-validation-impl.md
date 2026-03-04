@@ -293,7 +293,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "../convex/_generated/api.js";
 import fs from "fs";
 
-const client = new ConvexHttpClient("https://woozy-kangaroo-701.convex.cloud");
+const client = new ConvexHttpClient("https://<your-deployment>.convex.cloud");
 
 // Test product configuration with expected activation levels (mock data)
 const TEST_PRODUCTS = [
@@ -609,7 +609,7 @@ EOF
 
 **Step 1: Ensure Convex backend is running**
 
-The script connects to the deployed Convex backend at `woozy-kangaroo-701.convex.cloud`.
+The script connects to the deployed Convex backend at `<your-deployment>.convex.cloud`.
 Verify by running a simple query.
 
 **Step 2: Run the validation script**

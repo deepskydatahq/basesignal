@@ -74,7 +74,7 @@ describe("validateDevEnvironment", () => {
   });
 
   it("passes for dev Convex URL and test Clerk key", () => {
-    process.env.VITE_CONVEX_URL = "https://woozy-kangaroo-701.convex.cloud";
+    process.env.VITE_CONVEX_URL = "https://<your-deployment>.convex.cloud";
     process.env.CLERK_SECRET_KEY = "sk_test_xxx";
 
     expect(() => validateDevEnvironment()).not.toThrow();
