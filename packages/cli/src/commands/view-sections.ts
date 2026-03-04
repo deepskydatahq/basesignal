@@ -14,6 +14,7 @@ import type {
   StateCriterion,
   EntityProperty,
   ValueMoment,
+  OutcomeItem,
 } from "@basesignal/core";
 import { EXPERIENTIAL_LENS_TYPES } from "@basesignal/core";
 import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
@@ -24,6 +25,7 @@ import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-htm
 
 const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
+  { id: "outcomes", label: "Outcomes" },
   { id: "journey", label: "Journey" },
   { id: "icp-profiles", label: "ICP Profiles" },
   { id: "value-moments", label: "Value Moments" },
@@ -105,6 +107,56 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
     ${targetHtml}
     ${contextHtml}${confLine}
   </div>
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Outcomes
+// ---------------------------------------------------------------------------
+
+function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
+  if (!outcomes || outcomes.length === 0) {
+    return `<section id="outcomes" class="no-data">
+  <h2>Outcomes</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const cards = outcomes
+    .map((o: OutcomeItem) => {
+      const typeBadge = `<span class="badge">${escapeHtml(o.type)}</span>`;
+
+      let linkedHtml = "";
+      if (o.linkedFeatures.length > 0) {
+        linkedHtml = `\n      <h4>Linked Features</h4>\n      <ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`;
+      }
+
+      let measurementHtml = "";
+      if (o.measurement_references && o.measurement_references.length > 0) {
+        const badges = o.measurement_references
+          .map((r) => `<span class="badge badge-measurement">${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</span>`)
+          .join(" ");
+        measurementHtml = `\n      <div class="vm-crossrefs"><span class="vm-crossref-label">Tracks:</span> ${badges}</div>`;
+      }
+
+      let metricsHtml = "";
+      if (o.suggested_metrics && o.suggested_metrics.length > 0) {
+        const items = o.suggested_metrics
+          .map((s) => `<code>${escapeHtml(s)}</code>`)
+          .join(", ");
+        metricsHtml = `\n      <div class="vm-crossrefs"><span class="vm-crossref-label">Metrics:</span> ${items}</div>`;
+      }
+
+      return `    <div class="card">
+      <h3>${escapeHtml(o.description)}</h3>
+      ${typeBadge}${linkedHtml}${measurementHtml}${metricsHtml}
+    </div>`;
+    })
+    .join("\n");
+
+  return `<section id="outcomes">
+  <h2>Outcomes</h2>
+${cards}
 </section>`;
 }
 
@@ -459,10 +511,13 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
     ?? productDir.readJson<ValueMoment[]>(slug, "convergence/value-moments.json");
   const measurementSpec = productDir.readJson<MeasurementSpec>(slug, "outputs/measurement-spec.json");
   const lifecycleStates = productDir.readJson<LifecycleStatesResult>(slug, "outputs/lifecycle-states.json");
+  const outcomes = productDir.readJson<OutcomeItem[]>(slug, "outputs/outcomes.json")
+    ?? (profile?.outcomes?.items ?? null);
 
   // Track which sections have data for nav styling
   const analyzed = new Set<string>();
   if (profile?.identity) analyzed.add("identity");
+  if (outcomes && outcomes.length > 0) analyzed.add("outcomes");
   if (activationMap) analyzed.add("journey");
   if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
   if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
@@ -474,6 +529,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
     renderReportHeader(profile),
     renderSectionNav(analyzed),
     renderIdentitySection(profile?.identity),
+    renderOutcomesSection(outcomes),
     renderJourneySection(activationMap),
     renderIcpSection(icpProfiles),
     renderValueMomentsSection(valueMoments),

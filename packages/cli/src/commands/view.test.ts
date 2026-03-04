@@ -624,6 +624,7 @@ describe("renderProductReport", () => {
     const html = renderProductReport("test-app", productDir);
     expect(html).toContain("section-nav");
     expect(html).toContain('href="#identity"');
+    expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
     expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#value-moments"');
@@ -695,16 +696,17 @@ describe("renderProductReport", () => {
     productDir.writeJson("empty-app", "crawl/metadata.json", {});
 
     const html = renderProductReport("empty-app", productDir);
-    // All six section IDs should be present
+    // All seven section IDs should be present
     expect(html).toContain('id="identity"');
+    expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
     expect(html).toContain('id="icp-profiles"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
     expect(html).toContain('id="lifecycle-states"');
-    // Count "Not yet analyzed" — should appear 6 times (one per section)
+    // Count "Not yet analyzed" — should appear 7 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
-    expect(matches).toHaveLength(6);
+    expect(matches).toHaveLength(7);
   });
 
   it("renders identity as card layout with description and context badges", () => {
