@@ -16,6 +16,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test:packages": "npm test --workspaces"
   },
   "devDependencies": {
