@@ -1,0 +1,68 @@
+# Story: Add outcomes section to HTML report
+
+id = "M015-E002-S001"
+parent = "M015-E002"
+title = "Add outcomes section to HTML report"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add an outcomes section to the HTML report view with card layout showing description, type, features, and measurement references."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcomes appears in SECTION_NAV_ITEMS between Identity and Journey"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderOutcomesSection returns 'Not yet analyzed' when outcomes is null or empty"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each outcome renders as a card with description text"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcome type displays as a badge"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Linked features display as a list"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Measurement references display as badge-measurement spans (entity.activity format)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Suggested metrics display as code elements"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcomes without measurement_references show no measurement badges (graceful)"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+1. Add { id: 'outcomes', label: 'Outcomes' } to SECTION_NAV_ITEMS (between identity and journey)
+2. Create renderOutcomesSection(outcomes: OutcomeItem[] | null) function
+3. Read from outputs/outcomes.json with fallback to profile.outcomes.items in renderProductReport
+4. Use card class for each outcome, badge for type, badge-measurement for entity.activity refs
+5. Follow the value moments cross-refs pattern for measurement_references rendering
+6. Add CSS for any outcome-specific styling to view-html.ts if needed
+"""
+reference_files = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+]

@@ -1,0 +1,49 @@
+# Story: Add view tests for outcomes section
+
+id = "M015-E002-S002"
+parent = "M015-E002"
+title = "Add view tests for outcomes section"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add comprehensive tests for the outcomes section rendering in the HTML report view."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test renders outcomes section with enriched data (measurement_references + suggested_metrics)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test renders outcomes section with raw data (no enrichment fields)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test renders empty state when no outcomes exist"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Test outcomes section appears in navigation"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view.test.ts",
+    "packages/cli/src/commands/view-sections.ts",
+]
+input_fixtures = []
+depends_on = ["M015-E002-S001"]
+
+[handoff]
+implementation_hints = """
+Follow existing view.test.ts patterns:
+- Use createTmpProductDir() for fixtures
+- Write outcomes data to outputs/outcomes.json
+- Extract body content after </style> to avoid matching CSS classes
+- Test both enriched (with measurement_references) and raw (without) outcome data
+"""
+reference_files = [
+    "packages/cli/src/commands/view.test.ts",
+]

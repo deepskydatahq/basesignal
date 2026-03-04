@@ -1,0 +1,44 @@
+# Story: Add enrichment fields to OutcomeItem type
+
+id = "M015-E001-S001"
+parent = "M015-E001"
+title = "Add enrichment fields to OutcomeItem type"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add optional measurement_references, suggested_metrics fields to OutcomeItem in the core schema."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OutcomeItemSchema accepts objects with measurement_references array of {entity, activity} pairs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OutcomeItemSchema accepts objects with suggested_metrics array of strings"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OutcomeItemSchema still validates objects without enrichment fields (backward compatible)"
+
+[context]
+relevant_paths = [
+    "packages/core/src/schema/outcomes.ts",
+    "packages/core/src/schema/__tests__/outcomes.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add two optional fields to OutcomeItemSchema:
+- measurement_references: z.array(z.object({ entity: z.string(), activity: z.string() })).optional()
+- suggested_metrics: z.array(z.string()).optional()
+These follow the same shape as ValueMoment enrichment fields.
+"""
+reference_files = [
+    "packages/core/src/types/convergence.ts",
+]

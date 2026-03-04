@@ -1,0 +1,61 @@
+# Epic: Outcome Enrichment
+# Add measurement references and suggested metrics to outcomes via LLM enrichment.
+
+id = "M015-E001"
+parent = "M015"
+title = "Outcome Enrichment"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """
+Enrich each OutcomeItem with measurement_references (entity.activity pairs from the
+measurement spec) and suggested_metrics (derived metric names). Follow the same pattern
+as value moment enrichment: single LLM call, reuse buildEventVocabulary, persist to outputs/.
+"""
+
+[job_story]
+description = """
+When I generate outcomes for a product,
+I want each outcome to be cross-referenced with the measurement spec,
+so that I can see how each outcome would actually be measured.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "enrich-outcomes.ts exists with enrichOutcomes() function following enrich-value-moments.ts pattern",
+    "parseOutcomeEnrichmentResponse() validates LLM response shape",
+    "Enrichment is wired into the analysis pipeline after measurement spec generation",
+    "Enriched outcomes are persisted to outputs/outcomes.json",
+    "scan.ts prefers enriched outcomes for profile.outcomes",
+    "All enrichment tests pass",
+]
+validator_context = [
+    "packages/mcp-server/src/analysis/outputs/",
+    "packages/cli/src/commands/scan.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/schema/outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-value-moments.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Follow the enrich-value-moments.ts pattern exactly:
+- System prompt + user prompt builder
+- parseOutcomeEnrichmentResponse() for validation
+- Guard checks: no spec → return originals, no vocabulary → return originals
+- Single LLM call, temperature 0.1
+- Return copies, don't mutate input
+- OutcomeItem needs optional enrichment fields added to the schema
+"""
+
+estimated_stories = 3

@@ -1,0 +1,60 @@
+# Epic: Outcome Display Cards
+# Add outcomes as a dedicated section in the HTML report with rich card layout.
+
+id = "M015-E002"
+parent = "M015"
+title = "Outcome Display Cards"
+status = "active"
+created = 2026-03-04
+depends_on = ["M015-E001"]
+
+[outcome]
+description = """
+Display outcomes as rich, engaging profile cards in the HTML report view. Each card shows
+the outcome description, type badge, linked features, and measurement references. Cards
+should feel polished and connected — not a plain data dump.
+"""
+
+[job_story]
+description = """
+When I view a product report,
+I want to see outcomes as rich cards with measurement connections,
+so that I understand what each outcome achieves and how to measure it.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Outcomes section appears in the HTML report navigation",
+    "Each outcome renders as a card with description, type badge, and linked features",
+    "Measurement references display as entity.activity badges (like value moments)",
+    "Suggested metrics display as code badges",
+    "Empty/missing outcomes show 'Not yet analyzed' state",
+    "Section works with both enriched and raw outcome data",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Follow the value moments card pattern from view-sections.ts:
+- Use the card CSS class with appropriate styling
+- Type as a badge, linked features as a list
+- Measurement references as badge-measurement spans
+- Suggested metrics as code elements
+- Add 'outcomes' to SECTION_NAV_ITEMS
+- Read from outputs/outcomes.json with fallback to profile.outcomes
+"""
+
+estimated_stories = 2

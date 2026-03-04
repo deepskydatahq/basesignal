@@ -1,0 +1,51 @@
+# Story: Wire enrichment into pipeline and persist
+
+id = "M015-E001-S003"
+parent = "M015-E001"
+title = "Wire enrichment into pipeline and persist"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Wire enrichOutcomes into the analysis pipeline and persist enriched outcomes to outputs/outcomes.json."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Pipeline calls enrichOutcomes after measurement spec generation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "scan.ts writes enriched outcomes to outputs/outcomes.json"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "scan.ts prefers enriched outcomes for profile.outcomes.items"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "PipelineOutputs type includes enriched_outcomes field"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+input_fixtures = []
+depends_on = ["M015-E001-S002"]
+
+[handoff]
+implementation_hints = """
+1. In outputs/index.ts: add enrichOutcomes call after enrichValueMoments, passing profile.outcomes.items
+2. Add enriched_outcomes to OutputsResult and PipelineOutputs types
+3. In scan.ts: persist enriched outcomes to outputs/outcomes.json
+4. In scan.ts: prefer enriched outcomes for profile.outcomes.items (same pattern as value moments)
+"""
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/cli/src/commands/scan.ts",
+]

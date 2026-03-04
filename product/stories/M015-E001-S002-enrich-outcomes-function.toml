@@ -1,0 +1,69 @@
+# Story: Create enrichOutcomes function
+
+id = "M015-E001-S002"
+parent = "M015-E001"
+title = "Create enrichOutcomes function"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Create enrich-outcomes.ts with enrichOutcomes() following enrich-value-moments.ts pattern."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "enrichOutcomes returns original outcomes when measurement spec is null"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "enrichOutcomes returns original outcomes when vocabulary is empty"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "enrichOutcomes returns original outcomes when outcomes array is empty"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "enrichOutcomes adds measurement_references and suggested_metrics from LLM response"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "enrichOutcomes does not mutate input outcomes"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomeEnrichmentResponse throws on non-array input"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomeEnrichmentResponse throws on entries missing description field"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomeEnrichmentResponse filters invalid measurement_references"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/enrich-value-moments.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/core/src/schema/outcomes.ts",
+]
+input_fixtures = []
+depends_on = ["M015-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Follow enrich-value-moments.ts exactly:
+1. System prompt explaining outcomes + vocabulary + task
+2. buildOutcomeEnrichmentUserPrompt() formatting outcomes + vocab
+3. parseOutcomeEnrichmentResponse() validating response shape
+4. enrichOutcomes() orchestrating: guard checks → LLM call → parse → merge
+Key difference: outcomes use 'description' as identifier (no id field), so use index-based matching.
+Reuse buildEventVocabulary() and formatVocabulary() from reconcile.ts.
+"""
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/enrich-value-moments.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/enrich-value-moments.test.ts",
+]
