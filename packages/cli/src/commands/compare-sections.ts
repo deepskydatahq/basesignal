@@ -8,7 +8,7 @@ import type {
   OutcomeItem,
 } from "@basesignal/core";
 import { escapeHtml, renderPage, confidenceBadge } from "./view-html.js";
-import { SECTION_NAV_ITEMS, SCROLL_SPY_SCRIPT, renderSectionNav } from "./view-sections.js";
+import { SCROLL_SPY_SCRIPT, renderSectionNav } from "./view-sections.js";
 
 // ---------------------------------------------------------------------------
 // Comparison data structures
