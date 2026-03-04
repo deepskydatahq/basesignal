@@ -1,0 +1,81 @@
+# Mission: CI/CD & Quality Gates
+# Fix CI red, add quality gates, prepare for reliable automated releases
+
+id = "M017"
+title = "CI/CD & Quality Gates"
+status = "active"
+created = 2026-03-04
+depends_on = ["M016"]
+
+[outcome]
+description = """
+Restore CI green on main, add test coverage reporting, add a lint:fix convenience script,
+and ensure the release pipeline is ready for first npm publish. The public repo must have
+a passing CI badge and reliable quality gates before driving adoption.
+"""
+
+user_progress = "From 'CI red, no coverage, no quality gates' to 'green CI, coverage reports, publish-ready'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "CI passes on main (lint + typecheck + build + test all green)",
+    "npm run lint exits 0 with no errors",
+    "Test coverage report is generated in CI and visible in PR comments or artifacts",
+    "npm run lint:fix script exists for developer convenience",
+    "No pending lint warnings in non-test source files",
+    "Release workflow is validated (changeset config correct, NPM_TOKEN documented)",
+]
+
+validator_context = [
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+    "packages/cli/src/commands/view-sections.ts",
+    "eslint.config.js",
+    "vitest.config.ts",
+]
+
+[context]
+related_docs = [
+    "CONTRIBUTING.md",
+]
+relevant_paths = [
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+    "packages/cli/src/commands/view-sections.ts",
+    "eslint.config.js",
+    "vitest.config.ts",
+    "packages/*/vitest.config.ts",
+    "package.json",
+    ".changeset/",
+]
+
+[scope]
+in_scope = [
+    "Fix 4 lint errors in view-sections.ts line 46 (no-useless-escape)",
+    "Fix or suppress 32 lint warnings (unused vars in test files)",
+    "Add lint:fix script to root package.json",
+    "Add test coverage reporting to CI (vitest coverage)",
+    "Add coverage config to vitest configs",
+    "Validate release workflow is ready for first publish",
+    "Document NPM_TOKEN setup in CONTRIBUTING.md if missing",
+]
+out_of_scope = [
+    "Adding prettier or formatting enforcement",
+    "Changing ESLint rules beyond fixing current issues",
+    "Actually publishing to npm (just validate the pipeline)",
+    "Adding new CI jobs beyond coverage",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+Audit findings:
+- CI is RED: 4 no-useless-escape errors in view-sections.ts:46 (SCROLL_SPY_SCRIPT template literal)
+- Beads tasks basesignal-0cx and basesignal-2yi reference wrong file (view.ts) — actual file is view-sections.ts
+- 32 warnings are @typescript-eslint/no-unused-vars in test files (already downgraded to warn)
+- No test coverage configured anywhere — need @vitest/coverage-v8
+- No lint:fix script in package.json
+- Release workflow uses changesets — config looks correct but no NPM_TOKEN documented
+- No pending changesets — first publish will need one created
+"""
