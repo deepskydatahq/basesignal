@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Environment
+.env
+.env.*
+
+# Scan output
+scan_output.json
+scan_stderr.log
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,6 +33,9 @@ dist-ssr
 
 # MCP server
 mcp-sessions.db
+
+# Internal tools
+.beads/
 
 # Git worktrees
 .worktrees/

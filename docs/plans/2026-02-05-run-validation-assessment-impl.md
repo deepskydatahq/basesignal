@@ -65,7 +65,7 @@ Run via Convex dashboard or script:
 node -e "
 const { ConvexHttpClient } = require('convex/browser');
 const { api } = require('./convex/_generated/api.js');
-const client = new ConvexHttpClient('https://woozy-kangaroo-701.convex.cloud');
+const client = new ConvexHttpClient('https://<your-deployment>.convex.cloud');
 
 async function check() {
   const user = await client.mutation(api.users.getOrCreateByClerkId, {
