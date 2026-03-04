@@ -1,0 +1,40 @@
+# Epic: Fix Lint & Restore CI Green
+
+id = "M017-E001"
+parent = "M017"
+title = "Fix Lint & Restore CI Green"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """Fix all lint errors blocking CI, clean up lint warnings in source files, and add lint:fix convenience script."""
+
+[job_story]
+description = """When I push to main, I want CI to pass reliably, so that the public repo shows a green badge and contributors trust the build."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "npx eslint . exits with 0 errors",
+    "npm run lint:fix script exists in root package.json",
+    "CI passes on the PR branch",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "eslint.config.js",
+    "package.json",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "eslint.config.js",
+    "package.json",
+]
+dependencies = []
+
+[notes]
+considerations = """4 no-useless-escape errors at view-sections.ts:46 (SCROLL_SPY_SCRIPT). 32 warnings are unused vars in test files — already downgraded to warn, acceptable. Beads bugs basesignal-0cx and basesignal-2yi reference wrong file (view.ts) — actual file is view-sections.ts."""
+
+estimated_stories = 2

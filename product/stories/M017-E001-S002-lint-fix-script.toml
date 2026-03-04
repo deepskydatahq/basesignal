@@ -1,0 +1,32 @@
+# Story: Add lint:fix script to package.json
+
+id = "M017-E001-S002"
+parent = "M017-E001"
+title = "Add lint:fix script to package.json"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add lint:fix convenience script to root package.json for developer workflow."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Root package.json has a lint:fix script that runs 'eslint . --fix'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "npm run lint exits with 0 errors after all fixes"
+
+[context]
+relevant_paths = ["package.json"]
+input_fixtures = []
+depends_on = ["M017-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Add "lint:fix": "eslint . --fix" to the scripts section in root package.json, after the existing "lint" script.
+"""
+reference_files = ["package.json"]

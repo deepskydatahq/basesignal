@@ -1,0 +1,44 @@
+# Epic: Test Coverage & Release Readiness
+
+id = "M017-E002"
+parent = "M017"
+title = "Test Coverage & Release Readiness"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """Add test coverage reporting to CI, configure vitest coverage, and validate the release pipeline is ready for first npm publish."""
+
+[job_story]
+description = """When a PR is opened, I want to see test coverage in the CI output, so that I can track quality and catch regressions."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "npm run test:run generates a coverage report",
+    "CI workflow includes coverage step",
+    "CONTRIBUTING.md documents release process and NPM_TOKEN setup",
+]
+validator_context = [
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+    "vitest.config.ts",
+    "CONTRIBUTING.md",
+]
+
+[context]
+relevant_paths = [
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
+    "vitest.config.ts",
+    "packages/*/vitest.config.ts",
+    "CONTRIBUTING.md",
+    ".changeset/",
+]
+dependencies = []
+
+[notes]
+considerations = """Need @vitest/coverage-v8 as devDependency. Coverage config goes in root vitest.config.ts. CI needs a coverage step after tests. Release workflow looks correct but NPM_TOKEN setup not documented."""
+
+estimated_stories = 2

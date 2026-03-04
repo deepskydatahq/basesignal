@@ -1,0 +1,43 @@
+# Story: Add test coverage configuration
+
+id = "M017-E002-S001"
+parent = "M017-E002"
+title = "Add test coverage configuration"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Install @vitest/coverage-v8 and configure coverage reporting in vitest config."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "@vitest/coverage-v8 is in devDependencies of root package.json"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "npm run test:run -- --coverage generates a coverage report"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Root vitest.config.ts has coverage provider set to v8"
+
+[context]
+relevant_paths = [
+    "vitest.config.ts",
+    "package.json",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+1. npm install -D @vitest/coverage-v8
+2. Add coverage config to root vitest.config.ts:
+   coverage: { provider: 'v8', reporter: ['text', 'text-summary'], exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.ts'] }
+3. Do NOT set coverage thresholds yet — just enable reporting.
+4. Add a test:coverage script: "test:coverage": "vitest run --coverage"
+"""
+reference_files = ["vitest.config.ts"]

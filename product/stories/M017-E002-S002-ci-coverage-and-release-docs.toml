@@ -1,0 +1,44 @@
+# Story: Add coverage to CI and document release process
+
+id = "M017-E002-S002"
+parent = "M017-E002"
+title = "Add coverage to CI and document release process"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add coverage reporting step to CI workflow and document the release process in CONTRIBUTING.md."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CI workflow runs tests with --coverage flag"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CONTRIBUTING.md has a 'Release process' section explaining changesets and NPM_TOKEN"
+
+[context]
+relevant_paths = [
+    ".github/workflows/ci.yml",
+    "CONTRIBUTING.md",
+    ".changeset/config.json",
+]
+input_fixtures = []
+depends_on = ["M017-E002-S001"]
+
+[handoff]
+implementation_hints = """
+1. In ci.yml: change the test step to include --coverage flag: npm test -- --run --coverage
+2. In CONTRIBUTING.md: add a 'Releasing' section:
+   - Explain changesets workflow (npx changeset → create PR → merge releases)
+   - Note that NPM_TOKEN must be set as a GitHub repo secret
+   - Link to changeset docs
+"""
+reference_files = [
+    ".github/workflows/ci.yml",
+    "CONTRIBUTING.md",
+    ".changeset/config.json",
+]
