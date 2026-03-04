@@ -153,6 +153,13 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     } else if (rawVMs && rawVMs.length > 0) {
       profile.value_moments = rawVMs;
     }
+    // Prefer enriched outcomes (with measurement cross-references) over raw outcomes
+    if (pipelineResult.outputs.enriched_outcomes && pipelineResult.outputs.enriched_outcomes.length > 0) {
+      profile.outcomes = {
+        ...((profile.outcomes as Record<string, unknown>) ?? {}),
+        items: pipelineResult.outputs.enriched_outcomes,
+      };
+    }
 
     // 7. PHASE 3 -- SAVE
     progress.start("Saving", "to local storage");
@@ -207,6 +214,9 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
     }
     if (pipelineResult.outputs.value_moments.length > 0) {
       productDir.writeJson(slug, "outputs/value-moments.json", pipelineResult.outputs.value_moments);
+    }
+    if (pipelineResult.outputs.enriched_outcomes && pipelineResult.outputs.enriched_outcomes.length > 0) {
+      productDir.writeJson(slug, "outputs/outcomes.json", pipelineResult.outputs.enriched_outcomes);
     }
 
     // Combined profile

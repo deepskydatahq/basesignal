@@ -205,6 +205,8 @@ export interface OutcomeItem {
   description: string;
   type: string;
   linkedFeatures: string[];
+  measurement_references?: Array<{ entity: string; activity: string }>;
+  suggested_metrics?: string[];
 }
 
 /** Business outcomes section of a product profile. */

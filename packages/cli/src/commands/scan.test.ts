@@ -134,6 +134,7 @@ const pipelineResult = {
     measurement_spec: null,
     lifecycle_states: null,
     value_moments: [],
+    enriched_outcomes: null,
   },
   errors: [],
   execution_time_ms: 500,
@@ -469,5 +470,80 @@ describe("runScan", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("lenses_batch1"),
     );
+  });
+
+  it("writes enriched outcomes to outputs/outcomes.json", async () => {
+    const enrichedOutcomes = [
+      {
+        description: "Increase retention",
+        type: "business",
+        linkedFeatures: ["onboarding"],
+        measurement_references: [{ entity: "project", activity: "created" }],
+        suggested_metrics: ["retention_rate"],
+      },
+    ];
+    const resultWithEnrichedOutcomes = {
+      ...pipelineResult,
+      outputs: {
+        ...pipelineResult.outputs,
+        enriched_outcomes: enrichedOutcomes,
+      },
+    };
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(resultWithEnrichedOutcomes);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("enriched-outcomes-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const writeCalls = mockWriteJson.mock.calls.map((c: unknown[]) => c[1]);
+    expect(writeCalls).toContain("outputs/outcomes.json");
+
+    // Verify the data written is the enriched outcomes
+    const outcomeCall = mockWriteJson.mock.calls.find((c: unknown[]) => c[1] === "outputs/outcomes.json");
+    expect(outcomeCall).toBeDefined();
+    expect(outcomeCall![2]).toEqual(enrichedOutcomes);
+  });
+
+  it("prefers enriched outcomes for profile.outcomes.items", async () => {
+    const enrichedOutcomes = [
+      {
+        description: "Increase retention",
+        type: "business",
+        linkedFeatures: ["onboarding"],
+        measurement_references: [{ entity: "project", activity: "created" }],
+        suggested_metrics: ["retention_rate"],
+      },
+    ];
+    const resultWithEnrichedOutcomes = {
+      ...pipelineResult,
+      outputs: {
+        ...pipelineResult.outputs,
+        enriched_outcomes: enrichedOutcomes,
+      },
+    };
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(resultWithEnrichedOutcomes);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("enriched-profile-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const savedProfile = mockSave.mock.calls[0][0];
+    expect(savedProfile.outcomes).toBeDefined();
+    expect(savedProfile.outcomes.items).toEqual(enrichedOutcomes);
+  });
+
+  it("does not set profile.outcomes when enriched_outcomes is null", async () => {
+    // Default pipelineResult has enriched_outcomes: null
+    mockRunAnalysisPipeline.mockReset();
+    mockRunAnalysisPipeline.mockResolvedValue(pipelineResult);
+    mockSave.mockReset();
+    mockSave.mockResolvedValue("no-outcomes-id");
+
+    await runScan("https://example.com", { format: "summary", verbose: false });
+
+    const savedProfile = mockSave.mock.calls[0][0];
+    expect(savedProfile.outcomes).toBeUndefined();
   });
 });

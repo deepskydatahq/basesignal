@@ -24,6 +24,7 @@ import type {
   ActivationLevel,
   ValidatedCandidate,
   LifecycleStatesResult,
+  OutcomeItem,
 } from "@basesignal/core";
 
 import type { ActivationMapResult } from "./outputs/activation-map.js";
@@ -43,6 +44,7 @@ export type {
   MeasurementSpec,
   ActivationLevel,
   LifecycleStatesResult,
+  OutcomeItem,
   ActivationMapResult,
 };
 
@@ -78,7 +80,10 @@ export type ProgressPhase =
   | "outputs_icp"
   | "outputs_activation_map"
   | "outputs_measurement_spec"
-  | "outputs_lifecycle_states";
+  | "outputs_lifecycle_states"
+  | "outputs_reconciliation"
+  | "outputs_enrichment"
+  | "outputs_outcome_enrichment";
 
 export interface ProgressEvent {
   phase: ProgressPhase;
@@ -135,6 +140,7 @@ export interface PipelineOutputs {
   measurement_spec: MeasurementSpec | null;
   lifecycle_states: LifecycleStatesResult | null;
   value_moments: ValueMoment[];
+  enriched_outcomes: OutcomeItem[] | null;
 }
 
 // Pipeline result
