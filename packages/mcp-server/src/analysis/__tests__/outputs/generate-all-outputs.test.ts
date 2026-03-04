@@ -170,6 +170,18 @@ const validEnrichmentResponse = JSON.stringify([{
   suggested_metrics: ["projects_created_per_user", "time_to_first_project"],
 }]);
 
+// Outcome enrichment response
+const validOutcomeEnrichmentResponse = JSON.stringify([{
+  description: "Increase team velocity",
+  measurement_references: [{ entity: "project", activity: "created" }],
+  suggested_metrics: ["velocity_per_sprint", "sprints_completed_per_week"],
+}]);
+
+// Sample outcomes for enrichment
+const sampleOutcomes = [
+  { description: "Increase team velocity", type: "business", linkedFeatures: ["sprint-planning"] },
+];
+
 // The LLM gets called in order: ICP, activation map, lifecycle states, measurement spec
 // We track call index to return the right response
 function createSequentialMockLlm(responses: string[]): LlmProvider {
@@ -192,7 +204,7 @@ function createFailingLlm(failOnCall: number): LlmProvider {
         throw new Error(`LLM call ${current} failed`);
       }
       // Return appropriate responses for other calls
-      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse, validEnrichmentResponse];
+      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse, validEnrichmentResponse, validOutcomeEnrichmentResponse];
       return responses[current] ?? "";
     },
   } as LlmProvider;
@@ -693,5 +705,149 @@ describe("generateAllOutputs — value moment enrichment wiring", () => {
 
     const enrichEvents = events.filter(e => e.phase === "outputs_enrichment");
     expect(enrichEvents).toHaveLength(0);
+  });
+});
+
+describe("generateAllOutputs — outcome enrichment wiring", () => {
+  it("calls enrichOutcomes after measurement spec generation when outcomes provided", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+      validEnrichmentResponse,
+      validOutcomeEnrichmentResponse,
+    ]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      undefined,
+      undefined,
+      sampleOutcomes,
+    );
+
+    expect(result.enriched_outcomes).not.toBeNull();
+    expect(result.enriched_outcomes).toHaveLength(1);
+    expect(result.enriched_outcomes![0].measurement_references).toEqual([{ entity: "project", activity: "created" }]);
+    expect(result.enriched_outcomes![0].suggested_metrics).toEqual(["velocity_per_sprint", "sprints_completed_per_week"]);
+  });
+
+  it("returns null enriched_outcomes when measurement spec is null", async () => {
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      null,
+      sampleIdentity,
+      llm,
+      undefined,
+      undefined,
+      undefined,
+      sampleOutcomes,
+    );
+
+    expect(result.enriched_outcomes).toBeNull();
+  });
+
+  it("returns null enriched_outcomes when outcomes not provided", async () => {
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+      validEnrichmentResponse,
+    ]);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+    );
+
+    expect(result.enriched_outcomes).toBeNull();
+  });
+
+  it("preserves original outcomes when outcome enrichment fails (graceful degradation)", async () => {
+    // Fail on outcome enrichment call (call index 6)
+    const llm = createFailingLlm(6);
+    const errors: PipelineError[] = [];
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      errors,
+      undefined,
+      sampleOutcomes,
+    );
+
+    expect(result.enriched_outcomes).toBeNull();
+
+    const outcomeErrors = errors.filter(e => e.step === "outcome_enrichment");
+    expect(outcomeErrors).toHaveLength(1);
+    expect(outcomeErrors[0].message).toContain("LLM call 6 failed");
+  });
+
+  it("fires progress callbacks for outcome enrichment on success", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+      validEnrichmentResponse,
+      validOutcomeEnrichmentResponse,
+    ]);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
+      undefined,
+      undefined,
+      sampleOutcomes,
+    );
+
+    const outcomeEvents = events.filter(e => e.phase === "outputs_outcome_enrichment");
+    expect(outcomeEvents).toHaveLength(2);
+    expect(outcomeEvents[0].status).toBe("started");
+    expect(outcomeEvents[1].status).toBe("completed");
+  });
+
+  it("does not fire outcome enrichment progress when no outcomes provided", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([
+      validICPResponse,
+      validActivationMapResponse,
+      validLifecycleStatesResponse,
+      validMeasurementSpecResponse,
+      validReconciliationResponse,
+      validEnrichmentResponse,
+    ]);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
+    );
+
+    const outcomeEvents = events.filter(e => e.phase === "outputs_outcome_enrichment");
+    expect(outcomeEvents).toHaveLength(0);
   });
 });

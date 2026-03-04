@@ -1,12 +1,14 @@
 // Output generation orchestration: ICP profiles, activation map, measurement spec, lifecycle states.
 
 import type { LlmProvider, OnProgress, PipelineError, ConvergenceResult, ICPProfile, IdentityResult, ActivationLevelsResult, MeasurementSpec, LifecycleStatesResult, ValueMoment } from "../types.js";
+import type { OutcomeItem } from "@basesignal/core";
 import { generateICPProfiles } from "./icp-profiles.js";
 import { generateActivationMap, type ActivationMapResult } from "./activation-map.js";
 import { generateLifecycleStates } from "./lifecycle-states.js";
 import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
 import { reconcileOutputs } from "./reconcile.js";
 import { enrichValueMoments } from "./enrich-value-moments.js";
+import { enrichOutcomes } from "./enrich-outcomes.js";
 
 // Re-export
 export { generateICPProfiles } from "./icp-profiles.js";
@@ -15,6 +17,7 @@ export { generateLifecycleStates } from "./lifecycle-states.js";
 export { generateMeasurementSpec, assembleMeasurementInput } from "./measurement-spec.js";
 export { reconcileOutputs, buildEventVocabulary } from "./reconcile.js";
 export { enrichValueMoments } from "./enrich-value-moments.js";
+export { enrichOutcomes } from "./enrich-outcomes.js";
 
 export interface OutputsResult {
   icp_profiles: ICPProfile[];
@@ -22,6 +25,7 @@ export interface OutputsResult {
   lifecycle_states: LifecycleStatesResult | null;
   measurement_spec: MeasurementSpec | null;
   value_moments: ValueMoment[];
+  enriched_outcomes: OutcomeItem[] | null;
 }
 
 /**
@@ -35,6 +39,7 @@ export async function generateAllOutputs(
   progress?: OnProgress,
   errors?: PipelineError[],
   pageUrls?: string[],
+  outcomes?: OutcomeItem[],
 ): Promise<OutputsResult> {
   const result: OutputsResult = {
     icp_profiles: [],
@@ -42,6 +47,7 @@ export async function generateAllOutputs(
     lifecycle_states: null,
     measurement_spec: null,
     value_moments: convergence.value_moments,
+    enriched_outcomes: null,
   };
 
   // 1. ICP profiles
@@ -144,6 +150,22 @@ export async function generateAllOutputs(
     } catch (e) {
       progress?.({ phase: "outputs_enrichment", status: "failed", detail: String(e) });
       errors?.push({ phase: "outputs", step: "enrichment", message: String(e) });
+    }
+  }
+
+  // 7. Outcome enrichment (cross-reference outcomes with measurement spec)
+  if (result.measurement_spec && outcomes && outcomes.length > 0) {
+    progress?.({ phase: "outputs_outcome_enrichment", status: "started" });
+    try {
+      result.enriched_outcomes = await enrichOutcomes(
+        outcomes,
+        result.measurement_spec,
+        llm,
+      );
+      progress?.({ phase: "outputs_outcome_enrichment", status: "completed" });
+    } catch (e) {
+      progress?.({ phase: "outputs_outcome_enrichment", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "outcome_enrichment", message: String(e) });
     }
   }
 
