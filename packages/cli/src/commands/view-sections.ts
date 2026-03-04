@@ -23,7 +23,7 @@ import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-htm
 // Section navigation
 // ---------------------------------------------------------------------------
 
-const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
+export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
   { id: "outcomes", label: "Outcomes" },
   { id: "journey", label: "Journey" },
@@ -33,7 +33,7 @@ const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "lifecycle-states", label: "Lifecycle States" },
 ];
 
-function renderSectionNav(analyzedSections: Set<string>): string {
+export function renderSectionNav(analyzedSections: Set<string>): string {
   const links = SECTION_NAV_ITEMS
     .map((item) => {
       const cls = analyzedSections.has(item.id) ? "" : " dimmed";
@@ -43,7 +43,7 @@ function renderSectionNav(analyzedSections: Set<string>): string {
   return `<nav class="section-nav">${links}</nav>`;
 }
 
-const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.section-nav');if(!n)return;var ls=n.querySelectorAll('a[href^="#"]');var cur=null;var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){cur=e.target.id}});if(cur){ls.forEach(function(l){l.classList.remove('active')});var a=n.querySelector('a[href="#'+cur+'"]');if(a)a.classList.add('active')}},{rootMargin:'-10% 0px -50% 0px',threshold:[0,0.1]});document.querySelectorAll('section[id]').forEach(function(s){o.observe(s)})})();`;
+export const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.section-nav');if(!n)return;var ls=n.querySelectorAll('a[href^="#"]');var cur=null;var o=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){cur=e.target.id}});if(cur){ls.forEach(function(l){l.classList.remove('active')});var a=n.querySelector('a[href="#'+cur+'"]');if(a)a.classList.add('active')}},{rootMargin:'-10% 0px -50% 0px',threshold:[0,0.1]});document.querySelectorAll('section[id]').forEach(function(s){o.observe(s)})})();`;
 
 // ---------------------------------------------------------------------------
 // Report header

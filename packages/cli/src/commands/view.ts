@@ -6,10 +6,12 @@ import type { ProductDirectory, ProductProfile } from "@basesignal/storage";
 import { loadConfig } from "../config.js";
 import { escapeHtml, renderPage, progressBar } from "./view-html.js";
 import { renderProductReport } from "./view-sections.js";
+import { renderComparisonReport } from "./compare-sections.js";
 
 // Re-export for tests and consumers
 export { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
 export { renderProductReport } from "./view-sections.js";
+export { renderComparisonReport } from "./compare-sections.js";
 
 // ---------------------------------------------------------------------------
 // Product list
@@ -123,6 +125,39 @@ function handleRequest(
     const products = loadProductList(productDir);
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(renderProductList(products));
+    return;
+  }
+
+  // Compare routing: /compare/{slug1}/{slug2}
+  const compareMatch = pathname.match(/^\/compare\/([^/]+)\/([^/]+)$/);
+  if (compareMatch) {
+    const slug1 = decodeURIComponent(compareMatch[1]);
+    const slug2 = decodeURIComponent(compareMatch[2]);
+
+    if (!isValidSlug(slug1) || !productDir.exists(slug1)) {
+      res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(
+        renderPage(
+          "Not Found",
+          `<h1>Product not found</h1>\n<p>No product with slug &ldquo;${escapeHtml(slug1)}&rdquo; exists.</p>\n<p><a href="/">Back to product list</a></p>`,
+        ),
+      );
+      return;
+    }
+
+    if (!isValidSlug(slug2) || !productDir.exists(slug2)) {
+      res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(
+        renderPage(
+          "Not Found",
+          `<h1>Product not found</h1>\n<p>No product with slug &ldquo;${escapeHtml(slug2)}&rdquo; exists.</p>\n<p><a href="/">Back to product list</a></p>`,
+        ),
+      );
+      return;
+    }
+
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(renderComparisonReport(slug1, slug2, productDir));
     return;
   }
 
