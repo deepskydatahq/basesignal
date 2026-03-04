@@ -1,6 +1,6 @@
 # Contributing to Basesignal
 
-Thanks for your interest in contributing. Basesignal is built on the idea that the product profile schema should be an open standard — the more crawlers, storage adapters, and integrations exist, the more useful the standard becomes.
+Thanks for your interest in contributing. Basesignal is a context engine for product growth data models — the more crawlers, storage adapters, and integrations exist, the more useful it becomes.
 
 The easiest way to contribute is to **add a new crawler**. If you can write a function that fetches a URL and returns structured data, you can contribute a crawler.
 

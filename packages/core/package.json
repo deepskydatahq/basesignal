@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Product profile types, validation, and analysis utilities",
   "license": "MIT",
-  "author": "DeepSky Data ApS",
+  "author": "deepskydata",
   "type": "module",
   "repository": {
     "type": "git",

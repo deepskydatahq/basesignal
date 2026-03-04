@@ -3,7 +3,7 @@
 
 *Context Engineering for Growth Intelligence*
 
-**February 2026 | DeepSky Data ApS**
+**February 2026 | deepskydata**
 
 ---
 
@@ -546,7 +546,7 @@ Basesignal sits at the intersection: **context engineering for growth, open sour
 
 *Version 3.0*
 *February 2026*
-*DeepSky Data ApS*
+*deepskydata*
 
 ---
 ---

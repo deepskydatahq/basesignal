@@ -4,7 +4,7 @@
 
 # Basesignal
 
-**The open standard for product growth models.**
+**Context engine for product growth data models.**
 
 Basesignal scans your product's website and generates a structured growth model — activation definitions, user journey, metric catalog, measurement plan — in 60 seconds. Use it from the CLI, connect it to Claude Desktop via MCP, or self-host with Docker.
 
