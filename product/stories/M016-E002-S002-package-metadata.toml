@@ -1,0 +1,47 @@
+# Story: Add author metadata and gitignore .beads/
+
+id = "M016-E002-S002"
+parent = "M016-E002"
+title = "Add author metadata and gitignore .beads/"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add author field to all package.json files and remove .beads/ from git tracking."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All 5 packages/*/package.json files have author: 'DeepSky Data ApS'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Root package.json has author: 'DeepSky Data ApS'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".beads/ is removed from git tracking (git rm -r --cached .beads/)"
+
+[context]
+relevant_paths = [
+    "packages/cli/package.json",
+    "packages/core/package.json",
+    "packages/crawlers/package.json",
+    "packages/mcp-server/package.json",
+    "packages/storage/package.json",
+    "package.json",
+    ".beads/",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+1. Add "author": "DeepSky Data ApS" to all 6 package.json files (root + 5 packages)
+2. Run: git rm -r --cached .beads/
+3. The .gitignore change for .beads/ is handled in E001-S001 — just remove from tracking here.
+Note: .beads/ gitignore pattern is added in E001-S001, so this story just removes it from git cache.
+"""
+reference_files = []

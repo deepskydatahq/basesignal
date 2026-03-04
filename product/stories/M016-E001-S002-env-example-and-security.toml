@@ -1,0 +1,45 @@
+# Story: Create .env.example and SECURITY.md
+
+id = "M016-E001-S002"
+parent = "M016-E001"
+title = "Create .env.example and SECURITY.md"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add .env.example with safe placeholder values and SECURITY.md with vulnerability reporting instructions."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".env.example exists with ANTHROPIC_API_KEY=sk-ant-... placeholder (not a real key)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".env.example includes commented OPENAI_API_KEY, BASESIGNAL_STORAGE_PATH, BASESIGNAL_MAX_PAGES, BASESIGNAL_CRAWL_TIMEOUT"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "SECURITY.md exists with vulnerability reporting instructions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "SECURITY.md references security@deepsky.com or GitHub Security Advisories as reporting channel"
+
+[context]
+relevant_paths = [".env", "SECURITY.md"]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+1. Create .env.example based on .env structure but with placeholder values only
+2. Create SECURITY.md following GitHub's recommended format:
+   - Supported versions table
+   - How to report (prefer GitHub Security Advisories: https://github.com/deepskydatahq/basesignal/security/advisories)
+   - What to expect (response time, process)
+   - What NOT to do (public disclosure before fix)
+"""
+reference_files = [".env"]

@@ -1,0 +1,38 @@
+# Epic: Security Hardening
+
+id = "M016-E001"
+parent = "M016"
+title = "Security Hardening"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """Harden .gitignore to prevent secret leakage, create .env.example with safe placeholders, redact internal URLs from historical docs, and add SECURITY.md."""
+
+[job_story]
+description = """When preparing the repo for public release, I want all secret-leaking paths blocked and internal references removed, so that going public doesn't expose credentials or internal infrastructure."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    ".gitignore blocks .env, .env.*, logs/, scan_output.json, scan_stderr.log",
+    ".env.example exists with placeholder values",
+    "No occurrences of woozy-kangaroo-701.convex.cloud in any file",
+    "SECURITY.md exists with vulnerability reporting instructions",
+]
+validator_context = [".gitignore", ".env.example", "SECURITY.md", "docs/plans/"]
+
+[context]
+relevant_paths = [
+    ".gitignore",
+    ".env",
+    "docs/plans/",
+    "SECURITY.md",
+]
+dependencies = []
+
+[notes]
+considerations = """Four docs/plans files contain the Convex deployment URL woozy-kangaroo-701.convex.cloud that needs redacting. The .gitignore needs env files, logs, and scan output patterns added."""
+
+estimated_stories = 3

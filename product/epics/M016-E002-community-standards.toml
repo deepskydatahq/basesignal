@@ -1,0 +1,38 @@
+# Epic: Community Standards
+
+id = "M016-E002"
+parent = "M016"
+title = "Community Standards"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """Add standard open-source community files and metadata: CODE_OF_CONDUCT.md, author fields in package.json, and gitignore internal artifacts (.beads/)."""
+
+[job_story]
+description = """When contributors discover the repo, I want standard community files present, so that the project appears well-maintained and welcoming."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "CODE_OF_CONDUCT.md exists with Contributor Covenant",
+    "All package.json files have author field",
+    ".beads/ is in .gitignore",
+]
+validator_context = ["CODE_OF_CONDUCT.md", "packages/*/package.json", ".gitignore"]
+
+[context]
+relevant_paths = [
+    "CODE_OF_CONDUCT.md",
+    "packages/*/package.json",
+    "package.json",
+    ".beads/",
+    ".gitignore",
+]
+dependencies = []
+
+[notes]
+considerations = """.beads/ is currently tracked in git — needs to be gitignored and removed from tracking. Six package.json files need author field added."""
+
+estimated_stories = 2

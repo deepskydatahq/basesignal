@@ -1,0 +1,86 @@
+# Mission: Open Source Readiness
+# Prepare the repository for public release — security audit, gitignore hardening, community standards
+
+id = "M016"
+title = "Open Source Readiness"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """
+Prepare the basesignal repository for public release on GitHub. Harden .gitignore to prevent
+secret leakage, redact internal references from historical docs, add standard open-source
+community files (SECURITY.md, CODE_OF_CONDUCT.md, .env.example), and clean up internal
+artifacts (.beads/ directory, legacy plan docs with internal URLs).
+"""
+
+user_progress = "From 'private repo with internal artifacts' to 'public-ready open source project'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    ".gitignore covers .env, .env.*, logs/, scan_output.json, scan_stderr.log",
+    "No internal Convex deployment URLs remain in docs/plans/",
+    "SECURITY.md exists with vulnerability reporting instructions",
+    "CODE_OF_CONDUCT.md exists",
+    ".env.example exists with placeholder values for all required env vars",
+    "All package.json files have author field",
+    ".beads/ is gitignored",
+]
+
+validator_context = [
+    ".gitignore",
+    "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
+    ".env.example",
+    "docs/plans/",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+]
+relevant_paths = [
+    ".gitignore",
+    ".env",
+    "docs/plans/",
+    ".beads/",
+    "packages/*/package.json",
+    "package.json",
+]
+
+[scope]
+in_scope = [
+    "Fix .gitignore gaps (env files, logs, scan output, .beads/)",
+    "Create .env.example with placeholder values",
+    "Add SECURITY.md with vulnerability reporting process",
+    "Add CODE_OF_CONDUCT.md (Contributor Covenant)",
+    "Redact internal Convex deployment URL from docs/plans/",
+    "Add author field to all package.json files",
+    "Gitignore .beads/ directory",
+]
+out_of_scope = [
+    "API key rotation (manual action by maintainer)",
+    "Removing docs/plans/ entirely (historical value)",
+    "Removing product/ layer (intentional transparency)",
+    "GitHub repo visibility toggle (done after merge)",
+    "CI/CD changes",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+Audit found:
+- .env with live API key not in .gitignore (CRITICAL — key rotation is manual, gitignore fix is in scope)
+- Convex deployment URL (woozy-kangaroo-701.convex.cloud) in 4 docs/plans files
+- Missing SECURITY.md and CODE_OF_CONDUCT.md
+- .beads/ directory tracked in git (internal task management, noise for contributors)
+- No author field in package.json files
+- logs/, scan_output.json, scan_stderr.log not gitignored
+
+All changes are additive or redactive — no functional code changes needed.
+"""

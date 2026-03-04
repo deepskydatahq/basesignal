@@ -1,0 +1,49 @@
+# Story: Harden .gitignore for public release
+
+id = "M016-E001-S001"
+parent = "M016-E001"
+title = "Harden .gitignore for public release"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add missing patterns to .gitignore to prevent secrets, logs, scan output, and internal artifacts from being committed."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".gitignore contains .env pattern"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".gitignore contains .env.* pattern for all env variants"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".gitignore contains scan_output.json"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".gitignore contains scan_stderr.log"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = ".gitignore contains .beads/ pattern"
+
+[context]
+relevant_paths = [".gitignore"]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add to .gitignore under appropriate section headers:
+- Under '# Environment': .env, .env.*
+- Under '# Scan output': scan_output.json, scan_stderr.log
+- Under '# Internal tools': .beads/
+The existing 'logs' pattern already covers the logs/ directory.
+Do NOT add *.local exclusion — it already exists.
+"""
+reference_files = [".gitignore"]

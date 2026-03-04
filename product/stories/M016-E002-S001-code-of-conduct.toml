@@ -1,0 +1,37 @@
+# Story: Add CODE_OF_CONDUCT.md
+
+id = "M016-E002-S001"
+parent = "M016-E002"
+title = "Add CODE_OF_CONDUCT.md"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add Contributor Covenant Code of Conduct to the repository."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CODE_OF_CONDUCT.md exists at repo root"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Uses Contributor Covenant v2.1"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Contact method references GitHub reporting or maintainer email"
+
+[context]
+relevant_paths = ["CODE_OF_CONDUCT.md"]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Use Contributor Covenant v2.1 (https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+Set enforcement contact to GitHub community reporting or a project-specific email.
+"""
+reference_files = ["CONTRIBUTING.md"]
