@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Product profile analysis from the command line",
   "license": "MIT",
+  "author": "DeepSky Data ApS",
   "type": "module",
   "repository": {
     "type": "git",
