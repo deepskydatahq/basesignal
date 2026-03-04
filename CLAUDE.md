@@ -56,65 +56,46 @@ npx basesignal serve
 
 ## Development Workflow
 
-This project uses Beads (`bd`) as the task engine with a label-based pipeline and a structured product layer (Missions → Epics → Stories).
+This project uses Beads (`bd`) for task tracking and Claude Code sub-agents for autonomous execution. The product layer (Missions → Epics → Stories) feeds into an automated pipeline.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  Product Layer (TOML files)                                             │
 │                                                                         │
-│   /brainstorm-epics ──► Mission TOML                                    │
-│   /product-epic ──────► /product-mission-breakdown ──► Epic TOMLs       │
-│                         /product-epic-breakdown ──► Story TOMLs          │
-│                         /product-story-handoff ──► Beads tasks           │
+│   product/missions/ → product/epics/ → product/stories/                 │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  Task Pipeline (Beads labels)                                           │
+│  Execution (Claude Code sub-agents)                                     │
 │                                                                         │
-│   /new-feature ──┐                                                      │
-│   /retro ────────┼──► brainstorm ──► plan ──► ready                     │
-│                  │       │             │         │                      │
-│                  │  /brainstorm    /plan-issue  /pick-issue             │
-│                  │  /brainstorm-auto           run-issue.sh             │
-│                  │  brainstorm-issues.sh  plan-issues.sh               │
-│                  │                                                      │
-│                  └──────────────────────────────────────────┘           │
-│                              (retro discovers more tasks)               │
+│   /execute-mission M014                                                 │
+│     Phase 1: Breakdown + LLM triage → Beads tasks                       │
+│     Phase 2: Epic sub-agents (parallel, worktree) → PRs                 │
+│     Phase 3: /fix-pr-feedback → address review comments                 │
+│     Phase 4: Report                                                     │
 │                                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  Validation                                                             │
+│  Post-Implementation                                                    │
 │                                                                         │
-│   /product-judgment ──► validates story → epic → mission                │
+│   /retro → discover follow-up issues → Beads tasks                      │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
-
-### Task Statuses (Beads)
-
-Tasks use Beads status + labels:
-
-| Beads State | Label | Description |
-|-------------|-------|-------------|
-| `open` | `brainstorm` | Needs design exploration |
-| `open` | `plan` | Needs implementation plan |
-| `open` | `ready` | Has plan, ready to code |
-| `in_progress` | — | Currently being worked on |
-| `closed` | — | Completed |
 
 ### Beads CLI Reference
 
 ```bash
 # List tasks by label
-bd list --label brainstorm --json
+bd list --label ready --json
 
 # Show task details
 bd show <id> --json
 
 # Create task with label
-bd create "Title" --labels brainstorm -d "description" --silent
+bd create "Title" --labels plan -d "description" --silent
 
 # Update status/labels
 bd update <id> --status in_progress
-bd update <id> --remove-label brainstorm --add-label plan
+bd update <id> --remove-label plan --add-label ready
 
 # Close task
 bd close <id>
@@ -127,66 +108,15 @@ bd status
 
 | Command | Description |
 |---------|-------------|
-| `/new-feature` | Brainstorm idea → design doc → Beads task |
-| `/plan-mission` | Plan a mission with codebase exploration and scope mapping |
-| `/brainstorm-epics` | Generate mission candidates from vision + value ladder |
-| `/brainstorm` | Interactive brainstorm for `brainstorm` queue |
-| `/brainstorm-auto` | Autonomous brainstorm with expert personas (from `.claude/experts/`) |
-| `/plan-issue` | Process `plan` queue |
-| `/pick-issue` | Process `ready` queue |
-| `/retro` | Post-implementation analysis |
-| `/product-mission-breakdown` | Break mission into epics |
-| `/product-epic-breakdown` | Break epic into stories |
-| `/product-story-handoff` | Create Beads tasks from ready stories |
-| `/product-judgment` | Validate story/epic/mission completion |
-
-### Headless Automation
-
-```bash
-# Brainstorm tasks (brainstorm → plan)
-./brainstorm-issues.sh              # Single task
-./brainstorm-issues.sh --loop       # Process all brainstorm tasks
-./brainstorm-issues.sh <task-id>    # Brainstorm specific task
-
-# Plan tasks (plan → ready)
-./plan-issues.sh                    # Single task
-./plan-issues.sh --loop             # Process all plan tasks
-./plan-issues.sh --max 5            # Limit to 5 tasks
-
-# Implement tasks (ready → done)
-./run-issue.sh                      # Single task
-./run-issue.sh --loop               # Process all ready tasks
-./run-issue.sh --max 5              # Limit to 5 tasks
-```
-
-All scripts support `--loop`, `--max N`, and `--continue-on-error` flags.
-
-### Parallel Automation
-
-For faster processing, use parallel workers with file-based locking:
-
-```bash
-# Parallel brainstorming (3 workers default)
-./brainstorm-parallel.sh            # 3 workers
-./brainstorm-parallel.sh -w 5       # 5 workers
-
-# Parallel planning (3 workers default)
-./plan-parallel.sh                  # 3 workers
-./plan-parallel.sh -w 5             # 5 workers
-
-# Parallel implementation with dependency awareness
-./run-parallel.sh                   # 3 workers, respects task dependencies
-./run-parallel.sh -w 5              # 5 workers
-```
-
-Workers automatically skip tasks with unresolved dependencies (registered via `bd dep add`).
-The `/product-story-handoff` command registers dependencies when creating tasks from stories.
+| `/execute-mission` | Full autopilot: breakdown → triage → implement → PR feedback → report |
+| `/fix-pr-feedback` | Read PR review comments, fix actionable feedback (max 2 rounds) |
+| `/retro` | Post-implementation retrospective, discover follow-up issues |
 
 ---
 
 ## Product Thinking
 
-The full development workflow (vision → value ladder → missions → epics → stories → tasks → implementation) is documented in [HOW_WE_WORK.md](./HOW_WE_WORK.md). That document is the primary reference for how ideas become shipped features.
+The full development workflow (vision → value ladder → missions → epics → stories → execution) is documented in [HOW_WE_WORK.md](./HOW_WE_WORK.md). That document is the primary reference for how ideas become shipped features.
 
 ### Quick Reference
 
@@ -197,36 +127,18 @@ VALUES.md              ← "What value?" (when levels change)
     ↓
 product/missions/      ← Outcome-oriented work packages
     ↓
-product/epics/         ← /product-mission-breakdown creates epic TOMLs
+/execute-mission       ← Autonomous: breakdown → triage → implement → PR
     ↓
-product/stories/       ← /product-epic-breakdown creates story TOMLs
-    ↓
-Beads tasks            ← /product-story-handoff creates bd tasks
-    ↓
-Task Pipeline → /retro → /product-judgment validates up the hierarchy
+/retro                 ← Discover follow-up issues
 ```
-
-### Product Commands
-
-| Command | Artifact | Updates |
-|---------|----------|---------|
-| `/product-vision` | VISION.md | Rarely (pivots only) |
-| `/product-values` | VALUES.md | When levels change |
-| `/brainstorm-epics` | Mission candidates | From value levels + ideas |
-| `/product-mission-breakdown` | Creates epic TOMLs from mission | Per mission |
-| `/product-epic-breakdown` | Creates story TOMLs from epic | Per epic |
-| `/product-story-handoff` | Creates Beads tasks from stories | When stories are ready |
-| `/product-judgment` | Validates completion up hierarchy | After implementation |
-| `/product-iteration` | Updates value ladder with learnings | After features |
 
 ### The Flow
 
-1. **Direction:** `/product-vision` → `/product-values`
-2. **Planning:** `/brainstorm-epics` → mission TOML → `/product-mission-breakdown` → `/product-epic-breakdown`
-3. **Handoff:** `/product-story-handoff` → Beads tasks with `brainstorm` label
-4. **Implementation:** Task pipeline (brainstorm → plan → ready → implement → close)
-5. **Validation:** `/product-judgment` → validates story → epic → mission
-6. **Learning:** `/product-iteration` → update value ladder → next cycle
+1. **Direction:** Refine vision and value ladder as needed
+2. **Mission:** Define the mission TOML
+3. **Execute:** `/execute-mission M014` — everything from breakdown to PRs, autonomous
+4. **Review:** Review and merge epic PRs
+5. **Retro:** `/retro` — discover follow-up issues
 
 ---
 
@@ -252,8 +164,6 @@ npm run test:run  # Run tests once (CI)
 
 **Every feature must have tests**
 - Write tests for all new functions and modules
-- Use `superpowers:subagent-driven-development` for multi-step implementations - it enforces tests per task
-- Use `superpowers:finishing-a-development-branch` to verify all tests pass before merging/pushing
 - Never mark work complete until `npm test` passes
 
 **Package boundaries matter**
