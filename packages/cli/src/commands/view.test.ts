@@ -624,6 +624,7 @@ describe("renderProductReport", () => {
     const html = renderProductReport("test-app", productDir);
     expect(html).toContain("section-nav");
     expect(html).toContain('href="#identity"');
+    expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
     expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#value-moments"');
@@ -695,16 +696,17 @@ describe("renderProductReport", () => {
     productDir.writeJson("empty-app", "crawl/metadata.json", {});
 
     const html = renderProductReport("empty-app", productDir);
-    // All six section IDs should be present
+    // All seven section IDs should be present
     expect(html).toContain('id="identity"');
+    expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
     expect(html).toContain('id="icp-profiles"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
     expect(html).toContain('id="lifecycle-states"');
-    // Count "Not yet analyzed" — should appear 6 times (one per section)
+    // Count "Not yet analyzed" — should appear 7 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
-    expect(matches).toHaveLength(6);
+    expect(matches).toHaveLength(7);
   });
 
   it("renders identity as card layout with description and context badges", () => {
@@ -854,6 +856,213 @@ describe("renderProductReport", () => {
     expect(activitiesIdx).toBeGreaterThan(-1);
     expect(propertiesIdx).toBeGreaterThan(-1);
     expect(activitiesIdx).toBeLessThan(propertiesIdx);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: outcomes section
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — outcomes section", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders outcomes section with enriched data (measurement_references + suggested_metrics)", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Reduce time to first deployment",
+        type: "efficiency",
+        linkedFeatures: ["One-click deploy", "Auto-config"],
+        measurement_references: [
+          { entity: "deployment", activity: "completed" },
+          { entity: "project", activity: "configured" },
+        ],
+        suggested_metrics: ["time_to_first_deploy", "deploy_success_rate"],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // Section structure
+    expect(bodyContent).toContain('id="outcomes"');
+    expect(bodyContent).toContain("Outcomes");
+    // Description as card heading
+    expect(bodyContent).toContain("Reduce time to first deployment");
+    // Type badge
+    expect(bodyContent).toContain("efficiency");
+    // Linked features
+    expect(bodyContent).toContain("One-click deploy");
+    expect(bodyContent).toContain("Auto-config");
+    // Measurement references as badge-measurement spans
+    expect(bodyContent).toContain("badge-measurement");
+    expect(bodyContent).toContain("deployment.completed");
+    expect(bodyContent).toContain("project.configured");
+    // Suggested metrics as code elements
+    expect(bodyContent).toContain("<code>time_to_first_deploy</code>");
+    expect(bodyContent).toContain("<code>deploy_success_rate</code>");
+  });
+
+  it("renders outcomes section with raw data (no enrichment fields)", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Increase team collaboration",
+        type: "engagement",
+        linkedFeatures: ["Shared boards", "Real-time editing"],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // Section should render without no-data class
+    expect(bodyContent).toContain('id="outcomes"');
+    expect(bodyContent).not.toContain('id="outcomes" class="no-data"');
+    // Description and type
+    expect(bodyContent).toContain("Increase team collaboration");
+    expect(bodyContent).toContain("engagement");
+    // Linked features
+    expect(bodyContent).toContain("Shared boards");
+    expect(bodyContent).toContain("Real-time editing");
+    // No measurement badges or metrics when enrichment fields are absent
+    expect(bodyContent).not.toContain("badge-measurement");
+    expect(bodyContent).not.toContain("Tracks:");
+    expect(bodyContent).not.toContain("Metrics:");
+  });
+
+  it("renders empty state when no outcomes exist", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Section should exist with no-data class
+    expect(html).toContain('id="outcomes" class="no-data"');
+    expect(html).toMatch(/id="outcomes"[\s\S]*?Not yet analyzed/);
+  });
+
+  it("outcomes section appears in navigation", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Some outcome",
+        type: "growth",
+        linkedFeatures: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    // Nav should include outcomes link
+    expect(html).toContain('href="#outcomes"');
+    // Outcomes has data, so the nav link should NOT be dimmed
+    expect(html).toMatch(/href="#outcomes" class=""/);
+  });
+
+  it("dims outcomes nav link when no outcomes data", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Outcomes has no data, so nav link should be dimmed
+    expect(html).toMatch(/href="#outcomes" class=" dimmed"/);
+  });
+
+  it("falls back to profile.outcomes.items when outputs/outcomes.json is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+      outcomes: {
+        items: [
+          {
+            description: "Profile fallback outcome",
+            type: "retention",
+            linkedFeatures: ["Feature X"],
+          },
+        ],
+        confidence: 0.7,
+        evidence: [],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Profile fallback outcome");
+    expect(bodyContent).toContain("retention");
+    expect(bodyContent).toContain("Feature X");
+  });
+
+  it("outcomes without measurement_references show no measurement badges (graceful)", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Outcome without refs",
+        type: "acquisition",
+        linkedFeatures: ["Landing page"],
+        measurement_references: [],
+        suggested_metrics: [],
+      },
+      {
+        description: "Outcome without enrichment fields at all",
+        type: "revenue",
+        linkedFeatures: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // Both outcomes should render
+    expect(bodyContent).toContain("Outcome without refs");
+    expect(bodyContent).toContain("Outcome without enrichment fields at all");
+    // No measurement badges
+    expect(bodyContent).not.toContain("badge-measurement");
+    expect(bodyContent).not.toContain("Tracks:");
+    expect(bodyContent).not.toContain("Metrics:");
+  });
+
+  it("outcomes section appears between identity and journey in the report", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const identityIdx = html.indexOf('id="identity"');
+    const outcomesIdx = html.indexOf('id="outcomes"');
+    const journeyIdx = html.indexOf('id="journey"');
+    expect(identityIdx).toBeGreaterThan(-1);
+    expect(outcomesIdx).toBeGreaterThan(-1);
+    expect(journeyIdx).toBeGreaterThan(-1);
+    expect(outcomesIdx).toBeGreaterThan(identityIdx);
+    expect(outcomesIdx).toBeLessThan(journeyIdx);
   });
 });
 
