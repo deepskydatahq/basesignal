@@ -2,6 +2,7 @@
   "name": "basesignal",
   "private": true,
   "version": "0.0.0",
+  "author": "DeepSky Data ApS",
   "type": "module",
   "workspaces": [
     "packages/core",

@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Web crawlers for extracting product information",
   "license": "MIT",
+  "author": "DeepSky Data ApS",
   "type": "module",
   "repository": {
     "type": "git",

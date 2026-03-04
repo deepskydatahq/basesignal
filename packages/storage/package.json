@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Storage adapters for product profiles (SQLite, file-based)",
   "license": "MIT",
+  "author": "DeepSky Data ApS",
   "type": "module",
   "repository": {
     "type": "git",

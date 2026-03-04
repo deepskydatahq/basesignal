@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "MCP server for AI-assisted product profile analysis",
   "license": "MIT",
+  "author": "DeepSky Data ApS",
   "type": "module",
   "repository": {
     "type": "git",
