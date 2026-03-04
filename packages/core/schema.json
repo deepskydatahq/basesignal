@@ -738,6 +738,31 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "measurement_references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "entity": {
+                      "type": "string"
+                    },
+                    "activity": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "entity",
+                    "activity"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "suggested_metrics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             },
             "required": [
