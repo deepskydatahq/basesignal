@@ -37,7 +37,7 @@ jobs:
         run: npm run build
 
       - name: Test
-        run: npm test -- --run
+        run: npm test -- --run --coverage
 
   # test-examples: Re-enable after first npm publish of @basesignal packages.
   # Examples reference @basesignal/*@latest from the npm registry.

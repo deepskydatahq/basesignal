@@ -159,9 +159,19 @@ This project uses [Changesets](https://github.com/changesets/changesets) for aut
 npx changeset
 ```
 
-Follow the prompts to select the affected packages and describe the change. The changeset file will be committed with your PR. When the PR merges, a GitHub Action will either open a "Version Packages" PR or publish directly to npm.
+Follow the prompts to select the affected packages and describe the change. The changeset file will be committed with your PR.
 
-**For maintainers:** The release workflow requires an `NPM_TOKEN` repository secret to publish packages to npm. Add this secret in the repository settings under Settings > Secrets and variables > Actions.
+### Release process
+
+1. **Create a changeset** in your PR: run `npx changeset`, select the affected packages, choose the semver bump type (patch/minor/major), and describe the change.
+2. **Merge to main.** When the PR merges, a GitHub Action detects pending changesets and opens a "Version Packages" PR that bumps versions and updates changelogs.
+3. **Merge the Version Packages PR.** This triggers the publish workflow, which builds all packages and publishes them to npm.
+
+### Maintainer setup
+
+The release workflow requires an `NPM_TOKEN` repository secret to publish packages to npm. Add this secret in the repository settings under **Settings > Secrets and variables > Actions**.
+
+For more details on how changesets work, see the [Changesets documentation](https://github.com/changesets/changesets).
 
 ## Getting help
 
