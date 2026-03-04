@@ -1,0 +1,91 @@
+# Mission: Outcome Enrichment & Display
+# Enrich raw outcomes with measurement connections and display them as rich profile cards.
+
+id = "M015"
+title = "Outcome Enrichment & Display"
+status = "active"
+created = 2026-03-04
+depends_on = ["M014"]
+
+[outcome]
+description = """
+Outcomes are one of basesignal's most valuable outputs — an extensive list of what users
+and businesses achieve with a product. Today they're stored as simple items (description,
+type, linkedFeatures) but never shown in the HTML report and have no connection to the
+measurement spec. This mission enriches each outcome with measurement references (how would
+you actually measure this outcome?) and displays them as rich, engaging profile cards in the
+view. The result: outcomes feel connected, measurable, and valuable — not just a disconnected list.
+"""
+
+user_progress = "From 'hidden outcome list' to 'rich, measurable outcome cards in the report'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Outcomes appear as a dedicated section in the HTML report view",
+    "Each outcome card shows its description, type, linked features, and measurement references",
+    "Outcomes are enriched with measurement_references from the measurement spec vocabulary",
+    "Enrichment uses the same entity.activity vocabulary as value moment enrichment",
+    "The view is visually engaging — card layout, not a plain table",
+    "Outcomes without measurement references gracefully show 'no measurement mapped'",
+    "All existing tests continue to pass",
+]
+
+validator_context = [
+    "packages/core/src/schema/outcomes.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/mcp-server/src/analysis/outputs/",
+]
+
+[context]
+related_docs = [
+    "VISION.md",
+    "VALUES.md",
+]
+relevant_paths = [
+    "packages/core/src/schema/outcomes.ts",
+    "packages/core/src/schema/convergence.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-value-moments.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/storage/src/types.ts",
+    "packages/mcp-server/src/tools/formatters.ts",
+]
+
+[scope]
+in_scope = [
+    "Enrich OutcomeItem with measurement_references (entity.activity pairs from spec)",
+    "Add suggested_metrics to each outcome (derived metric names)",
+    "Add an outcomes section to the HTML report view with card layout",
+    "Wire enrichment into the analysis pipeline (after measurement spec generation)",
+    "Persist enriched outcomes",
+]
+out_of_scope = [
+    "Changing the convergence algorithm or how outcomes feed into value moments",
+    "Modifying the MCP tool interface for outcomes",
+    "Changing the outcomes lens analysis itself",
+    "Adding new outcome types or categories",
+]
+acceptable_breakage = [
+    "OutcomeItem type gains optional fields — existing data still valid",
+]
+
+[notes]
+considerations = """
+This follows the same pattern as M014-E002 (value moment enrichment):
+- buildEventVocabulary() from reconcile.ts provides the canonical vocabulary
+- A single LLM call maps outcomes to measurement spec events
+- The enriched data gets persisted to outputs/ directory
+- The view reads enriched data with fallback to raw data
+
+Key files to reference:
+- enrich-value-moments.ts — pattern for LLM enrichment with vocabulary
+- reconcile.ts — buildEventVocabulary() and formatVocabulary() are reusable
+- view-sections.ts — pattern for adding new sections to the HTML report
+- view-html.ts — CSS classes and card styling already available
+
+Keep the scope small — 2 epics, enrichment + display. This is also a test
+run for the new /execute-mission workflow.
+"""
