@@ -1,0 +1,59 @@
+# Story: Add compare tests
+
+id = "M018-E001-S004"
+parent = "M018-E001"
+title = "Add compare tests"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add comprehensive tests for the comparison feature following view.test.ts patterns."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify comparison renders both product names in header"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify compare-grid CSS class is present"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify 'Not yet analyzed' shown when section missing on one side"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify badge-shared appears for matching ICP pain points"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Tests verify HTTP route returns 200 for valid slugs and 404 for missing"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "At least 25 tests in compare.test.ts"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/compare.test.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = ["M018-E001-S003"]
+
+[handoff]
+implementation_hints = """
+Follow view.test.ts patterns exactly:
+- Use createTmpProductDir() for fixtures
+- Write data to outputs/*.json via productDir.writeJson()
+- Extract body after </style> for content assertions
+- Test both enriched and raw data variants
+- Test all 7 sections with comparison data
+- Test HTTP routing with missing/valid slugs
+"""
+reference_files = [
+    "packages/cli/src/commands/view.test.ts",
+]

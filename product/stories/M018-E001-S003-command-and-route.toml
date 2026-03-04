@@ -1,0 +1,55 @@
+# Story: Add compare route and CLI command
+
+id = "M018-E001-S003"
+parent = "M018-E001"
+title = "Add compare route and CLI command"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Add /compare/{slug1}/{slug2} route to view server and create the compare CLI command."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "GET /compare/{slug1}/{slug2} returns 200 with comparison HTML"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "GET /compare/{slug1}/{missing} returns 404"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "basesignal compare is registered as a CLI command"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Compare command validates both slugs exist before starting server"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/compare.ts",
+    "packages/cli/src/program.ts",
+]
+input_fixtures = []
+depends_on = ["M018-E001-S002"]
+
+[handoff]
+implementation_hints = """
+1. In view.ts handleRequest: add /compare/{slug1}/{slug2} route BEFORE the /{slug} catch-all
+   - Use regex: /^\\/compare\\/([^/]+)\\/([^/]+)$/
+   - Validate both slugs, 404 if missing
+   - Call renderComparisonReport from compare-sections.ts
+2. Create compare.ts with registerCompareCommand:
+   - basesignal compare <slug1> <slug2> [-p port] [--no-open]
+   - Validate slugs via productDir.exists()
+   - Reuse startViewServer and openBrowser from view.ts (may need to export them)
+3. Register in program.ts
+"""
+reference_files = [
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/program.ts",
+]

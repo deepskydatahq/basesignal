@@ -1,0 +1,64 @@
+# Story: Implement 7 section comparison renderers
+
+id = "M018-E001-S002"
+parent = "M018-E001"
+title = "Implement 7 section comparison renderers"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Implement all 7 side-by-side section comparison renderers with shared attribute highlighting."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderIdentityComparison renders two identity cards side by side"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderIcpComparison marks matching pain points with badge-shared class"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderValueMomentsComparison shows tier summary counts for both products"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderMeasurementSpecComparison shows entity counts and marks shared entity names"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each section shows 'Not yet analyzed' when data missing on one side"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderJourneyComparison shows stage count and primary activation level comparison"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderLifecycleComparison highlights shared state names"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/compare-sections.ts",
+    "packages/cli/src/commands/view-sections.ts",
+]
+input_fixtures = []
+depends_on = ["M018-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Follow view-sections.ts renderer patterns. Each comparison renderer takes left/right data objects.
+Difference highlighting:
+- String lists (pain_points, triggers, entity names): case-insensitive match → badge-shared for overlap
+- Numeric (confidence): show both as badges
+- Structural (stages, states): count summary line
+Reuse escapeHtml, confidenceBadge, progressBar from view-html.ts.
+Reuse existing CSS classes: card, badge, badge-measurement, badge-lifecycle, etc.
+"""
+reference_files = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+]

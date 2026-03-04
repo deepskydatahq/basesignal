@@ -1,0 +1,43 @@
+# Epic: Compare Feature
+
+id = "M018-E001"
+parent = "M018"
+title = "Compare Feature"
+status = "active"
+created = 2026-03-04
+depends_on = []
+
+[outcome]
+description = """Add a compare command and side-by-side HTML view for comparing two scanned products across all 7 analysis sections."""
+
+[job_story]
+description = """When I've scanned two products, I want to compare them side by side, so that I can see how their growth models differ."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "basesignal compare slug1 slug2 opens comparison in browser",
+    "GET /compare/{slug1}/{slug2} returns side-by-side HTML",
+    "All 7 sections render comparison content",
+    "25+ tests pass in compare.test.ts",
+]
+validator_context = [
+    "packages/cli/src/commands/compare-sections.ts",
+    "packages/cli/src/commands/compare.ts",
+    "packages/cli/src/commands/compare.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/cli/src/program.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """4 stories in sequence: renderPage extension → comparison renderers → CLI + route → tests."""
+
+estimated_stories = 4

@@ -1,0 +1,56 @@
+# Story: Extend renderPage and create comparison layout
+
+id = "M018-E001-S001"
+parent = "M018-E001"
+title = "Extend renderPage and create comparison layout"
+status = "ready"
+created = 2026-03-04
+
+[outcome]
+description = """Extend renderPage with extraCss option and create the comparison data loader and page layout in compare-sections.ts."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderPage accepts extraCss option and includes it in the style block"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "loadComparisonData returns structured object with all 7 sections for a given slug"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderComparisonReport produces HTML with compare-grid CSS class"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Comparison page has max-width 1400px layout"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section nav renders all 7 sections with dimming for empty sections"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view-sections.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+1. In view-html.ts: add extraCss?: string to renderPage options type, inject before </style>
+2. Create compare-sections.ts with:
+   - ComparisonData interface (slug + all 7 output types nullable)
+   - loadComparisonData(slug, productDir) — reads same files as renderProductReport
+   - renderComparisonReport(slug1, slug2, productDir) — loads both, renders page with comparison CSS
+3. Comparison CSS: .compare-layout max-width 1400px, .compare-grid with 2-col grid, product labels with blue/purple borders
+4. Reuse SCROLL_SPY_SCRIPT from view-sections.ts (export it or duplicate)
+"""
+reference_files = [
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view-sections.ts",
+]
