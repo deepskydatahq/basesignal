@@ -1,0 +1,48 @@
+# Story: Define AnalyticsTaxonomy types in @basesignal/core
+
+id = "M019-E001-S001"
+parent = "M019-E001"
+title = "Define AnalyticsTaxonomy types"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Add AnalyticsTaxonomy TypeScript types to @basesignal/core that represent
+a normalized, platform-agnostic event taxonomy from analytics platforms."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "AnalyticsTaxonomy type exported from @basesignal/core"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TaxonomyEvent has: name, description, properties[], category?, status?, tags[], volume_last_30d?"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TaxonomyProperty has: name, type, description, required"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "AnalyticsTaxonomy has: platform, project_id, extracted_at, events[], metadata?"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Types compile without errors in npm run build"
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/index.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """Create packages/core/src/types/taxonomy.ts with the types.
+Export from packages/core/src/types/index.ts. Follow the same patterns as outputs.ts.
+Keep it simple — these are data shapes, not runtime validated."""
+reference_files = ["packages/core/src/types/outputs.ts"]

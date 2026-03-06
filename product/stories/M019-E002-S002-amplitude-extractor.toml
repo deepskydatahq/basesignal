@@ -1,0 +1,49 @@
+# Story: Amplitude taxonomy extractor
+
+id = "M019-E002-S002"
+parent = "M019-E002"
+title = "Amplitude taxonomy extractor"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Implement a DLT-based Amplitude extractor that pulls event taxonomy
+from the Amplitude Taxonomy API and normalizes to AnalyticsTaxonomy."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "amplitude_source() returns a DLT resource yielding event types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "normalize_amplitude_events() converts Taxonomy API response to list of TaxonomyEvent"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Event properties from GET /taxonomy/event-properties mapped to TaxonomyProperty"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extract_amplitude_taxonomy(api_key, secret_key) returns AnalyticsTaxonomy"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Unit tests with fixture JSON pass"
+
+[context]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/",
+]
+input_fixtures = []
+depends_on = ["M019-E002-S001"]
+
+[handoff]
+implementation_hints = """Amplitude Taxonomy API:
+- GET /api/2/taxonomy/event (list event types)
+- GET /api/2/taxonomy/event-property (list event properties)
+Auth: Basic auth with API key:secret key
+Follow the same pattern established by the PostHog extractor."""
+reference_files = []

@@ -1,0 +1,47 @@
+# Epic: Taxonomy Schema and Python Package Scaffolding
+# Define the normalized taxonomy type in core + set up packages/loaders
+
+id = "M019-E001"
+title = "Taxonomy Schema and Python Package Scaffolding"
+status = "draft"
+created = 2026-03-06
+mission = "M019"
+sequence = 1
+
+[outcome]
+description = """
+Define the normalized analytics taxonomy schema as a TypeScript type in @basesignal/core
+and as a JSON Schema. Set up packages/loaders as a Python package with pyproject.toml,
+DLT dependency, and project structure. Add taxonomy storage support to ProductDirectory.
+"""
+
+[scope]
+in_scope = [
+    "AnalyticsTaxonomy TypeScript type in @basesignal/core (events, properties, metadata)",
+    "JSON Schema generation or manual schema for the taxonomy format",
+    "packages/loaders/ Python package with pyproject.toml, src layout, DLT dependency",
+    "ProductDirectory method to read/write taxonomy JSON",
+    "Basic project structure: loaders/src/basesignal_loaders/ with __init__.py",
+    "pytest setup with conftest.py",
+]
+out_of_scope = [
+    "Actual API extractors (E002)",
+    "CLI command (E003)",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/index.ts",
+    "packages/storage/src/product-directory.ts",
+]
+
+[notes]
+considerations = """
+The taxonomy schema needs to capture: event name, description, properties (name, type,
+description, required), category/group, status (active/inactive/hidden), volume hints
+if available, and platform source metadata.
+
+Keep it platform-agnostic - the extractors normalize platform-specific formats into this
+common shape.
+"""

@@ -1,0 +1,48 @@
+# Story: Python __main__.py entry point for subprocess invocation
+
+id = "M019-E003-S002"
+parent = "M019-E003"
+title = "Python __main__.py entry point"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Add __main__.py to basesignal_loaders that accepts CLI args (platform,
+credentials, output path), runs the appropriate extractor, and writes normalized JSON."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "python -m basesignal_loaders --platform posthog --api-key x --project-id y --output /tmp/out.json runs extraction"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Output JSON file matches AnalyticsTaxonomy schema"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Progress messages written to stderr"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Exit code 0 on success, 1 on error with error message on stderr"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Unknown platform argument returns exit code 1 with list of supported platforms"
+
+[context]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/__main__.py",
+    "packages/loaders/src/basesignal_loaders/__init__.py",
+]
+input_fixtures = []
+depends_on = ["M019-E002-S001", "M019-E003-S001"]
+
+[handoff]
+implementation_hints = """Use argparse for CLI parsing. Dispatch to the appropriate extractor
+based on --platform. Write result as JSON to --output path. Keep it simple — this is the
+bridge between TypeScript CLI and Python extractors."""
+reference_files = []

@@ -1,0 +1,51 @@
+# Story: Scaffold packages/loaders Python package
+
+id = "M019-E001-S003"
+parent = "M019-E001"
+title = "Scaffold Python loaders package"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Create the packages/loaders directory with pyproject.toml, Python src layout,
+DLT dependency, pytest configuration, and a basic smoke test."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/loaders/pyproject.toml exists with [project] name = 'basesignal-loaders'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "DLT listed as dependency in pyproject.toml"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/loaders/src/basesignal_loaders/__init__.py exists"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "packages/loaders/src/basesignal_loaders/schema.py defines TaxonomyEvent, TaxonomyProperty, AnalyticsTaxonomy as dataclasses or Pydantic models mirroring the TS types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "pip install -e packages/loaders succeeds"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "pytest packages/loaders runs and passes with at least one smoke test"
+
+[context]
+relevant_paths = []
+input_fixtures = []
+depends_on = ["M019-E001-S001"]
+
+[handoff]
+implementation_hints = """Use modern Python packaging: pyproject.toml with [build-system] hatchling or setuptools.
+src layout: packages/loaders/src/basesignal_loaders/. Tests in packages/loaders/tests/.
+Mirror the AnalyticsTaxonomy types from core as Python dataclasses.
+Optional extras for each platform: [posthog], [amplitude], [mixpanel].
+Include a __main__.py entry point that will later be the CLI target for subprocess calls."""
+reference_files = []

@@ -1,0 +1,52 @@
+# Story: PostHog taxonomy extractor
+
+id = "M019-E002-S001"
+parent = "M019-E002"
+title = "PostHog taxonomy extractor"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Implement a DLT-based PostHog extractor that pulls event definitions and
+property definitions from the PostHog API and normalizes to AnalyticsTaxonomy."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "posthog_source() returns a DLT resource yielding event definitions"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "normalize_posthog_events() converts PostHog API response to list of TaxonomyEvent"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Properties from /property_definitions mapped to TaxonomyProperty on each event"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extract_posthog_taxonomy(api_key, project_id, host) returns AnalyticsTaxonomy"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Unit tests with fixture JSON from PostHog API responses pass"
+
+[context]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/",
+]
+input_fixtures = []
+depends_on = ["M019-E001-S003"]
+
+[handoff]
+implementation_hints = """PostHog API endpoints:
+- GET /api/projects/{project_id}/event_definitions?limit=100 (paginated)
+- GET /api/projects/{project_id}/property_definitions?limit=100 (paginated)
+Auth: Authorization: Bearer {personal_api_key}
+Host: defaults to https://app.posthog.com but configurable for self-hosted.
+
+Create fixture files from the PostHog API docs for testing.
+Use DLT's @dlt.resource decorator for the source."""
+reference_files = []

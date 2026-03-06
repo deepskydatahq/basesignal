@@ -1,0 +1,54 @@
+# Epic: DLT Platform Extractors
+# Build DLT pipelines for PostHog, Amplitude, and Mixpanel taxonomy extraction
+
+id = "M019-E002"
+title = "DLT Platform Extractors"
+status = "draft"
+created = 2026-03-06
+mission = "M019"
+sequence = 2
+depends_on = ["M019-E001"]
+
+[outcome]
+description = """
+Implement DLT-based extractors for PostHog, Amplitude, and Mixpanel that pull event
+taxonomies from their APIs and normalize them to the common AnalyticsTaxonomy schema.
+Each extractor handles authentication, pagination, rate limiting, and writes normalized
+JSON output.
+"""
+
+[scope]
+in_scope = [
+    "PostHog extractor: event definitions, property definitions via /api/projects/{id}/event_definitions",
+    "Amplitude extractor: event taxonomy via Taxonomy API",
+    "Mixpanel extractor: lexicon (event schemas) via Lexicon API",
+    "Normalization layer: platform-specific response -> AnalyticsTaxonomy JSON",
+    "DLT pipeline configuration for each platform",
+    "Unit tests with fixture API responses for each platform",
+    "Integration test structure with mock HTTP",
+]
+out_of_scope = [
+    "Full event data loading (raw events, user profiles)",
+    "Segment or other CDPs",
+    "CLI integration (E003)",
+]
+
+[context]
+relevant_paths = [
+    "packages/loaders/",
+]
+
+[notes]
+considerations = """
+PostHog API: /api/projects/{project_id}/event_definitions and /api/projects/{project_id}/property_definitions
+Amplitude API: Taxonomy API - https://amplitude.com/docs/apis/analytics/taxonomy
+Mixpanel API: Lexicon API - https://developer.mixpanel.com/reference/lexicon-schemas-list
+
+DLT may have existing verified sources for some of these. Check dlt-hub/verified-sources
+before writing from scratch.
+
+Each extractor should be independently installable via extras:
+  pip install basesignal-loaders[posthog]
+  pip install basesignal-loaders[amplitude]
+  pip install basesignal-loaders[mixpanel]
+"""

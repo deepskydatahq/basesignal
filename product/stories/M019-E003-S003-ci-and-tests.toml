@@ -1,0 +1,46 @@
+# Story: CI setup and end-to-end tests
+
+id = "M019-E003-S003"
+parent = "M019-E003"
+title = "CI setup and end-to-end tests"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Add Python test step to CI workflow and write end-to-end tests for the
+load command using a mock HTTP server."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "CI workflow runs pip install and pytest for packages/loaders"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "End-to-end test: mock PostHog API -> basesignal load -> taxonomy/events.json written"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLI load command test mocks subprocess and verifies args passed to Python"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All existing TypeScript tests still pass"
+
+[context]
+relevant_paths = [
+    ".github/workflows/ci.yml",
+    "packages/cli/src/commands/",
+    "packages/loaders/tests/",
+]
+input_fixtures = []
+depends_on = ["M019-E003-S001", "M019-E003-S002"]
+
+[handoff]
+implementation_hints = """Add a Python test job to .github/workflows/ci.yml: setup-python,
+pip install -e packages/loaders[posthog], pytest packages/loaders.
+For the e2e test, use pytest's tmp_path + responses library or httpretty to mock PostHog API.
+CLI test in TypeScript mocks child_process.spawn."""
+reference_files = [".github/workflows/ci.yml"]

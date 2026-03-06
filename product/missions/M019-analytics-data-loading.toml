@@ -1,0 +1,88 @@
+# Mission: Analytics Data Loading
+# Load event taxonomies from analytics platforms using DLT (Python)
+
+id = "M019"
+title = "Analytics Data Loading"
+status = "active"
+created = 2026-03-06
+depends_on = ["M014"]
+
+[outcome]
+description = """
+Add a Python-based data loading layer using DLT (dlthub) to extract event taxonomies
+from Amplitude, PostHog, and Mixpanel. The loader lives inside the monorepo as a new
+packages/loaders package. It extracts event names, properties, and categories from each
+platform's API and writes a normalized taxonomy JSON file to the product directory.
+
+This is the foundation for Phase 4 (Connected Intelligence) from the vision: bridging
+the gap between Basesignal's recommended tracking and what teams actually track. Start
+with taxonomy/schema extraction now; scale to full event data loading later.
+"""
+
+user_progress = "From 'here is what you should track' to 'here is what you should track vs what you do track'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "packages/loaders exists as a Python package with pyproject.toml",
+    "DLT pipeline extracts event taxonomy from at least one platform (PostHog preferred as first target)",
+    "Normalized taxonomy JSON written to product directory at taxonomy/events.json",
+    "Common taxonomy schema: event name, properties (name + type), category/tags",
+    "basesignal load <platform> --product <slug> triggers the Python loader and writes output",
+    "Unit tests for normalization logic with fixture data",
+    "Integration test with mock API responses",
+    "CI runs Python tests alongside TypeScript tests",
+]
+
+validator_context = [
+    "packages/loaders/",
+    "packages/cli/src/commands/load.ts",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/storage/src/product-directory.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/cli/src/program.ts",
+]
+
+[scope]
+in_scope = [
+    "New packages/loaders Python package with DLT",
+    "PostHog taxonomy extractor (events, properties, event definitions)",
+    "Amplitude taxonomy extractor (event taxonomy API)",
+    "Mixpanel taxonomy extractor (lexicon API)",
+    "Common normalized taxonomy schema (TypeScript type + JSON Schema)",
+    "Writer that saves normalized taxonomy to product directory",
+    "CLI load command that shells out to Python loader",
+    "pyproject.toml with DLT and platform-specific dependencies",
+    "Unit and integration tests with fixture data",
+]
+out_of_scope = [
+    "Full event data loading (volume data, user events) - future mission",
+    "Comparison/audit logic (M020)",
+    "API key management UI - env vars and CLI flags only",
+    "Real-time streaming or webhooks",
+    "Web UI for loading configuration",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+Architecture: Python package inside monorepo alongside TypeScript packages. DLT handles
+API extraction and rate limiting. Output is normalized JSON that TypeScript packages can read.
+
+CLI integration: The basesignal CLI (TypeScript) shells out to the Python loader via
+subprocess. The loader is a standalone script that accepts platform, credentials, and
+output path as arguments.
+
+Platform priority: PostHog first (open source, well-documented API, likely user overlap),
+then Amplitude (largest market share), then Mixpanel.
+
+DLT gives us: retry logic, rate limiting, incremental loading, schema evolution - all of
+which matter when we scale to full event data in a future mission.
+
+The normalized taxonomy schema should be defined as a TypeScript type in @basesignal/core
+so both the loader output and the audit consumer agree on the shape.
+"""

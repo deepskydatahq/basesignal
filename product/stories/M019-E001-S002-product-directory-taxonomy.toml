@@ -1,0 +1,39 @@
+# Story: Add taxonomy read/write to ProductDirectory
+
+id = "M019-E001-S002"
+parent = "M019-E001"
+title = "Add taxonomy storage to ProductDirectory"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Add convenience methods to ProductDirectory for reading and writing
+analytics taxonomy JSON files at the taxonomy/events.json artifact path."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "productDir.writeTaxonomy(slug, taxonomy) writes to {slug}/taxonomy/events.json"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "productDir.readTaxonomy(slug) returns AnalyticsTaxonomy | null"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "readTaxonomy returns null when file does not exist"
+
+[context]
+relevant_paths = [
+    "packages/storage/src/product-directory.ts",
+]
+input_fixtures = []
+depends_on = ["M019-E001-S001"]
+
+[handoff]
+implementation_hints = """Add writeTaxonomy and readTaxonomy methods to ProductDirectory.
+Use the existing writeJson/readJson internally with artifact path 'taxonomy/events.json'.
+Import AnalyticsTaxonomy type from @basesignal/core."""
+reference_files = ["packages/storage/src/product-directory.ts"]

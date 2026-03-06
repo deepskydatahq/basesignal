@@ -1,0 +1,57 @@
+# Story: CLI load command with subprocess bridge
+
+id = "M019-E003-S001"
+parent = "M019-E003"
+title = "CLI load command with subprocess bridge"
+status = "ready"
+created = 2026-03-06
+
+[outcome]
+description = """Add basesignal load <platform> --product <slug> CLI command that spawns
+the Python loader as a subprocess and writes taxonomy to the product directory."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "basesignal load posthog --product acme --api-key xxx spawns python -m basesignal_loaders"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CLI passes platform, api-key, project-id, and output-path as args to Python subprocess"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Python stderr output forwarded to user as progress messages"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Non-zero Python exit code reported as CLI error with stderr message"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Missing python binary detected with helpful error: 'Python 3.10+ required'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "basesignal load --help shows available platforms and required options"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/program.ts",
+    "packages/cli/src/commands/",
+]
+input_fixtures = []
+depends_on = ["M019-E002-S001"]
+
+[handoff]
+implementation_hints = """Create packages/cli/src/commands/load.ts with registerLoadCommand.
+Use child_process.spawn to invoke python -m basesignal_loaders.
+Pass args: --platform posthog --api-key xxx --project-id yyy --output /path/to/taxonomy/events.json
+Wire into program.ts. The Python __main__.py should accept these args, run the extractor,
+and write the JSON file."""
+reference_files = [
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/program.ts",
+]

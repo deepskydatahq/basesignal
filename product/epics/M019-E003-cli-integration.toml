@@ -1,0 +1,53 @@
+# Epic: CLI Integration and End-to-End Flow
+# Wire the Python loaders into the basesignal CLI
+
+id = "M019-E003"
+title = "CLI Integration and End-to-End Flow"
+status = "draft"
+created = 2026-03-06
+mission = "M019"
+sequence = 3
+depends_on = ["M019-E002"]
+
+[outcome]
+description = """
+Add a basesignal load command that invokes the Python loader for a specified platform,
+passes credentials and product slug, and stores the normalized taxonomy in the product
+directory. Includes end-to-end tests and CI setup for Python tests.
+"""
+
+[scope]
+in_scope = [
+    "basesignal load <platform> --product <slug> CLI command",
+    "Subprocess invocation of Python loader from TypeScript CLI",
+    "Credential passing via --api-key flag and/or env vars (POSTHOG_API_KEY, etc.)",
+    "Progress output during loading",
+    "Error handling: missing Python, missing dependencies, API errors",
+    "End-to-end test with mock API server",
+    "CI workflow addition for Python package (pip install, pytest)",
+    "Documentation in packages/loaders/README.md",
+]
+out_of_scope = [
+    "Web UI for loading",
+    "Credential storage/management beyond env vars",
+    "Audit/comparison command (M020)",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/program.ts",
+    "packages/cli/src/commands/",
+    "packages/loaders/",
+    ".github/workflows/",
+]
+
+[notes]
+considerations = """
+The TypeScript CLI spawns the Python loader as a subprocess. Communication is simple:
+- Input: CLI args (platform, api-key, project-id, output-path)
+- Output: JSON file written to output-path + exit code
+- Stderr: progress/error messages forwarded to user
+
+The CLI should detect if Python/pip is available and give a helpful error if not.
+Consider a setup command: basesignal load --setup that runs pip install for the user.
+"""
