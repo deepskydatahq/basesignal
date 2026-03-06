@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { ProductDirectory } from "./product-directory";
+import type { AnalyticsTaxonomy } from "@basesignal/core";
 
 describe("ProductDirectory", () => {
   let root: string;
@@ -108,5 +109,51 @@ describe("ProductDirectory", () => {
     pd.writeJson("acme", "convergence/clusters.json", { clusters: [] });
     expect(pd.readJson("acme", "lenses/capability-mapping.json")).toEqual({ lens: "capability_mapping" });
     expect(pd.readJson("acme", "convergence/clusters.json")).toEqual({ clusters: [] });
+  });
+
+  // --- taxonomy convenience methods ---
+
+  it("writeTaxonomy and readTaxonomy round-trip", () => {
+    const taxonomy: AnalyticsTaxonomy = {
+      platform: "amplitude",
+      project_id: "proj-123",
+      extracted_at: "2026-03-06T00:00:00Z",
+      events: [
+        {
+          name: "signup_completed",
+          description: "User completed signup",
+          properties: [
+            { name: "method", type: "string", description: "Signup method", required: true },
+          ],
+          category: "onboarding",
+          tags: ["core"],
+          volume_last_30d: 5000,
+        },
+      ],
+      metadata: { loader_version: "1.0.0", event_count: 1 },
+    };
+
+    pd.writeTaxonomy("my-product", taxonomy);
+    const result = pd.readTaxonomy("my-product");
+    expect(result).toEqual(taxonomy);
+  });
+
+  it("readTaxonomy returns null when file does not exist", () => {
+    expect(pd.readTaxonomy("nonexistent-product")).toBeNull();
+  });
+
+  it("writeTaxonomy stores at taxonomy/events.json path", () => {
+    const taxonomy: AnalyticsTaxonomy = {
+      platform: "posthog",
+      project_id: "proj-456",
+      extracted_at: "2026-03-06T00:00:00Z",
+      events: [],
+    };
+
+    pd.writeTaxonomy("test-slug", taxonomy);
+
+    // Verify it's at the expected artifact path
+    const viaReadJson = pd.readJson("test-slug", "taxonomy/events.json");
+    expect(viaReadJson).toEqual(taxonomy);
   });
 });
