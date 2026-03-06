@@ -70,7 +70,7 @@ class AnalyticsTaxonomy:
                     ],
                     **({"category": e.category} if e.category is not None else {}),
                     **({"status": e.status} if e.status is not None else {}),
-                    "tags": e.tags,
+                    "tags": list(e.tags),
                     **(
                         {"volume_last_30d": e.volume_last_30d}
                         if e.volume_last_30d is not None
@@ -81,13 +81,12 @@ class AnalyticsTaxonomy:
             ],
         }
         if self.metadata is not None:
-            meta: dict[str, Any] = {}
+            meta: dict[str, Any] = dict(self.metadata.extra)
             if self.metadata.loader_version is not None:
                 meta["loader_version"] = self.metadata.loader_version
             if self.metadata.extraction_duration_ms is not None:
                 meta["extraction_duration_ms"] = self.metadata.extraction_duration_ms
             if self.metadata.event_count is not None:
                 meta["event_count"] = self.metadata.event_count
-            meta.update(self.metadata.extra)
             result["metadata"] = meta
         return result

@@ -103,7 +103,7 @@ export class ProductDirectory {
 
   /**
    * Read an analytics taxonomy for a product.
-   * Returns null if the file does not exist.
+   * Returns null if the file does not exist or contains invalid JSON.
    */
   readTaxonomy(slug: string): AnalyticsTaxonomy | null {
     return this.readJson<AnalyticsTaxonomy>(slug, "taxonomy/events.json");
