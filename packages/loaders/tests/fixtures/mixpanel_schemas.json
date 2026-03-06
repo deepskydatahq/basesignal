@@ -1,0 +1,62 @@
+{
+    "results": [
+        {
+            "entityType": "event",
+            "name": "App Opened",
+            "description": "User opened the application",
+            "schemaJson": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "properties": {
+                    "platform": {
+                        "type": "string",
+                        "description": "Platform the app was opened on"
+                    },
+                    "app_version": {
+                        "type": "string",
+                        "description": "Version of the app"
+                    }
+                },
+                "required": ["platform"]
+            },
+            "isHidden": false,
+            "isDropped": false,
+            "isMerged": false
+        },
+        {
+            "entityType": "event",
+            "name": "Item Purchased",
+            "description": "User purchased an item",
+            "schemaJson": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "properties": {
+                    "item_id": {
+                        "type": "string",
+                        "description": "ID of the item purchased"
+                    },
+                    "price": {
+                        "type": "number",
+                        "description": "Price of the item"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "Currency code"
+                    }
+                },
+                "required": ["item_id", "price"]
+            },
+            "isHidden": false,
+            "isDropped": false,
+            "isMerged": false
+        },
+        {
+            "entityType": "event",
+            "name": "Legacy Event",
+            "description": "",
+            "schemaJson": null,
+            "isHidden": true,
+            "isDropped": true,
+            "isMerged": false
+        }
+    ],
+    "status": "ok"
+}
