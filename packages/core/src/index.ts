@@ -93,6 +93,14 @@ export type {
   EntityJsonSchema,
 } from "./types/outputs";
 
+// Analytics taxonomy types
+export type {
+  TaxonomyProperty,
+  TaxonomyEvent,
+  TaxonomyMetadata,
+  AnalyticsTaxonomy,
+} from "./types/taxonomy";
+
 // --- Zod Runtime Validation Schemas ---
 export * from "./schema";
 
