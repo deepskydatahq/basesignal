@@ -1,0 +1,34 @@
+{
+    "count": 3,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": "evt-001",
+            "name": "$pageview",
+            "description": "When a user views a page",
+            "tags": ["web", "core"],
+            "volume_30_day": 15000,
+            "created_at": "2025-01-01T00:00:00Z",
+            "last_seen_at": "2026-03-06T00:00:00Z"
+        },
+        {
+            "id": "evt-002",
+            "name": "signup",
+            "description": "User completed signup",
+            "tags": ["onboarding"],
+            "volume_30_day": 500,
+            "created_at": "2025-02-01T00:00:00Z",
+            "last_seen_at": "2026-03-05T00:00:00Z"
+        },
+        {
+            "id": "evt-003",
+            "name": "feature_used",
+            "description": "",
+            "tags": [],
+            "volume_30_day": null,
+            "created_at": "2025-03-01T00:00:00Z",
+            "last_seen_at": null
+        }
+    ]
+}
