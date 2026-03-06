@@ -1,0 +1,39 @@
+{
+    "count": 4,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": "prop-001",
+            "name": "$current_url",
+            "description": "The URL of the current page",
+            "property_type": "String",
+            "is_numerical": false,
+            "tags": []
+        },
+        {
+            "id": "prop-002",
+            "name": "$browser",
+            "description": "Browser name",
+            "property_type": "String",
+            "is_numerical": false,
+            "tags": []
+        },
+        {
+            "id": "prop-003",
+            "name": "signup_method",
+            "description": "Method used to sign up",
+            "property_type": "String",
+            "is_numerical": false,
+            "tags": ["onboarding"]
+        },
+        {
+            "id": "prop-004",
+            "name": "feature_name",
+            "description": "Name of the feature used",
+            "property_type": "String",
+            "is_numerical": false,
+            "tags": []
+        }
+    ]
+}

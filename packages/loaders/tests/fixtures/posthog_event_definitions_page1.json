@@ -1,0 +1,16 @@
+{
+    "count": 2,
+    "next": "https://app.posthog.com/api/projects/12345/event_definitions?limit=1&offset=1",
+    "previous": null,
+    "results": [
+        {
+            "id": "evt-001",
+            "name": "$pageview",
+            "description": "When a user views a page",
+            "tags": ["web"],
+            "volume_30_day": 15000,
+            "created_at": "2025-01-01T00:00:00Z",
+            "last_seen_at": "2026-03-06T00:00:00Z"
+        }
+    ]
+}
