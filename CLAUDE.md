@@ -162,6 +162,12 @@ npm run test:run  # Run tests once (CI)
 
 ## Critical Rules
 
+**Never push directly to main**
+- This is a public repository. All changes go through pull requests.
+- Create a feature branch, push, and open a PR targeting `main`.
+- Do NOT merge PRs automatically — leave them for human review.
+- This applies to code, TOML files, docs — everything.
+
 **Every feature must have tests**
 - Write tests for all new functions and modules
 - Never mark work complete until `npm test` passes

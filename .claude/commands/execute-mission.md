@@ -2,6 +2,8 @@
 
 Full autopilot from mission alignment to PRs. Breaks down the mission into epics and stories, triages each story, then launches parallel sub-agents to implement each epic in an isolated worktree. One PR per epic.
 
+**IMPORTANT: This is a public repository. Never push directly to main. All changes go through PRs for human review.**
+
 ## Arguments
 
 - Mission ID (required): `/execute-mission M014`
@@ -296,9 +298,9 @@ For each story, in order:
 1. Run the full test suite: npm run test:run
 2. Run the build: npm run build
 3. Fix any issues
-4. Push and create a PR:
+4. Push and create a PR **targeting main** (do NOT merge — leave for human review):
    git push -u origin HEAD
-   gh pr create --title "feat({epic_id}): {epic_title}" --body "## Summary
+   gh pr create --base main --title "feat({epic_id}): {epic_title}" --body "## Summary
    {epic_outcome}
 
    ## Stories Implemented
@@ -309,6 +311,8 @@ For each story, in order:
 
    ---
    Automated via /execute-mission"
+
+   **IMPORTANT: Do NOT merge the PR. Leave it open for human review.**
 
 ## Rules
 
@@ -352,7 +356,23 @@ Launch all PR feedback agents in parallel (multiple Agent calls in one message, 
 
 ---
 
-### Phase 4: Report
+### Phase 4: TOML Commit
+
+Commit the mission, epic, and story TOML files on a separate branch and create a PR:
+
+```bash
+git checkout -b bd/{mission_id}-tomls main
+git add product/missions/{mission_id}-*.toml product/epics/{mission_id}-*.toml product/stories/{mission_id}-*.toml
+git commit -m "bd: add {mission_id} mission, epic, and story TOMLs"
+git push -u origin HEAD
+gh pr create --base main --title "bd: {mission_id} mission, epic, and story TOMLs" --body "Product layer TOMLs for {mission_id}."
+```
+
+Do NOT merge — leave for human review alongside the epic PRs.
+
+---
+
+### Phase 5: Report
 
 Collect results from all agents and output:
 
@@ -367,9 +387,13 @@ Collect results from all agents and output:
 | E002 | partial | #{pr} | 2/3 completed |
 | E003 | cascade-failed | — | blocked by E001 |
 
-### PRs Created
+### PRs for Review
 - #{pr}: feat(E001): {title} — {url}
 - #{pr}: feat(E002): {title} — {url}
+- #{pr}: bd: {mission_id} TOMLs — {url}
+
+**ACTION REQUIRED: Please review and merge these PRs.**
+For sequential epics, merge in order (E001 first, then E002, etc.).
 
 ### Tasks Closed
 {list of beads task IDs}
@@ -384,6 +408,6 @@ Collect results from all agents and output:
 ### Summary
 - Epics: {completed}/{total} succeeded
 - Stories: {completed}/{total} implemented
-- PRs: {count} created
+- PRs: {count} created (awaiting review)
 - Tasks: {count} closed
 ```
