@@ -70,3 +70,11 @@ export type {
   MeasurementInputData,
   OutputGenerationResult,
 } from "./outputs";
+
+// Analytics taxonomy types
+export type {
+  TaxonomyProperty,
+  TaxonomyEvent,
+  TaxonomyMetadata,
+  AnalyticsTaxonomy,
+} from "./taxonomy";

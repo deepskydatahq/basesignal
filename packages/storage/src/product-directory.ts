@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
+import type { AnalyticsTaxonomy } from "@basesignal/core";
 
 const DEFAULT_ROOT = join(homedir(), ".basesignal", "products");
 
@@ -90,5 +91,21 @@ export class ProductDirectory {
   getPath(slug: string, artifactPath?: string): string {
     if (artifactPath) return join(this.root, slug, artifactPath);
     return join(this.root, slug);
+  }
+
+  /**
+   * Write an analytics taxonomy for a product.
+   * Stores at {slug}/taxonomy/events.json.
+   */
+  writeTaxonomy(slug: string, taxonomy: AnalyticsTaxonomy): void {
+    this.writeJson(slug, "taxonomy/events.json", taxonomy);
+  }
+
+  /**
+   * Read an analytics taxonomy for a product.
+   * Returns null if the file does not exist or contains invalid JSON.
+   */
+  readTaxonomy(slug: string): AnalyticsTaxonomy | null {
+    return this.readJson<AnalyticsTaxonomy>(slug, "taxonomy/events.json");
   }
 }
