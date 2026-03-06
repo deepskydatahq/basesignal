@@ -1,0 +1,45 @@
+{
+    "success": true,
+    "data": [
+        {
+            "id": 101,
+            "event_type": "page_viewed",
+            "event_property": "page_url",
+            "description": "URL of the page viewed",
+            "type": "string",
+            "regex": null,
+            "enum_values": null,
+            "required": false
+        },
+        {
+            "id": 102,
+            "event_type": "page_viewed",
+            "event_property": "referrer",
+            "description": "Referrer URL",
+            "type": "string",
+            "regex": null,
+            "enum_values": null,
+            "required": false
+        },
+        {
+            "id": 103,
+            "event_type": "signup_completed",
+            "event_property": "signup_method",
+            "description": "Method used for signup",
+            "type": "string",
+            "regex": null,
+            "enum_values": ["email", "google", "github"],
+            "required": true
+        },
+        {
+            "id": 104,
+            "event_type": "purchase",
+            "event_property": "amount",
+            "description": "Purchase amount in cents",
+            "type": "number",
+            "regex": null,
+            "enum_values": null,
+            "required": true
+        }
+    ]
+}
