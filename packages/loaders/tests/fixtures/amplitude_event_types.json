@@ -1,0 +1,32 @@
+{
+    "success": true,
+    "data": [
+        {
+            "id": 1,
+            "event_type": "page_viewed",
+            "description": "User viewed a page in the app",
+            "category": "engagement",
+            "display_name": "Page Viewed",
+            "flow_hidden": false,
+            "non_active": false
+        },
+        {
+            "id": 2,
+            "event_type": "signup_completed",
+            "description": "User completed the signup flow",
+            "category": "onboarding",
+            "display_name": "Signup Completed",
+            "flow_hidden": false,
+            "non_active": false
+        },
+        {
+            "id": 3,
+            "event_type": "purchase",
+            "description": "",
+            "category": null,
+            "display_name": "Purchase",
+            "flow_hidden": false,
+            "non_active": true
+        }
+    ]
+}
