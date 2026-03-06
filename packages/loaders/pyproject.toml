@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "basesignal-loaders"
+version = "0.1.0"
+description = "DLT-based data loaders for analytics taxonomy extraction"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "dlt>=1.0.0",
+]
+
+[project.optional-dependencies]
+amplitude = []
+posthog = []
+mixpanel = []
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/basesignal_loaders"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
