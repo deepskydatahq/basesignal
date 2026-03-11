@@ -1,0 +1,69 @@
+id = "M021-E001"
+parent = "M021"
+title = "Snowflake Activity Schema Loader and CLI Integration"
+status = "active"
+created = 2026-03-11
+depends_on = []
+
+[outcome]
+description = """
+Add a Snowflake extractor to the Python loaders package that connects to a Snowflake warehouse,
+reads an activity schema table, extracts distinct activities as TaxonomyEvent entries with
+feature_json properties, and returns a normalized AnalyticsTaxonomy. Wire it into the Python
+CLI entry point and the TypeScript load command. Include comprehensive tests.
+"""
+
+[job_story]
+description = """
+When I have product analytics data in a Snowflake activity schema,
+I want to run basesignal load snowflake to extract the event taxonomy,
+so that I can audit my tracking against the measurement spec.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "snowflake.py extracts taxonomy from activity schema table via SQL",
+    "Activities mapped to TaxonomyEvent, feature_json keys to TaxonomyProperty",
+    "Optional stats (event counts, first/last seen) per activity",
+    "Python entry point handles --platform snowflake with connection args",
+    "TypeScript CLI accepts snowflake as a platform with connection options",
+    "Unit tests for normalization with fixture data",
+    "Integration test with mocked Snowflake connector",
+    "All existing tests continue to pass",
+]
+validator_context = [
+    "packages/loaders/src/basesignal_loaders/snowflake.py",
+    "packages/loaders/tests/test_snowflake.py",
+    "packages/loaders/src/basesignal_loaders/__main__.py",
+    "packages/cli/src/commands/load.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/posthog.py",
+    "packages/loaders/src/basesignal_loaders/schema.py",
+    "packages/loaders/src/basesignal_loaders/__main__.py",
+    "packages/loaders/pyproject.toml",
+    "packages/loaders/tests/test_posthog.py",
+    "packages/core/src/types/taxonomy.ts",
+    "packages/cli/src/commands/load.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Three sequential stories:
+1. Core extractor (snowflake.py) — SQL queries, normalization, activity schema parsing
+2. CLI integration — wire into __main__.py and load.ts with Snowflake-specific connection args
+3. Tests — unit tests with fixtures, integration test with mocked connector
+
+Unlike the analytics platform loaders that use DLT for API extraction, Snowflake uses direct
+SQL via snowflake-connector-python. No DLT needed for this loader.
+
+Connection args: account, user, password, warehouse, database, schema, table. Primarily via
+env vars (SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, SNOWFLAKE_WAREHOUSE,
+SNOWFLAKE_DATABASE, SNOWFLAKE_SCHEMA), with CLI flag overrides.
+"""
+
+estimated_stories = 3

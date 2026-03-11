@@ -1,0 +1,58 @@
+id = "M021-E001-S002"
+parent = "M021-E001"
+title = "Wire Snowflake into Python and TypeScript CLI"
+status = "ready"
+created = 2026-03-11
+
+[outcome]
+description = """Add 'snowflake' as a supported platform in __main__.py and load.ts, with
+Snowflake-specific connection arguments (account, warehouse, database, schema, table)."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "SUPPORTED_PLATFORMS includes 'snowflake' in both __main__.py and load.ts"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "__main__.py dispatches to extract_snowflake_taxonomy when --platform snowflake"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Snowflake connection args (--account, --warehouse, --database, --sf-schema, --table) accepted"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Env var fallbacks: SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, SNOWFLAKE_PASSWORD, etc."
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TypeScript load.ts passes Snowflake-specific args through to Python subprocess"
+
+[context]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/__main__.py",
+    "packages/cli/src/commands/load.ts",
+]
+input_fixtures = []
+depends_on = ["M021-E001-S001"]
+
+[handoff]
+implementation_hints = """
+In __main__.py: add snowflake to SUPPORTED_PLATFORMS, add Snowflake-specific args to argparser
+(--account, --warehouse, --database, --sf-schema, --table, --stats flag).
+For snowflake, --api-key serves as password, or add --password. Keep it simple.
+
+In load.ts: add 'snowflake' to SUPPORTED_PLATFORMS, add Snowflake-specific options to the
+commander command, pass them through as args to the Python subprocess.
+
+Consider: for Snowflake, the --api-key flag doesn't make sense. Use --account, --user,
+--password (or env vars). The Python argparser may need platform-specific arg groups or
+the args can be optional with env var fallbacks.
+"""
+reference_files = [
+    "packages/loaders/src/basesignal_loaders/__main__.py",
+    "packages/cli/src/commands/load.ts",
+]

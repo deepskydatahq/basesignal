@@ -1,0 +1,85 @@
+# Mission: Snowflake Activity Schema Loader
+# Load event taxonomy from Snowflake warehouses using the activity schema data model
+
+id = "M021"
+title = "Snowflake Activity Schema Loader"
+status = "planned"
+created = 2026-03-11
+depends_on = ["M019"]
+
+[outcome]
+description = """
+Add a Snowflake loader to the packages/loaders Python package that connects to a Snowflake
+warehouse, reads an activity schema table, and extracts a normalized taxonomy. The activity
+schema model has a canonical shape (entity_id, activity, ts, feature_json, etc.) — the loader
+maps distinct activities to TaxonomyEvent entries and feature_json keys to TaxonomyProperty
+entries. Optionally pulls aggregated usage stats (event counts, first/last seen) to enrich
+the taxonomy for downstream audit.
+
+This extends M019's analytics data loading to warehouse-native data, enabling teams that
+use Snowflake as their source of truth (alongside or instead of a product analytics tool)
+to participate in the full taxonomy audit and measurement spec workflow.
+"""
+
+user_progress = "From 'analytics platform taxonomies only' to 'warehouse-native activity schema support'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "basesignal load snowflake --product <slug> connects and extracts taxonomy",
+    "Activity schema table parsed: distinct activities become TaxonomyEvent entries",
+    "feature_json keys extracted as TaxonomyProperty entries with inferred types",
+    "Optional --stats flag pulls event counts, first_seen, last_seen per activity",
+    "Connection params via env vars (SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, etc.) or CLI flags",
+    "Unit tests with fixture data covering activity schema parsing and normalization",
+    "Integration test with mocked Snowflake connector",
+    "Graceful error on connection failure or missing table",
+]
+
+validator_context = [
+    "packages/loaders/src/basesignal_loaders/snowflake.py",
+    "packages/loaders/tests/test_snowflake.py",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/posthog.py",
+    "packages/loaders/src/basesignal_loaders/__main__.py",
+    "packages/core/src/types/taxonomy.ts",
+    "packages/storage/src/product-directory.ts",
+    "packages/cli/src/commands/load.ts",
+]
+
+[scope]
+in_scope = [
+    "Snowflake loader in packages/loaders using snowflake-connector-python",
+    "Activity schema table discovery and parsing",
+    "Activity → TaxonomyEvent mapping with feature_json → TaxonomyProperty extraction",
+    "Optional aggregated stats (counts, recency) per activity",
+    "Connection config via env vars and CLI flags",
+    "CLI integration: basesignal load snowflake --product <slug>",
+    "Unit and integration tests with fixtures and mocked connector",
+]
+out_of_scope = [
+    "Generic SQL warehouse support (BigQuery, Redshift) - future mission",
+    "Full event data loading (raw rows) - future mission",
+    "Custom activity schema variations - support canonical schema only for now",
+    "Snowflake key-pair authentication - username/password and env vars first",
+    "Web UI for connection configuration",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+Activity schema convention: a single table with columns like entity_id, activity (string),
+ts (timestamp), feature_1..feature_N or a feature_json (variant/JSON) column. The loader
+should auto-detect whether properties come from named columns or a JSON variant column.
+
+Unlike the analytics platform loaders (which use DLT for API extraction), Snowflake access
+is direct SQL. Consider whether DLT's Snowflake source adds value here or if
+snowflake-connector-python is simpler and sufficient.
+
+Connection security: support env vars as primary method, CLI flags as override. Never log
+credentials. Consider supporting Snowflake's external browser auth for interactive use.
+"""
