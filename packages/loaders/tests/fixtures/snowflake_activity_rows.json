@@ -1,0 +1,26 @@
+[
+  {
+    "activity": "page_viewed",
+    "feature_json": "{\"url\": \"https://example.com\", \"duration_s\": 12}"
+  },
+  {
+    "activity": "page_viewed",
+    "feature_json": "{\"url\": \"https://example.com/pricing\", \"duration_s\": 30, \"referrer\": \"google\"}"
+  },
+  {
+    "activity": "signed_up",
+    "feature_json": "{\"method\": \"google\", \"is_invited\": true}"
+  },
+  {
+    "activity": "signed_up",
+    "feature_json": "{\"method\": \"email\", \"is_invited\": false}"
+  },
+  {
+    "activity": "feature_used",
+    "feature_json": "{\"feature_name\": \"dashboard\", \"click_count\": 5}"
+  },
+  {
+    "activity": "feature_used",
+    "feature_json": null
+  }
+]
