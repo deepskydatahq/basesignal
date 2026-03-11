@@ -10,7 +10,7 @@ import time
 
 from basesignal_loaders import __version__
 
-SUPPORTED_PLATFORMS = ["posthog", "amplitude", "mixpanel"]
+SUPPORTED_PLATFORMS = ["posthog", "amplitude", "mixpanel", "snowflake"]
 
 
 def _progress(msg: str) -> None:
@@ -30,17 +30,32 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=SUPPORTED_PLATFORMS,
         help=f"Analytics platform to extract from ({', '.join(SUPPORTED_PLATFORMS)})",
     )
-    parser.add_argument("--api-key", required=True, help="API key for the analytics platform")
+    parser.add_argument("--api-key", default=None, help="API key for the analytics platform")
     parser.add_argument("--project-id", default=None, help="Project/workspace ID")
     parser.add_argument("--secret-key", default=None, help="Secret key (for Amplitude/Mixpanel)")
     parser.add_argument("--host", default=None, help="Custom API host (e.g., self-hosted PostHog)")
     parser.add_argument("--output", required=True, help="Output JSON file path")
+
+    # Snowflake-specific arguments
+    parser.add_argument("--account", default=None, help="Snowflake account identifier (or SNOWFLAKE_ACCOUNT env)")
+    parser.add_argument("--user", default=None, help="Snowflake username (or SNOWFLAKE_USER env)")
+    parser.add_argument("--password", default=None, help="Snowflake password (or SNOWFLAKE_PASSWORD env)")
+    parser.add_argument("--warehouse", default=None, help="Snowflake warehouse name (or SNOWFLAKE_WAREHOUSE env)")
+    parser.add_argument("--database", default=None, help="Snowflake database name (or SNOWFLAKE_DATABASE env)")
+    parser.add_argument("--sf-schema", default=None, help="Snowflake schema name (or SNOWFLAKE_SCHEMA env)")
+    parser.add_argument("--table", default=None, help="Activity schema table name")
+    parser.add_argument("--stats", action="store_true", default=False, help="Include usage stats (counts, first/last seen)")
     return parser
 
 
 def _extract(args: argparse.Namespace) -> dict:
     """Dispatch to the appropriate extractor and return a dict."""
     platform = args.platform
+
+    # Validate --api-key is provided for non-snowflake platforms
+    if platform != "snowflake" and not args.api_key:
+        print("Error: --api-key is required for non-snowflake platforms.", file=sys.stderr)
+        sys.exit(1)
 
     if platform == "posthog":
         from basesignal_loaders.posthog import extract_posthog_taxonomy
@@ -76,6 +91,36 @@ def _extract(args: argparse.Namespace) -> dict:
             service_account=args.api_key,
             secret=secret,
             project_id=project_id,
+        )
+
+    elif platform == "snowflake":
+        from basesignal_loaders.snowflake import extract_snowflake_taxonomy
+
+        account = args.account or os.environ.get("SNOWFLAKE_ACCOUNT", "")
+        user = args.user or os.environ.get("SNOWFLAKE_USER", "")
+        password = args.password or os.environ.get("SNOWFLAKE_PASSWORD", "")
+        warehouse = args.warehouse or os.environ.get("SNOWFLAKE_WAREHOUSE", "")
+        database = args.database or os.environ.get("SNOWFLAKE_DATABASE", "")
+        sf_schema = args.sf_schema or os.environ.get("SNOWFLAKE_SCHEMA", "")
+        table = args.table or ""
+
+        if not account:
+            print("Error: --account or SNOWFLAKE_ACCOUNT is required for snowflake.", file=sys.stderr)
+            sys.exit(1)
+        if not table:
+            print("Error: --table is required for snowflake.", file=sys.stderr)
+            sys.exit(1)
+
+        _progress(f"Extracting taxonomy from Snowflake ({account}/{database}.{sf_schema}.{table})...")
+        taxonomy = extract_snowflake_taxonomy(
+            account=account,
+            user=user,
+            password=password,
+            warehouse=warehouse,
+            database=database,
+            schema=sf_schema,
+            table=table,
+            stats=args.stats,
         )
 
     else:
