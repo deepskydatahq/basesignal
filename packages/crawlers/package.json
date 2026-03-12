@@ -14,7 +14,12 @@
     "url": "https://github.com/deepskydatahq/basesignal/issues"
   },
   "homepage": "https://github.com/deepskydatahq/basesignal#readme",
-  "keywords": ["basesignal", "product-profile", "product-analytics", "web-crawler"],
+  "keywords": [
+    "basesignal",
+    "product-profile",
+    "product-analytics",
+    "web-crawler"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,7 +30,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -38,6 +45,7 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
-    "cheerio": "^1.2.0"
+    "cheerio": "^1.2.0",
+    "pdf-parse": "^2.4.5"
   }
 }
