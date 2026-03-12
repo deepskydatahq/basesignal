@@ -12,6 +12,7 @@ export type ScanErrorCode =
   | "invalid-url"
   | "network-error"
   | "crawl-empty"
+  | "docs-not-found"
   | "missing-api-key"
   | "llm-error"
   | "llm-rate-limit"
