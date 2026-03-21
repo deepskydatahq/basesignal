@@ -1,0 +1,64 @@
+id = "M021-E001-S003"
+parent = "M021-E001"
+title = "Snowflake loader tests"
+status = "ready"
+created = 2026-03-11
+
+[outcome]
+description = """Comprehensive test suite for the Snowflake extractor: unit tests for
+normalization with fixture data, integration test with mocked connector, and CLI dispatch test."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_normalize_snowflake_rows_basic: rows with distinct activities produce correct TaxonomyEvents"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_normalize_snowflake_rows_feature_json: feature_json keys become TaxonomyProperty with inferred types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_normalize_snowflake_rows_stats: stats mode populates volume_last_30d, first_seen, last_seen via metadata"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_normalize_snowflake_rows_empty: empty input returns empty events"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "test_extract_snowflake_taxonomy: mocked connector returns fixture rows, produces complete AnalyticsTaxonomy"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_extract_snowflake_taxonomy_connection_error: connection failure raises clear error message"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_main_snowflake_dispatch: __main__ with --platform snowflake dispatches correctly"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "TypeScript load.test.ts: snowflake platform accepted and args forwarded"
+
+[context]
+relevant_paths = [
+    "packages/loaders/tests/test_posthog.py",
+    "packages/loaders/tests/fixtures/",
+    "packages/loaders/src/basesignal_loaders/snowflake.py",
+]
+input_fixtures = []
+depends_on = ["M021-E001-S001", "M021-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Follow test_posthog.py patterns exactly: fixture files in tests/fixtures/, mock the connector.
+Create fixtures: snowflake_activity_rows.json with sample activity schema rows.
+Mock snowflake.connector.connect() to return a mock cursor with fetchall() returning fixture data.
+For TypeScript tests, follow existing load.test.ts patterns if they exist, or create minimal tests.
+"""
+reference_files = [
+    "packages/loaders/tests/test_posthog.py",
+]

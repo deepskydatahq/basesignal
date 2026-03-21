@@ -1,0 +1,55 @@
+id = "M021-E001-S001"
+parent = "M021-E001"
+title = "Snowflake activity schema extractor"
+status = "ready"
+created = 2026-03-11
+
+[outcome]
+description = """Implement snowflake.py that connects to Snowflake, queries an activity schema table,
+and returns a normalized AnalyticsTaxonomy with activities as events and feature_json keys as properties."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "extract_snowflake_taxonomy returns AnalyticsTaxonomy with platform='snowflake'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Distinct activities from the activity column become TaxonomyEvent entries"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Keys from feature_json/variant column become TaxonomyProperty entries with inferred types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "When stats=True, event_count, first_seen, last_seen are populated per event"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "normalize_snowflake_rows([]) returns empty events list"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Connection failure raises a clear error (not a raw Snowflake exception)"
+
+[context]
+relevant_paths = [
+    "packages/loaders/src/basesignal_loaders/posthog.py",
+    "packages/loaders/src/basesignal_loaders/schema.py",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Follow the posthog.py pattern: a normalize function + an extract function.
+Use snowflake-connector-python for direct SQL queries (no DLT needed).
+Query: SELECT DISTINCT activity FROM {table} for events.
+Query: SELECT activity, feature_json FROM {table} to extract property keys per activity.
+Stats query: SELECT activity, COUNT(*), MIN(ts), MAX(ts) FROM {table} GROUP BY activity.
+Add snowflake-connector-python to pyproject.toml optional deps.
+"""
+reference_files = ["packages/loaders/src/basesignal_loaders/posthog.py"]
