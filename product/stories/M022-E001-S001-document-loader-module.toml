@@ -1,0 +1,67 @@
+id = "M022-E001-S001"
+parent = "M022-E001"
+title = "Document loader module with PDF, Markdown, and text parsing"
+status = "ready"
+created = 2026-03-12
+
+[outcome]
+description = """Implement a document-loader.ts module in packages/crawlers that reads files from a directory,
+extracts text content, chunks large documents, and returns CrawledPage[] entries."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "loadDocuments('./docs/') reads all .md, .txt, .pdf files and returns CrawledPage[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each CrawledPage has pageType='document', url='file:///path/to/file', title from filename"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Markdown files: content is raw text, chunked by heading (##) if >8000 chars"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Text files: content is raw text, chunked by paragraph if >8000 chars"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "PDF files: text extracted via pdf-parse, chunked by page"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Unparseable PDF files produce a warning (stderr) and are skipped, not throwing"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty directory returns empty CrawledPage[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each chunk CrawledPage has metadata.source_type='document' and metadata.chunk_index"
+
+[context]
+relevant_paths = [
+    "packages/crawlers/src/types.ts",
+    "packages/crawlers/src/website/extract.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create packages/crawlers/src/document-loader.ts with:
+- loadDocuments(dirPath: string): Promise<CrawledPage[]>
+- Internal helpers: readMarkdown, readText, readPdf, chunkContent
+- PDF: add pdf-parse to packages/crawlers/package.json
+- URL field: use file:// protocol with absolute path
+- Title: derive from filename without extension, convert dashes/underscores to spaces
+- pageType: 'document' for all document-sourced pages
+- metadata: add source_type: 'document', original_path, chunk_index fields
+- Chunking threshold: ~8000 chars per chunk
+- Export loadDocuments from packages/crawlers/src/index.ts
+"""
+reference_files = ["packages/crawlers/src/types.ts"]

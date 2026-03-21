@@ -1,0 +1,60 @@
+id = "M022-E001-S002"
+parent = "M022-E001"
+title = "Wire --docs flag into scan command"
+status = "ready"
+created = 2026-03-12
+
+[outcome]
+description = """Add --docs <dir> option to the scan command that loads documents, merges them into
+crawl results before analysis, and stores document metadata in the product directory."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "scan command accepts --docs <dir> option"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Document pages are appended to crawlResult.pages before analysis pipeline runs"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Product directory stores document metadata at documents/metadata.json"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Document pages appear in crawl/pages.json alongside crawled website pages"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Scan works normally without --docs flag (no regression)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "--docs with nonexistent directory prints error and exits gracefully"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/scan.ts",
+    "packages/storage/src/product-directory.ts",
+]
+input_fixtures = []
+depends_on = ["M022-E001-S001"]
+
+[handoff]
+implementation_hints = """
+In scan.ts:
+1. Add --docs <dir> option to the scan command (.option('--docs <dir>', 'Path to documents directory'))
+2. After crawl phase, if --docs provided:
+   - Import loadDocuments from @basesignal/crawlers
+   - Call loadDocuments(docsDir)
+   - Append result to crawlResult.pages
+   - Log count: 'Loaded N document pages from ./docs/'
+3. In save phase, write documents/metadata.json with { count, files: [...], loadedAt }
+4. Validate dir exists before loading, print helpful error if not
+
+Keep it simple — documents just merge into pages array. The pipeline doesn't need changes.
+"""
+reference_files = ["packages/cli/src/commands/scan.ts"]

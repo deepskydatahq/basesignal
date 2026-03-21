@@ -1,0 +1,71 @@
+id = "M022-E001-S003"
+parent = "M022-E001"
+title = "Document loader tests"
+status = "ready"
+created = 2026-03-12
+
+[outcome]
+description = """Comprehensive tests for document loading: file parsing, chunking behavior,
+edge cases, and CLI integration."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_load_markdown: .md file returns CrawledPage with raw content and pageType='document'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_load_text: .txt file returns CrawledPage with raw content"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_load_pdf: .pdf file returns CrawledPage with extracted text"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_chunk_markdown: large .md file is split by heading into multiple CrawledPage entries"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_chunk_text: large .txt file is split by paragraph into multiple entries"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_empty_directory: empty dir returns []"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_mixed_files: directory with .md, .txt, .pdf, and .jpg returns only supported types"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_unparseable_pdf: corrupt PDF is skipped with warning, other files still loaded"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "test_metadata: each CrawledPage has source_type, original_path, chunk_index in metadata"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "test_scan_with_docs: --docs flag integrates with scan flow (mock crawl + real doc loading)"
+
+[context]
+relevant_paths = [
+    "packages/crawlers/src/document-loader.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+input_fixtures = []
+depends_on = ["M022-E001-S001", "M022-E001-S002"]
+
+[handoff]
+implementation_hints = """
+Create packages/crawlers/src/document-loader.test.ts.
+Use vitest with temp directories (fs.mkdtempSync) containing fixture files.
+Create small test fixtures inline: a short .md file, a .txt file.
+For PDF testing: use pdf-parse's own test fixture or create a minimal PDF programmatically.
+If PDF fixture is complex, mock the pdf-parse module for unit tests.
+For the integration test, verify document pages flow through to the analysis input.
+"""
+reference_files = ["packages/crawlers/src/website/extract.test.ts"]

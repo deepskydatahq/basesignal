@@ -1,0 +1,92 @@
+# Mission: Document Ingestion
+# Ingest PDFs, Markdown, Notion, and Google Docs alongside website crawls
+
+id = "M022"
+title = "Document Ingestion"
+status = "planned"
+created = 2026-03-11
+depends_on = ["M014"]
+
+[outcome]
+description = """
+Extend Basesignal's input layer beyond website crawling to accept documents — local files
+(PDF, Markdown, plain text) and document links (public Notion pages, Google Docs publish
+links). Documents are read, chunked, and merged into the crawl results as additional content
+entries before the 7-lens analysis runs.
+
+This lets users feed in internal context (PRDs, onboarding guides, strategy docs, research
+notes) that dramatically improves ICP accuracy, activation map depth, and measurement spec
+relevance. The public website alone only captures marketing surface — documents carry the
+real product thinking.
+"""
+
+user_progress = "From 'analyze public website only' to 'analyze website + internal documents for deeper context'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "basesignal scan <url> --docs ./docs/ includes local files in analysis",
+    "PDF files parsed and text extracted",
+    "Markdown files read and included as content entries",
+    "Plain text files read and included as content entries",
+    "Documents appear as content entries with source_type and title metadata",
+    "Analysis lenses process document content alongside crawled pages",
+    "Product directory stores document metadata in documents/ subdirectory",
+    "Graceful handling of unparseable PDFs (warning, skip, continue)",
+    "Tests for document parsing, chunking, and pipeline integration",
+]
+
+validator_context = [
+    "packages/crawlers/src/document-loader.ts",
+    "packages/crawlers/src/document-loader.test.ts",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/crawlers/src/",
+    "packages/mcp-server/src/analysis/",
+    "packages/storage/src/product-directory.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+
+[scope]
+in_scope = [
+    "Document loader module in packages/crawlers",
+    "Local file support: PDF, Markdown (.md), plain text (.txt)",
+    "PDF text extraction (pdf-parse or similar lightweight library)",
+    "Markdown parsing (already available via existing deps)",
+    "Documents merged into crawl results as additional content entries",
+    "CLI --docs flag on scan command accepting a directory path",
+    "Document metadata (source_type, title, path) stored in product directory",
+    "Content chunking for large documents to fit LLM context",
+    "Unit tests for parsing and integration tests for pipeline",
+]
+out_of_scope = [
+    "Notion API integration - support public page URLs only for now",
+    "Google Drive API integration - support published Google Docs URLs only for now",
+    "OCR for scanned/image PDFs - text-based PDFs only",
+    "Document change detection or incremental updates",
+    "Web UI for document upload",
+    "Automatic document discovery or recursive folder watching",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+Architecture: documents become CrawlPage-like entries with a source_type field to distinguish
+them from crawled pages. The simplest integration point is to append document content to the
+crawl results array before it enters the analysis pipeline — the lenses already process an
+array of content, so documents blend in naturally.
+
+Chunking strategy: large PDFs and docs should be chunked to stay within LLM context limits.
+A simple approach: chunk by heading (for Markdown) or by page (for PDF), with a max token
+target per chunk. Each chunk becomes a separate content entry.
+
+Future phases (not in this mission):
+- Phase 2: URL-based document fetching (public Notion pages, Google Docs publish links)
+- Phase 3: Native API connectors (Notion API, Google Drive API)
+
+PDF parsing: prefer a lightweight, pure-JS solution (pdf-parse) over heavy native deps.
+Keep the dependency footprint small.
+"""

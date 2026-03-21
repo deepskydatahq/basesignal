@@ -1,0 +1,71 @@
+id = "M022-E001"
+parent = "M022"
+title = "Document Loader and CLI Integration"
+status = "active"
+created = 2026-03-12
+depends_on = []
+
+[outcome]
+description = """
+Add a document loader module to packages/crawlers that reads local files (PDF, Markdown,
+plain text) and returns CrawledPage[] entries. Wire a --docs flag into the scan command
+that loads documents from a directory, merges them into crawl results, and stores document
+metadata in the product directory. Documents flow through the analysis pipeline alongside
+crawled pages.
+"""
+
+[job_story]
+description = """
+When I have internal documents (PRDs, strategy docs, onboarding guides) alongside my website,
+I want to include them in the basesignal scan with --docs ./docs/,
+so that the analysis has richer context beyond just the public marketing surface.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Document loader reads .md, .txt, .pdf files and returns CrawledPage[] entries",
+    "Each document becomes a CrawledPage with pageType='document', source_type metadata, and title",
+    "Large documents are chunked (by heading for MD, by page for PDF) into separate CrawledPage entries",
+    "PDF text extraction works for text-based PDFs",
+    "Unparseable PDFs produce a warning and are skipped gracefully",
+    "scan --docs ./path/ merges document pages into crawl results before analysis",
+    "Product directory stores document metadata at documents/metadata.json",
+    "Lenses process document content alongside crawled website pages",
+    "Comprehensive tests for parsing, chunking, and pipeline integration",
+]
+validator_context = [
+    "packages/crawlers/src/document-loader.ts",
+    "packages/crawlers/src/document-loader.test.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/crawlers/src/types.ts",
+    "packages/crawlers/src/website/extract.ts",
+    "packages/crawlers/src/registry.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/lenses/shared.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/storage/src/product-directory.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Three sequential stories:
+1. Document loader module — file reading, text extraction, chunking, returns CrawledPage[]
+2. CLI integration — --docs flag on scan, merge documents into crawl results, store metadata
+3. Tests — unit tests for parsing/chunking, integration test for pipeline
+
+Key design: documents become CrawledPage entries with pageType='document'. The lenses
+already handle mixed page types via buildPageContext(). Documents use file:// URLs for
+the url field, and the file name as title.
+
+PDF parsing: use pdf-parse (lightweight, pure JS). Add as a dependency to packages/crawlers.
+Markdown: read raw text (lenses handle markdown naturally).
+Chunking: split by heading (##) for MD, by page for PDF. Max ~8000 chars per chunk.
+"""
+
+estimated_stories = 3
