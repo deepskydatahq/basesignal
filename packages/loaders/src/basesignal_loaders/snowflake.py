@@ -20,6 +20,17 @@ from basesignal_loaders.schema import (
 )
 
 
+def _quote_identifier(value: str) -> str:
+    """Quote a Snowflake identifier to prevent SQL injection.
+
+    Wraps the identifier in double quotes and escapes any embedded
+    double-quote characters by doubling them (standard SQL quoting).
+    """
+    if not value:
+        raise ValueError("Snowflake identifier cannot be empty")
+    return '"' + value.replace('"', '""') + '"'
+
+
 def _infer_type(value: Any) -> str:
     """Infer a TaxonomyProperty type string from a Python value."""
     if isinstance(value, bool):
@@ -94,7 +105,7 @@ def normalize_snowflake_rows(
         tags: list[str] = []
         if stats and activity_name in stats:
             s = stats[activity_name]
-            volume = s.get("event_count")
+            volume = s.get("volume_last_30d")
             first_seen = s.get("first_seen")
             last_seen = s.get("last_seen")
             if first_seen:
@@ -152,7 +163,7 @@ def extract_snowflake_taxonomy(
         )
 
     start = time.monotonic()
-    fqn = f"{database}.{schema}.{table}"
+    fqn = ".".join(_quote_identifier(part) for part in (database, schema, table))
     project_id = f"{account}/{database}.{schema}"
 
     try:
@@ -181,7 +192,9 @@ def extract_snowflake_taxonomy(
         stats_dict: dict[str, dict[str, Any]] | None = None
         if stats:
             cur.execute(
-                f"SELECT activity, COUNT(*) AS event_count, "
+                f"SELECT activity, "
+                f"COUNT_IF(ts >= DATEADD(day, -30, CURRENT_TIMESTAMP)) AS volume_last_30d, "
+                f"COUNT(*) AS event_count, "
                 f"MIN(ts) AS first_seen, MAX(ts) AS last_seen "
                 f"FROM {fqn} GROUP BY activity"
             )
@@ -189,9 +202,10 @@ def extract_snowflake_taxonomy(
             for row in cur.fetchall():
                 activity_name = row[0]
                 stats_dict[activity_name] = {
-                    "event_count": row[1],
-                    "first_seen": str(row[2]) if row[2] else None,
-                    "last_seen": str(row[3]) if row[3] else None,
+                    "volume_last_30d": row[1],
+                    "event_count": row[2],
+                    "first_seen": str(row[3]) if row[3] else None,
+                    "last_seen": str(row[4]) if row[4] else None,
                 }
     finally:
         conn.close()

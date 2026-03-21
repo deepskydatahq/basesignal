@@ -10,6 +10,7 @@ from basesignal_loaders.snowflake import (
     extract_snowflake_taxonomy,
     normalize_snowflake_rows,
     _infer_type,
+    _quote_identifier,
 )
 from basesignal_loaders.schema import AnalyticsTaxonomy, TaxonomyEvent
 
@@ -49,6 +50,22 @@ def test_infer_type_object():
 
 def test_infer_type_none():
     assert _infer_type(None) == "String"
+
+
+# ---------- _quote_identifier ----------
+
+
+def test_quote_identifier_basic():
+    assert _quote_identifier("MY_TABLE") == '"MY_TABLE"'
+
+
+def test_quote_identifier_escapes_double_quotes():
+    assert _quote_identifier('my"table') == '"my""table"'
+
+
+def test_quote_identifier_empty_raises():
+    with pytest.raises(ValueError, match="cannot be empty"):
+        _quote_identifier("")
 
 
 # ---------- normalize_snowflake_rows ----------
@@ -97,12 +114,14 @@ def test_normalize_snowflake_rows_stats():
     rows = _load_fixture("snowflake_activity_rows.json")
     stats = {
         "page_viewed": {
-            "event_count": 1500,
+            "volume_last_30d": 1500,
+            "event_count": 8000,
             "first_seen": "2025-01-01T00:00:00",
             "last_seen": "2026-03-01T00:00:00",
         },
         "signed_up": {
-            "event_count": 200,
+            "volume_last_30d": 200,
+            "event_count": 1000,
             "first_seen": "2025-02-15T00:00:00",
             "last_seen": "2026-03-10T00:00:00",
         },
@@ -211,11 +230,11 @@ def test_extract_snowflake_taxonomy_with_stats():
     column_names = ["activity", "feature_json"]
     row_tuples = [(r["activity"], r["feature_json"]) for r in fixture_rows]
 
-    stats_column_names = ["activity", "event_count", "first_seen", "last_seen"]
+    stats_column_names = ["activity", "volume_last_30d", "event_count", "first_seen", "last_seen"]
     stats_rows = [
-        ("feature_used", 100, "2025-06-01", "2026-03-01"),
-        ("page_viewed", 5000, "2025-01-01", "2026-03-10"),
-        ("signed_up", 300, "2025-03-15", "2026-03-09"),
+        ("feature_used", 20, 100, "2025-06-01", "2026-03-01"),
+        ("page_viewed", 1200, 5000, "2025-01-01", "2026-03-10"),
+        ("signed_up", 50, 300, "2025-03-15", "2026-03-09"),
     ]
 
     call_count = [0]
@@ -255,7 +274,7 @@ def test_extract_snowflake_taxonomy_with_stats():
         )
 
     page_viewed = next(e for e in taxonomy.events if e.name == "page_viewed")
-    assert page_viewed.volume_last_30d == 5000
+    assert page_viewed.volume_last_30d == 1200
 
 
 def test_extract_snowflake_taxonomy_connection_error():
@@ -339,3 +358,13 @@ def test_main_snowflake_dispatch():
             result = _extract(args)
 
     assert result["platform"] == "snowflake"
+    mock_extract.assert_called_once_with(
+        account="myaccount",
+        user="myuser",
+        password="mypass",
+        warehouse="MY_WH",
+        database="MY_DB",
+        schema="PUBLIC",
+        table="ACTIVITIES",
+        stats=True,
+    )

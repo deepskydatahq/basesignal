@@ -104,11 +104,21 @@ def _extract(args: argparse.Namespace) -> dict:
         sf_schema = args.sf_schema or os.environ.get("SNOWFLAKE_SCHEMA", "")
         table = args.table or ""
 
-        if not account:
-            print("Error: --account or SNOWFLAKE_ACCOUNT is required for snowflake.", file=sys.stderr)
-            sys.exit(1)
-        if not table:
-            print("Error: --table is required for snowflake.", file=sys.stderr)
+        required = {
+            "account": account,
+            "user": user,
+            "password": password,
+            "warehouse": warehouse,
+            "database": database,
+            "sf-schema": sf_schema,
+            "table": table,
+        }
+        missing = [flag for flag, value in required.items() if not value]
+        if missing:
+            print(
+                f"Error: missing required Snowflake options: {', '.join(f'--{flag}' for flag in missing)}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         _progress(f"Extracting taxonomy from Snowflake ({account}/{database}.{sf_schema}.{table})...")

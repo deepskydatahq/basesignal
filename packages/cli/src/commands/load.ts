@@ -110,6 +110,8 @@ export async function runLoad(platform: string, options: LoadOptions): Promise<v
   }
 
   // Snowflake-specific args
+  const env = { ...process.env };
+
   if (options.account) {
     args.push("--account", options.account);
   }
@@ -117,7 +119,8 @@ export async function runLoad(platform: string, options: LoadOptions): Promise<v
     args.push("--user", options.user);
   }
   if (options.password) {
-    args.push("--password", options.password);
+    // Pass password via environment variable to avoid exposing it in process listings
+    env.SNOWFLAKE_PASSWORD = options.password;
   }
   if (options.warehouse) {
     args.push("--warehouse", options.warehouse);
@@ -143,6 +146,7 @@ export async function runLoad(platform: string, options: LoadOptions): Promise<v
   return new Promise<void>((resolve, reject) => {
     const proc = spawn(pythonBin, args, {
       stdio: ["ignore", "pipe", "pipe"],
+      env,
     });
 
     let stderrOutput = "";
@@ -191,7 +195,7 @@ export function registerLoadCommand(program: Command): void {
     .option("--host <url>", "Custom API host (e.g., for self-hosted PostHog)")
     .option("--account <id>", "Snowflake account identifier")
     .option("--user <name>", "Snowflake username")
-    .option("--password <pwd>", "Snowflake password")
+    .option("--password <pwd>", "Snowflake password (prefer SNOWFLAKE_PASSWORD env var)")
     .option("--warehouse <name>", "Snowflake warehouse name")
     .option("--database <name>", "Snowflake database name")
     .option("--sf-schema <name>", "Snowflake schema name")

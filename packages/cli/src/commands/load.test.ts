@@ -278,8 +278,9 @@ describe("load command", () => {
     expect(args).toContain("myaccount");
     expect(args).toContain("--user");
     expect(args).toContain("myuser");
-    expect(args).toContain("--password");
-    expect(args).toContain("mypass");
+    // Password should NOT be in args — it's passed via env var
+    expect(args).not.toContain("--password");
+    expect(args).not.toContain("mypass");
     expect(args).toContain("--warehouse");
     expect(args).toContain("MY_WH");
     expect(args).toContain("--database");
@@ -291,6 +292,9 @@ describe("load command", () => {
     expect(args).toContain("--stats");
     // Should NOT contain --api-key since it's not provided for snowflake
     expect(args).not.toContain("--api-key");
+    // Password should be passed via SNOWFLAKE_PASSWORD env var
+    const spawnOpts = loaderCall![2] as { env?: Record<string, string> };
+    expect(spawnOpts.env?.SNOWFLAKE_PASSWORD).toBe("mypass");
   });
 
   it("passes --host arg when provided", async () => {
