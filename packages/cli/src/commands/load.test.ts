@@ -113,6 +113,9 @@ describe("load command", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("posthog"),
     );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("snowflake"),
+    );
   });
 
   it("passes correct args to Python subprocess for posthog", async () => {
@@ -234,6 +237,64 @@ describe("load command", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Python 3.10+ required"),
     );
+  });
+
+  it("accepts snowflake platform and forwards Snowflake-specific args", async () => {
+    const proc = createMockProcess();
+    mockSpawn.mockImplementation((_bin: string, args: string[]) => {
+      if (args[0] === "--version") {
+        const versionProc = createMockProcess();
+        setTimeout(() => {
+          versionProc.emitStdout("data", Buffer.from("Python 3.12.1\n"));
+          versionProc.emit("close", 0);
+        }, 0);
+        return versionProc;
+      }
+      setTimeout(() => proc.emit("close", 0), 0);
+      return proc;
+    });
+
+    await runLoad("snowflake", {
+      product: "acme",
+      verbose: false,
+      account: "myaccount",
+      user: "myuser",
+      password: "mypass",
+      warehouse: "MY_WH",
+      database: "MY_DB",
+      sfSchema: "PUBLIC",
+      table: "ACTIVITIES",
+      stats: true,
+    });
+
+    const loaderCall = mockSpawn.mock.calls.find(
+      (c: unknown[]) => Array.isArray(c[1]) && (c[1] as string[]).includes("-m"),
+    );
+    expect(loaderCall).toBeDefined();
+    const args = loaderCall![1] as string[];
+    expect(args).toContain("--platform");
+    expect(args).toContain("snowflake");
+    expect(args).toContain("--account");
+    expect(args).toContain("myaccount");
+    expect(args).toContain("--user");
+    expect(args).toContain("myuser");
+    // Password should NOT be in args — it's passed via env var
+    expect(args).not.toContain("--password");
+    expect(args).not.toContain("mypass");
+    expect(args).toContain("--warehouse");
+    expect(args).toContain("MY_WH");
+    expect(args).toContain("--database");
+    expect(args).toContain("MY_DB");
+    expect(args).toContain("--sf-schema");
+    expect(args).toContain("PUBLIC");
+    expect(args).toContain("--table");
+    expect(args).toContain("ACTIVITIES");
+    expect(args).toContain("--stats");
+    // Should NOT contain --api-key since it's not provided for snowflake
+    expect(args).not.toContain("--api-key");
+    // Password should be passed via SNOWFLAKE_PASSWORD env var
+    const spawnOpts = loaderCall![2] as { env?: Record<string, string> };
+    expect(spawnOpts.env?.SNOWFLAKE_PASSWORD).toBe("mypass");
   });
 
   it("passes --host arg when provided", async () => {

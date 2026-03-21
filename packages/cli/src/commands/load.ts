@@ -6,7 +6,7 @@ import { loadConfig } from "../config.js";
 // Constants
 // ---------------------------------------------------------------------------
 
-const SUPPORTED_PLATFORMS = ["posthog", "amplitude", "mixpanel"] as const;
+const SUPPORTED_PLATFORMS = ["posthog", "amplitude", "mixpanel", "snowflake"] as const;
 type Platform = (typeof SUPPORTED_PLATFORMS)[number];
 
 // ---------------------------------------------------------------------------
@@ -53,10 +53,19 @@ async function getPythonVersion(bin: string): Promise<string | null> {
 
 export interface LoadOptions {
   product: string;
-  apiKey: string;
+  apiKey?: string;
   projectId?: string;
   host?: string;
   verbose: boolean;
+  // Snowflake-specific options
+  account?: string;
+  user?: string;
+  password?: string;
+  warehouse?: string;
+  database?: string;
+  sfSchema?: string;
+  table?: string;
+  stats?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,13 +97,45 @@ export async function runLoad(platform: string, options: LoadOptions): Promise<v
   }
 
   // Build args
-  const args = ["-m", "basesignal_loaders", "--platform", platform, "--api-key", options.apiKey, "--output", outputPath];
+  const args = ["-m", "basesignal_loaders", "--platform", platform, "--output", outputPath];
 
+  if (options.apiKey) {
+    args.push("--api-key", options.apiKey);
+  }
   if (options.projectId) {
     args.push("--project-id", options.projectId);
   }
   if (options.host) {
     args.push("--host", options.host);
+  }
+
+  // Snowflake-specific args
+  const env = { ...process.env };
+
+  if (options.account) {
+    args.push("--account", options.account);
+  }
+  if (options.user) {
+    args.push("--user", options.user);
+  }
+  if (options.password) {
+    // Pass password via environment variable to avoid exposing it in process listings
+    env.SNOWFLAKE_PASSWORD = options.password;
+  }
+  if (options.warehouse) {
+    args.push("--warehouse", options.warehouse);
+  }
+  if (options.database) {
+    args.push("--database", options.database);
+  }
+  if (options.sfSchema) {
+    args.push("--sf-schema", options.sfSchema);
+  }
+  if (options.table) {
+    args.push("--table", options.table);
+  }
+  if (options.stats) {
+    args.push("--stats");
   }
 
   if (options.verbose) {
@@ -105,6 +146,7 @@ export async function runLoad(platform: string, options: LoadOptions): Promise<v
   return new Promise<void>((resolve, reject) => {
     const proc = spawn(pythonBin, args, {
       stdio: ["ignore", "pipe", "pipe"],
+      env,
     });
 
     let stderrOutput = "";
@@ -148,18 +190,34 @@ export function registerLoadCommand(program: Command): void {
       `Load analytics taxonomy from a platform.\nSupported platforms: ${SUPPORTED_PLATFORMS.join(", ")}`,
     )
     .requiredOption("--product <slug>", "Product slug for storage")
-    .requiredOption("--api-key <key>", "API key for the analytics platform")
+    .option("--api-key <key>", "API key for the analytics platform")
     .option("--project-id <id>", "Project/workspace ID on the analytics platform")
     .option("--host <url>", "Custom API host (e.g., for self-hosted PostHog)")
+    .option("--account <id>", "Snowflake account identifier")
+    .option("--user <name>", "Snowflake username")
+    .option("--password <pwd>", "Snowflake password (prefer SNOWFLAKE_PASSWORD env var)")
+    .option("--warehouse <name>", "Snowflake warehouse name")
+    .option("--database <name>", "Snowflake database name")
+    .option("--sf-schema <name>", "Snowflake schema name")
+    .option("--table <name>", "Activity schema table name")
+    .option("--stats", "Include usage stats (counts, first/last seen)", false)
     .option("-v, --verbose", "Show detailed progress", false)
     .action(async (platform: string, opts: Record<string, unknown>) => {
       try {
         await runLoad(platform, {
           product: opts.product as string,
-          apiKey: opts.apiKey as string,
+          apiKey: opts.apiKey as string | undefined,
           projectId: opts.projectId as string | undefined,
           host: opts.host as string | undefined,
           verbose: Boolean(opts.verbose),
+          account: opts.account as string | undefined,
+          user: opts.user as string | undefined,
+          password: opts.password as string | undefined,
+          warehouse: opts.warehouse as string | undefined,
+          database: opts.database as string | undefined,
+          sfSchema: opts.sfSchema as string | undefined,
+          table: opts.table as string | undefined,
+          stats: Boolean(opts.stats),
         });
       } catch (error) {
         console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
