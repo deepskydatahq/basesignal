@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import type { Command } from "commander";
 import { computeCompleteness } from "@basesignal/core";
 import type { ProductProfile } from "@basesignal/storage";
@@ -45,6 +46,8 @@ export interface ScanOptions {
   output?: string;
   format: OutputFormat;
   verbose: boolean;
+  /** Optional path to a directory of documents to merge into crawl results. */
+  docs?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -82,6 +85,23 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
       );
     }
     progress.done("Crawling", `${crawlResult.pages.length} pages`);
+
+    // 5b. LOAD DOCUMENTS (optional)
+    let documentPages: typeof crawlResult.pages = [];
+    if (options.docs) {
+      if (!existsSync(options.docs)) {
+        throw new ScanError(
+          "docs-not-found",
+          `Document directory not found: ${options.docs}`,
+          "Check that the --docs path exists and is a directory",
+        );
+      }
+      progress.start("Loading documents", options.docs);
+      const { loadDocuments } = await import("@basesignal/crawlers");
+      documentPages = await loadDocuments(options.docs);
+      crawlResult.pages.push(...documentPages);
+      progress.done("Loading documents", `${documentPages.length} document pages`);
+    }
 
     // 6. PHASE 2 -- ANALYZE
     progress.start("Analyzing", `${crawlResult.pages.length} pages through analysis pipeline`);
@@ -219,6 +239,22 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
       productDir.writeJson(slug, "outputs/outcomes.json", pipelineResult.outputs.enriched_outcomes);
     }
 
+    // Document metadata (if documents were loaded)
+    if (documentPages.length > 0) {
+      const uniqueFiles = [
+        ...new Set(
+          documentPages.map(
+            (p) => (p.metadata as Record<string, unknown>)?.original_path as string,
+          ).filter(Boolean),
+        ),
+      ];
+      productDir.writeJson(slug, "documents/metadata.json", {
+        count: documentPages.length,
+        files: uniqueFiles,
+        loadedAt: Date.now(),
+      });
+    }
+
     // Combined profile
     productDir.writeJson(slug, "profile.json", profile);
 
@@ -248,12 +284,14 @@ export function registerScanCommand(program: Command): void {
     .option("-o, --output <file>", "Save output to file")
     .option("-f, --format <format>", "Output format: summary, json, markdown", "summary")
     .option("-v, --verbose", "Show detailed progress", false)
+    .option("-d, --docs <dir>", "Load documents from directory and merge into analysis")
     .action(async (url: string, opts: Record<string, unknown>) => {
       try {
         await runScan(url, {
           output: opts.output as string | undefined,
           format: (opts.format as OutputFormat) ?? "summary",
           verbose: Boolean(opts.verbose),
+          docs: opts.docs as string | undefined,
         });
       } catch (error) {
         handleScanError(error);

@@ -22,6 +22,9 @@ export { BaseCrawler, type BaseCrawlerOptions } from "./base";
 // robots.txt utilities
 export { parseRobotsTxt, isPathAllowed, type RobotsTxtRules } from "./robots";
 
+// Document loader
+export { loadDocuments, type DocumentMetadata } from "./document-loader";
+
 // Testing utilities
 export {
   createFixtureCrawler,
