@@ -9,6 +9,7 @@ import { generateMeasurementSpec, assembleMeasurementInput } from "./measurement
 import { reconcileOutputs } from "./reconcile.js";
 import { enrichValueMoments } from "./enrich-value-moments.js";
 import { enrichOutcomes } from "./enrich-outcomes.js";
+import { generateOutcomes } from "./generate-outcomes.js";
 
 // Re-export
 export { generateICPProfiles } from "./icp-profiles.js";
@@ -18,6 +19,7 @@ export { generateMeasurementSpec, assembleMeasurementInput } from "./measurement
 export { reconcileOutputs, buildEventVocabulary } from "./reconcile.js";
 export { enrichValueMoments } from "./enrich-value-moments.js";
 export { enrichOutcomes } from "./enrich-outcomes.js";
+export { generateOutcomes } from "./generate-outcomes.js";
 
 export interface OutputsResult {
   icp_profiles: ICPProfile[];
@@ -39,7 +41,6 @@ export async function generateAllOutputs(
   progress?: OnProgress,
   errors?: PipelineError[],
   pageUrls?: string[],
-  outcomes?: OutcomeItem[],
 ): Promise<OutputsResult> {
   const result: OutputsResult = {
     icp_profiles: [],
@@ -153,8 +154,26 @@ export async function generateAllOutputs(
     }
   }
 
-  // 7. Outcome enrichment (cross-reference outcomes with measurement spec)
-  if (result.measurement_spec && outcomes && outcomes.length > 0) {
+  // 7. Outcome generation (extract business outcomes from value moments, identity, ICP profiles)
+  let outcomes: OutcomeItem[] = [];
+  if (convergence.value_moments.length > 0) {
+    progress?.({ phase: "outputs_outcome_generation", status: "started" });
+    try {
+      outcomes = await generateOutcomes(
+        convergence.value_moments,
+        identity,
+        result.icp_profiles,
+        llm,
+      );
+      progress?.({ phase: "outputs_outcome_generation", status: "completed", detail: `${outcomes.length} outcomes` });
+    } catch (e) {
+      progress?.({ phase: "outputs_outcome_generation", status: "failed", detail: String(e) });
+      errors?.push({ phase: "outputs", step: "outcome_generation", message: String(e) });
+    }
+  }
+
+  // 8. Outcome enrichment (cross-reference outcomes with measurement spec)
+  if (result.measurement_spec && outcomes.length > 0) {
     progress?.({ phase: "outputs_outcome_enrichment", status: "started" });
     try {
       result.enriched_outcomes = await enrichOutcomes(
@@ -167,6 +186,9 @@ export async function generateAllOutputs(
       progress?.({ phase: "outputs_outcome_enrichment", status: "failed", detail: String(e) });
       errors?.push({ phase: "outputs", step: "outcome_enrichment", message: String(e) });
     }
+  } else if (outcomes.length > 0) {
+    // No measurement spec available — store unenriched outcomes
+    result.enriched_outcomes = outcomes;
   }
 
   return result;
