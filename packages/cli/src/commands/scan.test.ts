@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { ScanError } from "../errors.js";
 
 // ---------------------------------------------------------------------------
@@ -6,6 +9,7 @@ import { ScanError } from "../errors.js";
 // ---------------------------------------------------------------------------
 
 const mockCrawl = vi.fn();
+const mockLoadDocuments = vi.fn();
 vi.mock("@basesignal/crawlers", () => {
   return {
     WebsiteCrawler: class MockWebsiteCrawler {
@@ -14,6 +18,7 @@ vi.mock("@basesignal/crawlers", () => {
       canCrawl = () => true;
       crawl = mockCrawl;
     },
+    loadDocuments: (...args: unknown[]) => mockLoadDocuments(...args),
   };
 });
 
@@ -226,6 +231,8 @@ describe("runScan", () => {
     mockClose.mockReset();
     mockWriteFileSync.mockReset();
     mockWriteJson.mockReset();
+    mockLoadDocuments.mockReset();
+    mockLoadDocuments.mockResolvedValue([]);
 
     // Non-TTY for predictable output
     Object.defineProperty(process.stderr, "isTTY", {
@@ -545,5 +552,76 @@ describe("runScan", () => {
 
     const savedProfile = mockSave.mock.calls[0][0];
     expect(savedProfile.outcomes).toBeUndefined();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Docs-only and combined modes
+  // ---------------------------------------------------------------------------
+
+  it("runs docs-only scan when url is undefined and --docs is provided", async () => {
+    const docsDir = mkdtempSync(join(tmpdir(), "basesignal-docs-test-"));
+    try {
+      const docPages = [
+        {
+          url: `file://${docsDir}/strategy.md`,
+          pageType: "document",
+          title: "strategy",
+          content: "Our target customer is mid-market SaaS",
+          metadata: { source_type: "document", original_path: `${docsDir}/strategy.md`, chunk_index: 0 },
+        },
+      ];
+      mockLoadDocuments.mockResolvedValue(docPages);
+      mockCrawl.mockClear();
+      mockRunAnalysisPipeline.mockClear();
+      mockRunAnalysisPipeline.mockResolvedValue(pipelineResult);
+
+      await runScan(undefined, { format: "summary", verbose: false, docs: docsDir });
+
+      // Should NOT have called crawl
+      expect(mockCrawl).not.toHaveBeenCalled();
+      // Should have loaded documents
+      expect(mockLoadDocuments).toHaveBeenCalledWith(docsDir);
+      // Pipeline should have received the document pages
+      const pipelineInput = mockRunAnalysisPipeline.mock.calls[0][0];
+      expect(pipelineInput.pages).toEqual(docPages);
+    } finally {
+      rmSync(docsDir, { recursive: true, force: true });
+    }
+  });
+
+  it("runs combined URL + docs scan when both are provided", async () => {
+    const docsDir = mkdtempSync(join(tmpdir(), "basesignal-docs-test-"));
+    try {
+      const docPages = [
+        {
+          url: `file://${docsDir}/notes.md`,
+          pageType: "document",
+          title: "notes",
+          content: "Internal onboarding notes",
+          metadata: { source_type: "document", original_path: `${docsDir}/notes.md`, chunk_index: 0 },
+        },
+      ];
+      mockLoadDocuments.mockResolvedValue(docPages);
+      mockRunAnalysisPipeline.mockClear();
+      mockRunAnalysisPipeline.mockResolvedValue(pipelineResult);
+
+      await runScan("https://example.com", { format: "summary", verbose: false, docs: docsDir });
+
+      // Should have crawled AND loaded docs
+      expect(mockCrawl).toHaveBeenCalled();
+      expect(mockLoadDocuments).toHaveBeenCalledWith(docsDir);
+      // Pipeline should have both crawled pages and document pages
+      const pipelineInput = mockRunAnalysisPipeline.mock.calls[0][0];
+      expect(pipelineInput.pages.length).toBe(3); // 2 crawled + 1 doc
+      expect(pipelineInput.pages[2]).toEqual(docPages[0]);
+    } finally {
+      rmSync(docsDir, { recursive: true, force: true });
+    }
+  });
+
+  it("throws when neither url nor docs provided and pages are empty", async () => {
+    await expect(
+      runScan(undefined, { format: "summary", verbose: false }),
+    ).rejects.toThrow("No content to analyze");
   });
 });
