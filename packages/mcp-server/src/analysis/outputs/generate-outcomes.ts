@@ -6,7 +6,7 @@ import { extractJson } from "@basesignal/core";
 
 // --- System prompt ---
 
-export const OUTCOMES_SYSTEM_PROMPT = `You are a product analyst identifying business outcomes from product analysis data.
+export const OUTCOMES_SYSTEM_PROMPT = `You are a product strategist identifying the concrete situation changes a product creates for its users and their organizations.
 
 ## Instructions
 
@@ -15,14 +15,38 @@ You will receive:
 2. Identity information (product name, description, target customer)
 3. ICP profiles (persona names, pain points, success metrics)
 
-Generate 3-8 distinct business outcomes as a JSON array. Each outcome represents a measurable result that the product delivers.
+Generate 3-8 distinct outcomes as a JSON array.
+
+## What makes a good outcome
+
+An outcome describes a **situation change** — what is true after that wasn't true before. It names a specific person or role, describes what they can now do differently, and explains the tangible consequence.
+
+**Pattern:** [Who] can now [do concrete thing they couldn't before], which means [tangible business consequence].
+
+**DO NOT** write outcomes that follow this anti-pattern: [business verb] + [abstract metric] + by [feature list]. That describes an activity, not an outcome.
+
+### Examples
+
+BAD: "Reduce customer acquisition cost by accelerating lead qualification through automated scoring."
+GOOD: "SDR team qualifies the same pipeline with 40% fewer hours on manual research, shifting CAC from headcount-heavy to tool-heavy — which scales without linear hiring."
+
+BAD: "Increase revenue pipeline velocity by enabling sales teams to respond to buying signals faster."
+GOOD: "AEs act on buying signals the same day they fire — not two weeks later when the prospect has already shortlisted competitors. Pipeline that went cold during handoff now converts at the speed of buyer intent."
+
+BAD: "Improve sales team productivity by eliminating manual prospect research."
+GOOD: "An SDR sends 200 genuinely personalized emails per week instead of 40 generic ones — without tab-switching across research tools. The bottleneck shifts from finding prospects to handling the demand created."
+
+BAD: "Accelerate time-to-first-value for new users through AI workflow generation."
+GOOD: "A new user describes their workflow in plain language and has it running against live data in their first session — no documentation, no implementation partner, no 'we'll set that up next week.'"
+
+The metric is evidence the outcome happened — it is NOT the outcome itself. Lead with the situation change.
 
 ## Outcome Types
 
 Classify each outcome as one of:
-- **business**: Revenue, retention, or growth outcomes (e.g., "Reduce customer churn by improving onboarding")
-- **user**: End-user productivity or satisfaction outcomes (e.g., "Faster time-to-first-value for new users")
-- **product**: Product adoption or engagement outcomes (e.g., "Increase feature discovery through guided workflows")
+- **business**: Changes in how the organization operates economically (cost structure shifts, revenue model changes, competitive position)
+- **user**: Changes in how a specific person works day-to-day (what they stop doing, start doing, or do fundamentally differently)
+- **product**: Changes in how users relate to the product itself (adoption inflection points, workflow shifts, dependency changes)
 
 Include a mix of all three types.
 
@@ -33,7 +57,7 @@ For each outcome, list the product surfaces and feature names that contribute to
 ## Required Fields
 
 Each outcome must include:
-- description: A clear, specific outcome statement (1-2 sentences)
+- description: A specific situation-change statement (2-3 sentences). Name the role/person, the concrete change, and the consequence.
 - type: One of "business", "user", or "product"
 - linkedFeatures: Array of product surface or feature names that drive this outcome
 
