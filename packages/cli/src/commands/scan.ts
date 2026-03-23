@@ -1,6 +1,8 @@
 import { existsSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import type { Command } from "commander";
 import { computeCompleteness } from "@basesignal/core";
+import type { CrawledPage } from "@basesignal/crawlers";
 import type { ProductProfile } from "@basesignal/storage";
 import { ScanError, handleScanError } from "../errors.js";
 import { loadConfig, requireApiKey } from "../config.js";
@@ -54,7 +56,7 @@ export interface ScanOptions {
 // runScan -- the composition core
 // ---------------------------------------------------------------------------
 
-export async function runScan(url: string, options: ScanOptions): Promise<void> {
+export async function runScan(url: string | undefined, options: ScanOptions): Promise<void> {
   // 1. Resolve config
   const config = loadConfig({ verbose: options.verbose });
   requireApiKey(config);
@@ -67,27 +69,34 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
   const storage = new FileStorage({ dir: config.storagePath });
 
   try {
-    // 4. Validate URL
-    const parsedUrl = validateUrl(url);
-
-    // 5. PHASE 1 -- CRAWL
-    progress.start("Crawling", parsedUrl.hostname);
-    const { WebsiteCrawler } = await import("@basesignal/crawlers");
-    const crawler = new WebsiteCrawler();
-    const crawlResult = await crawler.crawl(parsedUrl.href);
-
-    if (crawlResult.pages.length === 0) {
-      progress.fail("Crawling", "no pages found");
-      throw new ScanError(
-        "crawl-empty",
-        `No pages could be crawled from ${parsedUrl.href}`,
-        "Check that the URL is correct and publicly accessible",
-      );
+    // 4. Validate URL (if provided)
+    let parsedUrl: URL | undefined;
+    if (url) {
+      parsedUrl = validateUrl(url);
     }
-    progress.done("Crawling", `${crawlResult.pages.length} pages`);
 
-    // 5b. LOAD DOCUMENTS (optional)
-    let documentPages: typeof crawlResult.pages = [];
+    // 5. PHASE 1 -- CRAWL (skip if no URL)
+    const crawlResult: { pages: CrawledPage[] } = { pages: [] };
+    if (parsedUrl) {
+      progress.start("Crawling", parsedUrl.hostname);
+      const { WebsiteCrawler } = await import("@basesignal/crawlers");
+      const crawler = new WebsiteCrawler();
+      const result = await crawler.crawl(parsedUrl.href);
+      crawlResult.pages = result.pages;
+
+      if (crawlResult.pages.length === 0) {
+        progress.fail("Crawling", "no pages found");
+        throw new ScanError(
+          "crawl-empty",
+          `No pages could be crawled from ${parsedUrl.href}`,
+          "Check that the URL is correct and publicly accessible",
+        );
+      }
+      progress.done("Crawling", `${crawlResult.pages.length} pages`);
+    }
+
+    // 5b. LOAD DOCUMENTS (optional, or primary input if no URL)
+    let documentPages: CrawledPage[] = [];
     if (options.docs) {
       if (!existsSync(options.docs)) {
         throw new ScanError(
@@ -101,6 +110,15 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
       documentPages = await loadDocuments(options.docs);
       crawlResult.pages.push(...documentPages);
       progress.done("Loading documents", `${documentPages.length} document pages`);
+    }
+
+    // Ensure we have at least some content to analyze
+    if (crawlResult.pages.length === 0) {
+      throw new ScanError(
+        "crawl-empty",
+        "No content to analyze",
+        "Provide a URL to crawl and/or a --docs directory with documents",
+      );
     }
 
     // 6. PHASE 2 -- ANALYZE
@@ -131,9 +149,10 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
       lifecycle_states: pipelineResult.outputs.lifecycle_states,
       measurement_spec: pipelineResult.outputs.measurement_spec,
     });
+    const sourceLabel = parsedUrl?.href ?? `docs:${basename(resolve(options.docs ?? "."))}`;
     const profile: ProductProfile = {
       identity: pipelineResult.identity ?? undefined,
-      metadata: { url: parsedUrl.href, scannedAt: Date.now() },
+      metadata: { url: sourceLabel, scannedAt: Date.now() },
       completeness,
       overallConfidence: pipelineResult.identity?.confidence ?? 0,
     };
@@ -188,13 +207,13 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
 
     // Also persist structured artifacts via ProductDirectory
     const { ProductDirectory, urlToSlug } = await import("@basesignal/storage");
-    const slug = urlToSlug(parsedUrl.href);
+    const slug = parsedUrl ? urlToSlug(parsedUrl.href) : basename(resolve(options.docs ?? "."));
     const productDir = new ProductDirectory({ root: config.storagePath + "/products" });
 
     // Crawl artifacts
     productDir.writeJson(slug, "crawl/pages.json", crawlResult.pages);
     productDir.writeJson(slug, "crawl/metadata.json", {
-      url: parsedUrl.href,
+      url: sourceLabel,
       timestamp: Date.now(),
       pageCount: crawlResult.pages.length,
     });
@@ -279,13 +298,21 @@ export async function runScan(url: string, options: ScanOptions): Promise<void> 
 
 export function registerScanCommand(program: Command): void {
   program
-    .command("scan <url>")
-    .description("Crawl a URL and generate a product profile")
+    .command("scan [url]")
+    .description("Analyze a URL and/or local documents to generate a product profile")
     .option("-o, --output <file>", "Save output to file")
     .option("-f, --format <format>", "Output format: summary, json, markdown", "summary")
     .option("-v, --verbose", "Show detailed progress", false)
     .option("-d, --docs <dir>", "Load documents from directory and merge into analysis")
-    .action(async (url: string, opts: Record<string, unknown>) => {
+    .action(async (url: string | undefined, opts: Record<string, unknown>) => {
+      if (!url && !opts.docs) {
+        console.error("Error: Provide a URL to scan and/or --docs <dir> with documents");
+        console.error("Examples:");
+        console.error("  basesignal scan https://example.com");
+        console.error("  basesignal scan --docs ./docs/");
+        console.error("  basesignal scan https://example.com --docs ./docs/");
+        process.exit(1);
+      }
       try {
         await runScan(url, {
           output: opts.output as string | undefined,
