@@ -1,0 +1,63 @@
+id = "M024-E001-S001"
+parent = "M024-E001"
+title = "Create generateOutcomes() function"
+status = "ready"
+created = 2026-03-22
+
+[outcome]
+description = """Implement generate-outcomes.ts that uses an LLM call to extract business outcomes
+from value moments, identity, and ICP profiles, returning OutcomeItem[]."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateOutcomes() returns OutcomeItem[] with description, type, linkedFeatures"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcome types include 'business', 'user', and 'product'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "linkedFeatures are extracted from value moment product_surfaces and names"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Returns empty array when value_moments is empty"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomesResponse() validates JSON array with required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomesResponse() throws on invalid input"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-outcomes.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/core/src/types/convergence.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Follow the pattern from icp-profiles.ts: system prompt + user prompt + LLM call + parse response.
+Input: value moments (ValueMoment[]), identity (IdentityResult | null), ICP profiles (ICPProfile[]).
+Output: OutcomeItem[] with { description, type, linkedFeatures }.
+
+System prompt should instruct the LLM to:
+- Identify 3-8 business outcomes the product drives
+- Classify each as business/user/product type
+- Link each to specific features from the value moments
+- Return JSON array
+
+Create: packages/mcp-server/src/analysis/outputs/generate-outcomes.ts
+Export: generateOutcomes, parseOutcomesResponse
+"""
+reference_files = ["packages/mcp-server/src/analysis/outputs/icp-profiles.ts"]

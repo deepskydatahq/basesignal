@@ -1,0 +1,69 @@
+id = "M024-E001"
+parent = "M024"
+title = "Outcomes Generation and Pipeline Wiring"
+status = "active"
+created = 2026-03-22
+depends_on = []
+
+[outcome]
+description = """
+Add a generateOutcomes() function that uses an LLM to extract business outcomes from
+convergence data (value moments, identity, ICP profiles). Wire it into the outputs pipeline
+so outcomes are generated, enriched, stored, and displayed end-to-end. The enrichment,
+storage, and display layers are already implemented — only generation and wiring are missing.
+"""
+
+[job_story]
+description = """
+When I run a basesignal scan,
+I want business outcomes to be automatically extracted and shown in the results,
+so that I can understand what business outcomes my product drives and how to measure them.
+"""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "generateOutcomes() produces OutcomeItem[] from value moments + identity + ICP context",
+    "Pipeline calls generateOutcomes() inside generateAllOutputs() before enrichment step",
+    "enriched_outcomes is non-null in PipelineResult when convergence succeeds",
+    "Unit tests for generation with fixture/mock data",
+    "Existing pipeline tests continue to pass (mock response count updated)",
+    "Full pipeline integration test produces enriched outcomes",
+]
+validator_context = [
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/core/src/types/convergence.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Two stories:
+1. Create generate-outcomes.ts — LLM call to extract OutcomeItem[] from value moments + identity
+2. Wire into outputs pipeline — call generateOutcomes() inside generateAllOutputs(), feed result
+   to enrichOutcomes(), update pipeline tests
+
+Key design: generateOutcomes() is an output step (like ICP profiles), not a lens.
+Input: value moments, identity, ICP profiles.
+Output: OutcomeItem[] with description, type (business/user/product), linkedFeatures, confidence.
+
+The existing enrichment step (enrich-outcomes.ts) then adds measurement_references and
+suggested_metrics. No changes needed to enrichment, storage, or display.
+
+Important: existing pipeline tests use createSequentialMockLlm() with a fixed number of
+responses. Adding a new LLM call means updating mock response counts in tests.
+"""
+
+estimated_stories = 2

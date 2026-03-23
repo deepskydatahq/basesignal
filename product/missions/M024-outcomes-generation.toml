@@ -1,0 +1,88 @@
+# Mission: Outcomes Generation
+# Wire the missing outcomes extraction step so enriched outcomes flow end-to-end
+
+id = "M024"
+title = "Outcomes Generation"
+status = "active"
+created = 2026-03-22
+depends_on = ["M014"]
+
+[outcome]
+description = """
+Add an outcomes generation step to the analysis pipeline that extracts business outcomes
+from the existing lens data, identity, and ICP profiles. Wire it through the existing
+enrichment, storage, and display layers so that outcomes appear in scan results.
+
+The enrichment (enrich-outcomes.ts), storage (scan.ts → outputs/outcomes.json), and display
+(view-sections.ts) are already implemented and working — the only missing piece is the
+generation step that produces OutcomeItem[] from the analyzed data. Once generated, outcomes
+flow through enrichment (cross-referencing measurement spec), get saved to disk, and render
+in the view command.
+"""
+
+user_progress = "From 'outcomes always show Not yet analyzed' to 'outcomes generated and visible in every scan'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Pipeline produces OutcomeItem[] from lens data and identity context",
+    "Generated outcomes are passed to generateAllOutputs() for enrichment",
+    "enriched_outcomes is non-null in PipelineResult after a successful scan",
+    "outputs/outcomes.json is written to product directory",
+    "basesignal view shows outcomes section with actual data (not 'Not yet analyzed')",
+    "Unit tests for outcomes generation with fixture data",
+    "Integration test: full pipeline produces enriched outcomes",
+    "Existing tests continue to pass",
+]
+
+validator_context = [
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-outcomes.ts",
+    "packages/mcp-server/src/analysis/lenses/",
+    "packages/mcp-server/src/analysis/identity.ts",
+    "packages/core/src/types/convergence.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/commands/view-sections.ts",
+]
+
+[scope]
+in_scope = [
+    "Outcomes generation step using LLM to extract business outcomes from lens candidates + identity",
+    "Wire generated outcomes into generateAllOutputs() call in pipeline.ts",
+    "Ensure enriched_outcomes flows through to PipelineResult",
+    "Unit tests for generation logic",
+    "Integration test confirming end-to-end flow",
+]
+out_of_scope = [
+    "Changes to enrichment logic (enrich-outcomes.ts) — already working",
+    "Changes to storage logic (scan.ts) — already working",
+    "Changes to display logic (view-sections.ts) — already working",
+    "New outcome types or schema changes",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+The OutcomeItem type already exists in packages/core/src/types/convergence.ts:
+  { description, type, linkedFeatures, confidence }
+
+The enrichment step adds: measurement_references, suggested_metrics.
+
+Design choice: outcomes should be generated as an output step (like ICP profiles and
+activation map) rather than as a lens. The generation takes the converged lens candidates,
+identity, and ICP profiles as context and asks the LLM to identify business outcomes.
+
+The pipeline already calls generateAllOutputs() with lens results, identity, and ICP data.
+The simplest integration: add a generateOutcomes() function called inside generateAllOutputs()
+before the enrichment step, or as a separate step in the pipeline that feeds outcomes into
+generateAllOutputs().
+"""

@@ -1,0 +1,66 @@
+id = "M024-E001-S002"
+parent = "M024-E001"
+title = "Wire outcomes generation into pipeline"
+status = "ready"
+created = 2026-03-22
+
+[outcome]
+description = """Call generateOutcomes() inside generateAllOutputs() before the enrichment step,
+and feed the result into enrichOutcomes() so enriched_outcomes is populated in PipelineResult."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateAllOutputs() calls generateOutcomes() when convergence has value_moments"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Generated outcomes are passed to enrichOutcomes() when measurement_spec exists"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "enriched_outcomes in OutputsResult is non-null after successful generation + enrichment"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Pipeline gracefully handles generateOutcomes() failure (logs error, continues)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing pipeline tests pass with updated mock response counts"
+
+[[acceptance_criteria.criteria]]
+test = "integration"
+description = "Full pipeline with mock LLM produces enriched_outcomes in PipelineResult"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/pipeline.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+]
+input_fixtures = []
+depends_on = ["M024-E001-S001"]
+
+[handoff]
+implementation_hints = """
+In outputs/index.ts (generateAllOutputs):
+1. Remove the outcomes parameter from the function signature
+2. After step 4 (measurement spec) but before step 5 (reconciliation), add a new step:
+   call generateOutcomes(convergence.value_moments, identity, result.icp_profiles, llm)
+3. Store result in a local `outcomes` variable
+4. The existing step 7 (outcome enrichment) already uses outcomes — just feed the generated ones
+
+In pipeline.ts: no changes needed (generateAllOutputs already returns enriched_outcomes).
+
+Update existing tests:
+- generate-all-outputs.test.ts uses createSequentialMockLlm — add one more mock response
+  for the new generateOutcomes() LLM call
+- Any test that counts LLM calls needs the count incremented
+"""
+reference_files = [
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/generate-all-outputs.test.ts",
+]
