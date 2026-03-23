@@ -100,7 +100,11 @@ export function parseOutcomesResponse(responseText: string): OutcomeItem[] {
     throw new Error("Expected JSON array of outcome items");
   }
 
-  return parsed.map((entry: unknown, i: number) => {
+  if (parsed.length === 0) {
+    throw new Error("Expected at least 1 outcome item, got 0");
+  }
+
+  const results = parsed.map((entry: unknown, i: number) => {
     if (!entry || typeof entry !== "object") {
       throw new Error(`Outcome entry ${i} must be an object`);
     }
@@ -133,6 +137,16 @@ export function parseOutcomesResponse(responseText: string): OutcomeItem[] {
       linkedFeatures,
     };
   });
+
+  // Deduplicate by description (enrichment matches by description)
+  const seen = new Set<string>();
+  const deduped = results.filter((item) => {
+    if (seen.has(item.description)) return false;
+    seen.add(item.description);
+    return true;
+  });
+
+  return deduped;
 }
 
 // --- Generator ---
