@@ -62,7 +62,22 @@ const sampleConvergence: ConvergenceResult = {
   },
 };
 
+const emptyConvergence: ConvergenceResult = {
+  value_moments: [],
+  clusters: [],
+  stats: {
+    total_candidates: 0,
+    total_clusters: 0,
+    total_moments: 0,
+    tier_1_count: 0,
+    tier_2_count: 0,
+    tier_3_count: 0,
+  },
+};
+
 // Valid JSON responses for the generators
+// Call order: 0=ICP, 1=activationMap, 2=lifecycle, 3=measurementSpec, 4=reconciliation, 5=enrichment, 6=outcomeGeneration, 7=outcomeEnrichment
+
 const validICPResponse = JSON.stringify([
   {
     id: "icp-1",
@@ -170,20 +185,47 @@ const validEnrichmentResponse = JSON.stringify([{
   suggested_metrics: ["projects_created_per_user", "time_to_first_project"],
 }]);
 
-// Outcome enrichment response
-const validOutcomeEnrichmentResponse = JSON.stringify([{
-  description: "Increase team velocity",
-  measurement_references: [{ entity: "project", activity: "created" }],
-  suggested_metrics: ["velocity_per_sprint", "sprints_completed_per_week"],
-}]);
+// Outcome generation response (new step 7)
+const validOutcomeGenerationResponse = JSON.stringify([
+  { description: "Reduce onboarding time for new developers", type: "user", linkedFeatures: ["Onboarding"] },
+  { description: "Increase team velocity through quick project setup", type: "business", linkedFeatures: ["Onboarding", "Dashboard"] },
+  { description: "Improve feature discovery via guided workflows", type: "product", linkedFeatures: ["Onboarding"] },
+]);
 
-// Sample outcomes for enrichment
-const sampleOutcomes = [
-  { description: "Increase team velocity", type: "business", linkedFeatures: ["sprint-planning"] },
+// Outcome enrichment response (step 8)
+const validOutcomeEnrichmentResponse = JSON.stringify([
+  {
+    description: "Reduce onboarding time for new developers",
+    measurement_references: [{ entity: "project", activity: "created" }],
+    suggested_metrics: ["time_to_first_project", "onboarding_completion_rate"],
+  },
+  {
+    description: "Increase team velocity through quick project setup",
+    measurement_references: [{ entity: "project", activity: "created" }],
+    suggested_metrics: ["velocity_per_sprint", "sprints_completed_per_week"],
+  },
+  {
+    description: "Improve feature discovery via guided workflows",
+    measurement_references: [],
+    suggested_metrics: ["features_discovered_per_session"],
+  },
+]);
+
+// Full sequence of all 8 responses for tests that exercise the complete pipeline
+const allResponses = [
+  validICPResponse,              // 0: ICP profiles
+  validActivationMapResponse,    // 1: Activation map
+  validLifecycleStatesResponse,  // 2: Lifecycle states
+  validMeasurementSpecResponse,  // 3: Measurement spec
+  validReconciliationResponse,   // 4: Reconciliation
+  validEnrichmentResponse,       // 5: Value moment enrichment
+  validOutcomeGenerationResponse, // 6: Outcome generation
+  validOutcomeEnrichmentResponse, // 7: Outcome enrichment
 ];
 
-// The LLM gets called in order: ICP, activation map, lifecycle states, measurement spec
-// We track call index to return the right response
+// The LLM gets called in order: ICP, activation map, lifecycle states, measurement spec,
+// reconciliation, value moment enrichment, outcome generation, outcome enrichment.
+// We track call index to return the right response.
 function createSequentialMockLlm(responses: string[]): LlmProvider {
   let callIndex = 0;
   return {
@@ -203,9 +245,7 @@ function createFailingLlm(failOnCall: number): LlmProvider {
       if (current === failOnCall) {
         throw new Error(`LLM call ${current} failed`);
       }
-      // Return appropriate responses for other calls
-      const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse, validEnrichmentResponse, validOutcomeEnrichmentResponse];
-      return responses[current] ?? "";
+      return allResponses[current] ?? "";
     },
   } as LlmProvider;
 }
@@ -214,14 +254,7 @@ function createFailingLlm(failOnCall: number): LlmProvider {
 
 describe("generateAllOutputs — lifecycle states wiring", () => {
   it("calls generateLifecycleStates when all guards pass", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -237,7 +270,8 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
   });
 
   it("skips lifecycle states when activationLevels is null", async () => {
-    const llm = createSequentialMockLlm([validICPResponse]);
+    // Without activation levels: only ICP(0) + outcomeGeneration(1) run
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -250,12 +284,15 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
   });
 
   it("skips lifecycle states when identity is null", async () => {
+    // Without identity: ICP(0), activationMap(1), measurementSpec(2), reconciliation(3), enrichment(4), outcomeGeneration(5), outcomeEnrichment(6)
     const llm = createSequentialMockLlm([
       validICPResponse,
       validActivationMapResponse,
       validMeasurementSpecResponse,
       validReconciliationResponse,
       validEnrichmentResponse,
+      validOutcomeGenerationResponse,
+      validOutcomeEnrichmentResponse,
     ]);
 
     const result = await generateAllOutputs(
@@ -294,14 +331,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
   it("fires progress callbacks for lifecycle states on success", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -350,7 +380,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
   it("does not fire lifecycle states progress when guard skips it", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([validICPResponse]);
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -374,8 +404,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
           // Lifecycle states call
           capturedMessages = messages as Array<{ role: string; content: string }>;
         }
-        const responses = [validICPResponse, validActivationMapResponse, validLifecycleStatesResponse, validMeasurementSpecResponse, validReconciliationResponse, validEnrichmentResponse];
-        return responses[current] ?? "";
+        return allResponses[current] ?? "";
       },
     } as LlmProvider;
 
@@ -398,14 +427,7 @@ describe("generateAllOutputs — lifecycle states wiring", () => {
 
 describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () => {
   it("populates measurement_spec.sources from pageUrls parameter", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com/pricing"];
 
@@ -424,14 +446,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
   });
 
   it("measurement_spec.sources is empty when pageUrls not provided", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -445,14 +460,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
   });
 
   it("deduplicates pageUrls in measurement_spec.sources", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     const pageUrls = ["https://example.com", "https://example.com/features", "https://example.com"];
 
@@ -473,14 +481,7 @@ describe("generateAllOutputs — pageUrls flow to measurement_spec.sources", () 
 
 describe("generateAllOutputs — reconciliation wiring", () => {
   it("reconciles trigger events to measurement spec vocabulary", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -498,7 +499,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
   });
 
   it("skips reconciliation when measurement spec is null", async () => {
-    const llm = createSequentialMockLlm([validICPResponse]);
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -513,14 +514,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
   it("fires progress callbacks for reconciliation on success", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -585,7 +579,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
   it("does not fire reconciliation progress when measurement spec is null", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([validICPResponse]);
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -602,14 +596,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
 
 describe("generateAllOutputs — value moment enrichment wiring", () => {
   it("enriches value moments with measurement references", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -625,7 +612,7 @@ describe("generateAllOutputs — value moment enrichment wiring", () => {
   });
 
   it("preserves original value moments when measurement spec is null", async () => {
-    const llm = createSequentialMockLlm([validICPResponse]);
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     const result = await generateAllOutputs(
       sampleConvergence,
@@ -667,14 +654,7 @@ describe("generateAllOutputs — value moment enrichment wiring", () => {
   it("fires progress callbacks for enrichment on success", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -693,7 +673,7 @@ describe("generateAllOutputs — value moment enrichment wiring", () => {
   it("does not fire enrichment progress when measurement spec is null", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([validICPResponse]);
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -708,65 +688,62 @@ describe("generateAllOutputs — value moment enrichment wiring", () => {
   });
 });
 
-describe("generateAllOutputs — outcome enrichment wiring", () => {
-  it("calls enrichOutcomes after measurement spec generation when outcomes provided", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-      validOutcomeEnrichmentResponse,
-    ]);
+describe("generateAllOutputs — outcome generation wiring", () => {
+  it("generates outcomes when convergence has value_moments", async () => {
+    const llm = createSequentialMockLlm(allResponses);
 
     const result = await generateAllOutputs(
       sampleConvergence,
       sampleActivationLevels,
       sampleIdentity,
       llm,
-      undefined,
-      undefined,
-      undefined,
-      sampleOutcomes,
     );
 
+    // Outcomes should be generated and then enriched
     expect(result.enriched_outcomes).not.toBeNull();
-    expect(result.enriched_outcomes).toHaveLength(1);
-    expect(result.enriched_outcomes![0].measurement_references).toEqual([{ entity: "project", activity: "created" }]);
-    expect(result.enriched_outcomes![0].suggested_metrics).toEqual(["velocity_per_sprint", "sprints_completed_per_week"]);
+    expect(result.enriched_outcomes!.length).toBeGreaterThan(0);
   });
 
-  it("returns null enriched_outcomes when measurement spec is null", async () => {
-    const llm = createSequentialMockLlm([validICPResponse]);
+  it("generated outcomes are passed to enrichOutcomes when measurement_spec exists", async () => {
+    const llm = createSequentialMockLlm(allResponses);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+    );
+
+    // Enriched outcomes should have measurement_references from the enrichment step
+    expect(result.enriched_outcomes).not.toBeNull();
+    expect(result.enriched_outcomes![0].measurement_references).toEqual([{ entity: "project", activity: "created" }]);
+    expect(result.enriched_outcomes![0].suggested_metrics).toEqual(["time_to_first_project", "onboarding_completion_rate"]);
+  });
+
+  it("stores unenriched outcomes when measurement_spec is null", async () => {
+    // Without activation levels: ICP(0), outcomeGeneration(1) — no measurement spec
+    const llm = createSequentialMockLlm([validICPResponse, validOutcomeGenerationResponse]);
 
     const result = await generateAllOutputs(
       sampleConvergence,
       null,
       sampleIdentity,
       llm,
-      undefined,
-      undefined,
-      undefined,
-      sampleOutcomes,
     );
 
-    expect(result.enriched_outcomes).toBeNull();
+    // Outcomes generated but not enriched (no measurement spec)
+    expect(result.enriched_outcomes).not.toBeNull();
+    expect(result.enriched_outcomes!).toHaveLength(3);
+    // No enrichment fields since measurement spec was null
+    expect(result.enriched_outcomes![0].measurement_references).toBeUndefined();
   });
 
-  it("returns null enriched_outcomes when outcomes not provided", async () => {
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+  it("skips outcome generation when value_moments is empty", async () => {
+    const llm = createSequentialMockLlm([validICPResponse]);
 
     const result = await generateAllOutputs(
-      sampleConvergence,
-      sampleActivationLevels,
+      emptyConvergence,
+      null,
       sampleIdentity,
       llm,
     );
@@ -774,8 +751,8 @@ describe("generateAllOutputs — outcome enrichment wiring", () => {
     expect(result.enriched_outcomes).toBeNull();
   });
 
-  it("preserves original outcomes when outcome enrichment fails (graceful degradation)", async () => {
-    // Fail on outcome enrichment call (call index 6)
+  it("pipeline gracefully handles generateOutcomes failure", async () => {
+    // Fail on outcome generation call (call index 6)
     const llm = createFailingLlm(6);
     const errors: PipelineError[] = [];
 
@@ -786,29 +763,24 @@ describe("generateAllOutputs — outcome enrichment wiring", () => {
       llm,
       undefined,
       errors,
-      undefined,
-      sampleOutcomes,
     );
 
+    // Outcome generation failed — enriched_outcomes should be null
     expect(result.enriched_outcomes).toBeNull();
 
-    const outcomeErrors = errors.filter(e => e.step === "outcome_enrichment");
+    // Other outputs still present (ICP may have 0 profiles due to mock validation, but pipeline continues)
+    expect(result.activation_map).not.toBeNull();
+    expect(result.measurement_spec).not.toBeNull();
+
+    const outcomeErrors = errors.filter(e => e.step === "outcome_generation");
     expect(outcomeErrors).toHaveLength(1);
     expect(outcomeErrors[0].message).toContain("LLM call 6 failed");
   });
 
-  it("fires progress callbacks for outcome enrichment on success", async () => {
+  it("fires progress callbacks for outcome generation on success", async () => {
     const events: ProgressEvent[] = [];
     const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-      validOutcomeEnrichmentResponse,
-    ]);
+    const llm = createSequentialMockLlm(allResponses);
 
     await generateAllOutputs(
       sampleConvergence,
@@ -816,9 +788,81 @@ describe("generateAllOutputs — outcome enrichment wiring", () => {
       sampleIdentity,
       llm,
       progress,
-      undefined,
-      undefined,
-      sampleOutcomes,
+    );
+
+    const genEvents = events.filter(e => e.phase === "outputs_outcome_generation");
+    expect(genEvents).toHaveLength(2);
+    expect(genEvents[0].status).toBe("started");
+    expect(genEvents[1].status).toBe("completed");
+    expect(genEvents[1].detail).toContain("3 outcomes");
+  });
+
+  it("fires progress 'failed' when outcome generation throws", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createFailingLlm(6);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
+      [],
+    );
+
+    const genEvents = events.filter(e => e.phase === "outputs_outcome_generation");
+    expect(genEvents).toHaveLength(2);
+    expect(genEvents[0].status).toBe("started");
+    expect(genEvents[1].status).toBe("failed");
+  });
+
+  it("does not fire outcome generation progress when value_moments is empty", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    await generateAllOutputs(
+      emptyConvergence,
+      null,
+      sampleIdentity,
+      llm,
+      progress,
+    );
+
+    const genEvents = events.filter(e => e.phase === "outputs_outcome_generation");
+    expect(genEvents).toHaveLength(0);
+  });
+});
+
+describe("generateAllOutputs — outcome enrichment wiring", () => {
+  it("enriches generated outcomes with measurement references", async () => {
+    const llm = createSequentialMockLlm(allResponses);
+
+    const result = await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+    );
+
+    expect(result.enriched_outcomes).not.toBeNull();
+    expect(result.enriched_outcomes!).toHaveLength(3);
+    expect(result.enriched_outcomes![0].measurement_references).toBeDefined();
+    expect(result.enriched_outcomes![0].suggested_metrics).toBeDefined();
+  });
+
+  it("fires progress callbacks for outcome enrichment on success", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm(allResponses);
+
+    await generateAllOutputs(
+      sampleConvergence,
+      sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      progress,
     );
 
     const outcomeEvents = events.filter(e => e.phase === "outputs_outcome_enrichment");
@@ -827,21 +871,36 @@ describe("generateAllOutputs — outcome enrichment wiring", () => {
     expect(outcomeEvents[1].status).toBe("completed");
   });
 
-  it("does not fire outcome enrichment progress when no outcomes provided", async () => {
-    const events: ProgressEvent[] = [];
-    const progress = (event: ProgressEvent) => events.push(event);
-    const llm = createSequentialMockLlm([
-      validICPResponse,
-      validActivationMapResponse,
-      validLifecycleStatesResponse,
-      validMeasurementSpecResponse,
-      validReconciliationResponse,
-      validEnrichmentResponse,
-    ]);
+  it("preserves unenriched outcomes when outcome enrichment fails (graceful degradation)", async () => {
+    // Fail on outcome enrichment call (call index 7)
+    const llm = createFailingLlm(7);
+    const errors: PipelineError[] = [];
 
-    await generateAllOutputs(
+    const result = await generateAllOutputs(
       sampleConvergence,
       sampleActivationLevels,
+      sampleIdentity,
+      llm,
+      undefined,
+      errors,
+    );
+
+    // Outcome enrichment failed — enriched_outcomes should be null (generation succeeded but enrichment failed)
+    expect(result.enriched_outcomes).toBeNull();
+
+    const outcomeErrors = errors.filter(e => e.step === "outcome_enrichment");
+    expect(outcomeErrors).toHaveLength(1);
+    expect(outcomeErrors[0].message).toContain("LLM call 7 failed");
+  });
+
+  it("does not fire outcome enrichment progress when no outcomes generated", async () => {
+    const events: ProgressEvent[] = [];
+    const progress = (event: ProgressEvent) => events.push(event);
+    const llm = createSequentialMockLlm([validICPResponse]);
+
+    await generateAllOutputs(
+      emptyConvergence,
+      null,
       sampleIdentity,
       llm,
       progress,

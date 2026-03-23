@@ -83,6 +83,7 @@ export type ProgressPhase =
   | "outputs_lifecycle_states"
   | "outputs_reconciliation"
   | "outputs_enrichment"
+  | "outputs_outcome_generation"
   | "outputs_outcome_enrichment";
 
 export interface ProgressEvent {
