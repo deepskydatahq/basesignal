@@ -1,0 +1,28 @@
+---
+const githubUrl = 'https://github.com/deepskydatahq/basesignal';
+const timoUrl = 'https://www.youtube.com/@timodechau';
+---
+
+<footer class="py-8 border-t border-border-default">
+  <div class="container-content">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-white rounded flex items-center justify-center p-1">
+          <img src="/basesignal_logo_black.svg" alt="Basesignal logo" class="w-full h-full" />
+        </div>
+        <span class="text-sm font-medium">Basesignal</span>
+      </div>
+
+      <!-- Links -->
+      <div class="flex items-center gap-6">
+        <a href={githubUrl} class="text-text-muted hover:text-text-primary transition-colors text-sm">GitHub</a>
+        <span class="text-text-muted text-sm">
+          Built by <a href={timoUrl} class="text-text-secondary hover:text-text-primary transition-colors">Timo</a>
+        </span>
+      </div>
+
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,41 @@
+---
+const steps = [
+  {
+    number: '1',
+    title: 'Point at a URL',
+    description: 'Run npx basesignal scan with your product URL. Basesignal crawls your marketing site, pricing page, and documentation.'
+  },
+  {
+    number: '2',
+    title: 'AI analyzes through 7 lenses',
+    description: 'Capability mapping, effort elimination, time compression, information asymmetry, decision enablement, and more — then converges into structured output.'
+  },
+  {
+    number: '3',
+    title: 'Get your growth profile',
+    description: 'ICP profiles, value moments, activation maps, entity models, and measurement specs. Portable JSON you own. Use it everywhere.'
+  }
+];
+---
+
+<section class="section-padding">
+  <div class="container-content">
+    <h2 class="heading-2 text-center mb-12">
+      How it works
+    </h2>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      {steps.map((step) => (
+        <div class="text-center">
+          <div class="w-12 h-12 rounded-full bg-accent/20 text-accent flex items-center justify-center mx-auto mb-4 text-lg font-semibold">
+            {step.number}
+          </div>
+          <h3 class="text-lg font-semibold mb-2">{step.title}</h3>
+          <p class="text-text-secondary text-sm">
+            {step.description}
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

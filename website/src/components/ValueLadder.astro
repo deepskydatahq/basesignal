@@ -1,0 +1,89 @@
+---
+const tiers = [
+  {
+    name: 'Scan Intelligence',
+    status: 'Shipped',
+    isShipped: true,
+    levels: [
+      'Product identity — what is this, who is it for, how does it make money',
+      'Value moments — the moments that make users stay, tiered by impact',
+      'ICP profiles — best customers, prioritized by product fit'
+    ]
+  },
+  {
+    name: 'Growth Definitions',
+    status: 'Shipped',
+    isShipped: true,
+    levels: [
+      'Activation spectrum — 4 levels with measurable triggers',
+      'Lifecycle states — new through churned through resurrected',
+      'Entity model — core objects, properties, and relationships'
+    ]
+  },
+  {
+    name: 'Measurement Framework',
+    status: 'Shipped',
+    isShipped: true,
+    levels: [
+      'Tracking plan — every event, property, and perspective',
+      'Breakdown dimensions — segmentation axes for analysis',
+      'Cohort framework — time windows and grouping rules'
+    ]
+  },
+  {
+    name: 'Connected Intelligence',
+    status: 'Next',
+    isShipped: false,
+    levels: [
+      'Data connection — Amplitude, Mixpanel, Segment connectors',
+      'Gap analysis — what you track vs. what you should track',
+      'Live metrics — actual activation, retention, revenue from your model'
+    ]
+  },
+  {
+    name: 'Growth Operations',
+    status: 'Future',
+    isShipped: false,
+    levels: [
+      'Segment discovery — microsegments that outperform or underperform',
+      'Growth agents — recommend and execute growth plays'
+    ]
+  }
+];
+---
+
+<section class="section-padding">
+  <div class="container-content">
+    <h2 class="heading-2 text-center mb-4">
+      From URL to lifecycle dataset
+    </h2>
+
+    <p class="body-text text-center max-w-2xl mx-auto mb-12">
+      Basesignal builds up a complete growth profile in layers. Each tier adds depth — from scan-only intelligence to connected, live metrics.
+    </p>
+
+    <div class="max-w-3xl mx-auto space-y-6">
+      {tiers.map((tier) => (
+        <div class:list={['card', { 'border-accent': tier.isShipped, 'opacity-75': !tier.isShipped }]}>
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold">{tier.name}</h3>
+            <span class:list={[
+              'text-xs font-medium px-2 py-1 rounded',
+              tier.isShipped ? 'bg-accent/20 text-accent' : 'bg-bg-subtle text-text-muted'
+            ]}>
+              {tier.status}
+            </span>
+          </div>
+          <ul class="space-y-2">
+            {tier.levels.map((level: string) => (
+              <li class="flex items-start gap-2 text-text-secondary text-sm">
+                <span class:list={[tier.isShipped ? 'text-accent' : 'text-text-muted']}>→</span>
+                {level}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
