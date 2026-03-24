@@ -1,0 +1,56 @@
+---
+const ways = [
+  {
+    title: 'CLI',
+    description: 'npx basesignal scan — JSON files on disk, no vendor lock-in',
+    tag: 'Simplest'
+  },
+  {
+    title: 'MCP Server',
+    description: 'Connect from Claude Desktop, Cursor, or ChatGPT for conversational refinement',
+    tag: 'Richest'
+  },
+  {
+    title: 'Docker',
+    description: 'Self-host the full server with persistent storage',
+    tag: 'Self-host'
+  }
+];
+---
+
+<section class="section-padding">
+  <div class="container-content">
+    <h2 class="heading-2 text-center mb-6">
+      Run it your way
+    </h2>
+
+    <p class="body-text text-center max-w-2xl mx-auto mb-12">
+      Basesignal is open source and runs wherever you want. No signup, no API keys to manage, no vendor dependency.
+    </p>
+
+    <!-- Three ways -->
+    <div class="grid md:grid-cols-3 gap-6 mb-12">
+      {ways.map((way) => (
+        <div class="card">
+          <span class="text-xs font-medium px-2 py-1 rounded bg-accent/20 text-accent inline-block mb-3">
+            {way.tag}
+          </span>
+          <h3 class="text-lg font-semibold mb-2">{way.title}</h3>
+          <p class="text-text-secondary text-sm">{way.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Product Screenshot -->
+    <div class="relative max-w-4xl mx-auto">
+      <div class="absolute inset-0 bg-accent/20 blur-3xl rounded-full"></div>
+      <div class="relative screenshot-placeholder overflow-hidden">
+        <img
+          src="/images/basesignal_product_0126.png"
+          alt="Basesignal product screenshot"
+          class="w-full h-auto block"
+        />
+      </div>
+    </div>
+  </div>
+</section>
