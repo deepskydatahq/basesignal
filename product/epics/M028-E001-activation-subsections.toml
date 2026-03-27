@@ -1,0 +1,58 @@
+id = "M028-E001"
+parent = "M028"
+title = "Activation Context, Tracking, and Metrics Subsections"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+The Activation Journey section in the HTML report gains three subsections after the
+existing journey table and transitions:
+1. Activation Context: educational intro paragraph
+2. Track Activations: events/properties to implement + segments to create (derived from activation map)
+3. Activation Metrics: standard metric cards in 2-column layout with formulas and interpretation
+All data is template-generated from the ActivationMap, no new LLM calls.
+"""
+
+[job_story]
+description = """When I view the activation section, I want to see what to track, what
+segments to create, and which metrics to monitor, so I have a complete activation playbook."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Activation section includes educational context paragraph after journey table",
+    "Track Activations subsection lists trigger events from activation stages",
+    "Track Activations lists segments derived from activation levels",
+    "Activation Metrics renders standard metric cards in a 2-column layout",
+    "Each metric card has name, formula/description, and interpretation guidance",
+    "All data derived from ActivationMap (not hardcoded product-specific data)",
+    "Subsections omitted when activation map is null",
+    "Existing tests pass",
+    "New tests cover the three subsections",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/core/src/types/outputs.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+The metrics are standard activation metrics (Activation Rate, Retention comparison,
+Time-to-activate, Conversion delta). They use template strings that reference the
+primary activation level name from the ActivationMap. Not product-specific — they're
+the same metric definitions for any product, parameterized by the activation level name.
+"""
+
+estimated_stories = 2
