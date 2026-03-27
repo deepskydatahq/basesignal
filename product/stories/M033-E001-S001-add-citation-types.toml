@@ -1,0 +1,28 @@
+id = "M033-E001-S001"
+parent = "M033-E001"
+title = "Add citation types to OutcomeItem and ICPProfile"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Add optional citations field to OutcomeItem and ICPProfile types."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OutcomeItem has optional citations: Array<{url: string, excerpt: string}>"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICPProfile has optional citations: Array<{url: string, excerpt: string}>"
+
+[context]
+relevant_paths = ["packages/core/src/types/outputs.ts", "packages/core/src/types/profile.ts"]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = "Add to both OutcomeItem (profile.ts) and ICPProfile (outputs.ts). Same Citation type can be shared or inline."
+reference_files = []

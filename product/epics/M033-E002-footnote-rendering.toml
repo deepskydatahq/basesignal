@@ -1,0 +1,54 @@
+id = "M033-E002"
+parent = "M033"
+title = "Footnote Rendering & Sources Section"
+status = "active"
+created = 2026-03-27
+depends_on = ["M033-E001"]
+
+[outcome]
+description = """
+Render footnote markers [N] in the report next to cited claims. Identity evidence,
+outcome citations, and ICP citations all render as numbered footnotes. A Sources
+section at the bottom of the report lists all footnotes with clickable URLs and excerpts.
+"""
+
+[job_story]
+description = """When I view the report, I want to see footnote markers next to claims
+and a Sources section at the bottom with clickable links, so I can verify where each
+insight came from."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Identity evidence renders as footnotes with markers in the description",
+    "Outcome citations render as footnote markers after the description",
+    "ICP citations render as footnote markers after relevant fields",
+    "Sources section at bottom of report lists all footnotes",
+    "Each footnote shows clickable URL and excerpt",
+    "Footnotes numbered sequentially across the entire report",
+    "Report renders correctly when no citations exist",
+    "Existing tests pass",
+    "New tests cover footnote rendering",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Use a mutable footnote counter passed through renderers. Each renderer appends
+citations and returns HTML with [N] markers. The orchestrator collects all
+citations and renders the Sources section.
+"""
+
+estimated_stories = 2

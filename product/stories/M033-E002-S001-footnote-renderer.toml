@@ -1,0 +1,65 @@
+id = "M033-E002-S001"
+parent = "M033-E002"
+title = "Footnote rendering system and Sources section"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Create footnote helpers, render citations as numbered markers, add Sources section at bottom of report."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Footnote counter produces sequential [N] markers across sections"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Identity evidence renders as footnotes after description"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcome citations render as footnote markers after description"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP citations render as footnote markers after description"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Sources section at bottom lists all footnotes with URL and excerpt"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "No Sources section when no citations exist anywhere"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CSS for footnote markers (superscript) and sources section"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create a FootnoteCollector class/object:
+  { add(url, excerpt): number, getAll(): Array, renderSection(): string }
+
+Pass it through renderIdentitySection, renderOutcomesSection, renderIcpSection.
+Each renderer calls collector.add() for each citation and inserts [N] markers.
+
+After all sections, call collector.renderSection() for the Sources block.
+
+Identity already has evidence: Array<{url, excerpt}> — use these directly.
+
+CSS: .footnote-marker { vertical-align: super; font-size: 0.7em; }
+     .sources-section { border-top: 1px solid #e5e7eb; margin-top: 2rem; }
+"""
+reference_files = []
