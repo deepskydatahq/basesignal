@@ -96,7 +96,11 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .conf-badge { display: inline-block; font-size: 0.8rem; padding: 0.1em 0.5em; border-radius: 3px; font-weight: 500; }
     .conf-high { background: #d1fae5; color: #065f46; }
     .conf-med { background: #fef3c7; color: #92400e; }
-    .conf-low { background: #f3f4f6; color: #6b7280; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .conf-low { background: #f3f4f6; color: #6b7280; }
+    .active-measurement-context { margin-bottom: 1.5rem; }
+    .active-measurement-context p { color: #6b7280; line-height: 1.7; }
+    .active-when { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 6px; }
+    .active-when h4 { margin-top: 0; font-size: 0.9rem; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>
