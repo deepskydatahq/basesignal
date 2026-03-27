@@ -115,7 +115,9 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .performance-model ul { margin: 0; padding-left: 1.1rem; }
     .performance-model ul li { font-size: 0.875rem; margin-bottom: 0.15rem; }
     .performance-model .state-name { font-weight: 600; }
-    .performance-model .breakdown-text { font-size: 0.875rem; color: #374151; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .performance-model .breakdown-text { font-size: 0.875rem; color: #374151; }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .interpretation { font-size: 0.85rem; color: #6b7280; font-style: italic; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

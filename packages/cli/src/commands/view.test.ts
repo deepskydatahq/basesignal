@@ -1180,6 +1180,10 @@ describe("renderSourceMaterial", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Unit tests: source material in product report
+// ---------------------------------------------------------------------------
+
 describe("renderProductReport — source material", () => {
   let tmpDir: string | undefined;
 
@@ -1224,6 +1228,184 @@ describe("renderProductReport — source material", () => {
     const bodyContent = html.split("</style>")[1] ?? "";
     expect(bodyContent).not.toContain("source-material");
     expect(bodyContent).not.toContain("source-card");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: activation context and track activations subsections
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — activation context and track activations", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders activation context paragraph when activation map is present", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["sign_up"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 1,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Activation Context");
+    expect(bodyContent).toContain("activation-context");
+    expect(bodyContent).toContain("aha moments");
+  });
+
+  it("renders track activations section with trigger events from all stages", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["sign_up", "view_dashboard"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+        {
+          level: 2,
+          name: "adopter",
+          signal_strength: "strong",
+          trigger_events: ["create_project", "invite_team"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 2,
+      confidence: "high",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Track Activations");
+    expect(bodyContent).toContain("sign_up");
+    expect(bodyContent).toContain("view_dashboard");
+    expect(bodyContent).toContain("create_project");
+    expect(bodyContent).toContain("invite_team");
+  });
+
+  it("renders segments for each activation stage", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "First Upload",
+          signal_strength: "weak",
+          trigger_events: ["upload_file"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+        {
+          level: 2,
+          name: "Team Collaboration",
+          signal_strength: "strong",
+          trigger_events: ["invite_member"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 2,
+      confidence: "high",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Level 1: First Upload");
+    expect(bodyContent).toContain("Level 2: Team Collaboration");
+  });
+
+  it("omits activation context and track activations when activation map is null", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // No activation-map.json written
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("Activation Context");
+    expect(bodyContent).not.toContain("Track Activations");
+  });
+
+  it("deduplicates trigger events across stages", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "starter",
+          signal_strength: "weak",
+          trigger_events: ["sign_up", "shared_event"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+        {
+          level: 2,
+          name: "power",
+          signal_strength: "strong",
+          trigger_events: ["shared_event", "upgrade"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 2,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // shared_event should appear only once in the Track Activations list (deduplicated)
+    // It may also appear in the stage table cells, so we check the track activations section specifically
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // Extract the Track Activations section to check deduplication
+    const trackSection = bodyContent.split("Track Activations")[1] ?? "";
+    const listSection = trackSection.split("Create the following segments")[0] ?? "";
+    const matches = listSection.match(/shared_event/g);
+    expect(matches).toHaveLength(1);
   });
 });
 
@@ -1406,6 +1588,143 @@ describe("renderProductReport — identity positioning", () => {
     const html = renderProductReport("test-app", productDir);
     expect(html).not.toContain("<script>alert");
     expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: activation metrics subsection
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — activation metrics subsection", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  const buildActivationMap = (primaryLevel = 2) => ({
+    stages: [
+      {
+        level: 1,
+        name: "explorer",
+        signal_strength: "weak",
+        trigger_events: ["sign_up"],
+        value_moments_unlocked: [],
+        drop_off_risk: { level: "low", reason: "" },
+      },
+      {
+        level: 2,
+        name: "adopter",
+        signal_strength: "strong",
+        trigger_events: ["complete_onboarding"],
+        value_moments_unlocked: [],
+        drop_off_risk: { level: "low", reason: "" },
+      },
+    ],
+    transitions: [],
+    primary_activation_level: primaryLevel,
+    confidence: "high",
+    sources: [],
+  });
+
+  it("renders activation metrics section with 5 metric cards", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap());
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Activation Metrics");
+    expect(bodyContent).toContain("Activation Rate");
+    expect(bodyContent).toContain("Activated Subscription Rate");
+    expect(bodyContent).toContain("Retention Comparison");
+    expect(bodyContent).toContain("Conversion Rate Delta");
+    expect(bodyContent).toContain("Time to Activation");
+    // 5 metric cards should be present
+    const cardMatches = bodyContent.match(/class="card"/g);
+    expect(cardMatches).not.toBeNull();
+    expect((cardMatches ?? []).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("metric cards contain the primary activation level name", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap(2));
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // "adopter" is the name of stage at level 2 (primary_activation_level)
+    expect(bodyContent).toContain("adopter");
+    // Should appear in metric formulas (multiple times)
+    const adopterMatches = bodyContent.match(/adopter/g);
+    expect((adopterMatches ?? []).length).toBeGreaterThan(1);
+  });
+
+  it("falls back to 'Activated' when primary activation level stage is not found", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      ...buildActivationMap(),
+      primary_activation_level: 99, // no stage at level 99
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Activated");
+  });
+
+  it("activation metrics section is omitted when activation map is null", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // No activation-map.json
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("Activation Metrics");
+  });
+
+  it("metrics grid has 2-column CSS class", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap());
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("metrics-grid");
+    // The CSS should include the 2-column grid definition
+    expect(html).toContain("grid-template-columns: 1fr 1fr");
+  });
+
+  it("interpretation text uses styled class", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap());
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain('class="interpretation"');
+    // The interpretation text is HTML-escaped, so > becomes &gt;
+    expect(bodyContent).toContain("Target: &gt;40%");
   });
 });
 
