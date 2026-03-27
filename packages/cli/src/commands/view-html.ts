@@ -105,7 +105,17 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .conf-badge { display: inline-block; font-size: 0.8rem; padding: 0.1em 0.5em; border-radius: 3px; font-weight: 500; }
     .conf-high { background: #d1fae5; color: #065f46; }
     .conf-med { background: #fef3c7; color: #92400e; }
-    .conf-low { background: #f3f4f6; color: #6b7280; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .conf-low { background: #f3f4f6; color: #6b7280; }
+    .performance-model-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.75rem; }
+    .performance-model table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    .performance-model th, .performance-model td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    .performance-model th { font-weight: 600; color: #374151; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; background: #f9fafb; }
+    .performance-model tbody tr:hover { background: #f3f4f6; }
+    .performance-model td:first-child { font-weight: 600; white-space: nowrap; }
+    .performance-model ul { margin: 0; padding-left: 1.1rem; }
+    .performance-model ul li { font-size: 0.875rem; margin-bottom: 0.15rem; }
+    .performance-model .state-name { font-weight: 600; }
+    .performance-model .breakdown-text { font-size: 0.875rem; color: #374151; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

@@ -202,7 +202,7 @@ describe("renderComparisonReport", () => {
     expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#value-moments"');
     expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#lifecycle-states"');
+    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data on either side", () => {
