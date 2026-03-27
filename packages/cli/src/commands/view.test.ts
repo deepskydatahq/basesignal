@@ -1184,6 +1184,188 @@ describe("renderProductReport — source material", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Unit tests: positioning badge groups in identity section
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — identity positioning", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders all four positioning groups when all are populated", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ["Engineering", "Product"],
+        companies: ["Startups", "Scale-ups"],
+        use_cases: ["CI/CD", "Code review"],
+        revenue_model: ["Subscription", "Usage-based"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    // Positioning subsection should exist
+    expect(bodyContent).toContain("positioning-subsection");
+
+    // All four group labels
+    expect(bodyContent).toContain("Teams");
+    expect(bodyContent).toContain("Companies");
+    expect(bodyContent).toContain("Use Cases");
+    expect(bodyContent).toContain("Revenue Model");
+
+    // All badge values
+    expect(bodyContent).toContain("Engineering");
+    expect(bodyContent).toContain("Product");
+    expect(bodyContent).toContain("Startups");
+    expect(bodyContent).toContain("Scale-ups");
+    expect(bodyContent).toContain("CI/CD");
+    expect(bodyContent).toContain("Code review");
+    expect(bodyContent).toContain("Subscription");
+    expect(bodyContent).toContain("Usage-based");
+  });
+
+  it("renders only populated positioning groups, skipping empty ones", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ["Engineering"],
+        companies: [],
+        // use_cases omitted
+        revenue_model: ["Subscription"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).toContain("positioning-subsection");
+    expect(bodyContent).toContain("Teams");
+    expect(bodyContent).toContain("Engineering");
+    expect(bodyContent).toContain("Revenue Model");
+    expect(bodyContent).toContain("Subscription");
+
+    // Empty/missing groups should not render their labels
+    expect(bodyContent).not.toContain("Companies");
+    expect(bodyContent).not.toContain("Use Cases");
+  });
+
+  it("renders no positioning subsection when all fields are absent", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).not.toContain("positioning-subsection");
+    expect(bodyContent).not.toContain("positioning-group");
+  });
+
+  it("renders no positioning subsection when all fields are empty arrays", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: [],
+        companies: [],
+        use_cases: [],
+        revenue_model: [],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).not.toContain("positioning-subsection");
+  });
+
+  it("existing identity fields still render when positioning is also present", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        industry: "DevTools",
+        companyStage: "Growth",
+        confidence: 0.9,
+        teams: ["Platform"],
+        companies: ["Enterprise"],
+        use_cases: ["Automation"],
+        revenue_model: ["Enterprise"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Existing identity fields
+    expect(html).toContain("identity-card");
+    expect(html).toContain("identity-description");
+    expect(html).toContain("A test application");
+    expect(html).toContain("Developers");
+    expect(html).toContain("SaaS");
+    expect(html).toContain("DevTools");
+    expect(html).toContain("Growth");
+    // Plus positioning groups
+    expect(html).toContain("Platform");
+    expect(html).toContain("Enterprise");
+    expect(html).toContain("Automation");
+  });
+
+  it("escapes HTML in positioning badge values", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ['<script>alert("xss")</script>'],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).not.toContain("<script>alert");
+    expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Integration tests: HTTP server
 // ---------------------------------------------------------------------------
 
