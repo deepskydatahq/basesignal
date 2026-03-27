@@ -1,0 +1,40 @@
+id = "M025-E001-S003"
+parent = "M025-E001"
+title = "Render timestamps in HTML source material cards"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "HTML source material cards show 'Last updated: YYYY-MM-DD' below the count when a timestamp is present."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderSourceMaterial includes 'Last updated' text with formatted date when timestamps exist"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderSourceMaterial omits timestamp line when no timestamp is available"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing source material tests still pass"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = ["M025-E001-S001"]
+
+[handoff]
+implementation_hints = """
+In renderSourceMaterial(), add a small date line below each source-card's count/label.
+Use .source-label styling or a new small class. Format as YYYY-MM-DD from the timestamp.
+Add CSS for the timestamp subtitle if needed.
+"""
+reference_files = []
