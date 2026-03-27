@@ -117,7 +117,12 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .performance-model .state-name { font-weight: 600; }
     .performance-model .breakdown-text { font-size: 0.875rem; color: #374151; }
     .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .interpretation { font-size: 0.85rem; color: #6b7280; font-style: italic; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .interpretation { font-size: 0.85rem; color: #6b7280; font-style: italic; }
+    .outcomes-context { margin-bottom: 1.5rem; }
+    .outcomes-context p { color: #6b7280; line-height: 1.7; }
+    .outcome-narrative { font-size: 1.05rem; line-height: 1.7; margin-bottom: 0.75rem; }
+    .outcome-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; }
+    .outcome-measurement h5, .outcome-metrics h5 { margin-top: 0; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

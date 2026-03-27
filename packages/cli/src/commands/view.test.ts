@@ -939,23 +939,31 @@ describe("renderProductReport — outcomes section", () => {
 
     const html = renderProductReport("test-app", productDir);
     const bodyContent = html.split("</style>")[1] ?? "";
-    // Section structure
+    // Section structure uses "Possible Outcomes"
     expect(bodyContent).toContain('id="outcomes"');
-    expect(bodyContent).toContain("Outcomes");
-    // Description as card heading
+    expect(bodyContent).toContain("Possible Outcomes");
+    // Context block renders
+    expect(bodyContent).toContain("outcomes-context");
+    expect(bodyContent).toContain("Active starts after initial activation");
+    // Description as outcome-narrative paragraph (not h3)
+    expect(bodyContent).toContain('class="outcome-narrative"');
     expect(bodyContent).toContain("Reduce time to first deployment");
     // Type badge
     expect(bodyContent).toContain("efficiency");
-    // Linked features
+    // Features involved
+    expect(bodyContent).toContain("Features involved");
     expect(bodyContent).toContain("One-click deploy");
     expect(bodyContent).toContain("Auto-config");
-    // Measurement references as badge-measurement spans
-    expect(bodyContent).toContain("badge-measurement");
+    // Measurement references as entity.activity list items
     expect(bodyContent).toContain("deployment.completed");
     expect(bodyContent).toContain("project.configured");
-    // Suggested metrics as code elements
-    expect(bodyContent).toContain("<code>time_to_first_deploy</code>");
-    expect(bodyContent).toContain("<code>deploy_success_rate</code>");
+    // Side-by-side columns
+    expect(bodyContent).toContain("outcome-columns");
+    expect(bodyContent).toContain("outcome-measurement");
+    expect(bodyContent).toContain("outcome-metrics");
+    // Suggested metrics as list items
+    expect(bodyContent).toContain("time_to_first_deploy");
+    expect(bodyContent).toContain("deploy_success_rate");
   });
 
   it("renders outcomes section with raw data (no enrichment fields)", () => {
@@ -977,16 +985,18 @@ describe("renderProductReport — outcomes section", () => {
     // Section should render without no-data class
     expect(bodyContent).toContain('id="outcomes"');
     expect(bodyContent).not.toContain('id="outcomes" class="no-data"');
-    // Description and type
+    // Description as narrative paragraph
+    expect(bodyContent).toContain('class="outcome-narrative"');
     expect(bodyContent).toContain("Increase team collaboration");
     expect(bodyContent).toContain("engagement");
-    // Linked features
+    // Features involved section renders
+    expect(bodyContent).toContain("Features involved");
     expect(bodyContent).toContain("Shared boards");
     expect(bodyContent).toContain("Real-time editing");
-    // No measurement badges or metrics when enrichment fields are absent
-    expect(bodyContent).not.toContain("badge-measurement");
-    expect(bodyContent).not.toContain("Tracks:");
-    expect(bodyContent).not.toContain("Metrics:");
+    // No measurement columns when enrichment fields are absent
+    expect(bodyContent).not.toContain("outcome-columns");
+    expect(bodyContent).not.toContain("outcome-measurement");
+    expect(bodyContent).not.toContain("outcome-metrics");
   });
 
   it("renders empty state when no outcomes exist", () => {
@@ -997,12 +1007,13 @@ describe("renderProductReport — outcomes section", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    // Section should exist with no-data class
+    // Section should exist with no-data class and use "Possible Outcomes" heading
     expect(html).toContain('id="outcomes" class="no-data"');
     expect(html).toMatch(/id="outcomes"[\s\S]*?Not yet analyzed/);
+    expect(html).toContain("<h2>Possible Outcomes</h2>");
   });
 
-  it("outcomes section appears in navigation", () => {
+  it("outcomes section appears in navigation with Possible Outcomes label", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1017,8 +1028,9 @@ describe("renderProductReport — outcomes section", () => {
     ]);
 
     const html = renderProductReport("test-app", productDir);
-    // Nav should include outcomes link
+    // Nav should include outcomes link with "Possible Outcomes" label
     expect(html).toContain('href="#outcomes"');
+    expect(html).toContain("Possible Outcomes");
     // Outcomes has data, so the nav link should NOT be dimmed
     expect(html).toMatch(/href="#outcomes" class=""/);
   });
@@ -1060,7 +1072,7 @@ describe("renderProductReport — outcomes section", () => {
     expect(bodyContent).toContain("Feature X");
   });
 
-  it("outcomes without measurement_references show no measurement badges (graceful)", () => {
+  it("outcomes without measurement_references show no measurement columns (graceful)", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1086,10 +1098,10 @@ describe("renderProductReport — outcomes section", () => {
     // Both outcomes should render
     expect(bodyContent).toContain("Outcome without refs");
     expect(bodyContent).toContain("Outcome without enrichment fields at all");
-    // No measurement badges
-    expect(bodyContent).not.toContain("badge-measurement");
-    expect(bodyContent).not.toContain("Tracks:");
-    expect(bodyContent).not.toContain("Metrics:");
+    // No measurement/metrics columns when empty
+    expect(bodyContent).not.toContain("outcome-columns");
+    expect(bodyContent).not.toContain("outcome-measurement");
+    expect(bodyContent).not.toContain("outcome-metrics");
   });
 
   it("outcomes section appears between identity and journey in the report", () => {

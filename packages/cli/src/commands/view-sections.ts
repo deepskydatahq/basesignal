@@ -24,7 +24,7 @@ import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-htm
 
 export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
-  { id: "outcomes", label: "Outcomes" },
+  { id: "outcomes", label: "Possible Outcomes" },
   { id: "journey", label: "Journey" },
   { id: "icp-profiles", label: "ICP Profiles" },
   { id: "value-moments", label: "Value Moments" },
@@ -190,45 +190,56 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
 function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
   if (!outcomes || outcomes.length === 0) {
     return `<section id="outcomes" class="no-data">
-  <h2>Outcomes</h2>
+  <h2>Possible Outcomes</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
+  const contextBlock = `  <div class="outcomes-context">
+    <p>Active starts after initial activation and describes the ongoing process of value delivery. As long as your product delivers value to the user, their account stays active. These outcomes describe the situation changes that indicate sustained value.</p>
+  </div>`;
+
   const cards = outcomes
     .map((o: OutcomeItem) => {
+      const narrativeHtml = `<p class="outcome-narrative">${escapeHtml(o.description)}</p>`;
       const typeBadge = `<span class="badge">${escapeHtml(o.type)}</span>`;
 
-      let linkedHtml = "";
+      let featuresHtml = "";
       if (o.linkedFeatures.length > 0) {
-        linkedHtml = `\n      <h4>Linked Features</h4>\n      <ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`;
+        featuresHtml = `\n      <h4>Features involved</h4>\n      <ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`;
       }
 
-      let measurementHtml = "";
+      let measurementColHtml = "";
       if (o.measurement_references && o.measurement_references.length > 0) {
-        const badges = o.measurement_references
-          .map((r) => `<span class="badge badge-measurement">${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</span>`)
-          .join(" ");
-        measurementHtml = `\n      <div class="vm-crossrefs"><span class="vm-crossref-label">Tracks:</span> ${badges}</div>`;
+        const items = o.measurement_references
+          .map((r) => `<li>${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</li>`)
+          .join("");
+        measurementColHtml = `<div class="outcome-measurement">\n          <h5>Measurement</h5>\n          <ul>${items}</ul>\n        </div>`;
       }
 
-      let metricsHtml = "";
+      let metricsColHtml = "";
       if (o.suggested_metrics && o.suggested_metrics.length > 0) {
         const items = o.suggested_metrics
-          .map((s) => `<code>${escapeHtml(s)}</code>`)
-          .join(", ");
-        metricsHtml = `\n      <div class="vm-crossrefs"><span class="vm-crossref-label">Metrics:</span> ${items}</div>`;
+          .map((s) => `<li>${escapeHtml(s)}</li>`)
+          .join("");
+        metricsColHtml = `<div class="outcome-metrics">\n          <h5>Metrics</h5>\n          <ul>${items}</ul>\n        </div>`;
+      }
+
+      let columnsHtml = "";
+      if (measurementColHtml || metricsColHtml) {
+        columnsHtml = `\n      <div class="outcome-columns">\n        ${measurementColHtml}${metricsColHtml}\n      </div>`;
       }
 
       return `    <div class="card">
-      <h3>${escapeHtml(o.description)}</h3>
-      ${typeBadge}${linkedHtml}${measurementHtml}${metricsHtml}
+      ${narrativeHtml}
+      ${typeBadge}${featuresHtml}${columnsHtml}
     </div>`;
     })
     .join("\n");
 
   return `<section id="outcomes">
-  <h2>Outcomes</h2>
+  <h2>Possible Outcomes</h2>
+${contextBlock}
 ${cards}
 </section>`;
 }
