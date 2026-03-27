@@ -226,11 +226,88 @@ ${transRows}
   </table>`;
   }
 
+  // Activation Context
+  const activationContextHtml = `
+  <div class="activation-context">
+    <h3>Activation Context</h3>
+    <p>Activation represents the moments when users first experience meaningful value —
+  the "aha moments" that transform casual visitors into engaged users. Each activation
+  level represents a deeper commitment to the product, from initial exploration to
+  habitual usage.</p>
+  </div>`;
+
+  // Track Activations
+  const allTriggerEvents = Array.from(
+    new Set(activationMap.stages.flatMap((s: ActivationStage) => s.trigger_events))
+  );
+  const triggerEventItems = allTriggerEvents.length > 0
+    ? `<ul>${allTriggerEvents.map((e) => `<li>${escapeHtml(e)}</li>`).join("")}</ul>`
+    : "<p>No trigger events defined.</p>";
+
+  const segmentItems = activationMap.stages.length > 0
+    ? `<ul>${activationMap.stages.map((s: ActivationStage) => `<li>Level ${s.level}: ${escapeHtml(s.name)}</li>`).join("")}</ul>`
+    : "<p>No stages defined.</p>";
+
+  const trackActivationsHtml = `
+  <h3>Track Activations</h3>
+  <p>These events and properties need to be implemented and tested:</p>
+  ${triggerEventItems}
+  <p>Create the following segments in your analytics tool:</p>
+  ${segmentItems}`;
+
+  // Activation Metrics
+  const primaryStage = activationMap.stages.find((s: ActivationStage) => s.level === activationMap.primary_activation_level);
+  const primaryName = primaryStage?.name ?? "Activated";
+
+  const metricCards = [
+    {
+      name: "Activation Rate",
+      formula: `Accounts reaching '${primaryName}' / All new accounts`,
+      interpretation: "Target: >40%. Below 25% suggests the activation criteria may be too strict or the onboarding flow has friction.",
+    },
+    {
+      name: "Activated Subscription Rate",
+      formula: "Activated accounts that subscribe / All activated accounts",
+      interpretation: "If <50%, activation does not reliably indicate subscription intent. Consider revising activation criteria.",
+    },
+    {
+      name: "Retention Comparison",
+      formula: `30/60/90-day retention for '${primaryName}' users vs all users`,
+      interpretation: "Activated users should retain 2-3x better. If the gap is <1.5x, the activation signal may not be meaningful.",
+    },
+    {
+      name: "Conversion Rate Delta",
+      formula: "Conversion rate of activated users minus non-activated users",
+      interpretation: "A positive delta validates that activation predicts business outcomes. Target: >15 percentage points.",
+    },
+    {
+      name: "Time to Activation",
+      formula: `Median time from signup to reaching '${primaryName}'`,
+      interpretation: "Shorter is better. If >7 days for most products, investigate onboarding bottlenecks.",
+    },
+  ];
+
+  const metricCardHtml = metricCards
+    .map(
+      (card) => `    <div class="card">
+      <h4>${escapeHtml(card.name)}</h4>
+      <p>${escapeHtml(card.formula)}</p>
+      <p class="interpretation">${escapeHtml(card.interpretation)}</p>
+    </div>`
+    )
+    .join("\n");
+
+  const activationMetricsHtml = `
+  <h3>Activation Metrics</h3>
+  <div class="metrics-grid">
+${metricCardHtml}
+  </div>`;
+
   const confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(activationMap.confidence)}</p>`;
 
   return `<section id="journey">
   <h2>Activation Journey</h2>
-${stageTable}${transitionHtml}${confLine}
+${stageTable}${transitionHtml}${activationContextHtml}${trackActivationsHtml}${activationMetricsHtml}${confLine}
 </section>`;
 }
 
