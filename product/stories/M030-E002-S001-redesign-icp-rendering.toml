@@ -1,0 +1,61 @@
+id = "M030-E002-S001"
+parent = "M030-E002"
+title = "Redesign ICP section rendering"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Rename to ICP Segments, add context block, render value triggers and value moment levels in cards."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section heading reads 'ICP Segments'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Educational context block appears above ICP cards"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Value Triggers subsection renders when data exists"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Value Moment Levels render with L1/L2 level indicators"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing data (pain points, activation triggers, success metrics) still renders"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section nav updated from 'ICP Profiles' to 'ICP Segments'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty state uses 'ICP Segments' heading"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+In renderIcpSection:
+1. Change h2 and no-data heading to 'ICP Segments'
+2. Add context block above cards
+3. Add Value Triggers rendering (similar to pain_points list)
+4. Add Value Moment Levels rendering: each as 'L1: description' or 'L2: description'
+5. Update SECTION_NAV_ITEMS label
+6. Update section id from 'icp-profiles' to 'icp-segments'
+7. Update tests
+"""
+reference_files = []

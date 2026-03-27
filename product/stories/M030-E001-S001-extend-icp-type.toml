@@ -1,0 +1,28 @@
+id = "M030-E001-S001"
+parent = "M030-E001"
+title = "Extend ICPProfile type with value triggers and moment levels"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Add optional value_triggers and value_moment_levels fields to ICPProfile."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICPProfile has optional value_triggers: string[]"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICPProfile has optional value_moment_levels: Array<{level: string, description: string}>"
+
+[context]
+relevant_paths = ["packages/core/src/types/outputs.ts"]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = "Add two optional fields to the ICPProfile interface."
+reference_files = []

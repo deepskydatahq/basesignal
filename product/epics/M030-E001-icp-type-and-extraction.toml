@@ -1,0 +1,46 @@
+id = "M030-E001"
+parent = "M030"
+title = "ICP Type Extension & Extraction"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Extend ICPProfile with optional value_triggers (string array) and value_moment_levels
+(array of {level: string, description: string}). Update the ICP generation prompt to
+request these fields. Parser accepts them when present, backward compatible when absent.
+"""
+
+[job_story]
+description = """When a product is scanned, I want the ICP generation to also produce
+value triggers and value moment levels, so the report shows richer per-ICP data."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "ICPProfile gains optional value_triggers: string[]",
+    "ICPProfile gains optional value_moment_levels: Array<{level: string, description: string}>",
+    "ICP generation prompt requests value_triggers and value_moment_levels",
+    "Existing ICP tests pass",
+    "New tests cover parsing with and without new fields",
+]
+validator_context = [
+    "packages/core/src/types/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+value_moment_levels uses level strings like 'L1' and 'L2' with a description.
+Keep fields optional for backward compatibility.
+"""
+
+estimated_stories = 2

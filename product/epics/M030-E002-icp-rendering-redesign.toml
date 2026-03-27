@@ -1,0 +1,52 @@
+id = "M030-E002"
+parent = "M030"
+title = "ICP Segments Rendering Redesign"
+status = "active"
+created = 2026-03-27
+depends_on = ["M030-E001"]
+
+[outcome]
+description = """
+Rename ICP Profiles section to "ICP Segments". Add educational context block.
+Restructure cards to show: description, Pain Points, Value Triggers, Value Moment
+Levels with L1/L2 indicators. Update section nav. CSS for new layout.
+"""
+
+[job_story]
+description = """When I view the ICP section, I want to see value triggers and
+categorized value moment levels per ICP, so I understand what drives value for each segment."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Section heading is 'ICP Segments' (not 'ICP Profiles')",
+    "Educational context block renders at top of section",
+    "Each card shows Value Triggers subsection when data exists",
+    "Each card shows Value Moment Levels with L1/L2 indicators",
+    "Existing ICP data (pain points, activation triggers, success metrics) still renders",
+    "Section nav label updated to 'ICP Segments'",
+    "Empty section uses 'ICP Segments' heading",
+    "Existing tests pass",
+    "New tests cover redesigned layout",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Keep existing data rendering (pain_points, activation_triggers, success_metrics).
+Add value_triggers and value_moment_levels as new subsections.
+"""
+
+estimated_stories = 1
