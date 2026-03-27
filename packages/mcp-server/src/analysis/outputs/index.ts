@@ -58,6 +58,7 @@ export async function generateAllOutputs(
       convergence.value_moments,
       identity?.targetCustomer ?? "",
       llm,
+      pageUrls,
     );
     progress?.({ phase: "outputs_icp", status: "completed", detail: `${result.icp_profiles.length} profiles` });
   } catch (e) {
@@ -164,6 +165,7 @@ export async function generateAllOutputs(
         identity,
         result.icp_profiles,
         llm,
+        pageUrls,
       );
       progress?.({ phase: "outputs_outcome_generation", status: "completed", detail: `${outcomes.length} outcomes` });
     } catch (e) {

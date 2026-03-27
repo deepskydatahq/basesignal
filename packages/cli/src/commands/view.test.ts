@@ -12,6 +12,8 @@ import {
   loadProductList,
   renderProductList,
   renderProductReport,
+  renderSourceMaterial,
+  renderActiveMeasurementSection,
   startViewServer,
   type ViewServerHandle,
 } from "./view.js";
@@ -396,7 +398,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("Back to product list");
   });
 
-  it("renders ICP profiles with pain points and triggers", () => {
+  it("renders ICP segments with pain points and triggers", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -419,7 +421,7 @@ describe("renderProductReport", () => {
     ]);
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("ICP Profiles");
+    expect(html).toContain("ICP Segments");
     expect(html).toContain("Developer");
     expect(html).toContain("A software developer");
     expect(html).toContain("Typing fatigue");
@@ -430,7 +432,93 @@ describe("renderProductReport", () => {
     expect(html).toContain("85%");
   });
 
-  it("shows 'Not yet analyzed' when ICP profiles are missing", () => {
+  it("shows educational context block when ICP data exists", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A software developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("icp-context");
+    expect(html).toContain("different user types naturally");
+    expect(html).toContain("icp-identification");
+    expect(html).toContain("ask users during account creation");
+  });
+
+  it("renders value triggers when present in ICP segment", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        value_triggers: ["Completed first integration", "Shared with team"],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Value Triggers");
+    expect(html).toContain("Completed first integration");
+    expect(html).toContain("Shared with team");
+  });
+
+  it("renders value moment levels with level badges", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        value_moment_levels: [
+          { level: "basic", description: "Gets started with the product" },
+          { level: "advanced", description: "Uses integrations regularly" },
+        ],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Value Moment Levels");
+    expect(html).toContain('<span class="badge">basic</span>');
+    expect(html).toContain("Gets started with the product");
+    expect(html).toContain('<span class="badge">advanced</span>');
+    expect(html).toContain("Uses integrations regularly");
+  });
+
+  it("shows 'Not yet analyzed' when ICP segments are missing", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -438,9 +526,9 @@ describe("renderProductReport", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
     // ICP section should show not analyzed (no icp-profiles.json file)
-    expect(html).toMatch(/icp-profiles[\s\S]*?Not yet analyzed/);
+    expect(html).toMatch(/icp-segments[\s\S]*?Not yet analyzed/);
   });
 
   it("renders value moments grouped by tier", () => {
@@ -492,7 +580,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("vm-tier-3");
   });
 
-  it("renders measurement spec with perspectives and entities", () => {
+  it("renders measurement plan with events from measurement spec", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -516,54 +604,24 @@ describe("renderProductReport", () => {
             },
           ],
         },
-        customer: {
-          entities: [
-            {
-              name: "Customer",
-              properties: [],
-              activities: [
-                { name: "converted", derivation_rule: "When user upgrades", properties_used: [] },
-              ],
-            },
-          ],
-        },
-        interaction: {
-          entities: [
-            {
-              name: "PageView",
-              properties: [],
-              activities: [
-                { name: "viewed_page", properties_supported: ["page_url"] },
-              ],
-            },
-          ],
-        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
       },
       jsonSchemas: [],
       confidence: 0.8,
       sources: [],
-      warnings: ["Missing event coverage for onboarding"],
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("Measurement Spec");
-    expect(html).toContain("Product Perspective");
-    expect(html).toContain("Customer Perspective");
-    // Interaction perspective is hidden from the view
-    expect(html).not.toContain("Interaction Perspective");
-    expect(html).not.toContain("PageView");
-    expect(html).not.toContain("viewed_page");
-    expect(html).toContain("User");
-    expect(html).toContain("heartbeat");
+    expect(html).toContain("Measurement Plan");
+    expect(html).toContain('id="measurement-plan"');
+    expect(html).toContain("User.signed_up");
     expect(html).toContain("user_id");
-    expect(html).toContain("signed_up");
-    expect(html).toContain("converted");
-    expect(html).toContain("When user upgrades");
-    expect(html).toContain("80%");
-    expect(html).toContain("Missing event coverage for onboarding");
+    expect(html).toContain("measurement-spec");
+    expect(html).toContain("consolidated tracking implementation plan");
   });
 
-  it("renders lifecycle states with transitions", () => {
+  it("renders performance model table with lifecycle state data", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -586,20 +644,20 @@ describe("renderProductReport", () => {
           time_window: "7-30 days",
         },
       ],
-      transitions: [
-        {
-          from_state: "new",
-          to_state: "activated",
-          trigger_conditions: ["completes setup"],
-          typical_timeframe: "3-5 days",
-        },
-      ],
+      transitions: [],
       confidence: 0.75,
       sources: [],
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("Lifecycle States");
+    expect(html).toContain("Product Performance Model");
+    expect(html).toContain('id="performance-model"');
+    // Table columns
+    expect(html).toContain("State");
+    expect(html).toContain("Enters");
+    expect(html).toContain("Leaves");
+    expect(html).toContain("Breakdowns");
+    // State data
     expect(html).toContain("new");
     expect(html).toContain("activated");
     expect(html).toContain("Just signed up");
@@ -608,10 +666,54 @@ describe("renderProductReport", () => {
     expect(html).toContain("within last 7 days");
     expect(html).toContain("activate");
     expect(html).toContain("completes setup");
-    // Transitions
-    expect(html).toContain("Transitions");
-    expect(html).toContain("3-5 days");
+    // Account Level label
+    expect(html).toContain("Account Level");
+    // Confidence
     expect(html).toContain("75%");
+  });
+
+  it("renders performance model placeholder when lifecycle data is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('id="performance-model"');
+    expect(html).toMatch(/performance-model[\s\S]*?Not yet analyzed/);
+  });
+
+  it("renders performance model between identity and outcomes", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
+      states: [
+        {
+          name: "new",
+          definition: "Just signed up",
+          entry_criteria: [],
+          exit_triggers: [],
+          time_window: "0-7 days",
+        },
+      ],
+      transitions: [],
+      confidence: 0.75,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const identityPos = html.indexOf('id="identity"');
+    const performancePos = html.indexOf('id="performance-model"');
+    const outcomesPos = html.indexOf('id="outcomes"');
+    expect(identityPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(-1);
+    expect(outcomesPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(identityPos);
+    expect(outcomesPos).toBeGreaterThan(performancePos);
   });
 
   it("includes section navigation bar with links to all sections", () => {
@@ -626,10 +728,11 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#identity"');
     expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#icp-segments"');
+    expect(html).toContain('href="#active-measurement"');
     expect(html).toContain('href="#value-moments"');
-    expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#lifecycle-states"');
+    expect(html).toContain('href="#measurement-plan"');
+    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data", () => {
@@ -696,17 +799,18 @@ describe("renderProductReport", () => {
     productDir.writeJson("empty-app", "crawl/metadata.json", {});
 
     const html = renderProductReport("empty-app", productDir);
-    // All seven section IDs should be present
+    // All section IDs should be present
     expect(html).toContain('id="identity"');
     expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
+    expect(html).toContain('id="active-measurement"');
     expect(html).toContain('id="value-moments"');
-    expect(html).toContain('id="measurement-spec"');
-    expect(html).toContain('id="lifecycle-states"');
-    // Count "Not yet analyzed" — should appear 7 times (one per section)
+    expect(html).toContain('id="measurement-plan"');
+    expect(html).toContain('id="performance-model"');
+    // Count "Not yet analyzed" — should appear 8 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
-    expect(matches).toHaveLength(7);
+    expect(matches).toHaveLength(8);
   });
 
   it("renders identity as card layout with description and context badges", () => {
@@ -823,7 +927,120 @@ describe("renderProductReport", () => {
     expect(bodyContent).not.toContain("Metrics:");
   });
 
-  it("renders measurement spec activities before properties", () => {
+  it("renders measurement plan with activation trigger events", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["sign_up", "view_dashboard"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 1,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Measurement Plan");
+    expect(html).toContain("sign_up");
+    expect(html).toContain("view_dashboard");
+    expect(html).toContain("badge-primary");
+  });
+
+  it("renders measurement plan with lifecycle state criteria events", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
+      states: [
+        {
+          name: "new",
+          definition: "Just signed up",
+          entry_criteria: [{ event_name: "user_registered", condition: "first time" }],
+          exit_triggers: [{ event_name: "first_action_done", condition: "completes setup" }],
+          time_window: "0-7 days",
+        },
+      ],
+      transitions: [],
+      confidence: 0.75,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Measurement Plan");
+    expect(html).toContain("user_registered");
+    expect(html).toContain("first_action_done");
+    expect(html).toContain("badge-lifecycle");
+  });
+
+  it("deduplicates events across sources with merged source badges", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // Entity name "user" + activity "signed_up" => event key "user.signed_up"
+    productDir.writeJson("test-app", "outputs/measurement-spec.json", {
+      perspectives: {
+        product: {
+          entities: [{
+            id: "user",
+            name: "user",
+            description: "",
+            isHeartbeat: false,
+            properties: [{ name: "uid", type: "id", description: "User ID", isRequired: true }],
+            activities: [{ name: "signed_up", properties_supported: ["uid"], activity_properties: [] }],
+          }],
+        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
+      },
+      jsonSchemas: [],
+      confidence: 0.8,
+      sources: [],
+    });
+    // Activation map also references the same "user.signed_up" event name exactly
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["user.signed_up"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 1,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Extract only the table body to count event occurrences (avoid matching badges text)
+    const tableMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/);
+    const tableBody = tableMatch?.[1] ?? "";
+    const matches = (tableBody.match(/user\.signed_up/g) ?? []).length;
+    expect(matches).toBe(1);
+    // Should have both source badges
+    expect(html).toContain("measurement-spec");
+    expect(html).toContain("badge-primary");
+  });
+
+  it("shows properties for events that have them", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -833,12 +1050,15 @@ describe("renderProductReport", () => {
       perspectives: {
         product: {
           entities: [{
-            id: "board",
-            name: "Board",
-            description: "A whiteboard",
-            isHeartbeat: true,
-            properties: [{ name: "board_id", type: "id", description: "Board ID", isRequired: true }],
-            activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
+            id: "project",
+            name: "Project",
+            description: "",
+            isHeartbeat: false,
+            properties: [
+              { name: "project_id", type: "id", description: "Project ID", isRequired: true },
+              { name: "project_name", type: "string", description: "Name", isRequired: false },
+            ],
+            activities: [{ name: "created", properties_supported: ["project_id"], activity_properties: [] }],
           }],
         },
         customer: { entities: [] },
@@ -850,12 +1070,33 @@ describe("renderProductReport", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    // Activities should appear before properties in the HTML
-    const activitiesIdx = html.indexOf("Activities");
-    const propertiesIdx = html.indexOf("Property");
-    expect(activitiesIdx).toBeGreaterThan(-1);
-    expect(propertiesIdx).toBeGreaterThan(-1);
-    expect(activitiesIdx).toBeLessThan(propertiesIdx);
+    expect(html).toContain("Project.created");
+    expect(html).toContain("project_id");
+    expect(html).toContain("project_name");
+  });
+
+  it("shows not-analyzed placeholder when all measurement plan sources are null", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('id="measurement-plan"');
+    expect(html).toMatch(/measurement-plan[\s\S]*?Not yet analyzed/);
+  });
+
+  it("section nav has Measurement Plan link", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('href="#measurement-plan"');
+    expect(html).toContain("Measurement Plan");
   });
 });
 
@@ -894,23 +1135,31 @@ describe("renderProductReport — outcomes section", () => {
 
     const html = renderProductReport("test-app", productDir);
     const bodyContent = html.split("</style>")[1] ?? "";
-    // Section structure
+    // Section structure uses "Possible Outcomes"
     expect(bodyContent).toContain('id="outcomes"');
-    expect(bodyContent).toContain("Outcomes");
-    // Description as card heading
+    expect(bodyContent).toContain("Possible Outcomes");
+    // Context block renders
+    expect(bodyContent).toContain("outcomes-context");
+    expect(bodyContent).toContain("Active starts after initial activation");
+    // Description as outcome-narrative paragraph (not h3)
+    expect(bodyContent).toContain('class="outcome-narrative"');
     expect(bodyContent).toContain("Reduce time to first deployment");
     // Type badge
     expect(bodyContent).toContain("efficiency");
-    // Linked features
+    // Features involved
+    expect(bodyContent).toContain("Features involved");
     expect(bodyContent).toContain("One-click deploy");
     expect(bodyContent).toContain("Auto-config");
-    // Measurement references as badge-measurement spans
-    expect(bodyContent).toContain("badge-measurement");
+    // Measurement references as entity.activity list items
     expect(bodyContent).toContain("deployment.completed");
     expect(bodyContent).toContain("project.configured");
-    // Suggested metrics as code elements
-    expect(bodyContent).toContain("<code>time_to_first_deploy</code>");
-    expect(bodyContent).toContain("<code>deploy_success_rate</code>");
+    // Side-by-side columns
+    expect(bodyContent).toContain("outcome-columns");
+    expect(bodyContent).toContain("outcome-measurement");
+    expect(bodyContent).toContain("outcome-metrics");
+    // Suggested metrics as list items
+    expect(bodyContent).toContain("time_to_first_deploy");
+    expect(bodyContent).toContain("deploy_success_rate");
   });
 
   it("renders outcomes section with raw data (no enrichment fields)", () => {
@@ -932,16 +1181,18 @@ describe("renderProductReport — outcomes section", () => {
     // Section should render without no-data class
     expect(bodyContent).toContain('id="outcomes"');
     expect(bodyContent).not.toContain('id="outcomes" class="no-data"');
-    // Description and type
+    // Description as narrative paragraph
+    expect(bodyContent).toContain('class="outcome-narrative"');
     expect(bodyContent).toContain("Increase team collaboration");
     expect(bodyContent).toContain("engagement");
-    // Linked features
+    // Features involved section renders
+    expect(bodyContent).toContain("Features involved");
     expect(bodyContent).toContain("Shared boards");
     expect(bodyContent).toContain("Real-time editing");
-    // No measurement badges or metrics when enrichment fields are absent
-    expect(bodyContent).not.toContain("badge-measurement");
-    expect(bodyContent).not.toContain("Tracks:");
-    expect(bodyContent).not.toContain("Metrics:");
+    // No measurement columns when enrichment fields are absent
+    expect(bodyContent).not.toContain("outcome-columns");
+    expect(bodyContent).not.toContain("outcome-measurement");
+    expect(bodyContent).not.toContain("outcome-metrics");
   });
 
   it("renders empty state when no outcomes exist", () => {
@@ -952,12 +1203,13 @@ describe("renderProductReport — outcomes section", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    // Section should exist with no-data class
+    // Section should exist with no-data class and use "Possible Outcomes" heading
     expect(html).toContain('id="outcomes" class="no-data"');
     expect(html).toMatch(/id="outcomes"[\s\S]*?Not yet analyzed/);
+    expect(html).toContain("<h2>Possible Outcomes</h2>");
   });
 
-  it("outcomes section appears in navigation", () => {
+  it("outcomes section appears in navigation with Possible Outcomes label", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -972,8 +1224,9 @@ describe("renderProductReport — outcomes section", () => {
     ]);
 
     const html = renderProductReport("test-app", productDir);
-    // Nav should include outcomes link
+    // Nav should include outcomes link with "Possible Outcomes" label
     expect(html).toContain('href="#outcomes"');
+    expect(html).toContain("Possible Outcomes");
     // Outcomes has data, so the nav link should NOT be dimmed
     expect(html).toMatch(/href="#outcomes" class=""/);
   });
@@ -1015,7 +1268,7 @@ describe("renderProductReport — outcomes section", () => {
     expect(bodyContent).toContain("Feature X");
   });
 
-  it("outcomes without measurement_references show no measurement badges (graceful)", () => {
+  it("outcomes without measurement_references show no measurement columns (graceful)", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1041,10 +1294,10 @@ describe("renderProductReport — outcomes section", () => {
     // Both outcomes should render
     expect(bodyContent).toContain("Outcome without refs");
     expect(bodyContent).toContain("Outcome without enrichment fields at all");
-    // No measurement badges
-    expect(bodyContent).not.toContain("badge-measurement");
-    expect(bodyContent).not.toContain("Tracks:");
-    expect(bodyContent).not.toContain("Metrics:");
+    // No measurement/metrics columns when empty
+    expect(bodyContent).not.toContain("outcome-columns");
+    expect(bodyContent).not.toContain("outcome-measurement");
+    expect(bodyContent).not.toContain("outcome-metrics");
   });
 
   it("outcomes section appears between identity and journey in the report", () => {
@@ -1065,6 +1318,880 @@ describe("renderProductReport — outcomes section", () => {
     expect(outcomesIdx).toBeLessThan(journeyIdx);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Unit tests: source material rendering
+// ---------------------------------------------------------------------------
+
+describe("renderSourceMaterial", () => {
+  it("returns empty string when sourceMaterial is undefined", () => {
+    expect(renderSourceMaterial(undefined)).toBe("");
+  });
+
+  it("returns empty string when all counts are zero or missing", () => {
+    expect(renderSourceMaterial({})).toBe("");
+    expect(renderSourceMaterial({ pagesScanned: 0 })).toBe("");
+  });
+
+  it("renders page count with timestamp", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 12,
+      pagesLastUpdated: 1709337600000, // 2024-03-02
+    });
+    expect(html).toContain("source-material");
+    expect(html).toContain("source-card");
+    expect(html).toContain("12");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders document count with timestamp", () => {
+    const html = renderSourceMaterial({
+      documentsRead: 5,
+      documentsLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("5");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders video count with timestamp", () => {
+    const html = renderSourceMaterial({
+      videosWatched: 3,
+      videosLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("3");
+    expect(html).toContain("videos watched");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("omits timestamp line when no timestamp is available", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 8,
+    });
+    expect(html).toContain("8");
+    expect(html).toContain("pages scanned");
+    expect(html).not.toContain("Last updated");
+  });
+
+  it("renders multiple categories as separate cards", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 10,
+      pagesLastUpdated: 1709337600000,
+      documentsRead: 3,
+      documentsLastUpdated: 1709337600000,
+    });
+    const cardCount = (html.match(/source-card"/g) ?? []).length;
+    expect(cardCount).toBe(2);
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("documents read");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: source material in product report
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — source material", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders source material cards when profile has sourceMaterial data", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+      sourceMaterial: {
+        pagesScanned: 15,
+        pagesLastUpdated: 1709337600000,
+        documentsRead: 4,
+        documentsLastUpdated: 1709337600000,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("15");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("4");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("does not render source material section when profile has no sourceMaterial", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Check body content only (CSS has class definitions)
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("source-material");
+    expect(bodyContent).not.toContain("source-card");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: activation context and track activations subsections
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — activation context and track activations", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders activation context paragraph when activation map is present", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["sign_up"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 1,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Activation Context");
+    expect(bodyContent).toContain("activation-context");
+    expect(bodyContent).toContain("aha moments");
+  });
+
+  it("renders track activations section with trigger events from all stages", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["sign_up", "view_dashboard"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+        {
+          level: 2,
+          name: "adopter",
+          signal_strength: "strong",
+          trigger_events: ["create_project", "invite_team"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 2,
+      confidence: "high",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Track Activations");
+    expect(bodyContent).toContain("sign_up");
+    expect(bodyContent).toContain("view_dashboard");
+    expect(bodyContent).toContain("create_project");
+    expect(bodyContent).toContain("invite_team");
+  });
+
+  it("renders segments for each activation stage", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "First Upload",
+          signal_strength: "weak",
+          trigger_events: ["upload_file"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+        {
+          level: 2,
+          name: "Team Collaboration",
+          signal_strength: "strong",
+          trigger_events: ["invite_member"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 2,
+      confidence: "high",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Level 1: First Upload");
+    expect(bodyContent).toContain("Level 2: Team Collaboration");
+  });
+
+  it("omits activation context and track activations when activation map is null", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // No activation-map.json written
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("Activation Context");
+    expect(bodyContent).not.toContain("Track Activations");
+  });
+
+  it("deduplicates trigger events across stages", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "starter",
+          signal_strength: "weak",
+          trigger_events: ["sign_up", "shared_event"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+        {
+          level: 2,
+          name: "power",
+          signal_strength: "strong",
+          trigger_events: ["shared_event", "upgrade"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 2,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // shared_event should appear only once in the Track Activations list (deduplicated)
+    // It may also appear in the stage table cells, so we check the track activations section specifically
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // Extract the Track Activations section to check deduplication
+    const trackSection = bodyContent.split("Track Activations")[1] ?? "";
+    const listSection = trackSection.split("Create the following segments")[0] ?? "";
+    const matches = listSection.match(/shared_event/g);
+    expect(matches).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: positioning badge groups in identity section
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — identity positioning", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders all four positioning groups when all are populated", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ["Engineering", "Product"],
+        companies: ["Startups", "Scale-ups"],
+        use_cases: ["CI/CD", "Code review"],
+        revenue_model: ["Subscription", "Usage-based"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    // Positioning subsection should exist
+    expect(bodyContent).toContain("positioning-subsection");
+
+    // All four group labels
+    expect(bodyContent).toContain("Teams");
+    expect(bodyContent).toContain("Companies");
+    expect(bodyContent).toContain("Use Cases");
+    expect(bodyContent).toContain("Revenue Model");
+
+    // All badge values
+    expect(bodyContent).toContain("Engineering");
+    expect(bodyContent).toContain("Product");
+    expect(bodyContent).toContain("Startups");
+    expect(bodyContent).toContain("Scale-ups");
+    expect(bodyContent).toContain("CI/CD");
+    expect(bodyContent).toContain("Code review");
+    expect(bodyContent).toContain("Subscription");
+    expect(bodyContent).toContain("Usage-based");
+  });
+
+  it("renders only populated positioning groups, skipping empty ones", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ["Engineering"],
+        companies: [],
+        // use_cases omitted
+        revenue_model: ["Subscription"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).toContain("positioning-subsection");
+    expect(bodyContent).toContain("Teams");
+    expect(bodyContent).toContain("Engineering");
+    expect(bodyContent).toContain("Revenue Model");
+    expect(bodyContent).toContain("Subscription");
+
+    // Empty/missing groups should not render their labels
+    expect(bodyContent).not.toContain("Companies");
+    expect(bodyContent).not.toContain("Use Cases");
+  });
+
+  it("renders no positioning subsection when all fields are absent", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).not.toContain("positioning-subsection");
+    expect(bodyContent).not.toContain("positioning-group");
+  });
+
+  it("renders no positioning subsection when all fields are empty arrays", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: [],
+        companies: [],
+        use_cases: [],
+        revenue_model: [],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).not.toContain("positioning-subsection");
+  });
+
+  it("existing identity fields still render when positioning is also present", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        industry: "DevTools",
+        companyStage: "Growth",
+        confidence: 0.9,
+        teams: ["Platform"],
+        companies: ["Enterprise"],
+        use_cases: ["Automation"],
+        revenue_model: ["Enterprise"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Existing identity fields
+    expect(html).toContain("identity-card");
+    expect(html).toContain("identity-description");
+    expect(html).toContain("A test application");
+    expect(html).toContain("Developers");
+    expect(html).toContain("SaaS");
+    expect(html).toContain("DevTools");
+    expect(html).toContain("Growth");
+    // Plus positioning groups
+    expect(html).toContain("Platform");
+    expect(html).toContain("Enterprise");
+    expect(html).toContain("Automation");
+  });
+
+  it("escapes HTML in positioning badge values", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ['<script>alert("xss")</script>'],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).not.toContain("<script>alert");
+    expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+describe("renderProductReport — activation metrics subsection", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  const buildActivationMap = (primaryLevel = 2) => ({
+    stages: [
+      {
+        level: 1,
+        name: "explorer",
+        signal_strength: "weak",
+        trigger_events: ["sign_up"],
+        value_moments_unlocked: [],
+        drop_off_risk: { level: "low", reason: "" },
+      },
+      {
+        level: 2,
+        name: "adopter",
+        signal_strength: "strong",
+        trigger_events: ["complete_onboarding"],
+        value_moments_unlocked: [],
+        drop_off_risk: { level: "low", reason: "" },
+      },
+    ],
+    transitions: [],
+    primary_activation_level: primaryLevel,
+    confidence: "high",
+    sources: [],
+  });
+
+  it("renders activation metrics section with 5 metric cards", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap());
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Activation Metrics");
+    expect(bodyContent).toContain("Activation Rate");
+    expect(bodyContent).toContain("Activated Subscription Rate");
+    expect(bodyContent).toContain("Retention Comparison");
+    expect(bodyContent).toContain("Conversion Rate Delta");
+    expect(bodyContent).toContain("Time to Activation");
+    // 5 metric cards should be present
+    const cardMatches = bodyContent.match(/class="card"/g);
+    expect(cardMatches).not.toBeNull();
+    expect((cardMatches ?? []).length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("metric cards contain the primary activation level name", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap(2));
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    // "adopter" is the name of stage at level 2 (primary_activation_level)
+    expect(bodyContent).toContain("adopter");
+    // Should appear in metric formulas (multiple times)
+    const adopterMatches = bodyContent.match(/adopter/g);
+    expect((adopterMatches ?? []).length).toBeGreaterThan(1);
+  });
+
+  it("falls back to 'Activated' when primary activation level stage is not found", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      ...buildActivationMap(),
+      primary_activation_level: 99, // no stage at level 99
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain("Activated");
+  });
+
+  it("activation metrics section is omitted when activation map is null", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // No activation-map.json
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("Activation Metrics");
+  });
+
+  it("metrics grid has 2-column CSS class", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap());
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("metrics-grid");
+    // The CSS should include the 2-column grid definition
+    expect(html).toContain("grid-template-columns: 1fr 1fr");
+  });
+
+  it("interpretation text uses styled class", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", buildActivationMap());
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain('class="interpretation"');
+    // The interpretation text is HTML-escaped, so > becomes &gt;
+    expect(bodyContent).toContain("Target: &gt;40%");
+  });
+});
+
+// Unit tests: renderActiveMeasurementSection
+// ---------------------------------------------------------------------------
+
+describe("renderActiveMeasurementSection", () => {
+  const icpProfiles = [
+    {
+      id: "icp-1",
+      name: "Developer",
+      description: "A software developer",
+      pain_points: [],
+      activation_triggers: [],
+      success_metrics: [],
+      value_moment_priorities: [],
+      confidence: 0.85,
+      sources: [],
+    },
+  ];
+
+  const outcomes = [
+    {
+      description: "Reduce time to first deployment",
+      type: "efficiency",
+      linkedFeatures: ["One-click deploy"],
+      measurement_references: [
+        { entity: "deployment", activity: "completed" },
+        { entity: "project", activity: "created" },
+      ],
+      suggested_metrics: ["time_to_first_deploy", "deploy_success_rate"],
+    },
+    {
+      description: "Increase team collaboration",
+      type: "engagement",
+      linkedFeatures: [],
+      measurement_references: [
+        { entity: "deployment", activity: "completed" }, // duplicate — should be deduped
+      ],
+      suggested_metrics: ["collaboration_score"],
+    },
+  ];
+
+  const lifecycleStates = {
+    states: [
+      {
+        name: "Active",
+        definition: "User is actively using the product",
+        entry_criteria: [
+          { event_name: "session_started", condition: "at least once in last 7 days" },
+          { event_name: "feature_used", condition: "at least 3 times in last 14 days" },
+        ],
+        exit_triggers: [],
+        time_window: "7 days",
+      },
+      {
+        name: "Dormant",
+        definition: "User has not engaged recently",
+        entry_criteria: [{ event_name: "no_activity", condition: "30+ days" }],
+        exit_triggers: [],
+      },
+    ],
+    transitions: [],
+    confidence: 0.8,
+    sources: [],
+  };
+
+  it("renders section with ICP cards when data exists", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain('id="active-measurement"');
+    expect(html).toContain("Active Measurement");
+    expect(html).toContain("Developer");
+    expect(html).toContain("brings it all together");
+  });
+
+  it("shows outcomes listed per card with numbered O{n} format", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("O1: Reduce time to first deployment");
+    expect(html).toContain("O2: Increase team collaboration");
+  });
+
+  it("shows unique measurement events in entity.activity format", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("deployment.completed");
+    expect(html).toContain("project.created");
+    // deployment.completed should appear only once (deduped)
+    const matches = html.match(/deployment\.completed/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("shows unique suggested metrics", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("time_to_first_deploy");
+    expect(html).toContain("deploy_success_rate");
+    expect(html).toContain("collaboration_score");
+  });
+
+  it("shows is-active-when rule from lifecycle active state entry criteria", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("Is active when");
+    expect(html).toContain("session_started: at least once in last 7 days");
+    expect(html).toContain("feature_used: at least 3 times in last 14 days");
+  });
+
+  it("shows fallback when no active state found in lifecycle data", () => {
+    const noActiveStates = {
+      states: [
+        {
+          name: "Dormant",
+          definition: "No engagement",
+          entry_criteria: [{ event_name: "no_activity", condition: "30+ days" }],
+          exit_triggers: [],
+        },
+      ],
+      transitions: [],
+      confidence: 0.5,
+      sources: [],
+    };
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, noActiveStates);
+    expect(html).toContain("No activity rule defined yet");
+  });
+
+  it("returns not-analyzed placeholder when icpProfiles is null", () => {
+    const html = renderActiveMeasurementSection(null, outcomes, lifecycleStates);
+    expect(html).toContain('id="active-measurement"');
+    expect(html).toContain("no-data");
+    expect(html).toContain("Not yet analyzed");
+  });
+
+  it("returns not-analyzed placeholder when icpProfiles is empty array", () => {
+    const html = renderActiveMeasurementSection([], outcomes, lifecycleStates);
+    expect(html).toContain("no-data");
+    expect(html).toContain("Not yet analyzed");
+  });
+
+  it("renders ICP cards but shows no-outcomes message when outcomes is null", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, null, lifecycleStates);
+    expect(html).toContain("Developer");
+    expect(html).toContain("No outcomes generated yet");
+    // No outcome columns when no outcomes
+    expect(html).not.toContain("outcome-columns");
+  });
+
+  it("renders ICP cards but shows no-outcomes message when outcomes is empty", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, [], lifecycleStates);
+    expect(html).toContain("Developer");
+    expect(html).toContain("No outcomes generated yet");
+  });
+
+  it("shows fallback for is-active-when when lifecycleStates is null", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, null);
+    expect(html).toContain("Is active when");
+    expect(html).toContain("No activity rule defined yet");
+  });
+
+  it("renders multiple ICP cards", () => {
+    const multipleIcps = [
+      { ...icpProfiles[0], id: "icp-1", name: "Developer" },
+      { ...icpProfiles[0], id: "icp-2", name: "Manager" },
+    ];
+    const html = renderActiveMeasurementSection(multipleIcps, outcomes, lifecycleStates);
+    expect(html).toContain("Developer");
+    expect(html).toContain("Manager");
+  });
+});
+
+
+describe("renderProductReport — active measurement section", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("active measurement section appears in nav", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('href="#active-measurement"');
+    expect(html).toContain("Active Measurement");
+  });
+
+  it("active measurement nav link appears after icp-segments in nav", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const icpNavIdx = html.indexOf('href="#icp-segments"');
+    const amNavIdx = html.indexOf('href="#active-measurement"');
+    expect(icpNavIdx).toBeGreaterThan(-1);
+    expect(amNavIdx).toBeGreaterThan(-1);
+    expect(amNavIdx).toBeGreaterThan(icpNavIdx);
+  });
+
+  it("active measurement section appears after icp-segments section in report body", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const icpSectionIdx = html.indexOf('id="icp-segments"');
+    const amSectionIdx = html.indexOf('id="active-measurement"');
+    expect(icpSectionIdx).toBeGreaterThan(-1);
+    expect(amSectionIdx).toBeGreaterThan(-1);
+    expect(amSectionIdx).toBeGreaterThan(icpSectionIdx);
+  });
+
+  it("dims active measurement nav link when ICP or outcomes data is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // No icp-profiles.json or outcomes.json
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toMatch(/href="#active-measurement" class=" dimmed"/);
+  });
+
+  it("active measurement nav link not dimmed when both ICP and outcomes exist", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "Dev",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        confidence: 0.85,
+        sources: [],
+      },
+    ]);
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Some outcome",
+        type: "growth",
+        linkedFeatures: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toMatch(/href="#active-measurement" class=""/);
+  });
+});
+
 
 // ---------------------------------------------------------------------------
 // Integration tests: HTTP server
@@ -1195,5 +2322,135 @@ describe("view server", () => {
     handle = undefined;
 
     await expect(fetch(`${url}/`)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Source material stats in report header
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — source material stats", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders source material cards when stats are in profile metadata", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp", description: "A test app", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: {
+        url: "https://test.app",
+        scannedAt: Date.now(),
+      },
+      sourceMaterial: {
+        pagesScanned: 42,
+        documentsRead: 3,
+        videosWatched: 5,
+      },
+      completeness: 0.5,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("42");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("5");
+    expect(html).toContain("videos watched");
+    expect(html).toContain("3");
+    expect(html).toContain("documents read");
+  });
+
+  it("omits source material section when stats are missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp", description: "A test app", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: { url: "https://test.app", scannedAt: Date.now() },
+      completeness: 0.5,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).not.toContain("pages scanned");
+    expect(html).not.toContain("videos found");
+    expect(html).not.toContain("documents read");
+  });
+
+  it("only renders cards for non-zero counts", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp", description: "A test app", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: {
+        url: "https://test.app",
+        scannedAt: Date.now(),
+      },
+      sourceMaterial: {
+        pagesScanned: 10,
+        documentsRead: 0,
+        videosWatched: 0,
+      },
+      completeness: 0.5,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("10");
+    expect(html).toContain("pages scanned");
+    expect(html).not.toContain("videos watched");
+    expect(html).not.toContain("documents read");
+  });
+
+  it("backfills source material from crawl/metadata.json for older scans", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    // Profile without sourceMaterial (older scan)
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "OldApp", description: "Old scan", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: { url: "https://old.app", scannedAt: Date.now() },
+      completeness: 0.5,
+    });
+    // Crawl metadata with pageCount (older format)
+    productDir.writeJson("test-app", "crawl/metadata.json", {
+      url: "https://old.app",
+      timestamp: Date.now(),
+      pageCount: 25,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("25");
+    expect(html).toContain("pages scanned");
+  });
+
+  it("backfills from crawl/metadata.json with full sourceMaterial", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "OldApp", description: "Old scan", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: { url: "https://old.app", scannedAt: Date.now() },
+      completeness: 0.5,
+    });
+    productDir.writeJson("test-app", "crawl/metadata.json", {
+      url: "https://old.app",
+      timestamp: Date.now(),
+      pageCount: 30,
+      sourceMaterial: {
+        pagesScanned: 28,
+        documentsRead: 2,
+        videosWatched: 1,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("28");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("documents read");
+    expect(html).toContain("videos watched");
   });
 });

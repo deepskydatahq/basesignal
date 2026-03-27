@@ -63,6 +63,10 @@ Return a single JSON object with these fields:
   "businessModel": "How the product makes money (e.g., B2B SaaS, B2C freemium, usage-based)",
   "industry": "The industry or vertical (optional, omit if unclear)",
   "companyStage": "Startup, growth, enterprise, etc. (optional, omit if unclear)",
+  "teams": ["List of team types that use the product, e.g. 'engineering', 'marketing' (optional, omit if unclear)"],
+  "companies": ["List of company types or named companies that use the product (optional, omit if unclear)"],
+  "use_cases": ["List of specific use cases or problems the product solves (optional, omit if unclear)"],
+  "revenue_model": ["List of revenue model components, e.g. 'subscription', 'usage-based', 'per-seat' (optional, omit if unclear)"],
   "confidence": 0.0 to 1.0,
   "evidence": [{"url": "page URL", "excerpt": "relevant quote from the page"}]
 }
@@ -73,7 +77,8 @@ Rules:
 - evidence: include 1-3 short excerpts that support your extraction, with the source URL
 - description should be factual, not marketing copy
 - targetCustomer should be specific (not just "businesses")
-- businessModel should reflect the actual pricing/business approach`;
+- businessModel should reflect the actual pricing/business approach
+- teams, companies, use_cases, revenue_model are optional — only include them when clearly supported by the content`;
 
 // --- Extractor ---
 

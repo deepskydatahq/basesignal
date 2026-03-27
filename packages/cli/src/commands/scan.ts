@@ -157,6 +157,19 @@ export async function runScan(url: string | undefined, options: ScanOptions): Pr
       overallConfidence: pipelineResult.identity?.confidence ?? 0,
     };
 
+    // Source material stats
+    const webPagesCount = crawlResult.pages.length - documentPages.length;
+    const now = Date.now();
+    profile.sourceMaterial = {};
+    if (webPagesCount > 0) {
+      profile.sourceMaterial.pagesScanned = webPagesCount;
+      profile.sourceMaterial.pagesLastUpdated = now;
+    }
+    if (documentPages.length > 0) {
+      profile.sourceMaterial.documentsRead = documentPages.length;
+      profile.sourceMaterial.documentsLastUpdated = now;
+    }
+
     // Attach available sections
     if (pipelineResult.outputs.activation_map) {
       const am = pipelineResult.outputs.activation_map;

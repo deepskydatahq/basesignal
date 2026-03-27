@@ -54,6 +54,10 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .identity-target-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; }
     .identity-target-value { font-weight: 600; color: #1e40af; }
     .identity-context { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .positioning-subsection { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .positioning-group { display: flex; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap; }
+    .positioning-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; min-width: 6rem; padding-top: 0.1em; flex-shrink: 0; }
+    .positioning-badges { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     details { margin-bottom: 0.5rem; }
     details > summary { cursor: pointer; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; padding: 0.25rem 0; list-style: revert; }
     details > summary .badge { font-size: 0.7rem; vertical-align: middle; }
@@ -93,10 +97,48 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .progress-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
     .progress-bar-mini { display: inline-block; width: 60px; height: 0.75rem; vertical-align: middle; margin-right: 0.35rem; }
     .progress-bar-mini .progress-fill { border-radius: 3px; }
+    .source-material { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .source-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 1.25rem; text-align: center; display: flex; flex-direction: column; align-items: center; min-width: 120px; }
+    .source-card-count { font-size: 1.5rem; font-weight: 700; color: #1e40af; }
+    .source-card-label { font-size: 0.8rem; color: #6b7280; }
+    .source-card-date { font-size: 0.7rem; color: #9ca3af; margin-top: 0.25rem; }
     .conf-badge { display: inline-block; font-size: 0.8rem; padding: 0.1em 0.5em; border-radius: 3px; font-weight: 500; }
     .conf-high { background: #d1fae5; color: #065f46; }
     .conf-med { background: #fef3c7; color: #92400e; }
-    .conf-low { background: #f3f4f6; color: #6b7280; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .conf-low { background: #f3f4f6; color: #6b7280; }
+    .performance-model-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.75rem; }
+    .performance-model table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    .performance-model th, .performance-model td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    .performance-model th { font-weight: 600; color: #374151; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; background: #f9fafb; }
+    .performance-model tbody tr:hover { background: #f3f4f6; }
+    .performance-model td:first-child { font-weight: 600; white-space: nowrap; }
+    .performance-model ul { margin: 0; padding-left: 1.1rem; }
+    .performance-model ul li { font-size: 0.875rem; margin-bottom: 0.15rem; }
+    .performance-model .state-name { font-weight: 600; }
+    .performance-model .breakdown-text { font-size: 0.875rem; color: #374151; }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .interpretation { font-size: 0.85rem; color: #6b7280; font-style: italic; }
+    .outcomes-context { margin-bottom: 1.5rem; }
+    .outcomes-context p { color: #6b7280; line-height: 1.7; }
+    .outcome-narrative { font-size: 1.05rem; line-height: 1.7; margin-bottom: 0.75rem; }
+    .outcome-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .outcome-card > summary { cursor: pointer; font-size: 1rem; line-height: 1.6; list-style: none; }
+    .outcome-card > summary::-webkit-details-marker { display: none; }
+    .outcome-card > summary::before { content: '\\25B6  '; font-size: 0.7em; color: #9ca3af; transition: transform 0.15s; display: inline-block; }
+    .outcome-card[open] > summary::before { transform: rotate(90deg); }
+    .outcome-label { display: inline-block; font-size: 0.75rem; font-weight: 700; color: #2563eb; background: #dbeafe; padding: 0.1em 0.5em; border-radius: 3px; margin-right: 0.5rem; vertical-align: middle; }
+    .outcome-toggle { display: block; margin: 1rem auto 0; padding: 0.5rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; color: #374151; font-size: 0.85rem; cursor: pointer; }
+    .outcome-toggle:hover { background: #f3f4f6; border-color: #d1d5db; }
+    .outcome-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; }
+    .outcome-measurement h5, .outcome-metrics h5 { margin-top: 0; }
+    .icp-context { margin-bottom: 1.5rem; }
+    .icp-context p { color: #6b7280; line-height: 1.7; }
+    .icp-identification { font-style: italic; }
+    .active-measurement-context { margin-bottom: 1.5rem; }
+    .active-measurement-context p { color: #6b7280; line-height: 1.7; }
+    .active-when { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 6px; }
+    .active-when h4 { margin-top: 0; font-size: 0.9rem; }
+    .measurement-plan-intro { color: #6b7280; margin-bottom: 1rem; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

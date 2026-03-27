@@ -206,8 +206,8 @@ export function renderIcpComparison(left: ComparisonData, right: ComparisonData)
 
   const hasData = (left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0);
   const cls = hasData ? "" : " compare-empty";
-  return `<section id="icp-profiles"${cls}>
-  <h2 class="compare-section-title">ICP Profiles</h2>
+  return `<section id="icp-segments"${cls}>
+  <h2 class="compare-section-title">ICP Segments</h2>
   ${renderSideColumn(renderIcpSide(left.icpProfiles, rightPainPoints), renderIcpSide(right.icpProfiles, leftPainPoints), left.name, right.name)}
 </section>`;
 }
@@ -276,8 +276,8 @@ export function renderMeasurementSpecComparison(left: ComparisonData, right: Com
 
   const hasData = left.measurementSpec || right.measurementSpec;
   const cls = hasData ? "" : " compare-empty";
-  return `<section id="measurement-spec"${cls}>
-  <h2 class="compare-section-title">Measurement Spec</h2>
+  return `<section id="measurement-plan"${cls}>
+  <h2 class="compare-section-title">Measurement Plan</h2>
   ${renderSideColumn(renderSpecSide(left.measurementSpec, rightEntities), renderSpecSide(right.measurementSpec, leftEntities), left.name, right.name)}
 </section>`;
 }
@@ -308,8 +308,8 @@ export function renderLifecycleComparison(left: ComparisonData, right: Compariso
 
   const hasData = left.lifecycleStates || right.lifecycleStates;
   const cls = hasData ? "" : " compare-empty";
-  return `<section id="lifecycle-states"${cls}>
-  <h2 class="compare-section-title">Lifecycle States</h2>
+  return `<section id="performance-model"${cls}>
+  <h2 class="compare-section-title">Performance Model</h2>
   ${renderSideColumn(renderLifecycleSide(left.lifecycleStates, rightStates), renderLifecycleSide(right.lifecycleStates, leftStates), left.name, right.name)}
 </section>`;
 }
@@ -327,10 +327,10 @@ export function renderComparisonReport(slug1: string, slug2: string, productDir:
   if (left.profile?.identity || right.profile?.identity) analyzed.add("identity");
   if ((left.outcomes && left.outcomes.length > 0) || (right.outcomes && right.outcomes.length > 0)) analyzed.add("outcomes");
   if (left.activationMap || right.activationMap) analyzed.add("journey");
-  if ((left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0)) analyzed.add("icp-profiles");
+  if ((left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0)) analyzed.add("icp-segments");
   if ((left.valueMoments && left.valueMoments.length > 0) || (right.valueMoments && right.valueMoments.length > 0)) analyzed.add("value-moments");
-  if (left.measurementSpec || right.measurementSpec) analyzed.add("measurement-spec");
-  if (left.lifecycleStates || right.lifecycleStates) analyzed.add("lifecycle-states");
+  if (left.measurementSpec || right.measurementSpec) analyzed.add("measurement-plan");
+  if (left.lifecycleStates || right.lifecycleStates) analyzed.add("performance-model");
 
   const header = `<div class="compare-header">
   <p class="back-link"><a href="/">&larr; Back to product list</a></p>

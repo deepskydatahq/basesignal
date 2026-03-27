@@ -8,6 +8,10 @@ export const CoreIdentitySchema = z.object({
   businessModel: z.string().min(1),
   industry: z.string().optional(),
   companyStage: z.string().optional(),
+  teams: z.array(z.string()).optional(),
+  companies: z.array(z.string()).optional(),
+  use_cases: z.array(z.string()).optional(),
+  revenue_model: z.array(z.string()).optional(),
   confidence: ConfidenceSchema,
   evidence: z.array(EvidenceSchema),
 });

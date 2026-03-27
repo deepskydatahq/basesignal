@@ -199,10 +199,10 @@ describe("renderComparisonReport", () => {
     expect(html).toContain('href="#identity"');
     expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#icp-segments"');
     expect(html).toContain('href="#value-moments"');
-    expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#lifecycle-states"');
+    expect(html).toContain('href="#measurement-plan"');
+    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data on either side", () => {
@@ -286,10 +286,10 @@ describe("renderComparisonReport", () => {
     expect(html).toContain('id="identity"');
     expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
     expect(html).toContain('id="value-moments"');
-    expect(html).toContain('id="measurement-spec"');
-    expect(html).toContain('id="lifecycle-states"');
+    expect(html).toContain('id="measurement-plan"');
+    expect(html).toContain('id="performance-model"');
   });
 });
 
@@ -770,10 +770,10 @@ describe("renderComparisonReport — enriched data", () => {
     expect(body).toContain('id="identity"');
     expect(body).toContain('id="outcomes"');
     expect(body).toContain('id="journey"');
-    expect(body).toContain('id="icp-profiles"');
+    expect(body).toContain('id="icp-segments"');
     expect(body).toContain('id="value-moments"');
-    expect(body).toContain('id="measurement-spec"');
-    expect(body).toContain('id="lifecycle-states"');
+    expect(body).toContain('id="measurement-plan"');
+    expect(body).toContain('id="performance-model"');
 
     // Shared entities highlighted
     expect(body).toContain("badge-shared"); // Deploy and trial are shared
