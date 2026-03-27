@@ -492,7 +492,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("vm-tier-3");
   });
 
-  it("renders measurement spec with perspectives and entities", () => {
+  it("renders measurement plan with events from measurement spec", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -516,51 +516,21 @@ describe("renderProductReport", () => {
             },
           ],
         },
-        customer: {
-          entities: [
-            {
-              name: "Customer",
-              properties: [],
-              activities: [
-                { name: "converted", derivation_rule: "When user upgrades", properties_used: [] },
-              ],
-            },
-          ],
-        },
-        interaction: {
-          entities: [
-            {
-              name: "PageView",
-              properties: [],
-              activities: [
-                { name: "viewed_page", properties_supported: ["page_url"] },
-              ],
-            },
-          ],
-        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
       },
       jsonSchemas: [],
       confidence: 0.8,
       sources: [],
-      warnings: ["Missing event coverage for onboarding"],
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("Measurement Spec");
-    expect(html).toContain("Product Perspective");
-    expect(html).toContain("Customer Perspective");
-    // Interaction perspective is hidden from the view
-    expect(html).not.toContain("Interaction Perspective");
-    expect(html).not.toContain("PageView");
-    expect(html).not.toContain("viewed_page");
-    expect(html).toContain("User");
-    expect(html).toContain("heartbeat");
+    expect(html).toContain("Measurement Plan");
+    expect(html).toContain('id="measurement-plan"');
+    expect(html).toContain("User.signed_up");
     expect(html).toContain("user_id");
-    expect(html).toContain("signed_up");
-    expect(html).toContain("converted");
-    expect(html).toContain("When user upgrades");
-    expect(html).toContain("80%");
-    expect(html).toContain("Missing event coverage for onboarding");
+    expect(html).toContain("measurement-spec");
+    expect(html).toContain("consolidated tracking implementation plan");
   });
 
   it("renders lifecycle states with transitions", () => {
@@ -628,7 +598,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#journey"');
     expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#value-moments"');
-    expect(html).toContain('href="#measurement-spec"');
+    expect(html).toContain('href="#measurement-plan"');
     expect(html).toContain('href="#lifecycle-states"');
   });
 
@@ -702,7 +672,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('id="journey"');
     expect(html).toContain('id="icp-profiles"');
     expect(html).toContain('id="value-moments"');
-    expect(html).toContain('id="measurement-spec"');
+    expect(html).toContain('id="measurement-plan"');
     expect(html).toContain('id="lifecycle-states"');
     // Count "Not yet analyzed" — should appear 7 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
@@ -823,7 +793,120 @@ describe("renderProductReport", () => {
     expect(bodyContent).not.toContain("Metrics:");
   });
 
-  it("renders measurement spec activities before properties", () => {
+  it("renders measurement plan with activation trigger events", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["sign_up", "view_dashboard"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 1,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Measurement Plan");
+    expect(html).toContain("sign_up");
+    expect(html).toContain("view_dashboard");
+    expect(html).toContain("badge-primary");
+  });
+
+  it("renders measurement plan with lifecycle state criteria events", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
+      states: [
+        {
+          name: "new",
+          definition: "Just signed up",
+          entry_criteria: [{ event_name: "user_registered", condition: "first time" }],
+          exit_triggers: [{ event_name: "first_action_done", condition: "completes setup" }],
+          time_window: "0-7 days",
+        },
+      ],
+      transitions: [],
+      confidence: 0.75,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Measurement Plan");
+    expect(html).toContain("user_registered");
+    expect(html).toContain("first_action_done");
+    expect(html).toContain("badge-lifecycle");
+  });
+
+  it("deduplicates events across sources with merged source badges", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // Entity name "user" + activity "signed_up" => event key "user.signed_up"
+    productDir.writeJson("test-app", "outputs/measurement-spec.json", {
+      perspectives: {
+        product: {
+          entities: [{
+            id: "user",
+            name: "user",
+            description: "",
+            isHeartbeat: false,
+            properties: [{ name: "uid", type: "id", description: "User ID", isRequired: true }],
+            activities: [{ name: "signed_up", properties_supported: ["uid"], activity_properties: [] }],
+          }],
+        },
+        customer: { entities: [] },
+        interaction: { entities: [] },
+      },
+      jsonSchemas: [],
+      confidence: 0.8,
+      sources: [],
+    });
+    // Activation map also references the same "user.signed_up" event name exactly
+    productDir.writeJson("test-app", "outputs/activation-map.json", {
+      stages: [
+        {
+          level: 1,
+          name: "explorer",
+          signal_strength: "weak",
+          trigger_events: ["user.signed_up"],
+          value_moments_unlocked: [],
+          drop_off_risk: { level: "low", reason: "" },
+        },
+      ],
+      transitions: [],
+      primary_activation_level: 1,
+      confidence: "medium",
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Extract only the table body to count event occurrences (avoid matching badges text)
+    const tableMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/);
+    const tableBody = tableMatch?.[1] ?? "";
+    const matches = (tableBody.match(/user\.signed_up/g) ?? []).length;
+    expect(matches).toBe(1);
+    // Should have both source badges
+    expect(html).toContain("measurement-spec");
+    expect(html).toContain("badge-primary");
+  });
+
+  it("shows properties for events that have them", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -833,12 +916,15 @@ describe("renderProductReport", () => {
       perspectives: {
         product: {
           entities: [{
-            id: "board",
-            name: "Board",
-            description: "A whiteboard",
-            isHeartbeat: true,
-            properties: [{ name: "board_id", type: "id", description: "Board ID", isRequired: true }],
-            activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
+            id: "project",
+            name: "Project",
+            description: "",
+            isHeartbeat: false,
+            properties: [
+              { name: "project_id", type: "id", description: "Project ID", isRequired: true },
+              { name: "project_name", type: "string", description: "Name", isRequired: false },
+            ],
+            activities: [{ name: "created", properties_supported: ["project_id"], activity_properties: [] }],
           }],
         },
         customer: { entities: [] },
@@ -850,12 +936,33 @@ describe("renderProductReport", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    // Activities should appear before properties in the HTML
-    const activitiesIdx = html.indexOf("Activities");
-    const propertiesIdx = html.indexOf("Property");
-    expect(activitiesIdx).toBeGreaterThan(-1);
-    expect(propertiesIdx).toBeGreaterThan(-1);
-    expect(activitiesIdx).toBeLessThan(propertiesIdx);
+    expect(html).toContain("Project.created");
+    expect(html).toContain("project_id");
+    expect(html).toContain("project_name");
+  });
+
+  it("shows not-analyzed placeholder when all measurement plan sources are null", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('id="measurement-plan"');
+    expect(html).toMatch(/measurement-plan[\s\S]*?Not yet analyzed/);
+  });
+
+  it("section nav has Measurement Plan link", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('href="#measurement-plan"');
+    expect(html).toContain("Measurement Plan");
   });
 });
 
@@ -1195,5 +1302,135 @@ describe("view server", () => {
     handle = undefined;
 
     await expect(fetch(`${url}/`)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Source material stats in report header
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — source material stats", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders source material cards when stats are in profile metadata", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp", description: "A test app", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: {
+        url: "https://test.app",
+        scannedAt: Date.now(),
+        sourceMaterial: {
+          pagesScanned: 42,
+          documentsRead: 3,
+          videosFound: 5,
+        },
+      },
+      completeness: 0.5,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("42");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("5");
+    expect(html).toContain("videos found");
+    expect(html).toContain("3");
+    expect(html).toContain("documents read");
+  });
+
+  it("omits source material section when stats are missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp", description: "A test app", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: { url: "https://test.app", scannedAt: Date.now() },
+      completeness: 0.5,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).not.toContain("pages scanned");
+    expect(html).not.toContain("videos found");
+    expect(html).not.toContain("documents read");
+  });
+
+  it("only renders cards for non-zero counts", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp", description: "A test app", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: {
+        url: "https://test.app",
+        scannedAt: Date.now(),
+        sourceMaterial: {
+          pagesScanned: 10,
+          documentsRead: 0,
+          videosFound: 0,
+        },
+      },
+      completeness: 0.5,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("10");
+    expect(html).toContain("pages scanned");
+    expect(html).not.toContain("videos found");
+    expect(html).not.toContain("documents read");
+  });
+
+  it("backfills source material from crawl/metadata.json for older scans", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    // Profile without sourceMaterial (older scan)
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "OldApp", description: "Old scan", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: { url: "https://old.app", scannedAt: Date.now() },
+      completeness: 0.5,
+    });
+    // Crawl metadata with pageCount (older format)
+    productDir.writeJson("test-app", "crawl/metadata.json", {
+      url: "https://old.app",
+      timestamp: Date.now(),
+      pageCount: 25,
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("25");
+    expect(html).toContain("pages scanned");
+  });
+
+  it("backfills from crawl/metadata.json with full sourceMaterial", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "OldApp", description: "Old scan", targetCustomer: "Devs", businessModel: "SaaS", confidence: 0.8 },
+      metadata: { url: "https://old.app", scannedAt: Date.now() },
+      completeness: 0.5,
+    });
+    productDir.writeJson("test-app", "crawl/metadata.json", {
+      url: "https://old.app",
+      timestamp: Date.now(),
+      pageCount: 30,
+      sourceMaterial: {
+        pagesScanned: 28,
+        documentsRead: 2,
+        videosFound: 1,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("28");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("documents read");
+    expect(html).toContain("videos found");
   });
 });
