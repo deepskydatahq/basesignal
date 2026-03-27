@@ -3,6 +3,7 @@ import {
   parseICPProfiles,
   aggregateRoles,
   buildICPPrompt,
+  ICP_SYSTEM_PROMPT,
 } from "../../outputs/icp-profiles.js";
 import type { ValueMoment } from "../../types.js";
 
@@ -179,5 +180,59 @@ describe("parseICPProfiles", () => {
 
   it("rejects non-array response", () => {
     expect(() => parseICPProfiles('{"not":"array"}')).toThrow("Expected array");
+  });
+
+  it("parses value_triggers and value_moment_levels when present", () => {
+    const input = JSON.stringify([
+      {
+        name: "Engineering Team Lead",
+        description: "Manages a team of developers",
+        value_moment_priorities: [
+          { moment_id: "vm-1", priority: 1, relevance_reason: "Core workflow" },
+        ],
+        activation_triggers: ["create_board"],
+        pain_points: ["Manual planning"],
+        success_metrics: ["Sprint time < 15 min"],
+        confidence: 0.8,
+        value_triggers: ["Creates first sprint board with 5+ issues", "Runs retrospective"],
+        value_moment_levels: [
+          { level: "L1", description: "Core daily sprint management" },
+          { level: "L2", description: "Enables cross-team planning at scale" },
+        ],
+      },
+      {
+        name: "Senior Developer",
+        description: "Ships code daily",
+        value_moment_priorities: [
+          { moment_id: "vm-2", priority: 1, relevance_reason: "Task management" },
+        ],
+        activation_triggers: ["create_issue"],
+        pain_points: ["Context switching"],
+        success_metrics: ["All tasks visible"],
+        confidence: 0.7,
+      },
+    ]);
+
+    const result = parseICPProfiles(input);
+    expect(result[0].value_triggers).toEqual([
+      "Creates first sprint board with 5+ issues",
+      "Runs retrospective",
+    ]);
+    expect(result[0].value_moment_levels).toEqual([
+      { level: "L1", description: "Core daily sprint management" },
+      { level: "L2", description: "Enables cross-team planning at scale" },
+    ]);
+    expect(result[1].value_triggers).toBeUndefined();
+    expect(result[1].value_moment_levels).toBeUndefined();
+  });
+});
+
+describe("ICP_SYSTEM_PROMPT", () => {
+  it("contains value_triggers field documentation", () => {
+    expect(ICP_SYSTEM_PROMPT).toContain("value_triggers");
+  });
+
+  it("contains value_moment_levels field documentation", () => {
+    expect(ICP_SYSTEM_PROMPT).toContain("value_moment_levels");
   });
 });

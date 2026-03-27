@@ -40,6 +40,8 @@ Each profile must include:
 - activation_triggers: Array of actions that signal this persona is getting value
 - pain_points: Array of problems this persona faces without the product
 - success_metrics: Array of measurable outcomes indicating success
+- value_triggers: Array of specific product actions that indicate this persona is getting value (e.g., "Creates first audience segment with 100+ prospects"). These should be concrete, observable product interactions.
+- value_moment_levels: Array of { level: "L1" | "L2", description: string }. L1 = Core daily workflow value. L2 = Enables something at scale or unlocks advanced capability.
 - confidence: Number 0-1 reflecting how well-supported this persona is by the data
 
 ## Persona Prioritization
@@ -167,6 +169,17 @@ export function parseICPProfiles(responseText: string): ICPProfile[] {
         pain_points: (item.pain_points as unknown[]).map(String),
         success_metrics: (item.success_metrics as unknown[]).map(String),
         confidence,
+        ...(Array.isArray(item.value_triggers) && {
+          value_triggers: (item.value_triggers as unknown[]).map(String),
+        }),
+        ...(Array.isArray(item.value_moment_levels) && {
+          value_moment_levels: (
+            item.value_moment_levels as Array<Record<string, unknown>>
+          ).map((vml) => ({
+            level: String(vml.level ?? ""),
+            description: String(vml.description ?? ""),
+          })),
+        }),
         sources: [],
       };
     },
