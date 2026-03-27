@@ -75,6 +75,16 @@ export interface ProductProfile {
   /** Overall confidence score (0-1). */
   overallConfidence?: number;
 
+  /** Source material stats (counts and timestamps per category). */
+  sourceMaterial?: {
+    pagesScanned?: number;
+    pagesLastUpdated?: number;
+    documentsRead?: number;
+    documentsLastUpdated?: number;
+    videosWatched?: number;
+    videosLastUpdated?: number;
+  };
+
   /** Allow additional fields for forward compatibility. */
   [key: string]: unknown;
 }
