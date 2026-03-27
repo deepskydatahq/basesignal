@@ -2347,11 +2347,11 @@ describe("renderProductReport — source material stats", () => {
       metadata: {
         url: "https://test.app",
         scannedAt: Date.now(),
-        sourceMaterial: {
-          pagesScanned: 42,
-          documentsRead: 3,
-          videosFound: 5,
-        },
+      },
+      sourceMaterial: {
+        pagesScanned: 42,
+        documentsRead: 3,
+        videosWatched: 5,
       },
       completeness: 0.5,
     });
@@ -2361,7 +2361,7 @@ describe("renderProductReport — source material stats", () => {
     expect(html).toContain("42");
     expect(html).toContain("pages scanned");
     expect(html).toContain("5");
-    expect(html).toContain("videos found");
+    expect(html).toContain("videos watched");
     expect(html).toContain("3");
     expect(html).toContain("documents read");
   });
@@ -2389,11 +2389,11 @@ describe("renderProductReport — source material stats", () => {
       metadata: {
         url: "https://test.app",
         scannedAt: Date.now(),
-        sourceMaterial: {
-          pagesScanned: 10,
-          documentsRead: 0,
-          videosFound: 0,
-        },
+      },
+      sourceMaterial: {
+        pagesScanned: 10,
+        documentsRead: 0,
+        videosWatched: 0,
       },
       completeness: 0.5,
     });
@@ -2402,7 +2402,7 @@ describe("renderProductReport — source material stats", () => {
     expect(html).toContain("source-material");
     expect(html).toContain("10");
     expect(html).toContain("pages scanned");
-    expect(html).not.toContain("videos found");
+    expect(html).not.toContain("videos watched");
     expect(html).not.toContain("documents read");
   });
 
@@ -2443,7 +2443,7 @@ describe("renderProductReport — source material stats", () => {
       sourceMaterial: {
         pagesScanned: 28,
         documentsRead: 2,
-        videosFound: 1,
+        videosWatched: 1,
       },
     });
 
@@ -2451,6 +2451,6 @@ describe("renderProductReport — source material stats", () => {
     expect(html).toContain("28");
     expect(html).toContain("pages scanned");
     expect(html).toContain("documents read");
-    expect(html).toContain("videos found");
+    expect(html).toContain("videos watched");
   });
 });

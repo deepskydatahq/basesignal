@@ -22,13 +22,13 @@ import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-htm
 
 export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
+  { id: "performance-model", label: "Performance Model" },
   { id: "outcomes", label: "Possible Outcomes" },
   { id: "journey", label: "Journey" },
   { id: "icp-segments", label: "ICP Segments" },
   { id: "active-measurement", label: "Active Measurement" },
   { id: "value-moments", label: "Value Moments" },
   { id: "measurement-plan", label: "Measurement Plan" },
-  { id: "performance-model", label: "Performance Model" },
 ];
 
 export function renderSectionNav(analyzedSections: Set<string>): string {
@@ -48,26 +48,26 @@ export const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.sec
 // ---------------------------------------------------------------------------
 
 function renderHeaderSourceMaterial(profile: ProductProfile | null): string {
-  const sm = profile?.metadata?.sourceMaterial;
+  const sm = profile?.sourceMaterial;
   if (!sm) return "";
 
   const cards: string[] = [];
-  if (sm.pagesScanned > 0) {
+  if (sm.pagesScanned && sm.pagesScanned > 0) {
     cards.push(`<div class="source-card">
-      <span class="source-count">${sm.pagesScanned}</span>
-      <span class="source-label">pages scanned</span>
+      <span class="source-card-count">${sm.pagesScanned}</span>
+      <span class="source-card-label">pages scanned</span>
     </div>`);
   }
-  if (sm.videosFound > 0) {
+  if (sm.videosWatched && sm.videosWatched > 0) {
     cards.push(`<div class="source-card">
-      <span class="source-count">${sm.videosFound}</span>
-      <span class="source-label">videos found</span>
+      <span class="source-card-count">${sm.videosWatched}</span>
+      <span class="source-card-label">videos watched</span>
     </div>`);
   }
-  if (sm.documentsRead > 0) {
+  if (sm.documentsRead && sm.documentsRead > 0) {
     cards.push(`<div class="source-card">
-      <span class="source-count">${sm.documentsRead}</span>
-      <span class="source-label">documents read</span>
+      <span class="source-card-count">${sm.documentsRead}</span>
+      <span class="source-card-label">documents read</span>
     </div>`);
   }
 
@@ -226,8 +226,11 @@ function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
     <p>Active starts after initial activation and describes the ongoing process of value delivery. As long as your product delivers value to the user, their account stays active. These outcomes describe the situation changes that indicate sustained value.</p>
   </div>`;
 
+  const MAX_VISIBLE = 5;
+
   const cards = outcomes
-    .map((o: OutcomeItem) => {
+    .map((o: OutcomeItem, i: number) => {
+      const label = `O${i + 1}`;
       const narrativeHtml = `<p class="outcome-narrative">${escapeHtml(o.description)}</p>`;
       const typeBadge = `<span class="badge">${escapeHtml(o.type)}</span>`;
 
@@ -257,17 +260,24 @@ function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
         columnsHtml = `\n      <div class="outcome-columns">\n        ${measurementColHtml}${metricsColHtml}\n      </div>`;
       }
 
-      return `    <div class="card">
+      const hidden = i >= MAX_VISIBLE ? ` style="display:none" data-outcome-extra` : "";
+
+      return `    <details class="outcome-card card"${hidden}>
+      <summary><span class="outcome-label">${label}</span> ${escapeHtml(o.description)}</summary>
       ${narrativeHtml}
       ${typeBadge}${featuresHtml}${columnsHtml}
-    </div>`;
+    </details>`;
     })
     .join("\n");
+
+  const toggleHtml = outcomes.length > MAX_VISIBLE
+    ? `\n  <button class="outcome-toggle" onclick="document.querySelectorAll('[data-outcome-extra]').forEach(e=>{e.style.display=e.style.display==='none'?'':'none'});this.textContent=this.textContent.includes('Show')?'Hide ${outcomes.length - MAX_VISIBLE} more outcomes':'Show ${outcomes.length - MAX_VISIBLE} more outcomes'">Show ${outcomes.length - MAX_VISIBLE} more outcomes</button>`
+    : "";
 
   return `<section id="outcomes">
   <h2>Possible Outcomes</h2>
 ${contextBlock}
-${cards}
+${cards}${toggleHtml}
 </section>`;
 }
 
@@ -857,15 +867,15 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   const profile = productDir.readJson<ProductProfile>(slug, "profile.json");
 
   // Backfill source material stats from crawl metadata for older scans
-  if (profile?.metadata && !profile.metadata.sourceMaterial) {
+  if (profile && !profile.sourceMaterial) {
     const crawlMeta = productDir.readJson<Record<string, unknown>>(slug, "crawl/metadata.json");
     if (crawlMeta?.sourceMaterial) {
-      profile.metadata.sourceMaterial = crawlMeta.sourceMaterial as NonNullable<NonNullable<ProductProfile["metadata"]>["sourceMaterial"]>;
+      profile.sourceMaterial = crawlMeta.sourceMaterial as NonNullable<ProductProfile["sourceMaterial"]>;
     } else if (typeof crawlMeta?.pageCount === "number") {
-      profile.metadata.sourceMaterial = {
+      profile.sourceMaterial = {
         pagesScanned: crawlMeta.pageCount,
         documentsRead: 0,
-        videosFound: 0,
+        videosWatched: 0,
       };
     }
   }

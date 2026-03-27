@@ -121,6 +121,14 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .outcomes-context { margin-bottom: 1.5rem; }
     .outcomes-context p { color: #6b7280; line-height: 1.7; }
     .outcome-narrative { font-size: 1.05rem; line-height: 1.7; margin-bottom: 0.75rem; }
+    .outcome-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .outcome-card > summary { cursor: pointer; font-size: 1rem; line-height: 1.6; list-style: none; }
+    .outcome-card > summary::-webkit-details-marker { display: none; }
+    .outcome-card > summary::before { content: '\\25B6  '; font-size: 0.7em; color: #9ca3af; transition: transform 0.15s; display: inline-block; }
+    .outcome-card[open] > summary::before { transform: rotate(90deg); }
+    .outcome-label { display: inline-block; font-size: 0.75rem; font-weight: 700; color: #2563eb; background: #dbeafe; padding: 0.1em 0.5em; border-radius: 3px; margin-right: 0.5rem; vertical-align: middle; }
+    .outcome-toggle { display: block; margin: 1rem auto 0; padding: 0.5rem 1.25rem; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb; color: #374151; font-size: 0.85rem; cursor: pointer; }
+    .outcome-toggle:hover { background: #f3f4f6; border-color: #d1d5db; }
     .outcome-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; }
     .outcome-measurement h5, .outcome-metrics h5 { margin-top: 0; }
     .icp-context { margin-bottom: 1.5rem; }
@@ -130,10 +138,6 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .active-measurement-context p { color: #6b7280; line-height: 1.7; }
     .active-when { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 6px; }
     .active-when h4 { margin-top: 0; font-size: 0.9rem; }
-    .source-material { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
-    .source-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 1.25rem; display: flex; align-items: baseline; gap: 0.5rem; background: #f9fafb; }
-    .source-count { font-size: 1.5rem; font-weight: 700; color: #1e40af; }
-    .source-label { font-size: 0.85rem; color: #6b7280; }
     .measurement-plan-intro { color: #6b7280; margin-bottom: 1rem; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>

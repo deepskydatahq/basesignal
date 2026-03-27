@@ -308,8 +308,8 @@ export function renderLifecycleComparison(left: ComparisonData, right: Compariso
 
   const hasData = left.lifecycleStates || right.lifecycleStates;
   const cls = hasData ? "" : " compare-empty";
-  return `<section id="lifecycle-states"${cls}>
-  <h2 class="compare-section-title">Lifecycle States</h2>
+  return `<section id="performance-model"${cls}>
+  <h2 class="compare-section-title">Performance Model</h2>
   ${renderSideColumn(renderLifecycleSide(left.lifecycleStates, rightStates), renderLifecycleSide(right.lifecycleStates, leftStates), left.name, right.name)}
 </section>`;
 }

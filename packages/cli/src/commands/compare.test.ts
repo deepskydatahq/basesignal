@@ -289,7 +289,7 @@ describe("renderComparisonReport", () => {
     expect(html).toContain('id="icp-segments"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-plan"');
-    expect(html).toContain('id="lifecycle-states"');
+    expect(html).toContain('id="performance-model"');
   });
 });
 
@@ -773,7 +773,7 @@ describe("renderComparisonReport — enriched data", () => {
     expect(body).toContain('id="icp-segments"');
     expect(body).toContain('id="value-moments"');
     expect(body).toContain('id="measurement-plan"');
-    expect(body).toContain('id="lifecycle-states"');
+    expect(body).toContain('id="performance-model"');
 
     // Shared entities highlighted
     expect(body).toContain("badge-shared"); // Deploy and trial are shared
