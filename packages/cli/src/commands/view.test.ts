@@ -396,7 +396,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("Back to product list");
   });
 
-  it("renders ICP profiles with pain points and triggers", () => {
+  it("renders ICP segments with pain points and triggers", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -419,7 +419,7 @@ describe("renderProductReport", () => {
     ]);
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("ICP Profiles");
+    expect(html).toContain("ICP Segments");
     expect(html).toContain("Developer");
     expect(html).toContain("A software developer");
     expect(html).toContain("Typing fatigue");
@@ -430,7 +430,93 @@ describe("renderProductReport", () => {
     expect(html).toContain("85%");
   });
 
-  it("shows 'Not yet analyzed' when ICP profiles are missing", () => {
+  it("shows educational context block when ICP data exists", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A software developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("icp-context");
+    expect(html).toContain("different user types naturally");
+    expect(html).toContain("icp-identification");
+    expect(html).toContain("ask users during account creation");
+  });
+
+  it("renders value triggers when present in ICP segment", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        value_triggers: ["Completed first integration", "Shared with team"],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Value Triggers");
+    expect(html).toContain("Completed first integration");
+    expect(html).toContain("Shared with team");
+  });
+
+  it("renders value moment levels with level badges", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        value_moment_levels: [
+          { level: "basic", description: "Gets started with the product" },
+          { level: "advanced", description: "Uses integrations regularly" },
+        ],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Value Moment Levels");
+    expect(html).toContain('<span class="badge">basic</span>');
+    expect(html).toContain("Gets started with the product");
+    expect(html).toContain('<span class="badge">advanced</span>');
+    expect(html).toContain("Uses integrations regularly");
+  });
+
+  it("shows 'Not yet analyzed' when ICP segments are missing", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -438,9 +524,9 @@ describe("renderProductReport", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
     // ICP section should show not analyzed (no icp-profiles.json file)
-    expect(html).toMatch(/icp-profiles[\s\S]*?Not yet analyzed/);
+    expect(html).toMatch(/icp-segments[\s\S]*?Not yet analyzed/);
   });
 
   it("renders value moments grouped by tier", () => {
@@ -626,7 +712,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#identity"');
     expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#icp-segments"');
     expect(html).toContain('href="#value-moments"');
     expect(html).toContain('href="#measurement-spec"');
     expect(html).toContain('href="#lifecycle-states"');
@@ -700,7 +786,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('id="identity"');
     expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
     expect(html).toContain('id="lifecycle-states"');

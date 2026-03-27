@@ -206,8 +206,8 @@ export function renderIcpComparison(left: ComparisonData, right: ComparisonData)
 
   const hasData = (left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0);
   const cls = hasData ? "" : " compare-empty";
-  return `<section id="icp-profiles"${cls}>
-  <h2 class="compare-section-title">ICP Profiles</h2>
+  return `<section id="icp-segments"${cls}>
+  <h2 class="compare-section-title">ICP Segments</h2>
   ${renderSideColumn(renderIcpSide(left.icpProfiles, rightPainPoints), renderIcpSide(right.icpProfiles, leftPainPoints), left.name, right.name)}
 </section>`;
 }
@@ -327,7 +327,7 @@ export function renderComparisonReport(slug1: string, slug2: string, productDir:
   if (left.profile?.identity || right.profile?.identity) analyzed.add("identity");
   if ((left.outcomes && left.outcomes.length > 0) || (right.outcomes && right.outcomes.length > 0)) analyzed.add("outcomes");
   if (left.activationMap || right.activationMap) analyzed.add("journey");
-  if ((left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0)) analyzed.add("icp-profiles");
+  if ((left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0)) analyzed.add("icp-segments");
   if ((left.valueMoments && left.valueMoments.length > 0) || (right.valueMoments && right.valueMoments.length > 0)) analyzed.add("value-moments");
   if (left.measurementSpec || right.measurementSpec) analyzed.add("measurement-spec");
   if (left.lifecycleStates || right.lifecycleStates) analyzed.add("lifecycle-states");
