@@ -1,0 +1,61 @@
+id = "M031-E001"
+parent = "M031"
+title = "Active Measurement Section"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+New Active Measurement section in the HTML report. For each ICP segment, shows:
+applicable outcomes, measurement events needed, an 'is active when' rule derived
+from lifecycle states, and metrics to verify. Cross-reference is done at render
+time from existing output data (ICP profiles, outcomes, measurement spec, lifecycle
+states). No new LLM call or pipeline step — pure synthesis at render time.
+"""
+
+[job_story]
+description = """When I view the report, I want to see a per-ICP measurement plan
+that ties together outcomes, events, activity rules, and metrics, so I have a
+unified view of what to track for each user type."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Active Measurement section appears after ICP Segments in the report",
+    "Section has educational intro paragraph",
+    "Each ICP gets a card with applicable outcomes listed",
+    "Each card shows measurement events in entity.activity format",
+    "Each card shows 'is active when' rule from lifecycle active state criteria",
+    "Each card shows metrics to verify",
+    "Section added to nav",
+    "Section degrades gracefully when ICP or outcome data is missing",
+    "Existing tests pass",
+    "New tests cover the cross-reference rendering",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/core/src/types/outputs.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Cross-referencing at render time keeps it simple — no new pipeline step needed.
+The renderer receives all data and synthesizes it into per-ICP cards.
+'Is active when' rules come from lifecycle states active state entry criteria.
+Outcomes apply to all ICPs (product-level outcomes, not ICP-specific).
+Measurement events from outcomes' measurement_references.
+Metrics from outcomes' suggested_metrics.
+"""
+
+estimated_stories = 2

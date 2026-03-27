@@ -1,0 +1,40 @@
+id = "M031-E001-S002"
+parent = "M031-E001"
+title = "Wire active measurement into report and nav"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Add Active Measurement section to renderProductReport after ICP Segments and add to section nav."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderProductReport includes active measurement section after ICP segments"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "SECTION_NAV_ITEMS includes 'Active Measurement'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section nav tracks active-measurement data presence"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = ["M031-E001-S001"]
+
+[handoff]
+implementation_hints = """
+In renderProductReport: add renderActiveMeasurementSection call after ICP section.
+Pass icpProfiles, outcomes, and lifecycleStates.
+Add to SECTION_NAV_ITEMS: { id: 'active-measurement', label: 'Active Measurement' }.
+Add to analyzed set when icpProfiles and outcomes both exist.
+"""
+reference_files = []
