@@ -207,6 +207,7 @@ export interface OutcomeItem {
   linkedFeatures: string[];
   measurement_references?: Array<{ entity: string; activity: string }>;
   suggested_metrics?: string[];
+  citations?: Array<{ url: string; excerpt: string }>;
 }
 
 /** Business outcomes section of a product profile. */

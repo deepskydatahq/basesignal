@@ -12,6 +12,7 @@ import {
   loadProductList,
   renderProductList,
   renderProductReport,
+  FootnoteCollector,
   startViewServer,
   type ViewServerHandle,
 } from "./view.js";
@@ -1063,6 +1064,187 @@ describe("renderProductReport — outcomes section", () => {
     expect(journeyIdx).toBeGreaterThan(-1);
     expect(outcomesIdx).toBeGreaterThan(identityIdx);
     expect(outcomesIdx).toBeLessThan(journeyIdx);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: footnote rendering
+// ---------------------------------------------------------------------------
+
+describe("footnote rendering", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("FootnoteCollector.add returns sequential numbers", () => {
+    const fc = new FootnoteCollector();
+    expect(fc.add("https://example.com", "excerpt 1")).toBe(1);
+    expect(fc.add("https://example2.com", "excerpt 2")).toBe(2);
+    expect(fc.add("https://example3.com", "excerpt 3")).toBe(3);
+    expect(fc.count).toBe(3);
+  });
+
+  it("FootnoteCollector.markers generates correct HTML", () => {
+    const fc = new FootnoteCollector();
+    const html = fc.markers([
+      { url: "https://example.com", excerpt: "Some text" },
+    ]);
+    expect(html).toContain('class="footnote-marker"');
+    expect(html).toContain('href="#fn-1"');
+    expect(html).toContain("[1]");
+    expect(fc.count).toBe(1);
+  });
+
+  it("FootnoteCollector.markers returns empty string for empty array", () => {
+    const fc = new FootnoteCollector();
+    expect(fc.markers([])).toBe("");
+    expect(fc.count).toBe(0);
+  });
+
+  it("FootnoteCollector.renderSourcesSection renders all footnotes", () => {
+    const fc = new FootnoteCollector();
+    fc.add("https://example.com", "First source");
+    fc.add("https://other.com/page", "Second source");
+    const html = fc.renderSourcesSection();
+    expect(html).toContain('id="sources"');
+    expect(html).toContain("sources-section");
+    expect(html).toContain('id="fn-1"');
+    expect(html).toContain('id="fn-2"');
+    expect(html).toContain("https://example.com");
+    expect(html).toContain("First source");
+    expect(html).toContain("https://other.com/page");
+    expect(html).toContain("Second source");
+  });
+
+  it("FootnoteCollector.renderSourcesSection returns empty string when no footnotes", () => {
+    const fc = new FootnoteCollector();
+    expect(fc.renderSourcesSection()).toBe("");
+  });
+
+  it("renderProductReport includes Sources section when citations exist", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        evidence: [{ url: "https://source.com", excerpt: "Evidence from source" }],
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain('id="sources"');
+    expect(bodyContent).toContain("Sources");
+    expect(bodyContent).toContain("https://source.com");
+    expect(bodyContent).toContain("Evidence from source");
+  });
+
+  it("renderProductReport omits Sources section when no citations", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain('id="sources"');
+    expect(bodyContent).not.toContain("sources-section");
+  });
+
+  it("identity evidence renders as footnote markers", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        evidence: [
+          { url: "https://evidence1.com", excerpt: "First evidence" },
+          { url: "https://evidence2.com", excerpt: "Second evidence" },
+        ],
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain('class="footnote-marker"');
+    expect(bodyContent).toContain('href="#fn-1"');
+    expect(bodyContent).toContain('href="#fn-2"');
+    expect(bodyContent).toContain("[1]");
+    expect(bodyContent).toContain("[2]");
+  });
+
+  it("outcome citations render as footnote markers", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Outcome with citations",
+        type: "efficiency",
+        linkedFeatures: [],
+        citations: [
+          { url: "https://citation.com/page", excerpt: "Cited text" },
+        ],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain('class="footnote-marker"');
+    expect(bodyContent).toContain('href="#fn-1"');
+    expect(bodyContent).toContain("[1]");
+    expect(bodyContent).toContain('id="sources"');
+    expect(bodyContent).toContain("https://citation.com/page");
+    expect(bodyContent).toContain("Cited text");
+  });
+
+  it("ICP citations render as footnote markers", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Power User",
+        description: "A highly engaged user",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        confidence: 0.8,
+        sources: [],
+        citations: [
+          { url: "https://icp-source.com", excerpt: "ICP evidence" },
+        ],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).toContain('class="footnote-marker"');
+    expect(bodyContent).toContain('href="#fn-1"');
+    expect(bodyContent).toContain("[1]");
+    expect(bodyContent).toContain('id="sources"');
+    expect(bodyContent).toContain("https://icp-source.com");
+    expect(bodyContent).toContain("ICP evidence");
   });
 });
 

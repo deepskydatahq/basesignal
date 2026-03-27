@@ -20,6 +20,55 @@ import { EXPERIENTIAL_LENS_TYPES } from "@basesignal/core";
 import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
 
 // ---------------------------------------------------------------------------
+// Footnote collector
+// ---------------------------------------------------------------------------
+
+interface Footnote {
+  url: string;
+  excerpt: string;
+}
+
+export class FootnoteCollector {
+  private footnotes: Footnote[] = [];
+
+  /** Add a citation and return the footnote number */
+  add(url: string, excerpt: string): number {
+    this.footnotes.push({ url, excerpt });
+    return this.footnotes.length;
+  }
+
+  /** Render footnote markers for an array of citations */
+  markers(citations: Array<{ url: string; excerpt: string }>): string {
+    if (!citations || citations.length === 0) return "";
+    return citations
+      .map((c) => {
+        const n = this.add(c.url, c.excerpt);
+        return `<sup class="footnote-marker"><a href="#fn-${n}">[${n}]</a></sup>`;
+      })
+      .join("");
+  }
+
+  /** Get count of collected footnotes */
+  get count(): number {
+    return this.footnotes.length;
+  }
+
+  /** Render the Sources section */
+  renderSourcesSection(): string {
+    if (this.footnotes.length === 0) return "";
+    const items = this.footnotes
+      .map((f, i) => `<li id="fn-${i + 1}"><a href="${escapeHtml(f.url)}">${escapeHtml(f.url)}</a> — <em>${escapeHtml(f.excerpt)}</em></li>`)
+      .join("\n    ");
+    return `\n<section id="sources" class="sources-section">
+  <h2>Sources</h2>
+  <ol class="sources-list">
+    ${items}
+  </ol>
+</section>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Section navigation
 // ---------------------------------------------------------------------------
 
@@ -72,7 +121,7 @@ function renderReportHeader(profile: ProductProfile | null): string {
 // Identity
 // ---------------------------------------------------------------------------
 
-function renderIdentitySection(identity: ProductProfile["identity"]): string {
+function renderIdentitySection(identity: ProductProfile["identity"], footnotes: FootnoteCollector): string {
   if (!identity) {
     return `<section id="identity" class="no-data">
   <h2>Identity</h2>
@@ -80,8 +129,12 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
 </section>`;
   }
 
+  const evidenceMarkers = identity.evidence && identity.evidence.length > 0
+    ? footnotes.markers(identity.evidence)
+    : "";
+
   const descHtml = identity.description
-    ? `<p class="identity-description">${escapeHtml(identity.description)}</p>`
+    ? `<p class="identity-description">${escapeHtml(identity.description)}${evidenceMarkers}</p>`
     : "";
 
   const targetHtml = identity.targetCustomer
@@ -114,7 +167,7 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
 // Outcomes
 // ---------------------------------------------------------------------------
 
-function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
+function renderOutcomesSection(outcomes: OutcomeItem[] | null, footnotes: FootnoteCollector): string {
   if (!outcomes || outcomes.length === 0) {
     return `<section id="outcomes" class="no-data">
   <h2>Outcomes</h2>
@@ -125,6 +178,8 @@ function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
   const cards = outcomes
     .map((o: OutcomeItem) => {
       const typeBadge = `<span class="badge">${escapeHtml(o.type)}</span>`;
+
+      const citationMarkers = o.citations ? footnotes.markers(o.citations) : "";
 
       let linkedHtml = "";
       if (o.linkedFeatures.length > 0) {
@@ -148,7 +203,7 @@ function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
       }
 
       return `    <div class="card">
-      <h3>${escapeHtml(o.description)}</h3>
+      <h3>${escapeHtml(o.description)}${citationMarkers}</h3>
       ${typeBadge}${linkedHtml}${measurementHtml}${metricsHtml}
     </div>`;
     })
@@ -238,7 +293,7 @@ ${stageTable}${transitionHtml}${confLine}
 // ICP Profiles
 // ---------------------------------------------------------------------------
 
-function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
+function renderIcpSection(icpProfiles: ICPProfile[] | null, footnotes: FootnoteCollector): string {
   if (!icpProfiles || icpProfiles.length === 0) {
     return `<section id="icp-profiles" class="no-data">
   <h2>ICP Profiles</h2>
@@ -253,6 +308,8 @@ function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
 
   const cards = icpProfiles
     .map((p: ICPProfile) => {
+      const citationMarkers = p.citations ? footnotes.markers(p.citations) : "";
+
       let prioritiesHtml = "";
       if (p.value_moment_priorities.length > 0) {
         const rows = p.value_moment_priorities
@@ -265,7 +322,7 @@ function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
 
       return `    <div class="card">
       <h3>${escapeHtml(p.name)}</h3>
-      ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ""}
+      ${p.description ? `<p>${escapeHtml(p.description)}${citationMarkers}</p>` : ""}
       ${p.pain_points.length > 0 ? `<h4>Pain Points</h4>\n      ${renderList(p.pain_points)}` : ""}
       ${p.activation_triggers.length > 0 ? `<h4>Activation Triggers</h4>\n      ${renderList(p.activation_triggers)}` : ""}
       ${p.success_metrics.length > 0 ? `<h4>Success Metrics</h4>\n      ${renderList(p.success_metrics)}` : ""}${prioritiesHtml}${confLine}
@@ -524,18 +581,25 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   if (measurementSpec) analyzed.add("measurement-spec");
   if (lifecycleStates) analyzed.add("lifecycle-states");
 
+  const footnotes = new FootnoteCollector();
+
   const sections = [
     `<p class="back-link"><a href="/">&larr; Back to product list</a></p>`,
     renderReportHeader(profile),
     renderSectionNav(analyzed),
-    renderIdentitySection(profile?.identity),
-    renderOutcomesSection(outcomes),
+    renderIdentitySection(profile?.identity, footnotes),
+    renderOutcomesSection(outcomes, footnotes),
     renderJourneySection(activationMap),
-    renderIcpSection(icpProfiles),
+    renderIcpSection(icpProfiles, footnotes),
     renderValueMomentsSection(valueMoments),
     renderMeasurementSpecSection(measurementSpec),
     renderLifecycleStatesSection(lifecycleStates),
   ];
+
+  const sourcesSection = footnotes.renderSourcesSection();
+  if (sourcesSection) {
+    sections.push(sourcesSection);
+  }
 
   return renderPage(
     profile?.identity?.productName ?? slug,

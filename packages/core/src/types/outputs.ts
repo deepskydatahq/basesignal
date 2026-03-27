@@ -27,6 +27,7 @@ export interface ICPProfile {
   success_metrics: string[];
   confidence: number;
   sources: string[];
+  citations?: Array<{ url: string; excerpt: string }>;
 }
 
 // ---------------------------------------------------------------------------
