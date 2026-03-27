@@ -6,8 +6,6 @@ import type {
   ICPProfile,
   ValueMomentPriority,
   MeasurementSpec,
-  ProductEntity,
-  CustomerEntity,
   LifecycleStatesResult,
   LifecycleState,
   StateTransition,
@@ -29,7 +27,7 @@ export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "journey", label: "Journey" },
   { id: "icp-profiles", label: "ICP Profiles" },
   { id: "value-moments", label: "Value Moments" },
-  { id: "measurement-spec", label: "Measurement Spec" },
+  { id: "measurement-plan", label: "Measurement Plan" },
   { id: "lifecycle-states", label: "Lifecycle States" },
 ];
 
@@ -49,6 +47,34 @@ export const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.sec
 // Report header
 // ---------------------------------------------------------------------------
 
+function renderSourceMaterial(profile: ProductProfile | null): string {
+  const sm = profile?.metadata?.sourceMaterial;
+  if (!sm) return "";
+
+  const cards: string[] = [];
+  if (sm.pagesScanned > 0) {
+    cards.push(`<div class="source-card">
+      <span class="source-count">${sm.pagesScanned}</span>
+      <span class="source-label">pages scanned</span>
+    </div>`);
+  }
+  if (sm.videosFound > 0) {
+    cards.push(`<div class="source-card">
+      <span class="source-count">${sm.videosFound}</span>
+      <span class="source-label">videos found</span>
+    </div>`);
+  }
+  if (sm.documentsRead > 0) {
+    cards.push(`<div class="source-card">
+      <span class="source-count">${sm.documentsRead}</span>
+      <span class="source-label">documents read</span>
+    </div>`);
+  }
+
+  if (cards.length === 0) return "";
+  return `\n  <div class="source-material">${cards.join("")}</div>`;
+}
+
 function renderReportHeader(profile: ProductProfile | null): string {
   const name = profile?.identity?.productName ?? "Unknown Product";
   const url = profile?.metadata?.url;
@@ -64,7 +90,7 @@ function renderReportHeader(profile: ProductProfile | null): string {
 
   return `<div class="report-header">
   <h1>${escapeHtml(name)}</h1>
-  ${metaParts.length > 0 ? `<div class="meta">${metaParts.map((p) => `<span>${p}</span>`).join("")}</div>` : ""}
+  ${metaParts.length > 0 ? `<div class="meta">${metaParts.map((p) => `<span>${p}</span>`).join("")}</div>` : ""}${renderSourceMaterial(profile)}
 </div>`;
 }
 
@@ -359,85 +385,113 @@ ${tierSections}
 }
 
 // ---------------------------------------------------------------------------
-// Measurement Spec
+// Measurement Plan
 // ---------------------------------------------------------------------------
 
-function renderPropertyTable(properties: EntityProperty[]): string {
-  if (properties.length === 0) return "";
-  const propRows = properties
-    .map((p) => `          <tr><td>${escapeHtml(p.name)}</td><td><span class="badge">${escapeHtml(p.type)}</span></td><td>${p.isRequired ? "yes" : ""}</td><td>${escapeHtml(p.description)}</td></tr>`)
-    .join("\n");
-  return `
-        <table>
-          <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-          <tbody>
-${propRows}
-          </tbody>
-        </table>`;
+interface PlanEvent {
+  name: string;
+  properties: string[];
+  sources: string[];
 }
 
-function renderProductEntities(entities: ProductEntity[]): string {
-  if (entities.length === 0) return "<p>No entities defined.</p>";
-  return entities
-    .map((e) => {
-      const heartbeatBadge = e.isHeartbeat ? ' <span class="badge">heartbeat</span>' : "";
-      let activitiesHtml = "";
-      if (e.activities.length > 0) {
-        const actItems = e.activities
-          .map((a) => `<li>${escapeHtml(a.name)}${a.properties_supported.length > 0 ? ` (${a.properties_supported.map((s) => escapeHtml(s)).join(", ")})` : ""}</li>`)
-          .join("");
-        activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
-      }
-      return `      <div class="card">
-        <h4>${escapeHtml(e.name)}${heartbeatBadge}</h4>
-        ${e.description ? `<p>${escapeHtml(e.description)}</p>` : ""}${activitiesHtml}${renderPropertyTable(e.properties)}
-      </div>`;
-    })
-    .join("\n");
-}
-
-function renderCustomerEntities(entities: CustomerEntity[]): string {
-  if (entities.length === 0) return "<p>No entities defined.</p>";
-  return entities
-    .map((e) => {
-      let activitiesHtml = "";
-      if (e.activities.length > 0) {
-        const actItems = e.activities
-          .map((a) => `<li>${escapeHtml(a.name)}${a.derivation_rule ? ` — <em>${escapeHtml(a.derivation_rule)}</em>` : ""}</li>`)
-          .join("");
-        activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
-      }
-      return `      <div class="card">
-        <h4>${escapeHtml(e.name)}</h4>${activitiesHtml}${renderPropertyTable(e.properties)}
-      </div>`;
-    })
-    .join("\n");
-}
-
-
-function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
-  if (!spec) {
-    return `<section id="measurement-spec" class="no-data">
-  <h2>Measurement Spec</h2>
+function renderMeasurementPlanSection(
+  spec: MeasurementSpec | null,
+  activationMap: ActivationMap | null,
+  lifecycleStates: LifecycleStatesResult | null,
+): string {
+  if (!spec && !activationMap && !lifecycleStates) {
+    return `<section id="measurement-plan" class="no-data">
+  <h2>Measurement Plan</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
-  const perspectivesHtml = [
-    `    <h3>Product Perspective</h3>\n${renderProductEntities(spec.perspectives.product.entities)}`,
-    `    <h3>Customer Perspective</h3>\n${renderCustomerEntities(spec.perspectives.customer.entities)}`,
-  ].join("\n");
+  const eventMap = new Map<string, PlanEvent>();
 
-  let warningsHtml = "";
-  if (spec.warnings && spec.warnings.length > 0) {
-    warningsHtml = `\n  <div class="warnings"><h4>Warnings</h4><ul>${spec.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul></div>`;
+  const getOrCreate = (name: string): PlanEvent => {
+    if (!eventMap.has(name)) {
+      eventMap.set(name, { name, properties: [], sources: [] });
+    }
+    return eventMap.get(name)!;
+  };
+
+  const addSource = (event: PlanEvent, source: string) => {
+    if (!event.sources.includes(source)) event.sources.push(source);
+  };
+
+  const addProperties = (event: PlanEvent, props: string[]) => {
+    for (const p of props) {
+      if (!event.properties.includes(p)) event.properties.push(p);
+    }
+  };
+
+  // Step 1: From MeasurementSpec
+  if (spec) {
+    for (const entity of spec.perspectives.product.entities) {
+      for (const activity of entity.activities) {
+        const eventName = `${entity.name}.${activity.name}`;
+        const planEvent = getOrCreate(eventName);
+        addSource(planEvent, "measurement-spec");
+        addProperties(planEvent, entity.properties.map((p: EntityProperty) => p.name));
+      }
+    }
   }
 
-  const confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(spec.confidence)}</p>`;
+  // Step 2: From ActivationMap
+  if (activationMap) {
+    for (const stage of activationMap.stages) {
+      for (const trigger of stage.trigger_events) {
+        const planEvent = getOrCreate(trigger);
+        addSource(planEvent, "activation");
+      }
+    }
+  }
 
-  return `<section id="measurement-spec">
-  <h2>Measurement Spec</h2>
-${perspectivesHtml}${warningsHtml}${confLine}
+  // Step 3: From LifecycleStatesResult
+  if (lifecycleStates) {
+    for (const state of lifecycleStates.states) {
+      for (const criterion of state.entry_criteria) {
+        const planEvent = getOrCreate(criterion.event_name);
+        addSource(planEvent, "lifecycle");
+      }
+      for (const trigger of state.exit_triggers) {
+        const planEvent = getOrCreate(trigger.event_name);
+        addSource(planEvent, "lifecycle");
+      }
+    }
+  }
+
+  const sortedEvents = Array.from(eventMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+
+  const sourceBadge = (source: string): string => {
+    if (source === "activation") return `<span class="badge badge-primary">activation</span>`;
+    if (source === "lifecycle") return `<span class="badge badge-lifecycle">lifecycle</span>`;
+    return `<span class="badge">measurement-spec</span>`;
+  };
+
+  const rows = sortedEvents.map((event) => {
+    const propertiesHtml = event.properties.length > 0
+      ? event.properties.map((p) => `<code>${escapeHtml(p)}</code>`).join(", ")
+      : "—";
+    const sourcesHtml = event.sources.map(sourceBadge).join(" ");
+    return `      <tr>
+        <td><code>${escapeHtml(event.name)}</code></td>
+        <td>${propertiesHtml}</td>
+        <td>${sourcesHtml}</td>
+      </tr>`;
+  }).join("\n");
+
+  return `<section id="measurement-plan">
+  <h2>Measurement Plan</h2>
+  <p class="measurement-plan-intro">This is your consolidated tracking implementation plan. It combines events from the measurement specification, activation triggers, and lifecycle state criteria into a single checklist for your analytics engineer.</p>
+  <table>
+    <thead>
+      <tr><th>Event</th><th>Properties</th><th>Sources</th></tr>
+    </thead>
+    <tbody>
+${rows}
+    </tbody>
+  </table>
 </section>`;
 }
 
@@ -505,6 +559,21 @@ ${stateCards}${transitionsHtml}${confLine}
 
 export function renderProductReport(slug: string, productDir: ProductDirectory): string {
   const profile = productDir.readJson<ProductProfile>(slug, "profile.json");
+
+  // Backfill source material stats from crawl metadata for older scans
+  if (profile?.metadata && !profile.metadata.sourceMaterial) {
+    const crawlMeta = productDir.readJson<Record<string, unknown>>(slug, "crawl/metadata.json");
+    if (crawlMeta?.sourceMaterial) {
+      profile.metadata.sourceMaterial = crawlMeta.sourceMaterial as NonNullable<NonNullable<ProductProfile["metadata"]>["sourceMaterial"]>;
+    } else if (typeof crawlMeta?.pageCount === "number") {
+      profile.metadata.sourceMaterial = {
+        pagesScanned: crawlMeta.pageCount,
+        documentsRead: 0,
+        videosFound: 0,
+      };
+    }
+  }
+
   const activationMap = productDir.readJson<ActivationMap>(slug, "outputs/activation-map.json");
   const icpProfiles = productDir.readJson<ICPProfile[]>(slug, "outputs/icp-profiles.json");
   const valueMoments = productDir.readJson<ValueMoment[]>(slug, "outputs/value-moments.json")
@@ -521,7 +590,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   if (activationMap) analyzed.add("journey");
   if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
   if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
-  if (measurementSpec) analyzed.add("measurement-spec");
+  if (measurementSpec || activationMap || lifecycleStates) analyzed.add("measurement-plan");
   if (lifecycleStates) analyzed.add("lifecycle-states");
 
   const sections = [
@@ -533,7 +602,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
     renderJourneySection(activationMap),
     renderIcpSection(icpProfiles),
     renderValueMomentsSection(valueMoments),
-    renderMeasurementSpecSection(measurementSpec),
+    renderMeasurementPlanSection(measurementSpec, activationMap, lifecycleStates),
     renderLifecycleStatesSection(lifecycleStates),
   ];
 
