@@ -122,7 +122,10 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .outcomes-context p { color: #6b7280; line-height: 1.7; }
     .outcome-narrative { font-size: 1.05rem; line-height: 1.7; margin-bottom: 0.75rem; }
     .outcome-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem; }
-    .outcome-measurement h5, .outcome-metrics h5 { margin-top: 0; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .outcome-measurement h5, .outcome-metrics h5 { margin-top: 0; }
+    .icp-context { margin-bottom: 1.5rem; }
+    .icp-context p { color: #6b7280; line-height: 1.7; }
+    .icp-identification { font-style: italic; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

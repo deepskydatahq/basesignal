@@ -26,7 +26,7 @@ export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
   { id: "outcomes", label: "Possible Outcomes" },
   { id: "journey", label: "Journey" },
-  { id: "icp-profiles", label: "ICP Profiles" },
+  { id: "icp-segments", label: "ICP Segments" },
   { id: "value-moments", label: "Value Moments" },
   { id: "measurement-spec", label: "Measurement Spec" },
   { id: "performance-model", label: "Performance Model" },
@@ -396,13 +396,13 @@ ${stageTable}${transitionHtml}${activationContextHtml}${trackActivationsHtml}${a
 }
 
 // ---------------------------------------------------------------------------
-// ICP Profiles
+// ICP Segments
 // ---------------------------------------------------------------------------
 
 function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
   if (!icpProfiles || icpProfiles.length === 0) {
-    return `<section id="icp-profiles" class="no-data">
-  <h2>ICP Profiles</h2>
+    return `<section id="icp-segments" class="no-data">
+  <h2>ICP Segments</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
@@ -411,6 +411,11 @@ function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
     items.length > 0
       ? `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
       : "";
+
+  const contextBlock = `  <div class="icp-context">
+  <p>Your product has different user types naturally — they will achieve different outcomes and will have different value needs. Identifying these segments helps you tailor activation paths and measure success per persona.</p>
+  <p class="icp-identification">The easiest way to identify segments is to ask users during account creation.</p>
+</div>`;
 
   const cards = icpProfiles
     .map((p: ICPProfile) => {
@@ -422,20 +427,31 @@ function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
         prioritiesHtml = `\n      <h4>Value Moment Priorities</h4>\n      <ul>\n${rows}\n      </ul>`;
       }
 
+      let valueTriggersHtml = "";
+      if (p.value_triggers && p.value_triggers.length > 0) {
+        valueTriggersHtml = `\n      <h4>Value Triggers</h4>\n      <ul>${p.value_triggers.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`;
+      }
+
+      let valueMomentLevelsHtml = "";
+      if (p.value_moment_levels && p.value_moment_levels.length > 0) {
+        valueMomentLevelsHtml = `\n      <h4>Value Moment Levels</h4>\n      <ul>${p.value_moment_levels.map((v) => `<li><span class="badge">${escapeHtml(v.level)}</span> ${escapeHtml(v.description)}</li>`).join("")}</ul>`;
+      }
+
       const confLine = `\n      <p class="confidence">Confidence: ${confidenceBadge(p.confidence)}</p>`;
 
       return `    <div class="card">
       <h3>${escapeHtml(p.name)}</h3>
       ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ""}
       ${p.pain_points.length > 0 ? `<h4>Pain Points</h4>\n      ${renderList(p.pain_points)}` : ""}
-      ${p.activation_triggers.length > 0 ? `<h4>Activation Triggers</h4>\n      ${renderList(p.activation_triggers)}` : ""}
-      ${p.success_metrics.length > 0 ? `<h4>Success Metrics</h4>\n      ${renderList(p.success_metrics)}` : ""}${prioritiesHtml}${confLine}
+      ${p.activation_triggers.length > 0 ? `<h4>Activation Triggers</h4>\n      ${renderList(p.activation_triggers)}` : ""}${valueTriggersHtml}
+      ${p.success_metrics.length > 0 ? `<h4>Success Metrics</h4>\n      ${renderList(p.success_metrics)}` : ""}${prioritiesHtml}${valueMomentLevelsHtml}${confLine}
     </div>`;
     })
     .join("\n");
 
-  return `<section id="icp-profiles">
-  <h2>ICP Profiles</h2>
+  return `<section id="icp-segments">
+  <h2>ICP Segments</h2>
+${contextBlock}
 ${cards}
 </section>`;
 }
@@ -678,7 +694,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   if (profile?.identity) analyzed.add("identity");
   if (outcomes && outcomes.length > 0) analyzed.add("outcomes");
   if (activationMap) analyzed.add("journey");
-  if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
+  if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-segments");
   if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
   if (measurementSpec) analyzed.add("measurement-spec");
   if (lifecycleStates) analyzed.add("performance-model");
