@@ -68,6 +68,24 @@ describe("buildICPPrompt", () => {
     expect(prompt).toContain("1 T1");
     expect(prompt).toContain("1 T2");
   });
+
+  it("includes Source Pages section when pageUrls provided", () => {
+    const pageUrls = ["https://example.com/features", "https://example.com/pricing"];
+    const prompt = buildICPPrompt([], "Teams", pageUrls);
+    expect(prompt).toContain("## Source Pages");
+    expect(prompt).toContain("https://example.com/features");
+    expect(prompt).toContain("https://example.com/pricing");
+  });
+
+  it("omits Source Pages section when no pageUrls provided", () => {
+    const prompt = buildICPPrompt([], "Teams");
+    expect(prompt).not.toContain("## Source Pages");
+  });
+
+  it("omits Source Pages section when empty pageUrls provided", () => {
+    const prompt = buildICPPrompt([], "Teams", []);
+    expect(prompt).not.toContain("## Source Pages");
+  });
 });
 
 describe("parseICPProfiles", () => {
@@ -224,6 +242,74 @@ describe("parseICPProfiles", () => {
     ]);
     expect(result[1].value_triggers).toBeUndefined();
     expect(result[1].value_moment_levels).toBeUndefined();
+  });
+
+  it("parses citations when present", () => {
+    const input = JSON.stringify([
+      {
+        name: "Engineering Team Lead",
+        description: "Manages a team of developers",
+        value_moment_priorities: [
+          { moment_id: "vm-1", priority: 1, relevance_reason: "Core workflow" },
+        ],
+        activation_triggers: ["create_board"],
+        pain_points: ["Manual planning"],
+        success_metrics: ["Sprint time < 15 min"],
+        confidence: 0.8,
+        citations: [
+          { url: "https://example.com/features", excerpt: "Engineering teams use this to plan sprints faster" },
+        ],
+      },
+      {
+        name: "Senior Developer",
+        description: "Ships code daily",
+        value_moment_priorities: [
+          { moment_id: "vm-2", priority: 1, relevance_reason: "Task management" },
+        ],
+        activation_triggers: ["create_issue"],
+        pain_points: ["Context switching"],
+        success_metrics: ["All tasks visible"],
+        confidence: 0.7,
+      },
+    ]);
+
+    const result = parseICPProfiles(input);
+    expect(result[0].citations).toBeDefined();
+    expect(result[0].citations).toHaveLength(1);
+    expect(result[0].citations![0].url).toBe("https://example.com/features");
+    expect(result[0].citations![0].excerpt).toBe("Engineering teams use this to plan sprints faster");
+    expect(result[1].citations).toBeUndefined();
+  });
+
+  it("omits citations when not present (backward compat)", () => {
+    const input = JSON.stringify([
+      {
+        name: "Engineering Team Lead",
+        description: "Manages a team of developers",
+        value_moment_priorities: [
+          { moment_id: "vm-1", priority: 1, relevance_reason: "Core workflow" },
+        ],
+        activation_triggers: ["create_board"],
+        pain_points: ["Manual planning"],
+        success_metrics: ["Sprint time < 15 min"],
+        confidence: 0.8,
+      },
+      {
+        name: "Senior Developer",
+        description: "Ships code daily",
+        value_moment_priorities: [
+          { moment_id: "vm-2", priority: 1, relevance_reason: "Task management" },
+        ],
+        activation_triggers: ["create_issue"],
+        pain_points: ["Context switching"],
+        success_metrics: ["All tasks visible"],
+        confidence: 0.7,
+      },
+    ]);
+
+    const result = parseICPProfiles(input);
+    expect(result[0].citations).toBeUndefined();
+    expect(result[1].citations).toBeUndefined();
   });
 });
 
