@@ -276,8 +276,8 @@ export function renderMeasurementSpecComparison(left: ComparisonData, right: Com
 
   const hasData = left.measurementSpec || right.measurementSpec;
   const cls = hasData ? "" : " compare-empty";
-  return `<section id="measurement-spec"${cls}>
-  <h2 class="compare-section-title">Measurement Spec</h2>
+  return `<section id="measurement-plan"${cls}>
+  <h2 class="compare-section-title">Measurement Plan</h2>
   ${renderSideColumn(renderSpecSide(left.measurementSpec, rightEntities), renderSpecSide(right.measurementSpec, leftEntities), left.name, right.name)}
 </section>`;
 }
@@ -329,7 +329,7 @@ export function renderComparisonReport(slug1: string, slug2: string, productDir:
   if (left.activationMap || right.activationMap) analyzed.add("journey");
   if ((left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0)) analyzed.add("icp-segments");
   if ((left.valueMoments && left.valueMoments.length > 0) || (right.valueMoments && right.valueMoments.length > 0)) analyzed.add("value-moments");
-  if (left.measurementSpec || right.measurementSpec) analyzed.add("measurement-spec");
+  if (left.measurementSpec || right.measurementSpec) analyzed.add("measurement-plan");
   if (left.lifecycleStates || right.lifecycleStates) analyzed.add("performance-model");
 
   const header = `<div class="compare-header">

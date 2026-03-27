@@ -47,7 +47,7 @@ export const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.sec
 // Report header
 // ---------------------------------------------------------------------------
 
-function renderSourceMaterial(profile: ProductProfile | null): string {
+function renderHeaderSourceMaterial(profile: ProductProfile | null): string {
   const sm = profile?.metadata?.sourceMaterial;
   if (!sm) return "";
 
@@ -90,7 +90,7 @@ function renderReportHeader(profile: ProductProfile | null): string {
 
   return `<div class="report-header">
   <h1>${escapeHtml(name)}</h1>
-  ${metaParts.length > 0 ? `<div class="meta">${metaParts.map((p) => `<span>${p}</span>`).join("")}</div>` : ""}${renderSourceMaterial(profile)}
+  ${metaParts.length > 0 ? `<div class="meta">${metaParts.map((p) => `<span>${p}</span>`).join("")}</div>` : ""}${renderHeaderSourceMaterial(profile)}
 </div>`;
 }
 
