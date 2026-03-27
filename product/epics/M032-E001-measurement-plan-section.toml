@@ -1,0 +1,62 @@
+id = "M032-E001"
+parent = "M032"
+title = "Measurement Plan Section"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Replace the Measurement Spec section with a Measurement Plan section. Consolidates
+events from measurement spec entities, activation map trigger events, and lifecycle
+state criteria into a deduplicated, prioritized implementation checklist. Each event
+shows its source(s), properties, and priority. Renders as a table at the bottom of
+the report.
+"""
+
+[job_story]
+description = """When I view the report, I want a consolidated measurement plan showing
+all events I need to implement, where they come from, and what properties they need,
+so I can hand it to an analytics engineer for implementation."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Section is titled 'Measurement Plan' (replaces 'Measurement Spec')",
+    "Consolidates events from measurement spec product entities",
+    "Includes activation map trigger events",
+    "Includes lifecycle state criteria events",
+    "Events are deduplicated across sources",
+    "Each event shows its properties",
+    "Each event shows its source(s) as badges",
+    "Section nav updated from 'Measurement Spec' to 'Measurement Plan'",
+    "Graceful degradation when data is missing",
+    "Existing tests pass",
+    "New tests cover consolidation and rendering",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/core/src/types/outputs.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+The consolidation collects events from 3 sources:
+1. MeasurementSpec: product entities → each entity has activities (entity.activity names) + properties
+2. ActivationMap: stages have trigger_events (strings)
+3. LifecycleStatesResult: states have entry_criteria/exit_triggers (event_name + condition)
+Deduplicate by event name, track which sources contributed each event.
+Render as a table: Event | Properties | Sources | Priority.
+"""
+
+estimated_stories = 1
