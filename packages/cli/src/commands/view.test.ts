@@ -1750,7 +1750,6 @@ describe("renderProductReport — activation metrics subsection", () => {
   });
 
   it("metric cards contain the primary activation level name", () => {
-  it("metric cards contain the primary activation level name", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1768,7 +1767,6 @@ describe("renderProductReport — activation metrics subsection", () => {
   });
 
   it("falls back to 'Activated' when primary activation level stage is not found", () => {
-  it("falls back to 'Activated' when primary activation level stage is not found", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1785,7 +1783,6 @@ describe("renderProductReport — activation metrics subsection", () => {
   });
 
   it("activation metrics section is omitted when activation map is null", () => {
-  it("activation metrics section is omitted when activation map is null", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1798,7 +1795,6 @@ describe("renderProductReport — activation metrics subsection", () => {
     expect(bodyContent).not.toContain("Activation Metrics");
   });
 
-  it("metrics grid has 2-column CSS class", () => {
   it("metrics grid has 2-column CSS class", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
@@ -2015,8 +2011,7 @@ describe("renderProductReport — active measurement section", () => {
     expect(html).toContain("Active Measurement");
   });
 
-  it("active measurement nav link appears after icp-profiles in nav", () => {
-  it("active measurement nav link appears after icp-profiles in nav", () => {
+  it("active measurement nav link appears after icp-segments in nav", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -2031,8 +2026,7 @@ describe("renderProductReport — active measurement section", () => {
     expect(amNavIdx).toBeGreaterThan(icpNavIdx);
   });
 
-  it("active measurement section appears after icp-profiles section in report body", () => {
-  it("active measurement section appears after icp-profiles section in report body", () => {
+  it("active measurement section appears after icp-segments section in report body", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -2048,7 +2042,6 @@ describe("renderProductReport — active measurement section", () => {
   });
 
   it("dims active measurement nav link when ICP or outcomes data is missing", () => {
-  it("dims active measurement nav link when ICP or outcomes data is missing", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -2060,7 +2053,6 @@ describe("renderProductReport — active measurement section", () => {
     expect(html).toMatch(/href="#active-measurement" class=" dimmed"/);
   });
 
-  it("active measurement nav link not dimmed when both ICP and outcomes exist", () => {
   it("active measurement nav link not dimmed when both ICP and outcomes exist", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
