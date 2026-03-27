@@ -125,7 +125,11 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .outcome-measurement h5, .outcome-metrics h5 { margin-top: 0; }
     .icp-context { margin-bottom: 1.5rem; }
     .icp-context p { color: #6b7280; line-height: 1.7; }
-    .icp-identification { font-style: italic; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .icp-identification { font-style: italic; }
+    .active-measurement-context { margin-bottom: 1.5rem; }
+    .active-measurement-context p { color: #6b7280; line-height: 1.7; }
+    .active-when { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 6px; }
+    .active-when h4 { margin-top: 0; font-size: 0.9rem; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

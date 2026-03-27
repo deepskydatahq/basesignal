@@ -13,6 +13,7 @@ import {
   renderProductList,
   renderProductReport,
   renderSourceMaterial,
+  renderActiveMeasurementSection,
   startViewServer,
   type ViewServerHandle,
 } from "./view.js";
@@ -758,6 +759,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
     expect(html).toContain('href="#icp-segments"');
+    expect(html).toContain('href="#active-measurement"');
     expect(html).toContain('href="#value-moments"');
     expect(html).toContain('href="#measurement-spec"');
     expect(html).toContain('href="#performance-model"');
@@ -827,17 +829,18 @@ describe("renderProductReport", () => {
     productDir.writeJson("empty-app", "crawl/metadata.json", {});
 
     const html = renderProductReport("empty-app", productDir);
-    // All seven section IDs should be present
+    // All section IDs should be present
     expect(html).toContain('id="identity"');
     expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
     expect(html).toContain('id="icp-segments"');
+    expect(html).toContain('id="active-measurement"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
     expect(html).toContain('id="performance-model"');
-    // Count "Not yet analyzed" — should appear 7 times (one per section)
+    // Count "Not yet analyzed" — should appear 8 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
-    expect(matches).toHaveLength(7);
+    expect(matches).toHaveLength(8);
   });
 
   it("renders identity as card layout with description and context badges", () => {
@@ -1689,10 +1692,6 @@ describe("renderProductReport — identity positioning", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Unit tests: activation metrics subsection
-// ---------------------------------------------------------------------------
-
 describe("renderProductReport — activation metrics subsection", () => {
   let tmpDir: string | undefined;
 
@@ -1751,6 +1750,7 @@ describe("renderProductReport — activation metrics subsection", () => {
   });
 
   it("metric cards contain the primary activation level name", () => {
+  it("metric cards contain the primary activation level name", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1768,6 +1768,7 @@ describe("renderProductReport — activation metrics subsection", () => {
   });
 
   it("falls back to 'Activated' when primary activation level stage is not found", () => {
+  it("falls back to 'Activated' when primary activation level stage is not found", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1784,6 +1785,7 @@ describe("renderProductReport — activation metrics subsection", () => {
   });
 
   it("activation metrics section is omitted when activation map is null", () => {
+  it("activation metrics section is omitted when activation map is null", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1796,6 +1798,7 @@ describe("renderProductReport — activation metrics subsection", () => {
     expect(bodyContent).not.toContain("Activation Metrics");
   });
 
+  it("metrics grid has 2-column CSS class", () => {
   it("metrics grid has 2-column CSS class", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
@@ -1825,6 +1828,271 @@ describe("renderProductReport — activation metrics subsection", () => {
     expect(bodyContent).toContain("Target: &gt;40%");
   });
 });
+
+// Unit tests: renderActiveMeasurementSection
+// ---------------------------------------------------------------------------
+
+describe("renderActiveMeasurementSection", () => {
+  const icpProfiles = [
+    {
+      id: "icp-1",
+      name: "Developer",
+      description: "A software developer",
+      pain_points: [],
+      activation_triggers: [],
+      success_metrics: [],
+      value_moment_priorities: [],
+      confidence: 0.85,
+      sources: [],
+    },
+  ];
+
+  const outcomes = [
+    {
+      description: "Reduce time to first deployment",
+      type: "efficiency",
+      linkedFeatures: ["One-click deploy"],
+      measurement_references: [
+        { entity: "deployment", activity: "completed" },
+        { entity: "project", activity: "created" },
+      ],
+      suggested_metrics: ["time_to_first_deploy", "deploy_success_rate"],
+    },
+    {
+      description: "Increase team collaboration",
+      type: "engagement",
+      linkedFeatures: [],
+      measurement_references: [
+        { entity: "deployment", activity: "completed" }, // duplicate — should be deduped
+      ],
+      suggested_metrics: ["collaboration_score"],
+    },
+  ];
+
+  const lifecycleStates = {
+    states: [
+      {
+        name: "Active",
+        definition: "User is actively using the product",
+        entry_criteria: [
+          { event_name: "session_started", condition: "at least once in last 7 days" },
+          { event_name: "feature_used", condition: "at least 3 times in last 14 days" },
+        ],
+        exit_triggers: [],
+        time_window: "7 days",
+      },
+      {
+        name: "Dormant",
+        definition: "User has not engaged recently",
+        entry_criteria: [{ event_name: "no_activity", condition: "30+ days" }],
+        exit_triggers: [],
+      },
+    ],
+    transitions: [],
+    confidence: 0.8,
+    sources: [],
+  };
+
+  it("renders section with ICP cards when data exists", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain('id="active-measurement"');
+    expect(html).toContain("Active Measurement");
+    expect(html).toContain("Developer");
+    expect(html).toContain("brings it all together");
+  });
+
+  it("shows outcomes listed per card with numbered O{n} format", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("O1: Reduce time to first deployment");
+    expect(html).toContain("O2: Increase team collaboration");
+  });
+
+  it("shows unique measurement events in entity.activity format", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("deployment.completed");
+    expect(html).toContain("project.created");
+    // deployment.completed should appear only once (deduped)
+    const matches = html.match(/deployment\.completed/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("shows unique suggested metrics", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("time_to_first_deploy");
+    expect(html).toContain("deploy_success_rate");
+    expect(html).toContain("collaboration_score");
+  });
+
+  it("shows is-active-when rule from lifecycle active state entry criteria", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates);
+    expect(html).toContain("Is active when");
+    expect(html).toContain("session_started: at least once in last 7 days");
+    expect(html).toContain("feature_used: at least 3 times in last 14 days");
+  });
+
+  it("shows fallback when no active state found in lifecycle data", () => {
+    const noActiveStates = {
+      states: [
+        {
+          name: "Dormant",
+          definition: "No engagement",
+          entry_criteria: [{ event_name: "no_activity", condition: "30+ days" }],
+          exit_triggers: [],
+        },
+      ],
+      transitions: [],
+      confidence: 0.5,
+      sources: [],
+    };
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, noActiveStates);
+    expect(html).toContain("No activity rule defined yet");
+  });
+
+  it("returns not-analyzed placeholder when icpProfiles is null", () => {
+    const html = renderActiveMeasurementSection(null, outcomes, lifecycleStates);
+    expect(html).toContain('id="active-measurement"');
+    expect(html).toContain("no-data");
+    expect(html).toContain("Not yet analyzed");
+  });
+
+  it("returns not-analyzed placeholder when icpProfiles is empty array", () => {
+    const html = renderActiveMeasurementSection([], outcomes, lifecycleStates);
+    expect(html).toContain("no-data");
+    expect(html).toContain("Not yet analyzed");
+  });
+
+  it("renders ICP cards but shows no-outcomes message when outcomes is null", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, null, lifecycleStates);
+    expect(html).toContain("Developer");
+    expect(html).toContain("No outcomes generated yet");
+    // No outcome columns when no outcomes
+    expect(html).not.toContain("outcome-columns");
+  });
+
+  it("renders ICP cards but shows no-outcomes message when outcomes is empty", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, [], lifecycleStates);
+    expect(html).toContain("Developer");
+    expect(html).toContain("No outcomes generated yet");
+  });
+
+  it("shows fallback for is-active-when when lifecycleStates is null", () => {
+    const html = renderActiveMeasurementSection(icpProfiles, outcomes, null);
+    expect(html).toContain("Is active when");
+    expect(html).toContain("No activity rule defined yet");
+  });
+
+  it("renders multiple ICP cards", () => {
+    const multipleIcps = [
+      { ...icpProfiles[0], id: "icp-1", name: "Developer" },
+      { ...icpProfiles[0], id: "icp-2", name: "Manager" },
+    ];
+    const html = renderActiveMeasurementSection(multipleIcps, outcomes, lifecycleStates);
+    expect(html).toContain("Developer");
+    expect(html).toContain("Manager");
+  });
+});
+
+
+describe("renderProductReport — active measurement section", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("active measurement section appears in nav", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('href="#active-measurement"');
+    expect(html).toContain("Active Measurement");
+  });
+
+  it("active measurement nav link appears after icp-profiles in nav", () => {
+  it("active measurement nav link appears after icp-profiles in nav", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const icpNavIdx = html.indexOf('href="#icp-segments"');
+    const amNavIdx = html.indexOf('href="#active-measurement"');
+    expect(icpNavIdx).toBeGreaterThan(-1);
+    expect(amNavIdx).toBeGreaterThan(-1);
+    expect(amNavIdx).toBeGreaterThan(icpNavIdx);
+  });
+
+  it("active measurement section appears after icp-profiles section in report body", () => {
+  it("active measurement section appears after icp-profiles section in report body", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const icpSectionIdx = html.indexOf('id="icp-segments"');
+    const amSectionIdx = html.indexOf('id="active-measurement"');
+    expect(icpSectionIdx).toBeGreaterThan(-1);
+    expect(amSectionIdx).toBeGreaterThan(-1);
+    expect(amSectionIdx).toBeGreaterThan(icpSectionIdx);
+  });
+
+  it("dims active measurement nav link when ICP or outcomes data is missing", () => {
+  it("dims active measurement nav link when ICP or outcomes data is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    // No icp-profiles.json or outcomes.json
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toMatch(/href="#active-measurement" class=" dimmed"/);
+  });
+
+  it("active measurement nav link not dimmed when both ICP and outcomes exist", () => {
+  it("active measurement nav link not dimmed when both ICP and outcomes exist", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "Dev",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        confidence: 0.85,
+        sources: [],
+      },
+    ]);
+    productDir.writeJson("test-app", "outputs/outcomes.json", [
+      {
+        description: "Some outcome",
+        type: "growth",
+        linkedFeatures: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toMatch(/href="#active-measurement" class=""/);
+  });
+});
+
 
 // ---------------------------------------------------------------------------
 // Integration tests: HTTP server
