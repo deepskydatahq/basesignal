@@ -72,6 +72,30 @@ function renderReportHeader(profile: ProductProfile | null): string {
 // Identity
 // ---------------------------------------------------------------------------
 
+function renderPositioningGroups(identity: NonNullable<ProductProfile["identity"]>): string {
+  const groups: Array<{ label: string; items: string[] | undefined }> = [
+    { label: "Teams", items: identity.teams },
+    { label: "Companies", items: identity.companies },
+    { label: "Use Cases", items: identity.use_cases },
+    { label: "Revenue Model", items: identity.revenue_model },
+  ];
+
+  const populated = groups.filter((g) => g.items && g.items.length > 0);
+  if (populated.length === 0) return "";
+
+  const groupHtml = populated
+    .map(
+      (g) =>
+        `<div class="positioning-group">
+      <span class="positioning-label">${escapeHtml(g.label)}</span>
+      <div class="positioning-badges">${g.items!.map((item) => `<span class="badge">${escapeHtml(item)}</span>`).join(" ")}</div>
+    </div>`,
+    )
+    .join("\n    ");
+
+  return `\n    <div class="positioning-subsection">\n    ${groupHtml}\n    </div>`;
+}
+
 function renderIdentitySection(identity: ProductProfile["identity"]): string {
   if (!identity) {
     return `<section id="identity" class="no-data">
@@ -96,6 +120,8 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
     ? `<div class="identity-context">${contextBadges.map((b) => `<span class="badge">${b}</span>`).join(" ")}</div>`
     : "";
 
+  const positioningHtml = renderPositioningGroups(identity);
+
   const confLine = identity.confidence != null
     ? `\n  <p class="confidence">Confidence: ${confidenceBadge(identity.confidence)}</p>`
     : "";
@@ -105,7 +131,7 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
   <div class="identity-card">
     ${descHtml}
     ${targetHtml}
-    ${contextHtml}${confLine}
+    ${contextHtml}${positioningHtml}${confLine}
   </div>
 </section>`;
 }
