@@ -1,0 +1,106 @@
+# Mission: Outcomes Display Redesign
+# Restructure outcomes cards with features, measurement events, and metrics
+
+id = "M029"
+title = "Outcomes Display Redesign"
+status = "draft"
+created = 2026-03-26
+depends_on = ["M024", "M015"]
+
+[outcome]
+description = """
+The Outcomes section (renamed "Possible Outcomes") gets a richer card layout. Each
+outcome card shows:
+
+1. The outcome description as a narrative paragraph (not just a title)
+2. Features involved: list of product features that enable this outcome
+3. Measurement: event names (entity.activity) needed to track this outcome
+4. Metrics: derived metrics to verify the outcome is being achieved
+
+The existing outcome cards show description, type badge, linked features, and
+measurement references. This mission restructures the layout to match the wireframe:
+narrative description at top, then a three-area layout below with Features, Measurement
+events (left), and Metrics (right).
+
+An "Active / Retention" educational context block is added above the outcomes section
+explaining the concept of ongoing value delivery.
+"""
+
+user_progress = "From 'outcome cards with title and badges' to 'rich outcome narratives with features, events to track, and metrics to verify'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Section is titled 'Possible Outcomes'",
+    "An Active/Retention context block appears above the outcomes",
+    "Each outcome card shows full narrative description",
+    "Each outcome card lists features involved",
+    "Each outcome card shows measurement events (entity.activity format)",
+    "Each outcome card shows metrics in a right column",
+    "Layout uses side-by-side arrangement for measurement and metrics",
+    "Existing tests pass",
+    "New tests cover the redesigned renderer",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+]
+
+[context]
+related_docs = ["VISION.md", "VALUES.md"]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/core/src/types/convergence.ts",
+    "packages/mcp-server/src/analysis/outputs/enrich-outcomes.ts",
+]
+
+[scope]
+in_scope = [
+    "Rename section heading from 'Outcomes' to 'Possible Outcomes'",
+    "Add Active/Retention educational context block above outcomes",
+    "Restructure outcome card layout: narrative → features → measurement|metrics",
+    "Side-by-side layout for measurement events (left) and metrics (right)",
+    "CSS for the new card layout",
+]
+out_of_scope = [
+    "Changes to outcome generation logic",
+    "Changes to outcome enrichment logic",
+    "New outcome fields beyond what exists",
+]
+acceptable_breakage = [
+    "Outcomes section HTML structure changes completely",
+]
+
+[notes]
+considerations = """
+WIREFRAME REFERENCE:
+The wireframe shows outcome cards with this structure:
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ An SDR sends 200 genuinely personalized emails per week       │
+  │ instead of 40 generic ones — without tab-switching across     │
+  │ research tools. The bottleneck shifts from finding prospects   │
+  │ to handling the demand created.                                │
+  │                                                                │
+  │ Features involved                                              │
+  │ - enrichment_workflow                                          │
+  │ - data_provider_configuration                                  │
+  │ - Claygent AI                                                  │
+  │ - lead enrichment workflow                                     │
+  │                                                                │
+  │ Measurement                    │ Metrics                       │
+  │ contact.enriched               │ contacts_enriched_per_week    │
+  │ workflow.executed              │ personalization_workflow_exec  │
+  │ ai_agent.executed              │ ai_agent_usage_frequency      │
+  └────────────────────────────────────────────────────────────────┘
+
+The Active/Retention block above reads:
+"Active starts after initial activation and describes the ongoing process of value
+delivery. As long as your product delivers value to the user, their account stays
+active..."
+
+DATA:
+OutcomeItem already has: description, type, linkedFeatures, measurement_references,
+suggested_metrics. The data is there — this is primarily a rendering change.
+"""
