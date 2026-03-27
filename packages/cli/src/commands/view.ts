@@ -10,7 +10,7 @@ import { renderComparisonReport } from "./compare-sections.js";
 
 // Re-export for tests and consumers
 export { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
-export { renderProductReport } from "./view-sections.js";
+export { renderProductReport, FootnoteCollector } from "./view-sections.js";
 export { renderComparisonReport } from "./compare-sections.js";
 
 // ---------------------------------------------------------------------------

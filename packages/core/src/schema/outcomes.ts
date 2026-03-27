@@ -7,6 +7,7 @@ export const OutcomeItemSchema = z.object({
   linkedFeatures: z.array(z.string()),
   measurement_references: z.array(z.object({ entity: z.string(), activity: z.string() })).optional(),
   suggested_metrics: z.array(z.string()).optional(),
+  citations: z.array(z.object({ url: z.string(), excerpt: z.string() })).optional(),
 });
 export type OutcomeItem = z.infer<typeof OutcomeItemSchema>;
 

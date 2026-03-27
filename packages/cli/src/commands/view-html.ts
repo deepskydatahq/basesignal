@@ -96,7 +96,15 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .conf-badge { display: inline-block; font-size: 0.8rem; padding: 0.1em 0.5em; border-radius: 3px; font-weight: 500; }
     .conf-high { background: #d1fae5; color: #065f46; }
     .conf-med { background: #fef3c7; color: #92400e; }
-    .conf-low { background: #f3f4f6; color: #6b7280; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .conf-low { background: #f3f4f6; color: #6b7280; }
+    .footnote-marker { font-size: 0.7em; vertical-align: super; margin-left: 1px; }
+    .footnote-marker a { color: #2563eb; text-decoration: none; }
+    .footnote-marker a:hover { text-decoration: underline; }
+    .sources-section { border-top: 2px solid #e5e7eb; margin-top: 2.5rem; padding-top: 1.5rem; }
+    .sources-section h2::before { content: ''; }
+    .sources-list { font-size: 0.85rem; line-height: 1.8; }
+    .sources-list li { margin-bottom: 0.5rem; }
+    .sources-list em { color: #6b7280; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

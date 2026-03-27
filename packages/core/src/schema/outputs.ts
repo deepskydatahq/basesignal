@@ -40,6 +40,7 @@ export const ICPProfileSchema = z.object({
   success_metrics: z.array(z.string()),
   confidence: z.number(),
   sources: z.array(z.string()),
+  citations: z.array(z.object({ url: z.string(), excerpt: z.string() })).optional(),
 });
 export type ICPProfile = z.infer<typeof ICPProfileSchema>;
 
