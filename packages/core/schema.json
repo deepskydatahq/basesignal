@@ -31,6 +31,30 @@
         "companyStage": {
           "type": "string"
         },
+        "teams": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "companies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "use_cases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "revenue_model": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "confidence": {
           "type": "number",
           "minimum": 0,

@@ -47,6 +47,59 @@ describe("parseIdentityResponse", () => {
     expect(() => parseIdentityResponse(JSON.stringify({ productName: "App" })))
       .toThrow("Missing required field");
   });
+
+  it("parses positioning fields when present", () => {
+    const input = JSON.stringify({
+      productName: "TestApp",
+      description: "A test product",
+      targetCustomer: "Developers",
+      businessModel: "B2B SaaS",
+      teams: ["engineering", "product"],
+      companies: ["startups", "scale-ups"],
+      use_cases: ["ci/cd automation", "code review"],
+      revenue_model: ["subscription", "per-seat"],
+      confidence: 0.9,
+      evidence: [{ url: "https://example.com", excerpt: "A test product" }],
+    });
+    const result = parseIdentityResponse(input);
+    expect(result.teams).toEqual(["engineering", "product"]);
+    expect(result.companies).toEqual(["startups", "scale-ups"]);
+    expect(result.use_cases).toEqual(["ci/cd automation", "code review"]);
+    expect(result.revenue_model).toEqual(["subscription", "per-seat"]);
+  });
+
+  it("parses successfully without positioning fields (all optional)", () => {
+    const input = JSON.stringify({
+      productName: "TestApp",
+      description: "A test product",
+      targetCustomer: "Developers",
+      businessModel: "B2B SaaS",
+      confidence: 0.85,
+      evidence: [],
+    });
+    const result = parseIdentityResponse(input);
+    expect(result.productName).toBe("TestApp");
+    expect(result.teams).toBeUndefined();
+    expect(result.companies).toBeUndefined();
+    expect(result.use_cases).toBeUndefined();
+    expect(result.revenue_model).toBeUndefined();
+  });
+
+  it("parses with some positioning fields and not others", () => {
+    const input = JSON.stringify({
+      productName: "TestApp",
+      description: "A test product",
+      targetCustomer: "Developers",
+      businessModel: "B2B SaaS",
+      use_cases: ["deployment automation"],
+      confidence: 0.8,
+      evidence: [],
+    });
+    const result = parseIdentityResponse(input);
+    expect(result.use_cases).toEqual(["deployment automation"]);
+    expect(result.teams).toBeUndefined();
+    expect(result.revenue_model).toBeUndefined();
+  });
 });
 
 describe("filterIdentityPages", () => {
