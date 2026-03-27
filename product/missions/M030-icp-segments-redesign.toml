@@ -1,0 +1,107 @@
+# Mission: ICP Segments Redesign
+# Restructure ICP profiles with value triggers and value moment levels
+
+id = "M030"
+title = "ICP Segments Redesign"
+status = "draft"
+created = 2026-03-26
+depends_on = ["M014"]
+
+[outcome]
+description = """
+The ICP Profiles section is renamed to "ICP Segments" and restructured. Each ICP card
+gains two new subsections:
+
+1. Value Triggers: specific product actions that indicate this ICP is getting value
+   (e.g., "Creates first audience segment with 100+ prospects")
+
+2. Value Moment Levels: categorized value moments per ICP with level indicators
+   (L1: Core daily workflow, L2: Enables something at scale)
+
+An educational context block is added at the top explaining why ICP identification
+matters: "Your product has different user types naturally; they will achieve different
+outcomes and will have different value needs."
+
+The section also notes the importance of identification: "The easiest way is still
+ask them during account creation."
+"""
+
+user_progress = "From 'ICP cards with pain points and activation triggers' to 'ICP segments with value triggers, value moment levels, and identification guidance'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Section is titled 'ICP Segments'",
+    "Educational context block appears at the top",
+    "Each ICP card shows Pain Points",
+    "Each ICP card shows Value Triggers (new)",
+    "Each ICP card shows Value Moment Levels with L1/L2 categorization (new)",
+    "Existing ICP data (pain_points, activation_triggers, success_metrics) still renders",
+    "Existing tests pass",
+    "New tests cover the redesigned renderer",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/core/src/types/outputs.ts",
+]
+
+[context]
+related_docs = ["VISION.md", "VALUES.md"]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+]
+
+[scope]
+in_scope = [
+    "Rename section from 'ICP Profiles' to 'ICP Segments'",
+    "Add educational context block at top of section",
+    "Add value_triggers field to ICPProfile type",
+    "Add value_moment_levels field to ICPProfile type (L1/L2 categorized)",
+    "Extend ICP generation prompt to produce value triggers and value moment levels",
+    "Render new fields in ICP cards",
+    "Update section nav label",
+]
+out_of_scope = [
+    "ICP detection/classification logic changes",
+    "Segment identification instrumentation",
+    "Cross-referencing ICPs with outcomes (that's Active Measurement)",
+]
+acceptable_breakage = [
+    "ICPProfile type gains new optional fields",
+    "Section nav label changes from 'ICP Profiles' to 'ICP Segments'",
+]
+
+[notes]
+considerations = """
+WIREFRAME REFERENCE:
+The wireframe shows ICP cards with:
+
+  Sales Development Representative
+  ─────────────────────────────────
+  [description paragraph]
+
+  Pain Points
+  - Spending 2-3 hours daily on manual prospect research
+  - Building prospect lists from scratch each week
+  - Generic outreach messages with low response rates
+  - Difficulty finding accurate contact information
+
+  Value Triggers
+  - Creates first audience segment with 100+ prospects
+  - Sets up automated enrichment workflow
+  - Exports enriched contact list to email sequencer
+  - Configures personalization variables in outreach templates
+
+  Value Moment Levels
+  L1: Core daily workflow - SDRs need fresh, targeted prospect lists...
+  L1: Eliminates hours of manual prospect research...
+  L2: Enables personalized messaging at scale using enriched data points
+
+The Value Triggers are similar to existing activation_triggers but more specific
+to product actions. Value Moment Levels are a per-ICP view of the value moments,
+categorized by importance level.
+"""
