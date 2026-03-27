@@ -1,0 +1,64 @@
+id = "M029-E001-S001"
+parent = "M029-E001"
+title = "Redesign outcomes section renderer"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Rewrite renderOutcomesSection with new layout: context block, narrative cards, side-by-side measurement/metrics."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section heading reads 'Possible Outcomes'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Active/Retention context block rendered above outcome cards"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Outcome description renders as paragraph, not h3"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Features involved rendered as list under each card"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Measurement events rendered in left column with entity.activity format"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Metrics rendered in right column"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Side-by-side layout uses CSS grid or flexbox"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty outcomes renders not-analyzed with 'Possible Outcomes' heading"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Rewrite renderOutcomesSection in view-sections.ts:
+1. Change h2 from 'Outcomes' to 'Possible Outcomes'
+2. Add context block before cards
+3. Each card: description as <p>, then features as <ul>, then a 2-column
+   div with measurement events (left) and metrics (right)
+4. Add CSS: .outcome-columns (grid 1fr 1fr), .outcome-measurement, .outcome-metrics
+5. Update existing outcome tests + add new ones
+"""
+reference_files = []
