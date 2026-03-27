@@ -129,7 +129,12 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .active-measurement-context { margin-bottom: 1.5rem; }
     .active-measurement-context p { color: #6b7280; line-height: 1.7; }
     .active-when { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 6px; }
-    .active-when h4 { margin-top: 0; font-size: 0.9rem; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .active-when h4 { margin-top: 0; font-size: 0.9rem; }
+    .source-material { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .source-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 1.25rem; display: flex; align-items: baseline; gap: 0.5rem; background: #f9fafb; }
+    .source-count { font-size: 1.5rem; font-weight: 700; color: #1e40af; }
+    .source-label { font-size: 0.85rem; color: #6b7280; }
+    .measurement-plan-intro { color: #6b7280; margin-bottom: 1rem; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>
