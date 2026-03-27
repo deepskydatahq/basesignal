@@ -28,6 +28,7 @@ export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "outcomes", label: "Outcomes" },
   { id: "journey", label: "Journey" },
   { id: "icp-profiles", label: "ICP Profiles" },
+  { id: "active-measurement", label: "Active Measurement" },
   { id: "value-moments", label: "Value Moments" },
   { id: "measurement-spec", label: "Measurement Spec" },
   { id: "lifecycle-states", label: "Lifecycle States" },
@@ -500,6 +501,126 @@ ${stateCards}${transitionsHtml}${confLine}
 }
 
 // ---------------------------------------------------------------------------
+// Active Measurement
+// ---------------------------------------------------------------------------
+
+export function renderActiveMeasurementSection(
+  icpProfiles: ICPProfile[] | null,
+  outcomes: OutcomeItem[] | null,
+  lifecycleStates: LifecycleStatesResult | null,
+): string {
+  if (!icpProfiles || icpProfiles.length === 0) {
+    return `<section id="active-measurement" class="no-data">
+  <h2>Active Measurement</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  // Collect unique measurement references from all outcomes
+  const seenMeasurements = new Set<string>();
+  const measurementRefs: Array<{ entity: string; activity: string }> = [];
+  if (outcomes && outcomes.length > 0) {
+    for (const o of outcomes) {
+      if (o.measurement_references) {
+        for (const ref of o.measurement_references) {
+          const key = `${ref.entity}.${ref.activity}`;
+          if (!seenMeasurements.has(key)) {
+            seenMeasurements.add(key);
+            measurementRefs.push(ref);
+          }
+        }
+      }
+    }
+  }
+
+  // Collect unique suggested metrics from all outcomes
+  const seenMetrics = new Set<string>();
+  const allMetrics: string[] = [];
+  if (outcomes && outcomes.length > 0) {
+    for (const o of outcomes) {
+      if (o.suggested_metrics) {
+        for (const m of o.suggested_metrics) {
+          if (!seenMetrics.has(m)) {
+            seenMetrics.add(m);
+            allMetrics.push(m);
+          }
+        }
+      }
+    }
+  }
+
+  // Find the "Active" lifecycle state
+  const activeState = lifecycleStates?.states.find((s) =>
+    s.name.toLowerCase().includes("active"),
+  ) ?? null;
+
+  const cards = icpProfiles
+    .map((icp: ICPProfile) => {
+      // Outcomes section
+      let outcomesHtml: string;
+      if (!outcomes || outcomes.length === 0) {
+        outcomesHtml = `<h4>Applicable Outcomes</h4>\n      <p class="not-analyzed">No outcomes generated yet</p>`;
+      } else {
+        const outcomeItems = outcomes
+          .map((o, idx) => `<li>O${idx + 1}: ${escapeHtml(o.description)}</li>`)
+          .join("");
+        outcomesHtml = `<h4>Applicable Outcomes</h4>\n      <ul>${outcomeItems}</ul>`;
+      }
+
+      // Outcome columns (measurement + metrics)
+      const measurementItems = measurementRefs.length > 0
+        ? measurementRefs.map((r) => `<li>${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</li>`).join("")
+        : "<li>No measurement events defined yet</li>";
+
+      const metricsItems = allMetrics.length > 0
+        ? allMetrics.map((m) => `<li>${escapeHtml(m)}</li>`).join("")
+        : "<li>No metrics defined yet</li>";
+
+      const outcomeColumnsHtml = outcomes && outcomes.length > 0
+        ? `\n      <div class="outcome-columns">
+        <div class="outcome-measurement">
+          <h5>Measurement needed</h5>
+          <ul>${measurementItems}</ul>
+        </div>
+        <div class="outcome-metrics">
+          <h5>Metrics to verify</h5>
+          <ul>${metricsItems}</ul>
+        </div>
+      </div>`
+        : "";
+
+      // Is active when section
+      let activeWhenHtml: string;
+      if (!activeState || activeState.entry_criteria.length === 0) {
+        activeWhenHtml = `<ul><li>No activity rule defined yet</li></ul>`;
+      } else {
+        const criteriaItems = activeState.entry_criteria
+          .map((c) => `<li>${escapeHtml(c.event_name)}: ${escapeHtml(c.condition)}</li>`)
+          .join("");
+        activeWhenHtml = `<ul>${criteriaItems}</ul>`;
+      }
+
+      return `    <div class="card">
+      <h3>${escapeHtml(icp.name)}</h3>
+      ${outcomesHtml}${outcomeColumnsHtml}
+      <div class="active-when">
+        <h4>Is active when</h4>
+        ${activeWhenHtml}
+      </div>
+    </div>`;
+    })
+    .join("\n");
+
+  return `<section id="active-measurement">
+  <h2>Active Measurement</h2>
+  <div class="active-measurement-context">
+    <p>This section brings it all together. For each user segment, it maps the outcomes they should achieve, the events needed to measure progress, and the activity patterns that indicate ongoing engagement.</p>
+  </div>
+${cards}
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
 // Product report (orchestrator)
 // ---------------------------------------------------------------------------
 
@@ -520,6 +641,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   if (outcomes && outcomes.length > 0) analyzed.add("outcomes");
   if (activationMap) analyzed.add("journey");
   if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
+  if (icpProfiles && icpProfiles.length > 0 && outcomes && outcomes.length > 0) analyzed.add("active-measurement");
   if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
   if (measurementSpec) analyzed.add("measurement-spec");
   if (lifecycleStates) analyzed.add("lifecycle-states");
@@ -532,6 +654,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
     renderOutcomesSection(outcomes),
     renderJourneySection(activationMap),
     renderIcpSection(icpProfiles),
+    renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates),
     renderValueMomentsSection(valueMoments),
     renderMeasurementSpecSection(measurementSpec),
     renderLifecycleStatesSection(lifecycleStates),
