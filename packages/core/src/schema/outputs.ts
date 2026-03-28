@@ -2,11 +2,10 @@ import { z } from "zod/v4";
 
 // --- Perspective & MapsTo ---
 
-export const PerspectiveSchema = z.enum(["customer", "product", "interaction"]);
+export const PerspectiveSchema = z.enum(["product", "interaction"]);
 export type Perspective = z.infer<typeof PerspectiveSchema>;
 
 export const PerspectiveDistributionSchema = z.object({
-  customer: z.number(),
   product: z.number(),
   interaction: z.number(),
 });
@@ -73,13 +72,6 @@ export const ProductActivitySchema = z.object({
 });
 export type ProductActivity = z.infer<typeof ProductActivitySchema>;
 
-export const CustomerActivitySchema = z.object({
-  name: z.string().min(1),
-  derivation_rule: z.string().min(1),
-  properties_used: z.array(z.string()),
-});
-export type CustomerActivity = z.infer<typeof CustomerActivitySchema>;
-
 export const InteractionActivitySchema = z.object({
   name: z.string().min(1),
   properties_supported: z.array(z.string()),
@@ -97,13 +89,6 @@ export const ProductEntitySchema = z.object({
   activities: z.array(ProductActivitySchema),
 });
 export type ProductEntity = z.infer<typeof ProductEntitySchema>;
-
-export const CustomerEntitySchema = z.object({
-  name: z.string().min(1),
-  properties: z.array(EntityPropertySchema),
-  activities: z.array(CustomerActivitySchema),
-});
-export type CustomerEntity = z.infer<typeof CustomerEntitySchema>;
 
 export const InteractionEntitySchema = z.object({
   name: z.string().min(1),
@@ -231,7 +216,6 @@ export type TrackingEvent = z.infer<typeof TrackingEventSchema>;
 
 export const MeasurementSpecSchema = z.object({
   perspectives: z.object({
-    customer: z.object({ entities: z.array(CustomerEntitySchema) }),
     product: z.object({ entities: z.array(ProductEntitySchema) }),
     interaction: z.object({ entities: z.array(InteractionEntitySchema) }),
   }),

@@ -58,10 +58,8 @@ export {
   EntityPropertyTypeSchema,
   EntityPropertySchema,
   ProductActivitySchema,
-  CustomerActivitySchema,
   InteractionActivitySchema,
   ProductEntitySchema,
-  CustomerEntitySchema,
   InteractionEntitySchema,
   EntityJsonSchemaSchema,
 } from "./outputs";
@@ -88,10 +86,8 @@ export type {
   EntityPropertyType,
   EntityProperty,
   ProductActivity,
-  CustomerActivity,
   InteractionActivity,
   ProductEntity,
-  CustomerEntity,
   InteractionEntity,
   EntityJsonSchema,
 } from "./outputs";
