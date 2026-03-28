@@ -14,7 +14,7 @@ import type { ActivationMapResult } from "./activation-map.js";
 export interface EventVocabularyEntry {
   /** Canonical event name in entity.activity format (e.g., 'board.created'). */
   event: string;
-  /** Entity identifier (product entity id or 'customer'). */
+  /** Entity identifier (product entity id). */
   entity: string;
   /** Activity name (e.g., 'created', 'first_value_created'). */
   activity: string;

@@ -516,17 +516,6 @@ describe("renderProductReport", () => {
             },
           ],
         },
-        customer: {
-          entities: [
-            {
-              name: "Customer",
-              properties: [],
-              activities: [
-                { name: "converted", derivation_rule: "When user upgrades", properties_used: [] },
-              ],
-            },
-          ],
-        },
         interaction: {
           entities: [
             {
@@ -548,7 +537,6 @@ describe("renderProductReport", () => {
     const html = renderProductReport("test-app", productDir);
     expect(html).toContain("Measurement Spec");
     expect(html).toContain("Product Perspective");
-    expect(html).toContain("Customer Perspective");
     // Interaction perspective is hidden from the view
     expect(html).not.toContain("Interaction Perspective");
     expect(html).not.toContain("PageView");
@@ -557,8 +545,6 @@ describe("renderProductReport", () => {
     expect(html).toContain("heartbeat");
     expect(html).toContain("user_id");
     expect(html).toContain("signed_up");
-    expect(html).toContain("converted");
-    expect(html).toContain("When user upgrades");
     expect(html).toContain("80%");
     expect(html).toContain("Missing event coverage for onboarding");
   });
@@ -841,7 +827,6 @@ describe("renderProductReport", () => {
             activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
           }],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
       jsonSchemas: [],

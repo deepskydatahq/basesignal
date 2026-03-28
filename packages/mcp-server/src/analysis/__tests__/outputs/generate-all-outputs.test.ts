@@ -142,17 +142,6 @@ const validMeasurementSpecResponse = JSON.stringify({
         ],
       }],
     },
-    customer: {
-      entities: [{
-        name: "Customer",
-        properties: [
-          { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
-        ],
-        activities: [
-          { name: "first_value_created", derivation_rule: "Project created (first time)", properties_used: ["customer_id"] },
-        ],
-      }],
-    },
     interaction: {
       entities: [{
         name: "Interaction",

@@ -13,7 +13,6 @@ function makeSpec(overrides?: Partial<MeasurementSpec>): MeasurementSpec {
   return {
     perspectives: {
       product: { entities: [] },
-      customer: { entities: [] },
       interaction: { entities: [] },
     },
     jsonSchemas: [],
@@ -91,16 +90,6 @@ function makeOutputs(overrides?: Partial<OutputsResult>): OutputsResult {
             ],
           }],
         },
-        customer: {
-          entities: [{
-            name: "Customer",
-            properties: [],
-            activities: [
-              { name: "activated", derivation_rule: "Project created (first time)", properties_used: [] },
-              { name: "engaged", derivation_rule: "Daily use 3+ days", properties_used: [] },
-            ],
-          }],
-        },
         interaction: { entities: [] },
       },
     }),
@@ -122,11 +111,11 @@ describe("parseReconciliationResponse", () => {
   it("parses a valid mapping object", () => {
     const result = parseReconciliationResponse(JSON.stringify({
       create_project: "project.created",
-      signup: "customer.activated",
+      signup: "project.created",
     }));
     expect(result).toEqual({
       create_project: "project.created",
-      signup: "customer.activated",
+      signup: "project.created",
     });
   });
 
@@ -177,7 +166,6 @@ describe("buildEventVocabulary", () => {
             ],
           }],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
     });
@@ -189,36 +177,10 @@ describe("buildEventVocabulary", () => {
     ]);
   });
 
-  it("extracts customer entity events as customer.activity_name", () => {
-    const spec = makeSpec({
-      perspectives: {
-        product: { entities: [] },
-        customer: {
-          entities: [{
-            name: "Customer",
-            properties: [],
-            activities: [
-              { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: [] },
-              { name: "expansion_started", derivation_rule: "Invited teammate", properties_used: [] },
-            ],
-          }],
-        },
-        interaction: { entities: [] },
-      },
-    });
-
-    const vocab = buildEventVocabulary(spec);
-    expect(vocab).toEqual([
-      { event: "customer.first_value_created", entity: "customer", activity: "first_value_created", perspective: "customer" },
-      { event: "customer.expansion_started", entity: "customer", activity: "expansion_started", perspective: "customer" },
-    ]);
-  });
-
   it("excludes interaction perspective entities", () => {
     const spec = makeSpec({
       perspectives: {
         product: { entities: [] },
-        customer: { entities: [] },
         interaction: {
           entities: [{
             name: "Interaction",
@@ -234,7 +196,7 @@ describe("buildEventVocabulary", () => {
     expect(buildEventVocabulary(spec)).toEqual([]);
   });
 
-  it("returns product + customer entries from a mixed spec", () => {
+  it("returns only product entries from a mixed spec", () => {
     const spec = makeSpec({
       perspectives: {
         product: {
@@ -249,15 +211,6 @@ describe("buildEventVocabulary", () => {
             ],
           }],
         },
-        customer: {
-          entities: [{
-            name: "Customer",
-            properties: [],
-            activities: [
-              { name: "activated", derivation_rule: "Project created (first time)", properties_used: [] },
-            ],
-          }],
-        },
         interaction: {
           entities: [{
             name: "Interaction",
@@ -269,10 +222,9 @@ describe("buildEventVocabulary", () => {
     });
 
     const vocab = buildEventVocabulary(spec);
-    expect(vocab).toHaveLength(2);
+    expect(vocab).toHaveLength(1);
     expect(vocab.map((e: EventVocabularyEntry) => e.event)).toEqual([
       "project.created",
-      "customer.activated",
     ]);
   });
 
@@ -293,7 +245,6 @@ describe("buildEventVocabulary", () => {
             activities: [],
           }],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
     });
@@ -326,7 +277,6 @@ describe("buildEventVocabulary", () => {
             },
           ],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
     });
@@ -379,8 +329,8 @@ describe("reconcileOutputs", () => {
     const mapping = JSON.stringify({
       create_project: "project.created",
       complete_onboarding: "project.completed_onboarding",
-      signup: "customer.activated",
-      daily_use: "customer.engaged",
+      signup: "project.created",
+      daily_use: "project.completed_onboarding",
     });
 
     const result = await reconcileOutputs(outputs, mockLlm(mapping));
@@ -390,9 +340,9 @@ describe("reconcileOutputs", () => {
     // Activation map transitions
     expect(result.activation_map!.transitions[0].trigger_events).toEqual(["project.completed_onboarding"]);
     // Lifecycle state entry_criteria
-    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("customer.activated");
+    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("project.created");
     // Lifecycle state exit_triggers
-    expect(result.lifecycle_states!.states[1].exit_triggers[0].event_name).toBe("customer.engaged");
+    expect(result.lifecycle_states!.states[1].exit_triggers[0].event_name).toBe("project.completed_onboarding");
   });
 
   it("does not mutate the input outputs", async () => {
@@ -437,9 +387,9 @@ describe("reconcileOutputs", () => {
   it("preserves lifecycle state conditions and other fields", async () => {
     const outputs = makeOutputs();
     const mapping = JSON.stringify({
-      signup: "customer.activated",
+      signup: "project.created",
       create_project: "project.created",
-      daily_use: "customer.engaged",
+      daily_use: "project.completed_onboarding",
       complete_onboarding: "project.completed_onboarding",
     });
 
@@ -447,6 +397,7 @@ describe("reconcileOutputs", () => {
 
     // Conditions are preserved
     expect(result.lifecycle_states!.states[0].entry_criteria[0].condition).toBe("account created");
+    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("project.created");
     expect(result.lifecycle_states!.states[0].definition).toBe("Just signed up");
     expect(result.lifecycle_states!.confidence).toBe(0.75);
   });

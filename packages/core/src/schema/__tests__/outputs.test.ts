@@ -16,10 +16,8 @@ import {
   EntityPropertyTypeSchema,
   EntityPropertySchema,
   ProductActivitySchema,
-  CustomerActivitySchema,
   InteractionActivitySchema,
   ProductEntitySchema,
-  CustomerEntitySchema,
   InteractionEntitySchema,
   EntityJsonSchemaSchema,
 } from "../outputs";
@@ -66,7 +64,7 @@ const validTrackingEvent = {
   name: "page_view",
   entity_id: "ent-1",
   description: "User views a page",
-  perspective: "customer" as const,
+  perspective: "product" as const,
   properties: [validEventProperty],
   trigger_condition: "page loads",
   maps_to: { type: "value_moment" as const, moment_id: "vm-1" },
@@ -98,14 +96,6 @@ const validProductEntity = {
   ],
 };
 
-const validCustomerEntity = {
-  name: "Customer",
-  properties: [{ name: "customer_id", type: "id" as const, description: "Customer ID", isRequired: true }],
-  activities: [
-    { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
-  ],
-};
-
 const validInteractionEntity = {
   name: "Interaction",
   properties: [{ name: "element_type", type: "string" as const, description: "Element type", isRequired: true }],
@@ -118,7 +108,6 @@ const validInteractionEntity = {
 const validMeasurementSpec = {
   perspectives: {
     product: { entities: [validProductEntity] },
-    customer: { entities: [validCustomerEntity] },
     interaction: { entities: [validInteractionEntity] },
   },
   jsonSchemas: [
@@ -189,7 +178,7 @@ describe("MeasurementSpecSchema", () => {
 });
 
 describe("TrackingEventSchema", () => {
-  it.each(["customer", "product", "interaction"])("accepts perspective '%s'", (val) => {
+  it.each(["product", "interaction"])("accepts perspective '%s'", (val) => {
     expect(
       TrackingEventSchema.safeParse({ ...validTrackingEvent, perspective: val }).success,
     ).toBe(true);
@@ -281,28 +270,6 @@ describe("ProductActivitySchema", () => {
   });
 });
 
-describe("CustomerActivitySchema", () => {
-  it("accepts valid activity", () => {
-    expect(
-      CustomerActivitySchema.safeParse({
-        name: "first_value_created",
-        derivation_rule: "Board shared (first time)",
-        properties_used: ["customer_id"],
-      }).success,
-    ).toBe(true);
-  });
-
-  it("rejects empty derivation_rule", () => {
-    expect(
-      CustomerActivitySchema.safeParse({
-        name: "first_value_created",
-        derivation_rule: "",
-        properties_used: [],
-      }).success,
-    ).toBe(false);
-  });
-});
-
 describe("InteractionActivitySchema", () => {
   it("accepts valid activity", () => {
     expect(
@@ -334,17 +301,6 @@ describe("ProductEntitySchema", () => {
   it("rejects missing activities", () => {
     const { activities, ...rest } = validProductEntity;
     expect(ProductEntitySchema.safeParse(rest).success).toBe(false);
-  });
-});
-
-describe("CustomerEntitySchema", () => {
-  it("accepts valid entity", () => {
-    expect(CustomerEntitySchema.safeParse(validCustomerEntity).success).toBe(true);
-  });
-
-  it("rejects missing name", () => {
-    const { name, ...rest } = validCustomerEntity;
-    expect(CustomerEntitySchema.safeParse(rest).success).toBe(false);
   });
 });
 
