@@ -369,6 +369,28 @@ describe("reconcileOutputs", () => {
     expect(result).toBe(outputs);
   });
 
+  it("filters out hallucinated mappings not in canonical vocabulary", async () => {
+    const outputs = makeOutputs();
+    // LLM hallucinates a customer.activated mapping that's not in vocabulary
+    const mapping = JSON.stringify({
+      create_project: "project.created",
+      complete_onboarding: "customer.activated",
+      signup: "nonexistent.event",
+      daily_use: "project.completed_onboarding",
+    });
+
+    const result = await reconcileOutputs(outputs, mockLlm(mapping));
+
+    // Valid mapping applied
+    expect(result.activation_map!.stages[0].trigger_events).toEqual(["project.created"]);
+    // Hallucinated mapping reverted to original trigger
+    expect(result.activation_map!.transitions[0].trigger_events).toEqual(["complete_onboarding"]);
+    // Another hallucinated mapping reverted
+    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("signup");
+    // Valid mapping applied
+    expect(result.lifecycle_states!.states[1].exit_triggers[0].event_name).toBe("project.completed_onboarding");
+  });
+
   it("preserves unmapped triggers", async () => {
     const outputs = makeOutputs();
     // Only map some triggers — the rest should keep their original text

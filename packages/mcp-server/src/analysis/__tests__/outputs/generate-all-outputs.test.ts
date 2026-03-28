@@ -160,7 +160,7 @@ const validMeasurementSpecResponse = JSON.stringify({
 // Reconciliation mapping: maps free-text triggers to entity.activity vocabulary
 const validReconciliationResponse = JSON.stringify({
   create_project: "project.created",
-  signup: "customer.first_value_created",
+  signup: "project.created",
   daily_use: "daily_use",
   session_gap: "session_gap",
   session_started: "session_started",
@@ -482,7 +482,7 @@ describe("generateAllOutputs — reconciliation wiring", () => {
     // Activation map triggers should be mapped
     expect(result.activation_map!.stages[0].trigger_events).toEqual(["project.created"]);
     // Lifecycle state entry_criteria should be mapped
-    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("customer.first_value_created");
+    expect(result.lifecycle_states!.states[0].entry_criteria[0].event_name).toBe("project.created");
     // create_project mapped in exit_triggers
     expect(result.lifecycle_states!.states[0].exit_triggers[0].event_name).toBe("project.created");
   });

@@ -193,6 +193,12 @@ export function exportProfileAsMarkdown(
 
   if (measurementSpec?.perspectives) {
     const persp = measurementSpec.perspectives;
+    const hasProduct = (persp.product?.entities?.length ?? 0) > 0;
+    const hasInteraction = (persp.interaction?.entities?.length ?? 0) > 0;
+
+    if (!hasProduct && !hasInteraction) {
+      lines.push("*Not yet analyzed.*");
+    }
 
     // Product Entities
     if (persp.product?.entities && persp.product.entities.length > 0) {

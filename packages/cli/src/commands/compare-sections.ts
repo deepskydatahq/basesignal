@@ -250,6 +250,7 @@ export function renderMeasurementSpecComparison(left: ComparisonData, right: Com
     if (!spec) return new Set();
     const names = new Set<string>();
     for (const e of spec.perspectives.product.entities) names.add(e.name.toLowerCase());
+    for (const e of spec.perspectives.interaction.entities) names.add(e.name.toLowerCase());
     return names;
   };
 
@@ -259,10 +260,18 @@ export function renderMeasurementSpecComparison(left: ComparisonData, right: Com
   const renderSpecSide = (spec: MeasurementSpec | null, otherEntities: Set<string>): string => {
     if (!spec) return notAnalyzed();
     const allEntities = [
-      ...spec.perspectives.product.entities.map((e) => ({ ...e, perspective: "product" })),
+      ...spec.perspectives.product.entities.map((e) => ({ ...e, perspective: "product" as const })),
+      ...spec.perspectives.interaction.entities.map((e) => ({ ...e, perspective: "interaction" as const })),
     ];
     const entityCount = allEntities.length;
-    const summary = `<p><strong>${entityCount} entit${entityCount !== 1 ? "ies" : "y"}</strong> (${spec.perspectives.product.entities.length} product)</p>`;
+    const breakdown: string[] = [];
+    if (spec.perspectives.product.entities.length > 0) {
+      breakdown.push(`${spec.perspectives.product.entities.length} product`);
+    }
+    if (spec.perspectives.interaction.entities.length > 0) {
+      breakdown.push(`${spec.perspectives.interaction.entities.length} interaction`);
+    }
+    const summary = `<p><strong>${entityCount} entit${entityCount !== 1 ? "ies" : "y"}</strong>${breakdown.length ? ` (${breakdown.join(", ")})` : ""}</p>`;
     const entityList = allEntities.map((e) => {
       const isShared = otherEntities.has(e.name.toLowerCase());
       return `<div class="card">

@@ -241,6 +241,14 @@ export async function reconcileOutputs(
 
   const mapping = parseReconciliationResponse(responseText);
 
+  // Filter out hallucinated mappings that don't match the canonical vocabulary
+  const allowedEvents = new Set(vocabulary.map((entry) => entry.event));
+  for (const [trigger, canonicalEvent] of Object.entries(mapping)) {
+    if (canonicalEvent !== trigger && !allowedEvents.has(canonicalEvent)) {
+      mapping[trigger] = trigger;
+    }
+  }
+
   const result: OutputsResult = { ...outputs };
 
   if (result.activation_map) {

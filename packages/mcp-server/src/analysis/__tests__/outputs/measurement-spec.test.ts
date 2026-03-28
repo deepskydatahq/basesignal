@@ -441,6 +441,39 @@ describe("parseMeasurementSpecResponse — cross-reference validation", () => {
   });
 });
 
+describe("parseMeasurementSpecResponse — legacy customer sanitization", () => {
+  it("strips legacy customer perspective from LLM response", () => {
+    // Simulate an LLM that still returns a customer perspective
+    const legacyJson = JSON.stringify({
+      perspectives: {
+        product: {
+          entities: [{
+            id: "board", name: "Board", description: "D", isHeartbeat: true,
+            properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+          }],
+        },
+        customer: {
+          entities: [{
+            name: "Customer", properties: [],
+            activities: [{ name: "first_value_created", derivation_rule: "Board shared", properties_used: [] }],
+          }],
+        },
+        interaction: {
+          entities: [{
+            name: "Interaction", properties: [],
+            activities: [{ name: "element_clicked", properties_supported: [] }],
+          }],
+        },
+      },
+      confidence: 0.8,
+    });
+    const result = parseMeasurementSpecResponse(legacyJson);
+    expect(result.perspectives).not.toHaveProperty("customer");
+    expect(result.perspectives).toHaveProperty("product");
+    expect(result.perspectives).toHaveProperty("interaction");
+  });
+});
+
 describe("parseMeasurementSpecResponse — interaction validation", () => {
   it("rejects interaction entity with zero activities", () => {
     const json = makeValidSpecJson({

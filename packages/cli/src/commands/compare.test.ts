@@ -486,10 +486,11 @@ describe("renderMeasurementSpecComparison", () => {
     };
 
     const html = renderMeasurementSpecComparison(left, right);
-    // Left: 1 entity (1 product)
-    expect(html).toContain("1 entity");
-    // Right: 1 entity
-    expect(html).toContain("1 entity");
+    // Both sides should render entity counts
+    expect(
+      html.match(/<strong>1 entity<\/strong>/g) ?? []
+    ).toHaveLength(2);
+    expect(html).not.toContain("customer");
     // "User" is shared
     expect(html).toContain("badge-shared");
     expect(html).toContain("Shared");

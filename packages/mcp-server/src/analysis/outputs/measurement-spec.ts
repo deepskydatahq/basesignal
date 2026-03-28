@@ -427,8 +427,12 @@ export function parseMeasurementSpecResponse(
     }
   }
 
+  // Sanitize: only keep known perspectives (reject legacy customer, etc.)
   return {
-    perspectives: parsed.perspectives as MeasurementSpec["perspectives"],
+    perspectives: {
+      product: productPerspective as MeasurementSpec["perspectives"]["product"],
+      interaction: interactionPerspective as MeasurementSpec["perspectives"]["interaction"],
+    },
     jsonSchemas: [],
     confidence: parsed.confidence as number,
     sources: [],
