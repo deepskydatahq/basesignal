@@ -41,7 +41,7 @@ interface ValueEventTemplate {
 
 export const MEASUREMENT_SPEC_SYSTEM_PROMPT = `You are a product analytics specialist generating a measurement specification using the **Double Three-Layer Framework**.
 
-The Double Three-Layer Framework organizes tracking into three perspectives (Product, Customer, Interaction), each composed of three building blocks (Entities, Activities, Properties). Your task is to analyze the product context and produce a complete measurement specification.
+The Double Three-Layer Framework organizes tracking into two perspectives (Product, Interaction), each composed of three building blocks (Entities, Activities, Properties). Your task is to analyze the product context and produce a complete measurement specification.
 
 ## Step 1: Discover Product Entities (3-7)
 
@@ -100,24 +100,7 @@ Instruction: Support as many properties as possible within all activities. Each 
 
 Activity-specific properties (activity_properties) are rare — only use them for properties that ONLY make sense for one specific activity (e.g., "share_method" only applies to "shared").
 
-## Step 4: Compose Customer Journey (derived activities)
-
-Define a single Customer entity with activities derived from product activities. Customer activities represent journey stages, not raw events.
-
-CustomerActivity schema:
-- name: journey stage name (e.g., "first_value_created", "value_repeated", "expansion_started")
-- derivation_rule: human-readable rule composed from product activities with filters/thresholds
-- properties_used: array of property names used in the derivation
-
-Derivation rule examples:
-- "Board viewed (first time, anonymous)" → user's first encounter
-- "Board shared (first time) OR Asset created/updated (30+ times)" → first value created
-- "Board shared (2+ times in last 30 days) AND Asset created (50+ times)" → value repeated
-- "User invited (first time)" → expansion started
-
-The customer entity should have its own properties (e.g., customer_id, signup_date, account_type).
-
-## Step 5: Define Interaction Layer (generic tracking)
+## Step 4: Define Interaction Layer (generic tracking)
 
 Define a single Interaction entity for UI-level tracking. This captures the interactions that Step 2 explicitly excludes from product entities.
 
@@ -143,11 +126,6 @@ Product perspective entities:
 - Board (joined, created, updated, viewed, shared, presented, deleted) — heartbeat — properties: board_id, board_name, board_number_assets, board_number_access
 - Asset (added, updated, deleted, commented) — properties: asset_id, asset_type, asset_size
 - Subscription (created, canceled, ended) — properties: subscription_id, plan_name, billing_cycle
-
-Customer perspective:
-- Customer (miro_experienced_first_time, first_value_created, value_repeated, expansion_started, ...)
-  - "first_value_created" derivation_rule: "Board shared (first time) OR Asset created/updated (30+ times)"
-  - "value_repeated" derivation_rule: "Board shared (2+ in last 30 days)"
 
 Interaction perspective:
 - Interaction (element_clicked, element_submitted) — properties: element_type, element_text, element_position, element_target, element_value, element_container
@@ -184,23 +162,6 @@ Return a JSON object matching this exact schema:
         }
       ]
     },
-    "customer": {
-      "entities": [
-        {
-          "name": "Customer",
-          "properties": [
-            { "name": "customer_id", "type": "id", "description": "Customer identifier", "isRequired": true }
-          ],
-          "activities": [
-            {
-              "name": "first_value_created",
-              "derivation_rule": "Board shared (first time) OR Asset created/updated (30+ times)",
-              "properties_used": ["customer_id"]
-            }
-          ]
-        }
-      ]
-    },
     "interaction": {
       "entities": [
         {
@@ -226,7 +187,6 @@ Rules:
 - Every product entity id must match /^[a-z][a-z0-9_]*$/
 - Exactly one product entity must have isHeartbeat: true
 - Every activity properties_supported entry must reference an entity property name
-- Every customer activity must have a derivation_rule
 - Do NOT include jsonSchemas — they will be computed`;
 
 // --- Prompt Builder ---
@@ -311,7 +271,7 @@ export function buildMeasurementSpecPrompt(input: MeasurementInputData): {
 
   // Lifecycle States (when available from pipeline)
   if (input.lifecycle_states) {
-    sections.push("\n## Lifecycle States (use for customer journey derivation)");
+    sections.push("\n## Lifecycle States");
     for (const state of input.lifecycle_states.states) {
       const criteria = state.entry_criteria
         .map((c) => `${c.event_name}: ${c.condition}`)
@@ -383,9 +343,6 @@ export function parseMeasurementSpecResponse(
   if (!perspectives.product || typeof perspectives.product !== "object") {
     throw new Error("Missing required field: perspectives.product");
   }
-  if (!perspectives.customer || typeof perspectives.customer !== "object") {
-    throw new Error("Missing required field: perspectives.customer");
-  }
   if (!perspectives.interaction || typeof perspectives.interaction !== "object") {
     throw new Error("Missing required field: perspectives.interaction");
   }
@@ -453,23 +410,6 @@ export function parseMeasurementSpecResponse(
     warnings.push(
       `Product entity count (${productEntities.length}) exceeds recommended maximum of 7`,
     );
-  }
-
-  // --- Validate customer entities ---
-  const customerPerspective = perspectives.customer as Record<string, unknown>;
-  const customerEntities = customerPerspective.entities;
-  if (!Array.isArray(customerEntities)) {
-    throw new Error("Customer entities must be an array");
-  }
-  for (const entity of customerEntities as Array<Record<string, unknown>>) {
-    const activities = entity.activities as Array<Record<string, unknown>> || [];
-    for (const activity of activities) {
-      if (typeof activity.derivation_rule !== "string" || !activity.derivation_rule) {
-        throw new Error(
-          `Customer activity '${activity.name}': derivation_rule is required`,
-        );
-      }
-    }
   }
 
   // --- Validate interaction entities ---
@@ -566,45 +506,6 @@ export function generateEntityJsonSchemas(spec: MeasurementSpec): EntityJsonSche
         $id: `basesignal/product/${entity.id}/v1.0.json`,
         title: entity.name,
         description: entity.description,
-        type: "object",
-        properties,
-        required,
-        additionalProperties: false,
-      },
-    });
-  }
-
-  // Customer entities
-  for (const entity of spec.perspectives.customer.entities) {
-    const entityId = entity.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-    const properties: Record<string, unknown> = {
-      activity: {
-        type: "string",
-        enum: entity.activities.map((a) => a.name),
-        description: "The customer journey stage",
-      },
-    };
-
-    for (const prop of entity.properties) {
-      properties[prop.name] = {
-        ...mapPropertyType(prop.type),
-        description: prop.description,
-      };
-    }
-
-    const required = [
-      "activity",
-      ...entity.properties.filter((p) => p.isRequired).map((p) => p.name),
-    ];
-
-    results.push({
-      entityName: entity.name,
-      perspective: "customer",
-      schema: {
-        $schema: "https://json-schema.org/draft/2020-12/schema",
-        $id: `basesignal/customer/${entityId}/v1.0.json`,
-        title: entity.name,
-        description: `Customer journey entity: ${entity.name}`,
         type: "object",
         properties,
         required,
