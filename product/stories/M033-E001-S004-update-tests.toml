@@ -1,0 +1,51 @@
+id = "M033-E001-S004"
+parent = "M033-E001"
+title = "Update all tests for customer removal"
+status = "ready"
+created = 2026-03-28
+
+[outcome]
+description = """Update measurement-spec.test.ts, reconcile.test.ts, schema/outputs.test.ts,
+and types/outputs.test.ts to remove customer references. All test fixtures, assertions, and
+helper functions must reflect the two-perspective (product + interaction) measurement spec."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "All tests pass with npm run test:run"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "No test references perspectives.customer or CustomerEntity or CustomerActivity"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "measurement-spec.test.ts parser tests do not require customer perspective"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "reconcile.test.ts vocabulary tests only expect product events"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/reconcile.test.ts",
+    "packages/core/src/types/__tests__/outputs.test.ts",
+    "packages/core/src/schema/__tests__/outputs.test.ts",
+]
+input_fixtures = []
+depends_on = ["M033-E001-S001", "M033-E001-S002", "M033-E001-S003"]
+
+[handoff]
+implementation_hints = """Remove customer entities from makeValidSpecJson helper.
+Remove 'rejects missing perspectives.customer' test.
+Remove customer validation tests from parseMeasurementSpecResponse.
+Remove customer schema tests from generateEntityJsonSchemas.
+Update reconcile.test.ts makeSpec/makeOutputs to remove customer entities.
+Remove customer vocabulary tests, update mixed spec tests.
+Remove CustomerEntity/CustomerActivity type tests and schema tests.
+Update Perspective test to only have 'product' | 'interaction'.
+Remove PerspectiveDistribution customer field from test."""
+reference_files = []

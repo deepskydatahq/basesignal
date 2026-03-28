@@ -1,0 +1,51 @@
+id = "M033-E001-S003"
+parent = "M033-E001"
+title = "Remove customer from reconciliation and downstream consumers"
+status = "ready"
+created = 2026-03-28
+
+[outcome]
+description = """Remove customer entity events from buildEventVocabulary in reconcile.ts.
+Update EventVocabularyEntry perspective type to 'product' only. Update reconciliation prompt
+example to remove customer.first_value_created. Update compare-sections.ts and formatProfile.ts
+to remove customer entity references."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildEventVocabulary only returns product events (no customer.*)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "EventVocabularyEntry.perspective is only 'product'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Reconciliation prompt example does not reference customer.first_value_created"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "compare-sections.ts does not reference perspectives.customer"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "formatProfile.ts does not reference customer entities"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/cli/src/commands/compare-sections.ts",
+    "packages/mcp-server/src/tools/formatProfile.ts",
+]
+input_fixtures = []
+depends_on = ["M033-E001-S001"]
+
+[handoff]
+implementation_hints = """In reconcile.ts: remove the customer entity loop from buildEventVocabulary,
+change perspective type to just 'product', update prompt example.
+In compare-sections.ts: remove customer entity mapping and count from measurement spec comparison.
+In formatProfile.ts: remove ProfileCustomerActivity, ProfileCustomerEntity interfaces,
+remove customer from measurement spec rendering."""
+reference_files = []
