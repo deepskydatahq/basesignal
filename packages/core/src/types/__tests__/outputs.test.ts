@@ -22,10 +22,8 @@ import type {
   EntityPropertyType,
   EntityProperty,
   ProductActivity,
-  CustomerActivity,
   InteractionActivity,
   ProductEntity,
-  CustomerEntity,
   InteractionEntity,
   EntityJsonSchema,
 } from "../outputs";
@@ -169,18 +167,6 @@ describe("ProductActivity", () => {
   });
 });
 
-describe("CustomerActivity", () => {
-  it("has derivation_rule", () => {
-    const activity: CustomerActivity = {
-      name: "first_value_created",
-      derivation_rule: "Board shared (first time) OR Asset created/updated (30+ times)",
-      properties_used: ["customer_id"],
-    };
-    expect(activity.derivation_rule).toContain("Board shared");
-    expect(activity.properties_used).toHaveLength(1);
-  });
-});
-
 describe("InteractionActivity", () => {
   it("has properties_supported", () => {
     const activity: InteractionActivity = {
@@ -212,22 +198,6 @@ describe("ProductEntity", () => {
     expect(entity.isHeartbeat).toBe(true);
     expect(entity.activities).toHaveLength(2);
     expect(entity.properties).toHaveLength(1);
-  });
-});
-
-describe("CustomerEntity", () => {
-  it("has derived activities", () => {
-    const entity: CustomerEntity = {
-      name: "Customer",
-      properties: [
-        { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
-      ],
-      activities: [
-        { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
-      ],
-    };
-    expect(entity.activities).toHaveLength(1);
-    expect(entity.activities[0].derivation_rule).toContain("Board shared");
   });
 });
 
@@ -294,16 +264,15 @@ describe("MapsTo discriminated union", () => {
 });
 
 describe("Perspective", () => {
-  it("supports all 3 perspectives", () => {
-    const perspectives: Perspective[] = ["customer", "product", "interaction"];
-    expect(perspectives).toHaveLength(3);
+  it("supports 2 perspectives", () => {
+    const perspectives: Perspective[] = ["product", "interaction"];
+    expect(perspectives).toHaveLength(2);
   });
 });
 
 describe("PerspectiveDistribution", () => {
   it("has counts for each perspective", () => {
-    const dist: PerspectiveDistribution = { customer: 5, product: 3, interaction: 7 };
-    expect(dist.customer).toBe(5);
+    const dist: PerspectiveDistribution = { product: 3, interaction: 7 };
     expect(dist.product).toBe(3);
     expect(dist.interaction).toBe(7);
   });
@@ -315,14 +284,14 @@ describe("TrackingEvent", () => {
       name: "dashboard_created",
       entity_id: "dashboard",
       description: "User creates a dashboard",
-      perspective: "customer",
+      perspective: "product",
       properties: [{ name: "dashboard_id", type: "string", description: "ID", isRequired: true }],
       trigger_condition: "User clicks Create",
       maps_to: { type: "value_moment", moment_id: "vm-001" },
       category: "activation",
     };
     expect(event.name).toBe("dashboard_created");
-    expect(event.perspective).toBe("customer");
+    expect(event.perspective).toBe("product");
     expect(event.maps_to.type).toBe("value_moment");
   });
 });
@@ -357,13 +326,6 @@ describe("MeasurementSpec", () => {
             activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
           }],
         },
-        customer: {
-          entities: [{
-            name: "Customer",
-            properties: [{ name: "customer_id", type: "id", description: "ID", isRequired: true }],
-            activities: [{ name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] }],
-          }],
-        },
         interaction: {
           entities: [{
             name: "Interaction",
@@ -377,7 +339,6 @@ describe("MeasurementSpec", () => {
       sources: ["https://example.com"],
     };
     expect(spec.perspectives.product.entities).toHaveLength(1);
-    expect(spec.perspectives.customer.entities).toHaveLength(1);
     expect(spec.perspectives.interaction.entities).toHaveLength(1);
     expect(spec.warnings).toBeUndefined();
   });
@@ -386,7 +347,6 @@ describe("MeasurementSpec", () => {
     const spec: MeasurementSpec = {
       perspectives: {
         product: { entities: [] },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
       jsonSchemas: [],
@@ -458,7 +418,6 @@ describe("OutputGenerationResult", () => {
       measurement_spec: {
         perspectives: {
           product: { entities: [] },
-          customer: { entities: [] },
           interaction: { entities: [] },
         },
         jsonSchemas: [],

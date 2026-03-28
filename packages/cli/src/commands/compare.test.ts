@@ -95,7 +95,7 @@ describe("loadComparisonData", () => {
     productDir.writeJson("test-app", "outputs/icp-profiles.json", []);
     productDir.writeJson("test-app", "outputs/value-moments.json", []);
     productDir.writeJson("test-app", "outputs/measurement-spec.json", {
-      perspectives: { product: { entities: [] }, customer: { entities: [] }, interaction: { entities: [] } },
+      perspectives: { product: { entities: [] }, interaction: { entities: [] } },
       jsonSchemas: [], confidence: 0.8, sources: [],
     });
     productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
@@ -469,7 +469,6 @@ describe("renderMeasurementSpecComparison", () => {
       measurementSpec: {
         perspectives: {
           product: { entities: [{ id: "user", name: "User", description: "", isHeartbeat: false, properties: [], activities: [] }] },
-          customer: { entities: [{ name: "Account", properties: [], activities: [] }] },
           interaction: { entities: [] },
         },
         jsonSchemas: [], confidence: 0.8, sources: [],
@@ -480,7 +479,6 @@ describe("renderMeasurementSpecComparison", () => {
       measurementSpec: {
         perspectives: {
           product: { entities: [{ id: "user", name: "User", description: "", isHeartbeat: true, properties: [], activities: [] }] },
-          customer: { entities: [] },
           interaction: { entities: [] },
         },
         jsonSchemas: [], confidence: 0.7, sources: [],
@@ -488,10 +486,11 @@ describe("renderMeasurementSpecComparison", () => {
     };
 
     const html = renderMeasurementSpecComparison(left, right);
-    // Left: 2 entities (1 product + 1 customer)
-    expect(html).toContain("2 entities");
-    // Right: 1 entity
-    expect(html).toContain("1 entity");
+    // Both sides should render entity counts
+    expect(
+      html.match(/<strong>1 entity<\/strong>/g) ?? []
+    ).toHaveLength(2);
+    expect(html).not.toContain("customer");
     // "User" is shared
     expect(html).toContain("badge-shared");
     expect(html).toContain("Shared");
@@ -503,7 +502,6 @@ describe("renderMeasurementSpecComparison", () => {
       measurementSpec: {
         perspectives: {
           product: { entities: [{ id: "x", name: "X", description: "", isHeartbeat: false, properties: [], activities: [] }] },
-          customer: { entities: [] },
           interaction: { entities: [] },
         },
         jsonSchemas: [], confidence: 0.8, sources: [],
@@ -735,14 +733,14 @@ describe("renderComparisonReport — enriched data", () => {
     productDir.writeJson("app-a", "outputs/measurement-spec.json", {
       perspectives: {
         product: { entities: [{ id: "deploy", name: "Deploy", description: "", isHeartbeat: false, properties: [], activities: [] }] },
-        customer: { entities: [] }, interaction: { entities: [] },
+        interaction: { entities: [] },
       },
       jsonSchemas: [], confidence: 0.85, sources: [],
     });
     productDir.writeJson("app-b", "outputs/measurement-spec.json", {
       perspectives: {
         product: { entities: [{ id: "deploy", name: "Deploy", description: "", isHeartbeat: true, properties: [], activities: [] }] },
-        customer: { entities: [{ name: "Org", properties: [], activities: [] }] }, interaction: { entities: [] },
+        interaction: { entities: [] },
       },
       jsonSchemas: [], confidence: 0.7, sources: [],
     });

@@ -7,7 +7,6 @@ import type {
   ValueMomentPriority,
   MeasurementSpec,
   ProductEntity,
-  CustomerEntity,
   LifecycleStatesResult,
   LifecycleState,
   StateTransition,
@@ -396,25 +395,6 @@ function renderProductEntities(entities: ProductEntity[]): string {
     .join("\n");
 }
 
-function renderCustomerEntities(entities: CustomerEntity[]): string {
-  if (entities.length === 0) return "<p>No entities defined.</p>";
-  return entities
-    .map((e) => {
-      let activitiesHtml = "";
-      if (e.activities.length > 0) {
-        const actItems = e.activities
-          .map((a) => `<li>${escapeHtml(a.name)}${a.derivation_rule ? ` — <em>${escapeHtml(a.derivation_rule)}</em>` : ""}</li>`)
-          .join("");
-        activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
-      }
-      return `      <div class="card">
-        <h4>${escapeHtml(e.name)}</h4>${activitiesHtml}${renderPropertyTable(e.properties)}
-      </div>`;
-    })
-    .join("\n");
-}
-
-
 function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
   if (!spec) {
     return `<section id="measurement-spec" class="no-data">
@@ -425,7 +405,6 @@ function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
 
   const perspectivesHtml = [
     `    <h3>Product Perspective</h3>\n${renderProductEntities(spec.perspectives.product.entities)}`,
-    `    <h3>Customer Perspective</h3>\n${renderCustomerEntities(spec.perspectives.customer.entities)}`,
   ].join("\n");
 
   let warningsHtml = "";

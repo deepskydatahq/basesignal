@@ -69,19 +69,6 @@ const fullProfile: ProductProfile = {
           },
         ],
       },
-      customer: {
-        entities: [
-          {
-            name: "Account",
-            properties: [
-              { name: "plan", type: "string", description: "Subscription plan", isRequired: true },
-            ],
-            activities: [
-              { name: "account_upgraded", derivation_rule: "plan changed to higher tier", properties_used: ["plan"] },
-            ],
-          },
-        ],
-      },
       interaction: {
         entities: [
           {
@@ -272,10 +259,6 @@ describe("exportProfileAsMarkdown", () => {
     expect(md).toContain("**Project**:");
     // Product entity activities
     expect(md).toContain("Activity: user_created");
-    // Customer entities with derivation rules
-    expect(md).toContain("### Customer Entities");
-    expect(md).toContain("**Account**:");
-    expect(md).toContain("(derived: plan changed to higher tier)");
     // Interaction entities
     expect(md).toContain("### Interaction Entities");
     expect(md).toContain("**PageView**:");

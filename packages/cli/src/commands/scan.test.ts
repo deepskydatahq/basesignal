@@ -312,7 +312,7 @@ describe("runScan", () => {
       outputs: {
         icp_profiles: [{ id: "icp-1", name: "PM" }],
         activation_map: { stages: [] },
-        measurement_spec: { perspectives: { product: { entities: [] }, customer: { entities: [] }, interaction: { entities: [] } }, jsonSchemas: [], confidence: 0.5, sources: [] },
+        measurement_spec: { perspectives: { product: { entities: [] }, interaction: { entities: [] } }, jsonSchemas: [], confidence: 0.5, sources: [] },
         lifecycle_states: { states: [] },
         value_moments: [],
       },
@@ -398,7 +398,7 @@ describe("runScan", () => {
   });
 
   it("stores measurement_spec at top-level, not in profile.metrics", async () => {
-    const specData = { perspectives: { product: { entities: [] }, customer: { entities: [] }, interaction: { entities: [] } }, jsonSchemas: [], confidence: 0.5, sources: [] };
+    const specData = { perspectives: { product: { entities: [] }, interaction: { entities: [] } }, jsonSchemas: [], confidence: 0.5, sources: [] };
     const resultWithSpec = {
       ...pipelineResult,
       outputs: {
