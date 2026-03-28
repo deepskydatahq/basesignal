@@ -1,0 +1,45 @@
+id = "M033-E001-S002"
+parent = "M033-E001"
+title = "Remove customer from measurement spec generation"
+status = "ready"
+created = 2026-03-28
+
+[outcome]
+description = """Remove Step 4 (Customer Journey) from MEASUREMENT_SPEC_SYSTEM_PROMPT, remove customer
+from output format example, remove customer validation from parseMeasurementSpecResponse, remove
+customer entity JSON schema generation from generateEntityJsonSchemas. Remove/rephrase lifecycle
+states header about customer journey derivation."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MEASUREMENT_SPEC_SYSTEM_PROMPT does not contain Step 4 or Customer Journey"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseMeasurementSpecResponse does not require perspectives.customer"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateEntityJsonSchemas does not produce customer perspective schemas"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Output format example in prompt only shows product and interaction perspectives"
+
+[context]
+relevant_paths = ["packages/mcp-server/src/analysis/outputs/measurement-spec.ts"]
+input_fixtures = []
+depends_on = ["M033-E001-S001"]
+
+[handoff]
+implementation_hints = """Remove Step 4 section entirely from MEASUREMENT_SPEC_SYSTEM_PROMPT.
+Remove customer from Reference Example.
+Remove customer from Output Format JSON example.
+Remove customer validation block from parseMeasurementSpecResponse.
+Remove customer entity loop from generateEntityJsonSchemas.
+Rephrase lifecycle states prompt section header (remove 'use for customer journey derivation').
+Renumber Step 5 to Step 4."""
+reference_files = []
