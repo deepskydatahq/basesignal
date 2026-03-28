@@ -250,7 +250,6 @@ export function renderMeasurementSpecComparison(left: ComparisonData, right: Com
     if (!spec) return new Set();
     const names = new Set<string>();
     for (const e of spec.perspectives.product.entities) names.add(e.name.toLowerCase());
-    for (const e of spec.perspectives.customer.entities) names.add(e.name.toLowerCase());
     return names;
   };
 
@@ -261,10 +260,9 @@ export function renderMeasurementSpecComparison(left: ComparisonData, right: Com
     if (!spec) return notAnalyzed();
     const allEntities = [
       ...spec.perspectives.product.entities.map((e) => ({ ...e, perspective: "product" })),
-      ...spec.perspectives.customer.entities.map((e) => ({ ...e, perspective: "customer" })),
     ];
     const entityCount = allEntities.length;
-    const summary = `<p><strong>${entityCount} entit${entityCount !== 1 ? "ies" : "y"}</strong> (${spec.perspectives.product.entities.length} product, ${spec.perspectives.customer.entities.length} customer)</p>`;
+    const summary = `<p><strong>${entityCount} entit${entityCount !== 1 ? "ies" : "y"}</strong> (${spec.perspectives.product.entities.length} product)</p>`;
     const entityList = allEntities.map((e) => {
       const isShared = otherEntities.has(e.name.toLowerCase());
       return `<div class="card">

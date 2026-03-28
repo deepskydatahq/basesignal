@@ -38,11 +38,6 @@ interface ProfileProductActivity {
   name: string;
 }
 
-interface ProfileCustomerActivity {
-  name: string;
-  derivation_rule: string;
-}
-
 interface ProfileInteractionActivity {
   name: string;
 }
@@ -56,12 +51,6 @@ interface ProfileProductEntity {
   activities: ProfileProductActivity[];
 }
 
-interface ProfileCustomerEntity {
-  name: string;
-  properties: ProfileEntityProperty[];
-  activities: ProfileCustomerActivity[];
-}
-
 interface ProfileInteractionEntity {
   name: string;
   properties: ProfileEntityProperty[];
@@ -71,7 +60,6 @@ interface ProfileInteractionEntity {
 interface ProfileMeasurementSpec {
   perspectives: {
     product: { entities: ProfileProductEntity[] };
-    customer: { entities: ProfileCustomerEntity[] };
     interaction: { entities: ProfileInteractionEntity[] };
   };
   confidence: number;
@@ -166,10 +154,9 @@ export function formatProfileSummary(
   // Measurement Spec
   if (profile.measurement_spec) {
     const spec = profile.measurement_spec;
-    const { product, customer, interaction } = spec.perspectives;
+    const { product, interaction } = spec.perspectives;
     const hasEntities =
       product.entities.length > 0 ||
-      customer.entities.length > 0 ||
       interaction.entities.length > 0;
 
     if (hasEntities) {
@@ -186,20 +173,6 @@ export function formatProfileSummary(
           }
           if (entity.activities.length > 0) {
             lines.push(`  - Activities: ${entity.activities.map((a) => a.name).join(", ")}`);
-          }
-        }
-        lines.push("");
-      }
-
-      if (customer.entities.length > 0) {
-        lines.push("### Customer Entities");
-        for (const entity of customer.entities) {
-          lines.push(`- **${entity.name}**`);
-          if (entity.properties.length > 0) {
-            lines.push(`  - Properties: ${entity.properties.map((p) => p.name).join(", ")}`);
-          }
-          if (entity.activities.length > 0) {
-            lines.push(`  - Activities: ${entity.activities.map((a) => `${a.name} (${a.derivation_rule})`).join(", ")}`);
           }
         }
         lines.push("");
