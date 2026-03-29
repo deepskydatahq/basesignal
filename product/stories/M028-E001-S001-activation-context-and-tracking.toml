@@ -1,0 +1,45 @@
+id = "M028-E001-S001"
+parent = "M028-E001"
+title = "Activation context and track activations subsections"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Add educational context paragraph and Track Activations subsection (events + segments) to the activation journey section."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderJourneySection includes an activation context paragraph when activation map exists"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Track Activations subsection lists unique trigger events from all activation stages"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Track Activations lists segments derived from activation levels (e.g., 'Level 1: {name}' for each stage)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Subsections are omitted when activation map is null"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add to renderJourneySection after the transitions block:
+1. A context paragraph (template text about activation meaning)
+2. A 'Track Activations' h3 with:
+   - Events to track: collect all unique trigger_events from stages
+   - Segments to create: one per activation level (level number + name)
+"""
+reference_files = []
