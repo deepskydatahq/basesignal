@@ -1,0 +1,57 @@
+id = "M027-E001"
+parent = "M027"
+title = "Product Performance Model Section"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Replace the existing Lifecycle States section with a Product Performance Model section.
+Renders lifecycle states as a table/flow: state name → enters → leaves → breakdowns.
+Positioned between Identity and Outcomes in the report. Section nav updated. CSS added
+for the flow layout. Graceful degradation when no lifecycle data.
+"""
+
+[job_story]
+description = """When I view the HTML report, I want to see lifecycle states as a
+flow table showing how accounts enter, leave, and break down each state, so I can
+understand the account health model at a glance."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Product Performance Model section renders between Identity and Outcomes",
+    "Shows lifecycle states as rows with Enter, Leave, Breakdown columns",
+    "Data sourced from LifecycleStatesResult (same data as old Lifecycle States section)",
+    "Section nav includes 'Performance Model' and no longer includes 'Lifecycle States'",
+    "Section shows 'Account Level' label",
+    "Graceful degradation when lifecycle data is missing",
+    "Old Lifecycle States section is removed (replaced by this)",
+    "Existing tests pass",
+    "New tests cover performance model rendering",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/core/src/types/outputs.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+The wireframe shows a table-like layout: State | Enters | Leaves | Breakdowns.
+Replace renderLifecycleStatesSection with renderProductPerformanceModel.
+Move from last position to between Identity and Outcomes.
+Transition data maps to enter/leave columns. Entry_criteria → Enters, exit_triggers → Leaves.
+"""
+
+estimated_stories = 2
