@@ -1,0 +1,37 @@
+id = "M026-E001-S002"
+parent = "M026-E001"
+title = "Update identity extraction prompt for positioning"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "The LLM identity extraction prompt requests positioning dimensions and the parser accepts them."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "SYSTEM_PROMPT includes teams, companies, use_cases, revenue_model in the JSON template"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseIdentityResponse returns positioning fields when present in LLM response"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseIdentityResponse works without positioning fields (backward compatible)"
+
+[context]
+relevant_paths = ["packages/mcp-server/src/analysis/identity.ts"]
+input_fixtures = []
+depends_on = ["M026-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Update SYSTEM_PROMPT to include the four new fields in the JSON template.
+Mark them as optional in the prompt instructions.
+parseIdentityResponse already passes through unknown fields via 'as IdentityResult' —
+just verify it works. Add tests with and without positioning fields.
+"""
+reference_files = []

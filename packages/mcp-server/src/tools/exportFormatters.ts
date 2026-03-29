@@ -169,13 +169,6 @@ export function exportProfileAsMarkdown(
               activities?: Array<{ name: string; properties_supported?: string[]; activity_properties?: Array<{ name: string }> }>;
             }>;
           };
-          customer?: {
-            entities?: Array<{
-              name: string;
-              properties?: Array<{ name: string; type: string; description: string; isRequired?: boolean }>;
-              activities?: Array<{ name: string; derivation_rule?: string; properties_used?: string[] }>;
-            }>;
-          };
           interaction?: {
             entities?: Array<{
               name: string;
@@ -200,6 +193,12 @@ export function exportProfileAsMarkdown(
 
   if (measurementSpec?.perspectives) {
     const persp = measurementSpec.perspectives;
+    const hasProduct = (persp.product?.entities?.length ?? 0) > 0;
+    const hasInteraction = (persp.interaction?.entities?.length ?? 0) > 0;
+
+    if (!hasProduct && !hasInteraction) {
+      lines.push("*Not yet analyzed.*");
+    }
 
     // Product Entities
     if (persp.product?.entities && persp.product.entities.length > 0) {
@@ -218,24 +217,7 @@ export function exportProfileAsMarkdown(
       lines.push("");
     }
 
-    // Customer Entities
-    if (persp.customer?.entities && persp.customer.entities.length > 0) {
-      lines.push("### Customer Entities");
-      lines.push("");
-      for (const ent of persp.customer.entities) {
-        const props = ent.properties?.map((p) => p.name).join(", ") ?? "";
-        lines.push(`- **${ent.name}**: ${props}`);
-        if (ent.activities && ent.activities.length > 0) {
-          for (const act of ent.activities) {
-            const rule = act.derivation_rule
-              ? ` (derived: ${act.derivation_rule})`
-              : "";
-            lines.push(`  - Activity: ${act.name}${rule}`);
-          }
-        }
-      }
-      lines.push("");
-    }
+
 
     // Interaction Entities
     if (persp.interaction?.entities && persp.interaction.entities.length > 0) {

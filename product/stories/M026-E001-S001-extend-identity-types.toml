@@ -1,0 +1,41 @@
+id = "M026-E001-S001"
+parent = "M026-E001"
+title = "Extend identity types with positioning fields"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Add optional teams, companies, use_cases, revenue_model (string arrays) to all identity type definitions."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CoreIdentitySchema accepts optional teams, companies, use_cases, revenue_model as z.array(z.string())"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CoreIdentity interface in profile.ts has matching optional fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "IdentityResult interface in types.ts has matching optional fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ProductProfile.identity in storage types.ts has matching optional fields"
+
+[context]
+relevant_paths = [
+    "packages/core/src/schema/identity.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/storage/src/types.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = "Four files need the same four optional string array fields added."
+reference_files = []

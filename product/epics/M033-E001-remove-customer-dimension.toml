@@ -1,0 +1,65 @@
+id = "M033-E001"
+parent = "M033"
+title = "Remove Customer Dimension"
+status = "active"
+created = 2026-03-28
+depends_on = []
+
+[outcome]
+description = """
+Remove the customer perspective from MeasurementSpec types, Zod schemas, LLM prompt,
+parser, JSON schema generator, reconciliation event vocabulary, and all downstream
+consumers (compare-sections, formatProfile). Update all tests to reflect two-perspective
+(product + interaction) measurement spec.
+"""
+
+[job_story]
+description = """When I generate a measurement specification, I want only product and interaction
+perspectives (no customer dimension), so that the measurement plan doesn't overlap with
+lifecycle states which already model the customer journey."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "MeasurementSpec.perspectives no longer contains a customer field",
+    "Perspective type is 'product' | 'interaction' (no 'customer')",
+    "Measurement spec LLM prompt no longer requests customer journey composition (old Step 4)",
+    "Parser does not require or validate customer perspective",
+    "JSON schema generator skips customer entities",
+    "Reconciliation event vocabulary only includes product events (no customer.* entries)",
+    "No references to perspectives.customer remain in measurement-spec.ts or reconcile.ts",
+    "CustomerEntity and CustomerActivity types removed from core",
+    "All existing tests pass or are updated to reflect the removal",
+]
+validator_context = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/schema/index.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/cli/src/commands/compare-sections.ts",
+    "packages/mcp-server/src/tools/formatProfile.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/measurement-spec.test.ts",
+    "packages/mcp-server/src/analysis/__tests__/outputs/reconcile.test.ts",
+    "packages/core/src/types/__tests__/outputs.test.ts",
+    "packages/core/src/schema/__tests__/outputs.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+This is a single epic because removing the customer field from MeasurementSpec.perspectives
+cascades through types, schemas, prompts, parsers, generators, and tests — all tightly coupled.
+Stories are ordered: core types first, then generation, then reconciliation, then consumers, then tests.
+"""
+
+estimated_stories = 4

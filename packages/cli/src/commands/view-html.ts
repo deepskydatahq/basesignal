@@ -97,10 +97,25 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .progress-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
     .progress-bar-mini { display: inline-block; width: 60px; height: 0.75rem; vertical-align: middle; margin-right: 0.35rem; }
     .progress-bar-mini .progress-fill { border-radius: 3px; }
+    .source-material { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .source-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.75rem 1.25rem; text-align: center; display: flex; flex-direction: column; align-items: center; min-width: 120px; }
+    .source-card-count { font-size: 1.5rem; font-weight: 700; color: #1e40af; }
+    .source-card-label { font-size: 0.8rem; color: #6b7280; }
+    .source-card-date { font-size: 0.7rem; color: #9ca3af; margin-top: 0.25rem; }
     .conf-badge { display: inline-block; font-size: 0.8rem; padding: 0.1em 0.5em; border-radius: 3px; font-weight: 500; }
     .conf-high { background: #d1fae5; color: #065f46; }
     .conf-med { background: #fef3c7; color: #92400e; }
-    .conf-low { background: #f3f4f6; color: #6b7280; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
+    .conf-low { background: #f3f4f6; color: #6b7280; }
+    .performance-model-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; margin-bottom: 0.75rem; }
+    .performance-model table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    .performance-model th, .performance-model td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    .performance-model th { font-weight: 600; color: #374151; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; background: #f9fafb; }
+    .performance-model tbody tr:hover { background: #f3f4f6; }
+    .performance-model td:first-child { font-weight: 600; white-space: nowrap; }
+    .performance-model ul { margin: 0; padding-left: 1.1rem; }
+    .performance-model ul li { font-size: 0.875rem; margin-bottom: 0.15rem; }
+    .performance-model .state-name { font-weight: 600; }
+    .performance-model .breakdown-text { font-size: 0.875rem; color: #374151; }${options?.extraCss ? `\n    ${options.extraCss}` : ""}
   </style>
 </head>
 <body>

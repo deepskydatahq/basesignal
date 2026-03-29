@@ -1,0 +1,83 @@
+# Mission: Identity & Positioning Expansion
+# Expand the identity section with structured positioning data
+
+id = "M026"
+title = "Identity & Positioning Expansion"
+status = "draft"
+created = 2026-03-26
+depends_on = ["M014"]
+
+[outcome]
+description = """
+The Identity section in the HTML report expands to include a structured Positioning
+subsection. Currently, identity shows description, target customer, and context badges
+(business model, industry, company stage). The wireframe calls for richer positioning
+data: Teams (who uses it), Companies (company size/segment), High-level use cases,
+and Revenue Model.
+
+This data is partially available from the identity analysis. The mission adds structured
+extraction of positioning dimensions and renders them as labeled badge groups in the
+identity section.
+"""
+
+user_progress = "From 'identity shows a description and a few badges' to 'identity gives a complete positioning overview with teams, company types, use cases, and revenue model'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Identity section renders a Positioning subsection below the description",
+    "Positioning shows Teams as badge group (e.g., SDRs, RevOps, GTM teams)",
+    "Positioning shows Companies as badge group (e.g., Mid-market to enterprise)",
+    "Positioning shows High-level use cases as badge group",
+    "Positioning shows Revenue Model (e.g., Usage-based, Subscription Tiers)",
+    "Data is extracted from crawled content via LLM identity analysis",
+    "Existing tests pass",
+    "New tests cover positioning rendering and extraction",
+]
+
+validator_context = [
+    "packages/mcp-server/src/analysis/identity.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/core/src/types/profile.ts",
+]
+
+[context]
+related_docs = ["VISION.md", "VALUES.md"]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/identity.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/core/src/schema/profile.ts",
+]
+
+[scope]
+in_scope = [
+    "Extend identity extraction prompt to produce positioning dimensions: teams, company segments, use cases, revenue model",
+    "Extend ProductIdentity type with positioning fields",
+    "Render positioning as labeled badge groups in the Identity section",
+]
+out_of_scope = [
+    "ICP profile changes (separate section)",
+    "Competitive positioning or market analysis",
+    "Pricing page analysis",
+]
+acceptable_breakage = [
+    "ProductIdentity type gains new optional fields — additive, not breaking",
+    "Identity section HTML structure changes — visual only",
+]
+
+[notes]
+considerations = """
+WIREFRAME REFERENCE:
+Under Identity, the wireframe shows:
+  - Description paragraph
+  - Positioning subsection with labeled groups:
+    - Teams: "Revenue operations professionals", "Sales development representatives (SDRs)", "Go-to-market (GTM) teams"
+    - Companies: "Mid-market to enterprise"
+    - High-level use cases: "Automate outbound sales workflows", "Enrich prospect data"
+    - Revenue Model: "Usage-based", "Subscription Tiers"
+
+Some of this overlaps with existing identity fields (targetCustomer, businessModel).
+The approach should extend rather than duplicate.
+"""

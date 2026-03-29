@@ -14,19 +14,18 @@ import type { ActivationMapResult } from "./activation-map.js";
 export interface EventVocabularyEntry {
   /** Canonical event name in entity.activity format (e.g., 'board.created'). */
   event: string;
-  /** Entity identifier (product entity id or 'customer'). */
+  /** Entity identifier (product entity id). */
   entity: string;
   /** Activity name (e.g., 'created', 'first_value_created'). */
   activity: string;
   /** Which perspective this event belongs to. */
-  perspective: "product" | "customer";
+  perspective: "product";
 }
 
 /**
  * Extract a canonical event vocabulary from a MeasurementSpec.
  *
  * Product entity events use format `entity_id.activity_name` (e.g., 'board.created').
- * Customer entity events use format `customer.activity_name` (e.g., 'customer.first_value_created').
  * Interaction perspective entities are excluded.
  */
 export function buildEventVocabulary(spec: MeasurementSpec): EventVocabularyEntry[] {
@@ -39,17 +38,6 @@ export function buildEventVocabulary(spec: MeasurementSpec): EventVocabularyEntr
         entity: entity.id,
         activity: activity.name,
         perspective: "product",
-      });
-    }
-  }
-
-  for (const entity of spec.perspectives.customer.entities) {
-    for (const activity of entity.activities) {
-      entries.push({
-        event: `customer.${activity.name}`,
-        entity: "customer",
-        activity: activity.name,
-        perspective: "customer",
       });
     }
   }
@@ -124,14 +112,13 @@ For each trigger, find the best matching canonical event. Return a JSON object m
 
 ## Example
 
-Vocabulary: board.created, board.shared, board.updated, customer.first_value_created
-Triggers: create_board, share_with_team, first_board_shared
+Vocabulary: board.created, board.shared, board.updated
+Triggers: create_board, share_with_team
 
 Output:
 {
   "create_board": "board.created",
-  "share_with_team": "board.shared",
-  "first_board_shared": "customer.first_value_created"
+  "share_with_team": "board.shared"
 }`;
 
 function buildReconciliationUserPrompt(
@@ -253,6 +240,14 @@ export async function reconcileOutputs(
   );
 
   const mapping = parseReconciliationResponse(responseText);
+
+  // Filter out hallucinated mappings that don't match the canonical vocabulary
+  const allowedEvents = new Set(vocabulary.map((entry) => entry.event));
+  for (const [trigger, canonicalEvent] of Object.entries(mapping)) {
+    if (canonicalEvent !== trigger && !allowedEvents.has(canonicalEvent)) {
+      mapping[trigger] = trigger;
+    }
+  }
 
   const result: OutputsResult = { ...outputs };
 

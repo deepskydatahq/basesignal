@@ -1,0 +1,49 @@
+id = "M026-E002-S001"
+parent = "M026-E002"
+title = "Render positioning badge groups in identity section"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "The Identity section renders a Positioning subsection with labeled badge groups for teams, companies, use cases, and revenue model."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderIdentitySection outputs a Positioning subsection when positioning fields are present"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each non-empty positioning group renders as a label followed by badge spans"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Empty groups are omitted from the output"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Entire Positioning subsection is omitted when all positioning fields are absent"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing identity rendering tests still pass"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Add a renderPositioning() helper called from renderIdentitySection.
+Use the existing .badge CSS class. Add a .positioning-group class for label+badges.
+The positioning subsection goes after context badges, inside the identity-card div.
+Add CSS in view-html.ts for .positioning-group if needed.
+"""
+reference_files = []

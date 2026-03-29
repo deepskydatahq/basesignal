@@ -1,0 +1,46 @@
+id = "M033-E001-S003"
+parent = "M033-E001"
+title = "Update ICP prompt and parser for citations"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "ICP generation prompt requests citations, parser extracts them, pageUrls passed through."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT includes citations in required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildICPPrompt accepts pageUrls and includes them in the prompt"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseICPProfiles extracts citations when present"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseICPProfiles works without citations (backward compatible)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateAllOutputs passes pageUrls to generateICPProfiles"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+input_fixtures = []
+depends_on = ["M033-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Same pattern as outcomes. Update ICP_SYSTEM_PROMPT, buildICPPrompt, parseICPProfiles,
+generateICPProfiles, and the call in generateAllOutputs.
+"""
+reference_files = []

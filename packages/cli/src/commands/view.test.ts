@@ -12,6 +12,7 @@ import {
   loadProductList,
   renderProductList,
   renderProductReport,
+  renderSourceMaterial,
   startViewServer,
   type ViewServerHandle,
 } from "./view.js";
@@ -516,17 +517,6 @@ describe("renderProductReport", () => {
             },
           ],
         },
-        customer: {
-          entities: [
-            {
-              name: "Customer",
-              properties: [],
-              activities: [
-                { name: "converted", derivation_rule: "When user upgrades", properties_used: [] },
-              ],
-            },
-          ],
-        },
         interaction: {
           entities: [
             {
@@ -548,7 +538,6 @@ describe("renderProductReport", () => {
     const html = renderProductReport("test-app", productDir);
     expect(html).toContain("Measurement Spec");
     expect(html).toContain("Product Perspective");
-    expect(html).toContain("Customer Perspective");
     // Interaction perspective is hidden from the view
     expect(html).not.toContain("Interaction Perspective");
     expect(html).not.toContain("PageView");
@@ -557,13 +546,11 @@ describe("renderProductReport", () => {
     expect(html).toContain("heartbeat");
     expect(html).toContain("user_id");
     expect(html).toContain("signed_up");
-    expect(html).toContain("converted");
-    expect(html).toContain("When user upgrades");
     expect(html).toContain("80%");
     expect(html).toContain("Missing event coverage for onboarding");
   });
 
-  it("renders lifecycle states with transitions", () => {
+  it("renders performance model table with lifecycle state data", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -586,20 +573,20 @@ describe("renderProductReport", () => {
           time_window: "7-30 days",
         },
       ],
-      transitions: [
-        {
-          from_state: "new",
-          to_state: "activated",
-          trigger_conditions: ["completes setup"],
-          typical_timeframe: "3-5 days",
-        },
-      ],
+      transitions: [],
       confidence: 0.75,
       sources: [],
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("Lifecycle States");
+    expect(html).toContain("Product Performance Model");
+    expect(html).toContain('id="performance-model"');
+    // Table columns
+    expect(html).toContain("State");
+    expect(html).toContain("Enters");
+    expect(html).toContain("Leaves");
+    expect(html).toContain("Breakdowns");
+    // State data
     expect(html).toContain("new");
     expect(html).toContain("activated");
     expect(html).toContain("Just signed up");
@@ -608,10 +595,54 @@ describe("renderProductReport", () => {
     expect(html).toContain("within last 7 days");
     expect(html).toContain("activate");
     expect(html).toContain("completes setup");
-    // Transitions
-    expect(html).toContain("Transitions");
-    expect(html).toContain("3-5 days");
+    // Account Level label
+    expect(html).toContain("Account Level");
+    // Confidence
     expect(html).toContain("75%");
+  });
+
+  it("renders performance model placeholder when lifecycle data is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('id="performance-model"');
+    expect(html).toMatch(/performance-model[\s\S]*?Not yet analyzed/);
+  });
+
+  it("renders performance model between identity and outcomes", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
+      states: [
+        {
+          name: "new",
+          definition: "Just signed up",
+          entry_criteria: [],
+          exit_triggers: [],
+          time_window: "0-7 days",
+        },
+      ],
+      transitions: [],
+      confidence: 0.75,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const identityPos = html.indexOf('id="identity"');
+    const performancePos = html.indexOf('id="performance-model"');
+    const outcomesPos = html.indexOf('id="outcomes"');
+    expect(identityPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(-1);
+    expect(outcomesPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(identityPos);
+    expect(outcomesPos).toBeGreaterThan(performancePos);
   });
 
   it("includes section navigation bar with links to all sections", () => {
@@ -629,7 +660,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#value-moments"');
     expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#lifecycle-states"');
+    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data", () => {
@@ -703,7 +734,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('id="icp-profiles"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
-    expect(html).toContain('id="lifecycle-states"');
+    expect(html).toContain('id="performance-model"');
     // Count "Not yet analyzed" — should appear 7 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
     expect(matches).toHaveLength(7);
@@ -841,7 +872,6 @@ describe("renderProductReport", () => {
             activities: [{ name: "created", properties_supported: ["board_id"], activity_properties: [] }],
           }],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
       jsonSchemas: [],
@@ -1067,6 +1097,75 @@ describe("renderProductReport — outcomes section", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Unit tests: source material rendering
+// ---------------------------------------------------------------------------
+
+describe("renderSourceMaterial", () => {
+  it("returns empty string when sourceMaterial is undefined", () => {
+    expect(renderSourceMaterial(undefined)).toBe("");
+  });
+
+  it("returns empty string when all counts are zero or missing", () => {
+    expect(renderSourceMaterial({})).toBe("");
+    expect(renderSourceMaterial({ pagesScanned: 0 })).toBe("");
+  });
+
+  it("renders page count with timestamp", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 12,
+      pagesLastUpdated: 1709337600000, // 2024-03-02
+    });
+    expect(html).toContain("source-material");
+    expect(html).toContain("source-card");
+    expect(html).toContain("12");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders document count with timestamp", () => {
+    const html = renderSourceMaterial({
+      documentsRead: 5,
+      documentsLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("5");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders video count with timestamp", () => {
+    const html = renderSourceMaterial({
+      videosWatched: 3,
+      videosLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("3");
+    expect(html).toContain("videos watched");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("omits timestamp line when no timestamp is available", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 8,
+    });
+    expect(html).toContain("8");
+    expect(html).toContain("pages scanned");
+    expect(html).not.toContain("Last updated");
+  });
+
+  it("renders multiple categories as separate cards", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 10,
+      pagesLastUpdated: 1709337600000,
+      documentsRead: 3,
+      documentsLastUpdated: 1709337600000,
+    });
+    const cardCount = (html.match(/source-card"/g) ?? []).length;
+    expect(cardCount).toBe(2);
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("documents read");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Unit tests: positioning badge groups in identity section
 // ---------------------------------------------------------------------------
 
@@ -1080,20 +1179,16 @@ describe("renderProductReport — identity positioning", () => {
     }
   });
 
-  it("renders all four positioning groups when all are populated", () => {
+  it("renders source material cards when profile has sourceMaterial data", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
-      identity: {
-        productName: "TestApp",
-        description: "A product",
-        targetCustomer: "Developers",
-        businessModel: "SaaS",
-        confidence: 0.9,
-        teams: ["Engineering", "Product"],
-        companies: ["Startups", "Scale-ups"],
-        use_cases: ["CI/CD", "Code review"],
-        revenue_model: ["Subscription", "Usage-based"],
+      identity: { productName: "TestApp" },
+      sourceMaterial: {
+        pagesScanned: 15,
+        pagesLastUpdated: 1709337600000,
+        documentsRead: 4,
+        documentsLastUpdated: 1709337600000,
       },
     });
 
@@ -1243,8 +1338,26 @@ describe("renderProductReport — identity positioning", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).not.toContain("<script>alert");
-    expect(html).toContain("&lt;script&gt;");
+    expect(html).toContain("source-material");
+    expect(html).toContain("15");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("4");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("does not render source material section when profile has no sourceMaterial", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Check body content only (CSS has class definitions)
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("source-material");
+    expect(bodyContent).not.toContain("source-card");
   });
 });
 

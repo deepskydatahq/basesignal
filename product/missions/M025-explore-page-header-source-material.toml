@@ -1,0 +1,83 @@
+# Mission: Explore Page Header & Source Material
+# Add source material stats and restructure the report header
+
+id = "M025"
+title = "Explore Page Header & Source Material"
+status = "draft"
+created = 2026-03-26
+depends_on = ["M013"]
+
+[outcome]
+description = """
+The HTML report header shows source material stats so users understand the breadth
+of the analysis. Below the product name and URL, the header displays three categories
+of source material with counts: pages scanned, videos watched, documents read. Each
+category also shows a last-updated timestamp.
+
+The data for source material stats already exists in the crawl pipeline (page counts,
+content types). This mission surfaces it in the report header.
+"""
+
+user_progress = "From 'header shows product name and URL' to 'header shows what was analyzed and how much material was processed'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Report header renders source material counts (pages scanned, videos watched, documents read)",
+    "Source material section shows last-updated timestamps per category",
+    "Stats are derived from actual crawl metadata, not hardcoded",
+    "Header remains clean and scannable — stats don't overwhelm the product name",
+    "Existing tests pass after changes",
+    "New tests cover source material rendering",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/storage/src/",
+    "packages/crawlers/src/",
+]
+
+[scope]
+in_scope = [
+    "Add source material metadata to ProductProfile or scan metadata (pages scanned, videos watched, docs read, timestamps)",
+    "Pipeline: collect and persist source material stats during crawl",
+    "Header renderer: display source material stats with category labels and counts",
+    "Visual design: three stat badges/cards below the URL line",
+]
+out_of_scope = [
+    "Changing crawl logic itself",
+    "New content type detection",
+    "Export formats",
+]
+acceptable_breakage = [
+    "ProductProfile metadata may gain new fields — additive, not breaking",
+]
+
+[notes]
+considerations = """
+WIREFRAME REFERENCE:
+The wireframe shows three categories side by side below the URL:
+  - Docs: "3 documents read"
+  - Youtube: "4 videos watched"
+  - Website: "45 pages scanned"
+Each with a "Last updated" timestamp.
+
+DATA SOURCE:
+The crawl pipeline already processes different content types. We need to:
+1. Count pages by type (website page, document, video/youtube)
+2. Store these counts in the profile metadata
+3. Render them in the header
+
+The CrawledPage type likely already has content type info. Check the crawlers
+package for how page types are classified.
+"""

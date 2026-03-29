@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary;
+  }
+}
+
+@layer components {
+  .section-padding {
+    @apply py-20 md:py-28 lg:py-32;
+  }
+
+  .container-content {
+    @apply max-w-content mx-auto px-6;
+  }
+
+  .heading-1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    @apply text-3xl md:text-4xl font-semibold;
+  }
+
+  .body-text {
+    @apply text-lg text-text-secondary leading-relaxed;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent-hover transition-colors;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-6 py-3 border border-border-default text-text-primary font-medium rounded-lg hover:border-border-hover hover:bg-bg-subtle transition-colors;
+  }
+
+  .card {
+    @apply bg-bg-elevated border border-border-default rounded-xl p-6 transition-shadow duration-300;
+  }
+
+  .card:hover {
+    @apply shadow-[0_0_30px_rgba(59,130,246,0.15)];
+  }
+
+  .screenshot-placeholder {
+    @apply bg-bg-elevated border border-border-default rounded-xl transition-shadow duration-300;
+  }
+
+  .screenshot-placeholder:hover {
+    @apply shadow-[0_0_30px_rgba(59,130,246,0.15)];
+  }
+}

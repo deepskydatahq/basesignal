@@ -1,0 +1,51 @@
+id = "M033-E001-S002"
+parent = "M033-E001"
+title = "Update outcomes prompt and parser for citations"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Outcomes generation prompt requests citations, parser extracts them, pageUrls passed through."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "OUTCOMES_SYSTEM_PROMPT includes citations in required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "buildOutcomesPrompt accepts pageUrls and includes them in the prompt"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomesResponse extracts citations when present"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "parseOutcomesResponse works without citations (backward compatible)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "generateAllOutputs passes pageUrls to generateOutcomes"
+
+[context]
+relevant_paths = [
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+input_fixtures = []
+depends_on = ["M033-E001-S001"]
+
+[handoff]
+implementation_hints = """
+1. Update OUTCOMES_SYSTEM_PROMPT: add citations field to required fields.
+   Each outcome should have: citations: [{url: "page URL", excerpt: "supporting quote"}]
+2. Update buildOutcomesPrompt(valueMoments, identity, icpProfiles, pageUrls?):
+   Add a '## Source Pages' section listing the URLs.
+3. Update parseOutcomesResponse: extract optional citations array.
+4. Update generateOutcomes signature to accept pageUrls.
+5. Update generateAllOutputs to pass pageUrls to generateOutcomes.
+"""
+reference_files = []

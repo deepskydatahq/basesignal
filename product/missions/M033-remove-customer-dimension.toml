@@ -1,0 +1,89 @@
+# Mission: Remove Customer Dimension from Measurement Spec
+# The customer perspective is redundant with lifecycle states — remove it to simplify the measurement plan
+
+id = "M033"
+title = "Remove Customer Dimension from Measurement Spec"
+status = "active"
+created = 2026-03-28
+depends_on = ["M032"]
+
+[outcome]
+description = """
+Remove the customer perspective from the Double Three-Layer measurement specification.
+Lifecycle states already model the customer journey (entry criteria, exit triggers,
+state transitions), making the customer dimension in the measurement spec redundant.
+Removing it simplifies the measurement plan output and avoids confusing overlap.
+
+Also remove customer dimension references from the reconciliation event vocabulary,
+so activation map triggers only reconcile against product and interaction events.
+"""
+
+user_progress = "From 'measurement plan shows redundant customer journey events alongside lifecycle states' to 'measurement plan shows only product and interaction events, lifecycle states own the customer journey'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "MeasurementSpec.perspectives no longer contains a customer field",
+    "Perspective type is 'product' | 'interaction' (no 'customer')",
+    "Measurement spec LLM prompt no longer requests customer journey composition (old Step 4)",
+    "Parser does not require or validate customer perspective",
+    "JSON schema generator skips customer entities",
+    "Reconciliation event vocabulary only includes product events (no customer.* entries)",
+    "Measurement plan view rendering unchanged (already only renders product entities)",
+    "All existing tests pass or are updated to reflect the removal",
+    "No references to perspectives.customer remain in measurement-spec.ts or reconcile.ts",
+]
+
+validator_context = [
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/mcp-server/src/analysis/outputs/reconcile.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+    "packages/cli/src/commands/view-sections.ts",
+]
+
+[scope]
+in_scope = [
+    "Remove customer from MeasurementSpec.perspectives type and schema",
+    "Remove 'customer' from Perspective type union",
+    "Remove Step 4 (Customer Journey) from measurement spec LLM prompt",
+    "Remove customer perspective from output format example in prompt",
+    "Remove customer validation from parseMeasurementSpecResponse",
+    "Remove customer entity JSON schema generation from generateEntityJsonSchemas",
+    "Remove customer entries from buildEventVocabulary in reconcile.ts",
+    "Remove CustomerEntity and CustomerActivity types if no longer used elsewhere",
+    "Update tests to reflect two-perspective measurement spec",
+]
+out_of_scope = [
+    "Changes to lifecycle states — they already work correctly",
+    "Changes to activation map generation — no customer references there",
+    "Changes to view rendering — already only renders product entities",
+    "Changes to ICP profiles or value moments",
+]
+acceptable_breakage = []
+
+[notes]
+considerations = """
+The CustomerEntity and CustomerActivity types are only used by MeasurementSpec.perspectives.customer.
+Once that field is removed, these types and their Zod schemas can be deleted.
+
+The Perspective type ('customer' | 'product' | 'interaction') is used by EntityJsonSchema and
+TrackingEvent. After removal it becomes 'product' | 'interaction'.
+
+The reconciliation prompt example currently shows customer.first_value_created as a mapping target.
+Update the example to only show product entity mappings.
+
+The measurement spec prompt feeds lifecycle states as "use for customer journey derivation" —
+this section header and guidance should be removed or rephrased since there's no longer a
+customer perspective to derive.
+"""

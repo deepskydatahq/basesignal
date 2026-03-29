@@ -1,0 +1,43 @@
+---
+const questions = [
+  'Who are our best users?',
+  'What makes them stay?',
+  'Where do they drop off?',
+  'What should we measure?',
+  'How does our product actually grow?'
+];
+---
+
+<section class="section-padding">
+  <div class="container-content">
+    <h2 class="heading-2 text-center mb-8">
+      Teams can't answer the most basic growth questions
+    </h2>
+
+    <p class="body-text text-center mb-8">
+      Every product team needs answers to these questions:
+    </p>
+
+    <!-- Questions Display -->
+    <div class="max-w-md mx-auto bg-bg-elevated border border-border-default rounded-xl p-6 mb-8">
+      <div class="space-y-3">
+        {questions.map((q) => (
+          <p class="text-text-muted text-sm">{q}</p>
+        ))}
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="max-w-2xl mx-auto text-center">
+      <p class="body-text mb-4">
+        The answers are scattered across tools, teams, and outdated documents.
+      </p>
+      <p class="body-text mb-4">
+        Building this connected understanding — the <span class="text-text-primary font-medium">growth model</span> — requires weeks of consulting-grade work.
+      </p>
+      <p class="text-text-muted italic">
+        Most teams get 30% done and give up. The growth model never gets finished.
+      </p>
+    </div>
+  </div>
+</section>
