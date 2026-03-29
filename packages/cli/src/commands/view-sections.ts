@@ -15,7 +15,6 @@ import type {
   ValueMoment,
   OutcomeItem,
 } from "@basesignal/core";
-import { EXPERIENTIAL_LENS_TYPES } from "@basesignal/core";
 import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
 
 // ---------------------------------------------------------------------------
@@ -24,12 +23,11 @@ import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-htm
 
 export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
+  { id: "lifecycle-states", label: "Performance Model" },
+  { id: "journey", label: "Activation" },
   { id: "outcomes", label: "Outcomes" },
-  { id: "journey", label: "Journey" },
-  { id: "icp-profiles", label: "ICP Profiles" },
-  { id: "value-moments", label: "Value Moments" },
-  { id: "measurement-spec", label: "Measurement Spec" },
-  { id: "lifecycle-states", label: "Lifecycle States" },
+  { id: "icp-profiles", label: "ICP Segments" },
+  { id: "measurement-spec", label: "Measurement Plan" },
 ];
 
 export function renderSectionNav(analyzedSections: Set<string>): string {
@@ -48,22 +46,24 @@ export const SCROLL_SPY_SCRIPT = `(function(){var n=document.querySelector('.sec
 // Report header
 // ---------------------------------------------------------------------------
 
-function renderReportHeader(profile: ProductProfile | null): string {
+function renderReportHeader(profile: ProductProfile | null, pageCount: number): string {
   const name = profile?.identity?.productName ?? "Unknown Product";
   const url = profile?.metadata?.url;
   const scannedAt = profile?.metadata?.scannedAt;
-  const completeness = profile?.completeness;
-  const overallConfidence = profile?.overallConfidence;
+  const dateStr = scannedAt ? new Date(scannedAt).toISOString().split("T")[0] : null;
 
-  const metaParts: string[] = [];
-  if (url) metaParts.push(`<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`);
-  if (scannedAt) metaParts.push(`Scanned: ${new Date(scannedAt).toISOString().split("T")[0]}`);
-  if (completeness != null) metaParts.push(`${progressBar(completeness)}`);
-  if (overallConfidence != null) metaParts.push(`Confidence: ${confidenceBadge(overallConfidence)}`);
+  // Source material boxes
+  const sources: string[] = [];
+  if (pageCount > 0) {
+    sources.push(`<div class="source-box"><span class="source-value">${pageCount}</span><span class="source-label">pages scanned</span>${dateStr ? `<span class="source-date">Last updated ${dateStr}</span>` : ""}</div>`);
+  }
 
   return `<div class="report-header">
+  <a href="/" class="back-link">&larr; All products</a>
+  <div class="hero-brand">Basesignal</div>
   <h1>${escapeHtml(name)}</h1>
-  ${metaParts.length > 0 ? `<div class="meta">${metaParts.map((p) => `<span>${p}</span>`).join("")}</div>` : ""}
+  ${url ? `<a href="${escapeHtml(url)}" class="hero-url">${escapeHtml(url)}</a>` : ""}
+  ${sources.length > 0 ? `<div class="source-material"><span class="source-material-label">Source Material</span><div class="source-boxes">${sources.join("")}</div></div>` : ""}
 </div>`;
 }
 
@@ -84,28 +84,133 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
     : "";
 
   const targetHtml = identity.targetCustomer
-    ? `<div class="identity-target"><span class="identity-target-label">Target Customer</span> <span class="identity-target-value">${escapeHtml(identity.targetCustomer)}</span></div>`
+    ? `<div class="identity-target"><span class="identity-target-label">Target Customer</span><span class="identity-target-value">${escapeHtml(identity.targetCustomer)}</span></div>`
     : "";
 
-  const contextBadges: string[] = [];
-  if (identity.businessModel) contextBadges.push(escapeHtml(identity.businessModel));
-  if (identity.industry) contextBadges.push(escapeHtml(identity.industry));
-  if (identity.companyStage) contextBadges.push(escapeHtml(identity.companyStage));
-  const contextHtml = contextBadges.length > 0
-    ? `<div class="identity-context">${contextBadges.map((b) => `<span class="badge">${b}</span>`).join(" ")}</div>`
-    : "";
+  // Positioning section — group business context into categories
+  const positioningGroups: Array<{ label: string; items: string[] }> = [];
+  if (identity.industry) positioningGroups.push({ label: "Industry", items: [identity.industry] });
+  if (identity.businessModel) positioningGroups.push({ label: "Revenue Model", items: [identity.businessModel] });
+  if (identity.companyStage) positioningGroups.push({ label: "Stage", items: [identity.companyStage] });
 
-  const confLine = identity.confidence != null
-    ? `\n  <p class="confidence">Confidence: ${confidenceBadge(identity.confidence)}</p>`
-    : "";
+  let positioningHtml = "";
+  if (positioningGroups.length > 0) {
+    const groups = positioningGroups.map((g) =>
+      `<div class="pos-group"><span class="pos-label">${escapeHtml(g.label)}</span><div class="pos-items">${g.items.map((i) => `<span class="pos-item">${escapeHtml(i)}</span>`).join("")}</div></div>`,
+    ).join("");
+    positioningHtml = `<div class="positioning"><h3>Positioning</h3>${groups}</div>`;
+  }
 
   return `<section id="identity">
   <h2>Identity</h2>
-  <div class="identity-card">
-    ${descHtml}
-    ${targetHtml}
-    ${contextHtml}${confLine}
-  </div>
+  ${descHtml}
+  ${targetHtml}
+  ${positioningHtml}
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Product Performance Model (Lifecycle States)
+// ---------------------------------------------------------------------------
+
+function renderLifecycleStatesSection(lifecycleData: LifecycleStatesResult | null): string {
+  if (!lifecycleData) {
+    return `<section id="lifecycle-states" class="no-data">
+  <h2>Product Performance Model</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const stateColors = ["var(--blue)", "var(--teal)", "var(--gold-dark)", "var(--rose)", "var(--navy)", "var(--blue)", "var(--teal)"];
+
+  const stateRows = lifecycleData.states
+    .map((s: LifecycleState, i: number) => {
+      const color = stateColors[i % stateColors.length];
+      return `<tr>
+        <td><span class="state-pill" style="background:${color}">${escapeHtml(s.name)}</span></td>
+        <td class="state-def">${escapeHtml(s.definition)}</td>
+        <td class="state-window-cell">${s.time_window ? escapeHtml(s.time_window) : "—"}</td>
+      </tr>`;
+    })
+    .join("\n");
+
+  return `<section id="lifecycle-states">
+  <h2>Product Performance Model</h2>
+  <table class="perf-table">
+    <thead><tr><th>State</th><th>Definition</th><th>Time Window</th></tr></thead>
+    <tbody>
+${stateRows}
+    </tbody>
+  </table>
+  <p class="confidence">Confidence: ${confidenceBadge(lifecycleData.confidence)}</p>
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Activation (Journey)
+// ---------------------------------------------------------------------------
+
+function renderJourneySection(activationMap: ActivationMap | null): string {
+  if (!activationMap) {
+    return `<section id="journey" class="no-data">
+  <h2>Activation</h2>
+  <p class="not-analyzed">Not yet analyzed</p>
+</section>`;
+  }
+
+  const introText = `<p class="section-intro">Activation measures if you can give a new account/user glimpses of the value that you can deliver. We believe in activation levels to understand activation as a funnel.</p>`;
+
+  // Journey table
+  const stageRows = activationMap.stages
+    .map((s: ActivationStage) => {
+      const riskLevel = s.drop_off_risk.level;
+      const riskClass = riskLevel === "high" ? "risk-high" : riskLevel === "medium" ? "risk-medium" : "risk-low";
+      const isPrimary = s.level === activationMap.primary_activation_level;
+      const triggers = s.trigger_events.map((t) => `<code>${escapeHtml(t)}</code>`).join(" ");
+      return `<tr${isPrimary ? ' class="row-primary"' : ""}>
+        <td>${s.level}</td>
+        <td><strong>${escapeHtml(s.name)}</strong></td>
+        <td><span class="badge">${escapeHtml(s.signal_strength)}</span></td>
+        <td>${triggers}</td>
+        <td><span class="${riskClass}">${escapeHtml(riskLevel)}</span></td>
+      </tr>`;
+    })
+    .join("\n");
+
+  const journeyTable = `<h3>Activation Journey</h3>
+  <table>
+    <thead><tr><th>Level</th><th>Name</th><th>Signal</th><th>Triggers</th><th>Drop-off Risk</th></tr></thead>
+    <tbody>${stageRows}</tbody>
+  </table>`;
+
+  // Transitions
+  let transitionHtml = "";
+  if (activationMap.transitions.length > 0) {
+    const transRows = activationMap.transitions
+      .map((t: StageTransition) =>
+        `<tr><td>Level ${t.from_level} &rarr; Level ${t.to_level}</td><td>${t.trigger_events.map((e) => `<code>${escapeHtml(e)}</code>`).join(" ")}</td><td>${escapeHtml(t.typical_timeframe ?? "—")}</td></tr>`,
+      )
+      .join("\n");
+    transitionHtml = `<h3>Transitions</h3>
+  <table>
+    <thead><tr><th>Transition</th><th>Events</th><th>Timeframe</th></tr></thead>
+    <tbody>${transRows}</tbody>
+  </table>`;
+  }
+
+  // Track activations guidance
+  const trackHtml = `<div class="guidance-box">
+    <h3>Track Activations</h3>
+    <p>These events and properties need to be implemented and tested.</p>
+  </div>`;
+
+  return `<section id="journey">
+  <h2>Activation</h2>
+  ${introText}
+  ${journeyTable}
+  ${transitionHtml}
+  ${trackHtml}
+  <p class="confidence">Confidence: ${confidenceBadge(activationMap.confidence)}</p>
 </section>`;
 }
 
@@ -116,365 +221,130 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
 function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
   if (!outcomes || outcomes.length === 0) {
     return `<section id="outcomes" class="no-data">
-  <h2>Outcomes</h2>
+  <h2>Possible Outcomes</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
+  const introText = `<p class="section-intro">Active is driven by outcomes. Different outcomes are achieved by different groups of users. These need to be defined and measured as well.</p>`;
+
   const cards = outcomes
     .map((o: OutcomeItem) => {
-      const typeBadge = `<span class="badge">${escapeHtml(o.type)}</span>`;
+      const features = o.linkedFeatures.length > 0
+        ? `<div class="outcome-col"><h4>Features involved</h4><ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul></div>`
+        : "";
 
-      let linkedHtml = "";
-      if (o.linkedFeatures.length > 0) {
-        linkedHtml = `\n      <h4>Linked Features</h4>\n      <ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`;
-      }
+      const measurement = (o.measurement_references && o.measurement_references.length > 0)
+        ? `<div class="outcome-col"><h4>Measurement</h4><div class="outcome-codes">${o.measurement_references.map((r) => `<code>${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</code>`).join(" ")}</div></div>`
+        : "";
 
-      let measurementHtml = "";
-      if (o.measurement_references && o.measurement_references.length > 0) {
-        const badges = o.measurement_references
-          .map((r) => `<span class="badge badge-measurement">${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</span>`)
-          .join(" ");
-        measurementHtml = `\n      <div class="vm-crossrefs"><span class="vm-crossref-label">Tracks:</span> ${badges}</div>`;
-      }
+      const metrics = (o.suggested_metrics && o.suggested_metrics.length > 0)
+        ? `<div class="outcome-col"><h4>Metrics</h4><div class="outcome-codes">${o.suggested_metrics.map((s) => `<code>${escapeHtml(s)}</code>`).join(" ")}</div></div>`
+        : "";
 
-      let metricsHtml = "";
-      if (o.suggested_metrics && o.suggested_metrics.length > 0) {
-        const items = o.suggested_metrics
-          .map((s) => `<code>${escapeHtml(s)}</code>`)
-          .join(", ");
-        metricsHtml = `\n      <div class="vm-crossrefs"><span class="vm-crossref-label">Metrics:</span> ${items}</div>`;
-      }
-
-      return `    <div class="card">
-      <h3>${escapeHtml(o.description)}</h3>
-      ${typeBadge}${linkedHtml}${measurementHtml}${metricsHtml}
+      return `<div class="outcome-card">
+      <p class="outcome-desc">${escapeHtml(o.description)}</p>
+      <div class="outcome-grid">${features}${measurement}${metrics}</div>
     </div>`;
     })
     .join("\n");
 
   return `<section id="outcomes">
-  <h2>Outcomes</h2>
+  <h2>Possible Outcomes</h2>
+  ${introText}
 ${cards}
 </section>`;
 }
 
 // ---------------------------------------------------------------------------
-// Activation Journey
-// ---------------------------------------------------------------------------
-
-function renderJourneySection(activationMap: ActivationMap | null): string {
-  if (!activationMap) {
-    return `<section id="journey" class="no-data">
-  <h2>Activation Journey</h2>
-  <p class="not-analyzed">Not yet analyzed</p>
-</section>`;
-  }
-
-  // Stage rows
-  const stageRows = activationMap.stages
-    .map((s: ActivationStage) => {
-      const riskLevel = s.drop_off_risk.level;
-      const riskClass = riskLevel === "high" ? "risk-high" : riskLevel === "medium" ? "risk-medium" : "risk-low";
-      const isPrimary = s.level === activationMap.primary_activation_level;
-
-      return `      <tr>
-        <td>${s.level}${isPrimary ? ' <span class="badge badge-primary">primary</span>' : ""}</td>
-        <td>${escapeHtml(s.name)}</td>
-        <td><span class="badge">${escapeHtml(s.signal_strength)}</span></td>
-        <td>${s.trigger_events.map((t) => escapeHtml(t)).join(", ")}</td>
-        <td>${s.value_moments_unlocked.length > 0 ? s.value_moments_unlocked.length + " moment" + (s.value_moments_unlocked.length > 1 ? "s" : "") : "—"}</td>
-        <td><span class="${riskClass}">${escapeHtml(riskLevel)}</span></td>
-      </tr>`;
-    })
-    .join("\n");
-
-  const stageTable = activationMap.stages.length > 0
-    ? `  <table>
-    <thead>
-      <tr><th>Level</th><th>Name</th><th>Signal</th><th>Triggers</th><th>Value Moments</th><th>Drop-off Risk</th></tr>
-    </thead>
-    <tbody>
-${stageRows}
-    </tbody>
-  </table>`
-    : "";
-
-  // Transition rows
-  let transitionHtml = "";
-  if (activationMap.transitions.length > 0) {
-    const transRows = activationMap.transitions
-      .map((t: StageTransition) => {
-        return `      <tr>
-        <td>Level ${t.from_level} &rarr; Level ${t.to_level}</td>
-        <td>${t.trigger_events.map((e) => escapeHtml(e)).join(", ")}</td>
-        <td>${escapeHtml(t.typical_timeframe ?? "—")}</td>
-      </tr>`;
-      })
-      .join("\n");
-
-    transitionHtml = `
-  <h3>Transitions</h3>
-  <table>
-    <thead>
-      <tr><th>Transition</th><th>Trigger Events</th><th>Timeframe</th></tr>
-    </thead>
-    <tbody>
-${transRows}
-    </tbody>
-  </table>`;
-  }
-
-  const confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(activationMap.confidence)}</p>`;
-
-  return `<section id="journey">
-  <h2>Activation Journey</h2>
-${stageTable}${transitionHtml}${confLine}
-</section>`;
-}
-
-// ---------------------------------------------------------------------------
-// ICP Profiles
+// ICP Segments
 // ---------------------------------------------------------------------------
 
 function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
   if (!icpProfiles || icpProfiles.length === 0) {
     return `<section id="icp-profiles" class="no-data">
-  <h2>ICP Profiles</h2>
+  <h2>ICP Segments</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
-  const renderList = (items: string[]) =>
-    items.length > 0
-      ? `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
-      : "";
+  const introText = `<p class="section-intro">Your product has different user types naturally; they will achieve different outcomes and will have different value needs. Identification is essential. The easiest way is still to ask them during account creation.</p>`;
 
   const cards = icpProfiles
     .map((p: ICPProfile) => {
-      let prioritiesHtml = "";
+      const painHtml = p.pain_points.length > 0
+        ? `<h4>Pain Points</h4><ul>${p.pain_points.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+        : "";
+
+      const triggerHtml = p.activation_triggers.length > 0
+        ? `<h4>Value Triggers</h4><ul>${p.activation_triggers.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+        : "";
+
+      let vmLevels = "";
       if (p.value_moment_priorities.length > 0) {
-        const rows = p.value_moment_priorities
-          .map((pr: ValueMomentPriority) => `        <li>P${pr.priority}: ${escapeHtml(pr.relevance_reason)}</li>`)
-          .join("\n");
-        prioritiesHtml = `\n      <h4>Value Moment Priorities</h4>\n      <ul>\n${rows}\n      </ul>`;
+        vmLevels = `<h4>Value Moment Levels</h4><ul>${p.value_moment_priorities.map((pr: ValueMomentPriority) => `<li><strong>P${pr.priority}:</strong> ${escapeHtml(pr.relevance_reason)}</li>`).join("")}</ul>`;
       }
 
-      const confLine = `\n      <p class="confidence">Confidence: ${confidenceBadge(p.confidence)}</p>`;
-
-      return `    <div class="card">
+      return `<div class="icp-card">
       <h3>${escapeHtml(p.name)}</h3>
-      ${p.description ? `<p>${escapeHtml(p.description)}</p>` : ""}
-      ${p.pain_points.length > 0 ? `<h4>Pain Points</h4>\n      ${renderList(p.pain_points)}` : ""}
-      ${p.activation_triggers.length > 0 ? `<h4>Activation Triggers</h4>\n      ${renderList(p.activation_triggers)}` : ""}
-      ${p.success_metrics.length > 0 ? `<h4>Success Metrics</h4>\n      ${renderList(p.success_metrics)}` : ""}${prioritiesHtml}${confLine}
+      ${p.description ? `<p class="icp-desc">${escapeHtml(p.description)}</p>` : ""}
+      ${painHtml}
+      ${triggerHtml}
+      ${vmLevels}
+      <div class="confidence">Confidence: ${confidenceBadge(p.confidence)}</div>
     </div>`;
     })
     .join("\n");
 
   return `<section id="icp-profiles">
-  <h2>ICP Profiles</h2>
+  <h2>ICP Segments</h2>
+  ${introText}
 ${cards}
 </section>`;
 }
 
 // ---------------------------------------------------------------------------
-// Value Moments
-// ---------------------------------------------------------------------------
-
-function renderValueMomentCrossRefs(m: ValueMoment): string {
-  const parts: string[] = [];
-
-  if (m.measurement_references && m.measurement_references.length > 0) {
-    const badges = m.measurement_references
-      .map((r) => `<span class="badge badge-measurement">${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</span>`)
-      .join(" ");
-    parts.push(`<div class="vm-crossrefs"><span class="vm-crossref-label">Tracks:</span> ${badges}</div>`);
-  }
-
-  if (m.lifecycle_relevance && m.lifecycle_relevance.length > 0) {
-    const badges = m.lifecycle_relevance
-      .map((s) => `<span class="badge badge-lifecycle">${escapeHtml(s)}</span>`)
-      .join(" ");
-    parts.push(`<div class="vm-crossrefs"><span class="vm-crossref-label">Lifecycle:</span> ${badges}</div>`);
-  }
-
-  if (m.suggested_metrics && m.suggested_metrics.length > 0) {
-    const items = m.suggested_metrics
-      .map((s) => `<code>${escapeHtml(s)}</code>`)
-      .join(", ");
-    parts.push(`<div class="vm-crossrefs"><span class="vm-crossref-label">Metrics:</span> ${items}</div>`);
-  }
-
-  return parts.join("\n        ");
-}
-
-function renderValueMomentsSection(valueMoments: ValueMoment[] | null): string {
-  if (!valueMoments || valueMoments.length === 0) {
-    return `<section id="value-moments" class="no-data">
-  <h2>Value Moments</h2>
-  <p class="not-analyzed">Not yet analyzed</p>
-</section>`;
-  }
-
-  const tierLabels: Record<number, string> = { 1: "Core Value Moments", 2: "Important", 3: "Supporting" };
-  const tierClasses: Record<number, string> = { 1: "vm-tier-1", 2: "vm-tier-2", 3: "vm-tier-3" };
-  const grouped: Record<number, ValueMoment[]> = {};
-  for (const m of valueMoments) {
-    const tier = m.tier ?? 3;
-    (grouped[tier] ??= []).push(m);
-  }
-
-  const totalLenses = EXPERIENTIAL_LENS_TYPES.length;
-  const tierSections = [1, 2, 3]
-    .filter((t) => grouped[t]?.length)
-    .map((t) => {
-      const label = tierLabels[t] ?? `Tier ${t}`;
-      const tierClass = tierClasses[t] ?? "";
-      const isOpen = t <= 2;
-      const items = grouped[t]
-        .map((m: ValueMoment) => {
-          const details: string[] = [];
-          if (m.lens_count > 0) details.push(`${m.lens_count} of ${totalLenses} lenses`);
-          if (m.roles.length > 0) details.push(`Roles: ${m.roles.map((r) => escapeHtml(r)).join(", ")}`);
-          if (m.product_surfaces.length > 0) details.push(`Surfaces: ${m.product_surfaces.map((s) => escapeHtml(s)).join(", ")}`);
-          const crossRefs = renderValueMomentCrossRefs(m);
-          return `      <div class="card ${tierClass}">
-        <h4>${escapeHtml(m.name)}</h4>
-        ${m.description ? `<p>${escapeHtml(m.description)}</p>` : ""}
-        ${details.length > 0 ? `<p class="confidence">${details.join(" &middot; ")}</p>` : ""}
-        ${crossRefs}
-      </div>`;
-        })
-        .join("\n");
-      return `    <details${isOpen ? " open" : ""}>\n      <summary>${escapeHtml(label)} <span class="badge">${grouped[t].length}</span></summary>\n${items}\n    </details>`;
-    })
-    .join("\n");
-
-  return `<section id="value-moments">
-  <h2>Value Moments</h2>
-${tierSections}
-</section>`;
-}
-
-// ---------------------------------------------------------------------------
-// Measurement Spec
+// Measurement Plan (Measurement Spec)
 // ---------------------------------------------------------------------------
 
 function renderPropertyTable(properties: EntityProperty[]): string {
   if (properties.length === 0) return "";
   const propRows = properties
-    .map((p) => `          <tr><td>${escapeHtml(p.name)}</td><td><span class="badge">${escapeHtml(p.type)}</span></td><td>${p.isRequired ? "yes" : ""}</td><td>${escapeHtml(p.description)}</td></tr>`)
+    .map((p) => `<tr><td><code>${escapeHtml(p.name)}</code></td><td><span class="badge">${escapeHtml(p.type)}</span></td><td>${p.isRequired ? "yes" : ""}</td><td>${escapeHtml(p.description)}</td></tr>`)
     .join("\n");
-  return `
-        <table>
-          <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-          <tbody>
-${propRows}
-          </tbody>
-        </table>`;
-}
-
-function renderProductEntities(entities: ProductEntity[]): string {
-  if (entities.length === 0) return "<p>No entities defined.</p>";
-  return entities
-    .map((e) => {
-      const heartbeatBadge = e.isHeartbeat ? ' <span class="badge">heartbeat</span>' : "";
-      let activitiesHtml = "";
-      if (e.activities.length > 0) {
-        const actItems = e.activities
-          .map((a) => `<li>${escapeHtml(a.name)}${a.properties_supported.length > 0 ? ` (${a.properties_supported.map((s) => escapeHtml(s)).join(", ")})` : ""}</li>`)
-          .join("");
-        activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
-      }
-      return `      <div class="card">
-        <h4>${escapeHtml(e.name)}${heartbeatBadge}</h4>
-        ${e.description ? `<p>${escapeHtml(e.description)}</p>` : ""}${activitiesHtml}${renderPropertyTable(e.properties)}
-      </div>`;
-    })
-    .join("\n");
+  return `<table>
+    <thead><tr><th>Property</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>${propRows}</tbody>
+  </table>`;
 }
 
 function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
   if (!spec) {
     return `<section id="measurement-spec" class="no-data">
-  <h2>Measurement Spec</h2>
+  <h2>Measurement Plan</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
-  const perspectivesHtml = [
-    `    <h3>Product Perspective</h3>\n${renderProductEntities(spec.perspectives.product.entities)}`,
-  ].join("\n");
-
-  let warningsHtml = "";
-  if (spec.warnings && spec.warnings.length > 0) {
-    warningsHtml = `\n  <div class="warnings"><h4>Warnings</h4><ul>${spec.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join("")}</ul></div>`;
-  }
-
-  const confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(spec.confidence)}</p>`;
-
-  return `<section id="measurement-spec">
-  <h2>Measurement Spec</h2>
-${perspectivesHtml}${warningsHtml}${confLine}
-</section>`;
-}
-
-// ---------------------------------------------------------------------------
-// Lifecycle States
-// ---------------------------------------------------------------------------
-
-function renderLifecycleStatesSection(lifecycleData: LifecycleStatesResult | null): string {
-  if (!lifecycleData) {
-    return `<section id="lifecycle-states" class="no-data">
-  <h2>Lifecycle States</h2>
-  <p class="not-analyzed">Not yet analyzed</p>
-</section>`;
-  }
-
-  const renderCriteria = (criteria: StateCriterion[]) =>
-    criteria.length > 0
-      ? `<ul>${criteria.map((c) => `<li>${escapeHtml(c.event_name)}: ${escapeHtml(c.condition)}</li>`).join("")}</ul>`
-      : "";
-
-  const stateCards = lifecycleData.states
-    .map((s: LifecycleState) => {
-      return `    <div class="card">
-      <h3>${escapeHtml(s.name)}${s.time_window ? ` <span class="badge">${escapeHtml(s.time_window)}</span>` : ""}</h3>
-      <p>${escapeHtml(s.definition)}</p>
-      ${s.entry_criteria.length > 0 ? `<h4>Entry Criteria</h4>\n      ${renderCriteria(s.entry_criteria)}` : ""}
-      ${s.exit_triggers.length > 0 ? `<h4>Exit Triggers</h4>\n      ${renderCriteria(s.exit_triggers)}` : ""}
+  const entities = spec.perspectives.product.entities
+    .map((e: ProductEntity) => {
+      const heartbeatBadge = e.isHeartbeat ? ' <span class="badge badge-heartbeat">&#9829; heartbeat</span>' : "";
+      const acts = e.activities.length > 0
+        ? `<div class="entity-acts"><h4>Activities</h4>${e.activities.map((a) => `<code>${escapeHtml(a.name)}</code>`).join(" ")}</div>`
+        : "";
+      return `<div class="entity-card">
+      <div class="entity-head"><h3>${escapeHtml(e.name)}</h3>${heartbeatBadge}</div>
+      ${e.description ? `<p>${escapeHtml(e.description)}</p>` : ""}
+      ${acts}
+      ${renderPropertyTable(e.properties)}
     </div>`;
     })
     .join("\n");
 
-  let transitionsHtml = "";
-  if (lifecycleData.transitions.length > 0) {
-    const transRows = lifecycleData.transitions
-      .map((t: StateTransition) => {
-        return `      <tr>
-        <td>${escapeHtml(t.from_state)} &rarr; ${escapeHtml(t.to_state)}</td>
-        <td>${t.trigger_conditions.map((c) => escapeHtml(c)).join(", ")}</td>
-        <td>${escapeHtml(t.typical_timeframe ?? "—")}</td>
-      </tr>`;
-      })
-      .join("\n");
-
-    transitionsHtml = `
-  <h3>Transitions</h3>
-  <table>
-    <thead><tr><th>Transition</th><th>Trigger Conditions</th><th>Timeframe</th></tr></thead>
-    <tbody>
-${transRows}
-    </tbody>
-  </table>`;
-  }
-
-  const confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(lifecycleData.confidence)}</p>`;
-
-  return `<section id="lifecycle-states">
-  <h2>Lifecycle States</h2>
-${stateCards}${transitionsHtml}${confLine}
+  return `<section id="measurement-spec">
+  <h2>Measurement Plan</h2>
+${entities}
+  <p class="confidence">Confidence: ${confidenceBadge(spec.confidence)}</p>
 </section>`;
 }
 
@@ -486,34 +356,34 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   const profile = productDir.readJson<ProductProfile>(slug, "profile.json");
   const activationMap = productDir.readJson<ActivationMap>(slug, "outputs/activation-map.json");
   const icpProfiles = productDir.readJson<ICPProfile[]>(slug, "outputs/icp-profiles.json");
-  const valueMoments = productDir.readJson<ValueMoment[]>(slug, "outputs/value-moments.json")
-    ?? productDir.readJson<ValueMoment[]>(slug, "convergence/value-moments.json");
   const measurementSpec = productDir.readJson<MeasurementSpec>(slug, "outputs/measurement-spec.json");
   const lifecycleStates = productDir.readJson<LifecycleStatesResult>(slug, "outputs/lifecycle-states.json");
   const outcomes = productDir.readJson<OutcomeItem[]>(slug, "outputs/outcomes.json")
     ?? (profile?.outcomes?.items ?? null);
 
+  // Count source pages
+  const pageCount = profile?.metadata?.pageCount ?? 0;
+
   // Track which sections have data for nav styling
   const analyzed = new Set<string>();
   if (profile?.identity) analyzed.add("identity");
-  if (outcomes && outcomes.length > 0) analyzed.add("outcomes");
-  if (activationMap) analyzed.add("journey");
-  if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
-  if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
-  if (measurementSpec) analyzed.add("measurement-spec");
   if (lifecycleStates) analyzed.add("lifecycle-states");
+  if (activationMap) analyzed.add("journey");
+  if (outcomes && outcomes.length > 0) analyzed.add("outcomes");
+  if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
+  if (measurementSpec) analyzed.add("measurement-spec");
 
+  // Section order matches wireframes:
+  // Identity → Performance Model → Activation → Outcomes → ICP Segments → Measurement Plan
   const sections = [
-    `<p class="back-link"><a href="/">&larr; Back to product list</a></p>`,
-    renderReportHeader(profile),
+    renderReportHeader(profile, pageCount),
     renderSectionNav(analyzed),
     renderIdentitySection(profile?.identity),
-    renderOutcomesSection(outcomes),
-    renderJourneySection(activationMap),
-    renderIcpSection(icpProfiles),
-    renderValueMomentsSection(valueMoments),
-    renderMeasurementSpecSection(measurementSpec),
     renderLifecycleStatesSection(lifecycleStates),
+    renderJourneySection(activationMap),
+    renderOutcomesSection(outcomes),
+    renderIcpSection(icpProfiles),
+    renderMeasurementSpecSection(measurementSpec),
   ];
 
   return renderPage(
