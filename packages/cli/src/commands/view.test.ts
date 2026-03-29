@@ -550,7 +550,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("Missing event coverage for onboarding");
   });
 
-  it("renders lifecycle states with transitions", () => {
+  it("renders performance model table with lifecycle state data", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -573,20 +573,20 @@ describe("renderProductReport", () => {
           time_window: "7-30 days",
         },
       ],
-      transitions: [
-        {
-          from_state: "new",
-          to_state: "activated",
-          trigger_conditions: ["completes setup"],
-          typical_timeframe: "3-5 days",
-        },
-      ],
+      transitions: [],
       confidence: 0.75,
       sources: [],
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("Lifecycle States");
+    expect(html).toContain("Product Performance Model");
+    expect(html).toContain('id="performance-model"');
+    // Table columns
+    expect(html).toContain("State");
+    expect(html).toContain("Enters");
+    expect(html).toContain("Leaves");
+    expect(html).toContain("Breakdowns");
+    // State data
     expect(html).toContain("new");
     expect(html).toContain("activated");
     expect(html).toContain("Just signed up");
@@ -595,10 +595,54 @@ describe("renderProductReport", () => {
     expect(html).toContain("within last 7 days");
     expect(html).toContain("activate");
     expect(html).toContain("completes setup");
-    // Transitions
-    expect(html).toContain("Transitions");
-    expect(html).toContain("3-5 days");
+    // Account Level label
+    expect(html).toContain("Account Level");
+    // Confidence
     expect(html).toContain("75%");
+  });
+
+  it("renders performance model placeholder when lifecycle data is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('id="performance-model"');
+    expect(html).toMatch(/performance-model[\s\S]*?Not yet analyzed/);
+  });
+
+  it("renders performance model between identity and outcomes", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
+      states: [
+        {
+          name: "new",
+          definition: "Just signed up",
+          entry_criteria: [],
+          exit_triggers: [],
+          time_window: "0-7 days",
+        },
+      ],
+      transitions: [],
+      confidence: 0.75,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const identityPos = html.indexOf('id="identity"');
+    const performancePos = html.indexOf('id="performance-model"');
+    const outcomesPos = html.indexOf('id="outcomes"');
+    expect(identityPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(-1);
+    expect(outcomesPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(identityPos);
+    expect(outcomesPos).toBeGreaterThan(performancePos);
   });
 
   it("includes section navigation bar with links to all sections", () => {
@@ -616,7 +660,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#value-moments"');
     expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#lifecycle-states"');
+    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data", () => {
@@ -690,7 +734,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('id="icp-profiles"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
-    expect(html).toContain('id="lifecycle-states"');
+    expect(html).toContain('id="performance-model"');
     // Count "Not yet analyzed" — should appear 7 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
     expect(matches).toHaveLength(7);

@@ -337,7 +337,7 @@ export function renderComparisonReport(slug1: string, slug2: string, productDir:
   if ((left.icpProfiles && left.icpProfiles.length > 0) || (right.icpProfiles && right.icpProfiles.length > 0)) analyzed.add("icp-profiles");
   if ((left.valueMoments && left.valueMoments.length > 0) || (right.valueMoments && right.valueMoments.length > 0)) analyzed.add("value-moments");
   if (left.measurementSpec || right.measurementSpec) analyzed.add("measurement-spec");
-  if (left.lifecycleStates || right.lifecycleStates) analyzed.add("lifecycle-states");
+  if (left.lifecycleStates || right.lifecycleStates) analyzed.add("performance-model");
 
   const header = `<div class="compare-header">
   <p class="back-link"><a href="/">&larr; Back to product list</a></p>
