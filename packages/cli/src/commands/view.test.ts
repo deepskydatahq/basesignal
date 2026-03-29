@@ -12,6 +12,7 @@ import {
   loadProductList,
   renderProductList,
   renderProductReport,
+  renderSourceMaterial,
   startViewServer,
   type ViewServerHandle,
 } from "./view.js";
@@ -1048,6 +1049,122 @@ describe("renderProductReport — outcomes section", () => {
     expect(journeyIdx).toBeGreaterThan(-1);
     expect(outcomesIdx).toBeGreaterThan(identityIdx);
     expect(outcomesIdx).toBeLessThan(journeyIdx);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: source material rendering
+// ---------------------------------------------------------------------------
+
+describe("renderSourceMaterial", () => {
+  it("returns empty string when sourceMaterial is undefined", () => {
+    expect(renderSourceMaterial(undefined)).toBe("");
+  });
+
+  it("returns empty string when all counts are zero or missing", () => {
+    expect(renderSourceMaterial({})).toBe("");
+    expect(renderSourceMaterial({ pagesScanned: 0 })).toBe("");
+  });
+
+  it("renders page count with timestamp", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 12,
+      pagesLastUpdated: 1709337600000, // 2024-03-02
+    });
+    expect(html).toContain("source-material");
+    expect(html).toContain("source-card");
+    expect(html).toContain("12");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders document count with timestamp", () => {
+    const html = renderSourceMaterial({
+      documentsRead: 5,
+      documentsLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("5");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders video count with timestamp", () => {
+    const html = renderSourceMaterial({
+      videosWatched: 3,
+      videosLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("3");
+    expect(html).toContain("videos watched");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("omits timestamp line when no timestamp is available", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 8,
+    });
+    expect(html).toContain("8");
+    expect(html).toContain("pages scanned");
+    expect(html).not.toContain("Last updated");
+  });
+
+  it("renders multiple categories as separate cards", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 10,
+      pagesLastUpdated: 1709337600000,
+      documentsRead: 3,
+      documentsLastUpdated: 1709337600000,
+    });
+    const cardCount = (html.match(/source-card"/g) ?? []).length;
+    expect(cardCount).toBe(2);
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("documents read");
+  });
+});
+
+describe("renderProductReport — source material", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders source material cards when profile has sourceMaterial data", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+      sourceMaterial: {
+        pagesScanned: 15,
+        pagesLastUpdated: 1709337600000,
+        documentsRead: 4,
+        documentsLastUpdated: 1709337600000,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("15");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("4");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("does not render source material section when profile has no sourceMaterial", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Check body content only (CSS has class definitions)
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("source-material");
+    expect(bodyContent).not.toContain("source-card");
   });
 });
 

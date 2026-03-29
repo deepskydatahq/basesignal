@@ -68,6 +68,54 @@ function renderReportHeader(profile: ProductProfile | null): string {
 }
 
 // ---------------------------------------------------------------------------
+// Source material
+// ---------------------------------------------------------------------------
+
+interface SourceMaterialData {
+  pagesScanned?: number;
+  pagesLastUpdated?: number;
+  documentsRead?: number;
+  documentsLastUpdated?: number;
+  videosWatched?: number;
+  videosLastUpdated?: number;
+}
+
+function formatTimestamp(ts: number): string {
+  return new Date(ts).toISOString().split("T")[0];
+}
+
+export function renderSourceMaterial(sm: SourceMaterialData | undefined): string {
+  if (!sm) return "";
+
+  const categories: Array<{ count: number; label: string; timestamp?: number }> = [];
+  if (sm.pagesScanned && sm.pagesScanned > 0) {
+    categories.push({ count: sm.pagesScanned, label: "pages scanned", timestamp: sm.pagesLastUpdated });
+  }
+  if (sm.documentsRead && sm.documentsRead > 0) {
+    categories.push({ count: sm.documentsRead, label: "documents read", timestamp: sm.documentsLastUpdated });
+  }
+  if (sm.videosWatched && sm.videosWatched > 0) {
+    categories.push({ count: sm.videosWatched, label: "videos watched", timestamp: sm.videosLastUpdated });
+  }
+
+  if (categories.length === 0) return "";
+
+  const cards = categories
+    .map((c) => {
+      const tsLine = c.timestamp
+        ? `\n      <span class="source-card-date">Last updated: ${formatTimestamp(c.timestamp)}</span>`
+        : "";
+      return `    <div class="source-card">
+      <span class="source-card-count">${c.count}</span>
+      <span class="source-card-label">${escapeHtml(c.label)}</span>${tsLine}
+    </div>`;
+    })
+    .join("\n");
+
+  return `<div class="source-material">\n${cards}\n</div>`;
+}
+
+// ---------------------------------------------------------------------------
 // Identity
 // ---------------------------------------------------------------------------
 
@@ -506,6 +554,7 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   const sections = [
     `<p class="back-link"><a href="/">&larr; Back to product list</a></p>`,
     renderReportHeader(profile),
+    renderSourceMaterial(profile?.sourceMaterial as SourceMaterialData | undefined),
     renderSectionNav(analyzed),
     renderIdentitySection(profile?.identity),
     renderOutcomesSection(outcomes),
