@@ -99,13 +99,6 @@ export interface ProductActivity {
   activity_properties: EntityProperty[];
 }
 
-/** A customer journey activity — derived from product activities. */
-export interface CustomerActivity {
-  name: string;
-  derivation_rule: string;
-  properties_used: string[];
-}
-
 /** An interaction activity — generic UI tracking. */
 export interface InteractionActivity {
   name: string;
@@ -124,13 +117,6 @@ export interface ProductEntity {
   isHeartbeat: boolean;
   properties: EntityProperty[];
   activities: ProductActivity[];
-}
-
-/** A customer entity with derived journey activities. */
-export interface CustomerEntity {
-  name: string;
-  properties: EntityProperty[];
-  activities: CustomerActivity[];
 }
 
 /** An interaction entity with generic tracking activities. */
@@ -177,11 +163,10 @@ export interface EventProperty {
 }
 
 /** Perspective for a tracking event. */
-export type Perspective = "customer" | "product" | "interaction";
+export type Perspective = "product" | "interaction";
 
 /** Distribution of events across perspectives. */
 export interface PerspectiveDistribution {
-  customer: number;
   product: number;
   interaction: number;
 }
@@ -207,7 +192,6 @@ export interface TrackingEvent {
 /** Complete measurement specification — Double Three-Layer Framework. */
 export interface MeasurementSpec {
   perspectives: {
-    customer: { entities: CustomerEntity[] };
     product: { entities: ProductEntity[] };
     interaction: { entities: InteractionEntity[] };
   };

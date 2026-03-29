@@ -1,0 +1,132 @@
+# Mission: Source Citations & Footnotes
+# Add Wikipedia-style footnotes linking claims back to crawled source pages
+
+id = "M033"
+title = "Source Citations & Footnotes"
+status = "draft"
+created = 2026-03-27
+depends_on = ["M029", "M030"]
+
+[outcome]
+description = """
+The HTML report includes footnote markers (e.g., [1], [2]) next to key claims, linking
+to a Sources section at the bottom of the report. Each footnote shows the source page URL
+and a brief excerpt that supports the claim.
+
+This adds credibility and traceability — users can verify where each insight came from
+and assess whether the analysis is grounded in actual product content vs LLM inference.
+
+Phase 1 focuses on outcomes and ICP profiles (the most user-facing sections). Each outcome
+description and ICP pain point/value trigger gets citation markers when the LLM can link
+them to specific crawled pages.
+
+The identity section already has evidence fields — those get rendered as footnotes too.
+"""
+
+user_progress = "From 'claims without sources' to 'every key insight has a clickable footnote back to the source page'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Outcome descriptions include footnote markers [N] linking to source pages",
+    "ICP pain points and value triggers include footnote markers when evidence exists",
+    "Identity description renders its existing evidence as footnotes",
+    "A 'Sources' section at the bottom of the report lists all footnotes",
+    "Each footnote shows: page URL (clickable) and excerpt from the page",
+    "Footnotes are numbered sequentially across the entire report",
+    "Outcomes prompt requests citations with page URL and excerpt",
+    "ICP prompt requests citations with page URL and excerpt",
+    "Citation fields are optional — outputs without citations still render fine",
+    "Existing tests pass",
+    "New tests cover footnote rendering and citation parsing",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+]
+
+[context]
+related_docs = ["VISION.md"]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/identity.ts",
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/profile.ts",
+]
+
+[scope]
+in_scope = [
+    "Add optional citations field to OutcomeItem: Array<{url, excerpt}>",
+    "Add optional citations field to ICPProfile pain_points and value_triggers",
+    "Update outcomes generation prompt to request citations from crawled page URLs",
+    "Update ICP generation prompt to request citations from crawled page URLs",
+    "Pass crawled page URLs into outcome and ICP generation prompts",
+    "Render identity evidence as footnotes (already has url+excerpt data)",
+    "Render outcome citations as footnote markers in description text",
+    "Render ICP citations as footnote markers",
+    "New 'Sources' section at bottom of report collecting all footnotes",
+    "Footnote numbering: sequential across entire report",
+    "CSS for footnote markers (superscript links) and sources section",
+]
+out_of_scope = [
+    "Citations for activation map or measurement spec (future phase)",
+    "Citation verification (checking if excerpt actually appears on page)",
+    "Inline highlighting of cited text on source pages",
+    "Changes to the crawl pipeline itself",
+]
+acceptable_breakage = [
+    "OutcomeItem gains optional citations field — additive",
+    "ICPProfile gains optional citations field — additive",
+    "Outcome and ICP prompts get longer (include page URLs)",
+    "Report gains a new Sources section at the bottom",
+]
+
+[notes]
+considerations = """
+DESIGN:
+
+The footnote system works like Wikipedia:
+  "An SDR sends 200 personalized emails per week[1] instead of 40 generic ones[2]..."
+
+  Sources:
+  [1] clay.com/sequencer — "Create and run email campaigns directly inside Clay"
+  [2] clay.com/blog/outbound — "Most SDRs average 40 outbound emails per week"
+
+IMPLEMENTATION APPROACH:
+
+1. Citations as a parallel field (not inline in description text):
+   OutcomeItem gains: citations?: Array<{url: string, excerpt: string}>
+   The renderer inserts [N] markers at the end of the description.
+
+   Simpler alternative: ask the LLM to embed [source: url] markers inline,
+   then the renderer converts them to numbered footnotes. This is more natural
+   for the LLM but harder to parse reliably.
+
+   Recommendation: Use the parallel field approach (simpler, more reliable).
+   Each outcome gets 1-3 citations. The renderer appends footnote markers
+   after the description text.
+
+2. Page URLs in prompts:
+   The outcomes and ICP prompts already receive value moments with product_surfaces.
+   We need to also pass the crawled page URLs so the LLM can cite specific pages.
+   The buildOutcomesPrompt and buildICPPrompt functions need a pageUrls parameter.
+
+3. Footnote numbering:
+   A global counter starts at 1. Each section renderer returns both HTML and
+   a list of citations used. The report orchestrator collects all citations
+   and renders the Sources section at the bottom.
+
+   Simpler: pass a mutable counter object through the renderers.
+
+4. Identity evidence:
+   CoreIdentity already has evidence: Array<{url, excerpt}>. Just render
+   these as the first footnotes in the report.
+
+DATA FLOW:
+  Crawl pages (URLs) → prompt context → LLM citations → output JSON → renderer → footnotes
+"""

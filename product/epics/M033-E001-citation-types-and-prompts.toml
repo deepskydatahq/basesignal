@@ -1,0 +1,59 @@
+id = "M033-E001"
+parent = "M033"
+title = "Citation Types & Prompt Updates"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Add optional citations field to OutcomeItem and ICPProfile. Update outcomes and ICP
+generation prompts to request citations (page URL + excerpt). Pass pageUrls into
+outcome and ICP generation calls. Parse citation fields from LLM responses.
+"""
+
+[job_story]
+description = """When the pipeline generates outcomes and ICP profiles, I want the LLM
+to cite which crawled pages support each claim, so the report can show source references."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "OutcomeItem gains optional citations: Array<{url: string, excerpt: string}>",
+    "ICPProfile gains optional citations: Array<{url: string, excerpt: string}>",
+    "Outcomes prompt instructs LLM to include citations with page URL and excerpt",
+    "ICP prompt instructs LLM to include citations with page URL and excerpt",
+    "buildOutcomesPrompt accepts and includes pageUrls parameter",
+    "buildICPPrompt accepts and includes pageUrls parameter",
+    "generateAllOutputs passes pageUrls to outcome and ICP generation",
+    "parseOutcomesResponse accepts citations when present",
+    "parseICPProfiles accepts citations when present",
+    "Existing tests pass",
+    "New tests cover citation parsing",
+]
+validator_context = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/mcp-server/src/analysis/outputs/generate-outcomes.ts",
+    "packages/mcp-server/src/analysis/outputs/icp-profiles.ts",
+    "packages/mcp-server/src/analysis/outputs/index.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+pageUrls already flows into generateAllOutputs — just need to forward it to
+generateOutcomes and generateICPProfiles. The prompts need a section listing
+available source URLs so the LLM can reference them in citations.
+"""
+
+estimated_stories = 3

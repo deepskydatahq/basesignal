@@ -7,10 +7,8 @@ import type {
   ValueMomentPriority,
   MeasurementSpec,
   ProductEntity,
-  CustomerEntity,
   LifecycleStatesResult,
   LifecycleState,
-  StateTransition,
   StateCriterion,
   EntityProperty,
   ValueMoment,
@@ -30,7 +28,7 @@ export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "icp-segments", label: "ICP Segments" },
   { id: "value-moments", label: "Value Moments" },
   { id: "measurement-spec", label: "Measurement Spec" },
-  { id: "lifecycle-states", label: "Lifecycle States" },
+  { id: "performance-model", label: "Performance Model" },
 ];
 
 export function renderSectionNav(analyzedSections: Set<string>): string {
@@ -69,8 +67,80 @@ function renderReportHeader(profile: ProductProfile | null): string {
 }
 
 // ---------------------------------------------------------------------------
+// Source material
+// ---------------------------------------------------------------------------
+
+interface SourceMaterialData {
+  pagesScanned?: number;
+  pagesLastUpdated?: number;
+  documentsRead?: number;
+  documentsLastUpdated?: number;
+  videosWatched?: number;
+  videosLastUpdated?: number;
+}
+
+function formatTimestamp(ts: number): string {
+  return new Date(ts).toISOString().split("T")[0];
+}
+
+export function renderSourceMaterial(sm: SourceMaterialData | undefined): string {
+  if (!sm) return "";
+
+  const categories: Array<{ count: number; label: string; timestamp?: number }> = [];
+  if (sm.pagesScanned && sm.pagesScanned > 0) {
+    categories.push({ count: sm.pagesScanned, label: "pages scanned", timestamp: sm.pagesLastUpdated });
+  }
+  if (sm.documentsRead && sm.documentsRead > 0) {
+    categories.push({ count: sm.documentsRead, label: "documents read", timestamp: sm.documentsLastUpdated });
+  }
+  if (sm.videosWatched && sm.videosWatched > 0) {
+    categories.push({ count: sm.videosWatched, label: "videos watched", timestamp: sm.videosLastUpdated });
+  }
+
+  if (categories.length === 0) return "";
+
+  const cards = categories
+    .map((c) => {
+      const tsLine = c.timestamp
+        ? `\n      <span class="source-card-date">Last updated: ${formatTimestamp(c.timestamp)}</span>`
+        : "";
+      return `    <div class="source-card">
+      <span class="source-card-count">${c.count}</span>
+      <span class="source-card-label">${escapeHtml(c.label)}</span>${tsLine}
+    </div>`;
+    })
+    .join("\n");
+
+  return `<div class="source-material">\n${cards}\n</div>`;
+}
+
+// ---------------------------------------------------------------------------
 // Identity
 // ---------------------------------------------------------------------------
+
+function renderPositioningGroups(identity: NonNullable<ProductProfile["identity"]>): string {
+  const groups: Array<{ label: string; items: string[] | undefined }> = [
+    { label: "Teams", items: identity.teams },
+    { label: "Companies", items: identity.companies },
+    { label: "Use Cases", items: identity.use_cases },
+    { label: "Revenue Model", items: identity.revenue_model },
+  ];
+
+  const populated = groups.filter((g) => g.items && g.items.length > 0);
+  if (populated.length === 0) return "";
+
+  const groupHtml = populated
+    .map(
+      (g) =>
+        `<div class="positioning-group">
+      <span class="positioning-label">${escapeHtml(g.label)}</span>
+      <div class="positioning-badges">${g.items!.map((item) => `<span class="badge">${escapeHtml(item)}</span>`).join(" ")}</div>
+    </div>`,
+    )
+    .join("\n    ");
+
+  return `\n    <div class="positioning-subsection">\n    ${groupHtml}\n    </div>`;
+}
 
 function renderIdentitySection(identity: ProductProfile["identity"]): string {
   if (!identity) {
@@ -96,6 +166,8 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
     ? `<div class="identity-context">${contextBadges.map((b) => `<span class="badge">${b}</span>`).join(" ")}</div>`
     : "";
 
+  const positioningHtml = renderPositioningGroups(identity);
+
   const confLine = identity.confidence != null
     ? `\n  <p class="confidence">Confidence: ${confidenceBadge(identity.confidence)}</p>`
     : "";
@@ -105,7 +177,7 @@ function renderIdentitySection(identity: ProductProfile["identity"]): string {
   <div class="identity-card">
     ${descHtml}
     ${targetHtml}
-    ${contextHtml}${confLine}
+    ${contextHtml}${positioningHtml}${confLine}
   </div>
 </section>`;
 }
@@ -412,25 +484,6 @@ function renderProductEntities(entities: ProductEntity[]): string {
     .join("\n");
 }
 
-function renderCustomerEntities(entities: CustomerEntity[]): string {
-  if (entities.length === 0) return "<p>No entities defined.</p>";
-  return entities
-    .map((e) => {
-      let activitiesHtml = "";
-      if (e.activities.length > 0) {
-        const actItems = e.activities
-          .map((a) => `<li>${escapeHtml(a.name)}${a.derivation_rule ? ` — <em>${escapeHtml(a.derivation_rule)}</em>` : ""}</li>`)
-          .join("");
-        activitiesHtml = `\n        <h5>Activities</h5>\n        <ul>${actItems}</ul>`;
-      }
-      return `      <div class="card">
-        <h4>${escapeHtml(e.name)}</h4>${activitiesHtml}${renderPropertyTable(e.properties)}
-      </div>`;
-    })
-    .join("\n");
-}
-
-
 function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
   if (!spec) {
     return `<section id="measurement-spec" class="no-data">
@@ -441,7 +494,6 @@ function renderMeasurementSpecSection(spec: MeasurementSpec | null): string {
 
   const perspectivesHtml = [
     `    <h3>Product Perspective</h3>\n${renderProductEntities(spec.perspectives.product.entities)}`,
-    `    <h3>Customer Perspective</h3>\n${renderCustomerEntities(spec.perspectives.customer.entities)}`,
   ].join("\n");
 
   let warningsHtml = "";
@@ -458,60 +510,58 @@ ${perspectivesHtml}${warningsHtml}${confLine}
 }
 
 // ---------------------------------------------------------------------------
-// Lifecycle States
+// Product Performance Model
 // ---------------------------------------------------------------------------
 
-function renderLifecycleStatesSection(lifecycleData: LifecycleStatesResult | null): string {
+export function renderProductPerformanceModel(lifecycleData: LifecycleStatesResult | null): string {
   if (!lifecycleData) {
-    return `<section id="lifecycle-states" class="no-data">
-  <h2>Lifecycle States</h2>
+    return `<section id="performance-model" class="no-data">
+  <h2>Product Performance Model</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
-  const renderCriteria = (criteria: StateCriterion[]) =>
+  const renderCriteriaList = (criteria: StateCriterion[]) =>
     criteria.length > 0
       ? `<ul>${criteria.map((c) => `<li>${escapeHtml(c.event_name)}: ${escapeHtml(c.condition)}</li>`).join("")}</ul>`
-      : "";
+      : "<span>—</span>";
 
-  const stateCards = lifecycleData.states
+  const stateRows = lifecycleData.states
     .map((s: LifecycleState) => {
-      return `    <div class="card">
-      <h3>${escapeHtml(s.name)}${s.time_window ? ` <span class="badge">${escapeHtml(s.time_window)}</span>` : ""}</h3>
-      <p>${escapeHtml(s.definition)}</p>
-      ${s.entry_criteria.length > 0 ? `<h4>Entry Criteria</h4>\n      ${renderCriteria(s.entry_criteria)}` : ""}
-      ${s.exit_triggers.length > 0 ? `<h4>Exit Triggers</h4>\n      ${renderCriteria(s.exit_triggers)}` : ""}
-    </div>`;
+      const stateCell = `<span class="state-name">${escapeHtml(s.name)}</span>${s.time_window ? ` <span class="badge">${escapeHtml(s.time_window)}</span>` : ""}`;
+      const entersCell = renderCriteriaList(s.entry_criteria);
+      const leavesCell = renderCriteriaList(s.exit_triggers);
+      const breakdownCell = s.definition
+        ? `<span class="breakdown-text">${escapeHtml(s.definition)}</span>`
+        : "—";
+      return `      <tr>
+        <td>${stateCell}</td>
+        <td>${entersCell}</td>
+        <td>${leavesCell}</td>
+        <td>${breakdownCell}</td>
+      </tr>`;
     })
     .join("\n");
 
-  let transitionsHtml = "";
-  if (lifecycleData.transitions.length > 0) {
-    const transRows = lifecycleData.transitions
-      .map((t: StateTransition) => {
-        return `      <tr>
-        <td>${escapeHtml(t.from_state)} &rarr; ${escapeHtml(t.to_state)}</td>
-        <td>${t.trigger_conditions.map((c) => escapeHtml(c)).join(", ")}</td>
-        <td>${escapeHtml(t.typical_timeframe ?? "—")}</td>
-      </tr>`;
-      })
-      .join("\n");
-
-    transitionsHtml = `
-  <h3>Transitions</h3>
-  <table>
-    <thead><tr><th>Transition</th><th>Trigger Conditions</th><th>Timeframe</th></tr></thead>
-    <tbody>
-${transRows}
-    </tbody>
-  </table>`;
-  }
+  const table = lifecycleData.states.length > 0
+    ? `  <div class="performance-model">
+    <table>
+      <thead>
+        <tr><th>State</th><th>Enters</th><th>Leaves</th><th>Breakdowns</th></tr>
+      </thead>
+      <tbody>
+${stateRows}
+      </tbody>
+    </table>
+  </div>`
+    : "";
 
   const confLine = `\n  <p class="confidence">Confidence: ${confidenceBadge(lifecycleData.confidence)}</p>`;
 
-  return `<section id="lifecycle-states">
-  <h2>Lifecycle States</h2>
-${stateCards}${transitionsHtml}${confLine}
+  return `<section id="performance-model">
+  <h2>Product Performance Model</h2>
+  <p class="performance-model-label">Account Level</p>
+${table}${confLine}
 </section>`;
 }
 
@@ -538,19 +588,20 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-segments");
   if (valueMoments && valueMoments.length > 0) analyzed.add("value-moments");
   if (measurementSpec) analyzed.add("measurement-spec");
-  if (lifecycleStates) analyzed.add("lifecycle-states");
+  if (lifecycleStates) analyzed.add("performance-model");
 
   const sections = [
     `<p class="back-link"><a href="/">&larr; Back to product list</a></p>`,
     renderReportHeader(profile),
+    renderSourceMaterial(profile?.sourceMaterial as SourceMaterialData | undefined),
     renderSectionNav(analyzed),
     renderIdentitySection(profile?.identity),
+    renderProductPerformanceModel(lifecycleStates),
     renderOutcomesSection(outcomes),
     renderJourneySection(activationMap),
     renderIcpSection(icpProfiles),
     renderValueMomentsSection(valueMoments),
     renderMeasurementSpecSection(measurementSpec),
-    renderLifecycleStatesSection(lifecycleStates),
   ];
 
   return renderPage(

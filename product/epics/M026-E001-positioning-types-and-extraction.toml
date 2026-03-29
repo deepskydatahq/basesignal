@@ -1,0 +1,61 @@
+id = "M026-E001"
+parent = "M026"
+title = "Positioning Types & Extraction"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Extend the identity type system and LLM extraction to include positioning dimensions:
+teams, companies, use_cases, and revenue_model. These are optional string arrays on
+CoreIdentity and IdentityResult. The identity extraction prompt asks the LLM to produce
+these fields. The parser accepts them when present.
+"""
+
+[job_story]
+description = """When a product is scanned, I want the identity extraction to also capture
+positioning dimensions (teams, companies, use cases, revenue model), so that the report
+can display richer positioning data."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "CoreIdentitySchema gains optional positioning fields (teams, companies, use_cases, revenue_model as string arrays)",
+    "IdentityResult interface gains matching optional fields",
+    "ProductProfile storage type gains matching optional identity fields",
+    "Identity extraction prompt requests positioning dimensions",
+    "parseIdentityResponse accepts positioning fields when present",
+    "parseIdentityResponse works without positioning fields (backward compatible)",
+    "Existing identity tests still pass",
+    "New tests cover positioning field extraction",
+]
+validator_context = [
+    "packages/core/src/schema/identity.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/mcp-server/src/analysis/identity.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/storage/src/types.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/core/src/schema/identity.ts",
+    "packages/core/src/types/profile.ts",
+    "packages/mcp-server/src/analysis/identity.ts",
+    "packages/mcp-server/src/analysis/types.ts",
+    "packages/storage/src/types.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+Three type definitions need to stay in sync:
+1. CoreIdentitySchema (zod, packages/core/src/schema/identity.ts)
+2. CoreIdentity interface (packages/core/src/types/profile.ts)
+3. IdentityResult interface (packages/mcp-server/src/analysis/types.ts)
+4. ProductProfile.identity (packages/storage/src/types.ts)
+All four need the same optional fields.
+"""
+
+estimated_stories = 3

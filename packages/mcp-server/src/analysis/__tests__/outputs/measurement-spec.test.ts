@@ -79,7 +79,6 @@ const sampleICPs: ICPProfile[] = [
 
 function makeValidSpecJson(overrides: Partial<{
   productEntities: unknown[];
-  customerEntities: unknown[];
   interactionEntities: unknown[];
   confidence: number;
 }> = {}): string {
@@ -104,16 +103,6 @@ function makeValidSpecJson(overrides: Partial<{
     ],
   };
 
-  const defaultCustomerEntity = {
-    name: "Customer",
-    properties: [
-      { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
-    ],
-    activities: [
-      { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
-    ],
-  };
-
   const defaultInteractionEntity = {
     name: "Interaction",
     properties: [
@@ -128,7 +117,6 @@ function makeValidSpecJson(overrides: Partial<{
   return JSON.stringify({
     perspectives: {
       product: { entities: overrides.productEntities ?? [defaultProductEntity] },
-      customer: { entities: overrides.customerEntities ?? [defaultCustomerEntity] },
       interaction: { entities: overrides.interactionEntities ?? [defaultInteractionEntity] },
     },
     confidence: overrides.confidence ?? 0.85,
@@ -293,14 +281,8 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Support as many properties as possible");
   });
 
-  it("has Step 4: Customer Journey with derivation_rule", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 4: Compose Customer Journey");
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("derivation_rule");
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Board shared (first time)");
-  });
-
-  it("has Step 5: Interaction Layer", () => {
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 5: Define Interaction Layer");
+  it("has Step 4: Interaction Layer", () => {
+    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("Step 4: Define Interaction Layer");
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_clicked");
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_submitted");
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain("element_type");
@@ -322,7 +304,6 @@ describe("MEASUREMENT_SPEC_SYSTEM_PROMPT", () => {
   it("includes output JSON schema with perspectives", () => {
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"perspectives"');
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"product"');
-    expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"customer"');
     expect(MEASUREMENT_SPEC_SYSTEM_PROMPT).toContain('"interaction"');
   });
 
@@ -337,7 +318,6 @@ describe("parseMeasurementSpecResponse", () => {
   it("parses valid new-format measurement spec", () => {
     const result = parseMeasurementSpecResponse(makeValidSpecJson());
     expect(result.perspectives.product.entities).toHaveLength(1);
-    expect(result.perspectives.customer.entities).toHaveLength(1);
     expect(result.perspectives.interaction.entities).toHaveLength(1);
     expect(result.confidence).toBe(0.85);
     expect(result.jsonSchemas).toHaveLength(0); // populated by generateEntityJsonSchemas
@@ -351,23 +331,15 @@ describe("parseMeasurementSpecResponse", () => {
 
   it("rejects missing perspectives.product", () => {
     const json = JSON.stringify({
-      perspectives: { customer: { entities: [] }, interaction: { entities: [] } },
+      perspectives: { interaction: { entities: [] } },
       confidence: 0.5,
     });
     expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives.product");
   });
 
-  it("rejects missing perspectives.customer", () => {
-    const json = JSON.stringify({
-      perspectives: { product: { entities: [] }, interaction: { entities: [] } },
-      confidence: 0.5,
-    });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives.customer");
-  });
-
   it("rejects missing perspectives.interaction", () => {
     const json = JSON.stringify({
-      perspectives: { product: { entities: [] }, customer: { entities: [] } },
+      perspectives: { product: { entities: [] } },
       confidence: 0.5,
     });
     expect(() => parseMeasurementSpecResponse(json)).toThrow("Missing required field: perspectives.interaction");
@@ -382,7 +354,6 @@ describe("parseMeasurementSpecResponse", () => {
     const json = JSON.stringify({
       perspectives: {
         product: { entities: [] },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
     });
@@ -470,16 +441,36 @@ describe("parseMeasurementSpecResponse — cross-reference validation", () => {
   });
 });
 
-describe("parseMeasurementSpecResponse — customer validation", () => {
-  it("rejects customer activity without derivation_rule", () => {
-    const json = makeValidSpecJson({
-      customerEntities: [{
-        name: "Customer",
-        properties: [],
-        activities: [{ name: "activated", properties_used: [] }],
-      }],
+describe("parseMeasurementSpecResponse — legacy customer sanitization", () => {
+  it("strips legacy customer perspective from LLM response", () => {
+    // Simulate an LLM that still returns a customer perspective
+    const legacyJson = JSON.stringify({
+      perspectives: {
+        product: {
+          entities: [{
+            id: "board", name: "Board", description: "D", isHeartbeat: true,
+            properties: [], activities: [{ name: "created", properties_supported: [], activity_properties: [] }],
+          }],
+        },
+        customer: {
+          entities: [{
+            name: "Customer", properties: [],
+            activities: [{ name: "first_value_created", derivation_rule: "Board shared", properties_used: [] }],
+          }],
+        },
+        interaction: {
+          entities: [{
+            name: "Interaction", properties: [],
+            activities: [{ name: "element_clicked", properties_supported: [] }],
+          }],
+        },
+      },
+      confidence: 0.8,
     });
-    expect(() => parseMeasurementSpecResponse(json)).toThrow("derivation_rule");
+    const result = parseMeasurementSpecResponse(legacyJson);
+    expect(result.perspectives).not.toHaveProperty("customer");
+    expect(result.perspectives).toHaveProperty("product");
+    expect(result.perspectives).toHaveProperty("interaction");
   });
 });
 
@@ -540,17 +531,6 @@ describe("generateEntityJsonSchemas", () => {
           ],
         }],
       },
-      customer: {
-        entities: [{
-          name: "Customer",
-          properties: [
-            { name: "customer_id", type: "id", description: "Customer ID", isRequired: true },
-          ],
-          activities: [
-            { name: "first_value_created", derivation_rule: "Board shared (first time)", properties_used: ["customer_id"] },
-          ],
-        }],
-      },
       interaction: {
         entities: [{
           name: "Interaction",
@@ -571,7 +551,7 @@ describe("generateEntityJsonSchemas", () => {
 
   it("produces one schema per entity across all perspectives", () => {
     const schemas = generateEntityJsonSchemas(spec);
-    expect(schemas).toHaveLength(3); // 1 product + 1 customer + 1 interaction
+    expect(schemas).toHaveLength(2); // 1 product + 1 interaction
   });
 
   it("product schema has activity enum and entity properties", () => {
@@ -592,18 +572,6 @@ describe("generateEntityJsonSchemas", () => {
     expect(required).toContain("activity");
     expect(required).toContain("board_id");
     expect(required).not.toContain("board_name"); // not required
-  });
-
-  it("customer schema has activity enum with journey stages", () => {
-    const schemas = generateEntityJsonSchemas(spec);
-    const customerSchema = schemas.find((s) => s.entityName === "Customer")!;
-    expect(customerSchema.perspective).toBe("customer");
-    const schema = customerSchema.schema as Record<string, unknown>;
-    expect(schema.$id).toBe("basesignal/customer/customer/v1.0.json");
-
-    const props = schema.properties as Record<string, Record<string, unknown>>;
-    expect(props.activity.enum).toEqual(["first_value_created"]);
-    expect(props.customer_id.type).toBe("string");
   });
 
   it("interaction schema has activity enum with element types", () => {
@@ -641,7 +609,6 @@ describe("generateEntityJsonSchemas", () => {
             properties: [], activities: [],
           }],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
       jsonSchemas: [],
@@ -673,7 +640,6 @@ describe("generateEntityJsonSchemas", () => {
             activities: [],
           }],
         },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
       jsonSchemas: [],

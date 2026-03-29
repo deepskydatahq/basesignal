@@ -234,21 +234,6 @@ export const MEASUREMENT_SPEC_RESPONSE = JSON.stringify({
         },
       ],
     },
-    customer: {
-      entities: [
-        {
-          name: "Customer",
-          properties: [
-            { name: "customer_id", type: "id", description: "Customer identifier", isRequired: true },
-          ],
-          activities: [
-            { name: "first_value_created", derivation_rule: "Issue created (first time) OR Board created (3+ times)", properties_used: ["customer_id"] },
-            { name: "value_repeated", derivation_rule: "Issue completed (5+ in last 30 days)", properties_used: ["customer_id"] },
-            { name: "expansion_started", derivation_rule: "User invited (first time)", properties_used: ["customer_id"] },
-          ],
-        },
-      ],
-    },
     interaction: {
       entities: [
         {

@@ -1,0 +1,53 @@
+id = "M028-E001-S002"
+parent = "M028-E001"
+title = "Activation metrics subsection with 2-column card layout"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Add Activation Metrics subsection with standard metric cards in a 2-column grid layout."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Activation Metrics subsection renders after Track Activations"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Renders metric cards: Activation Rate, Activated Subscription Rate, Retention comparison, Conversion rate delta, Time to activation"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card shows metric name, formula/description, and interpretation guidance"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Cards use a 2-column grid layout"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Metric descriptions reference the primary activation level name from the activation map"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = ["M028-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Add after Track Activations:
+- h3 'Activation Metrics'
+- 2-column CSS grid (.metrics-grid)
+- Each metric as a .card with h4 name, p description/formula, p.interpretation
+- Standard metrics: Activation Rate, Activated New Subscription Rate,
+  30/60/90d Retention (activated vs all), Conversion Rate Delta, Time to Activation
+- Use primary activation level name in descriptions
+- Add CSS for .metrics-grid in view-html.ts
+"""
+reference_files = []

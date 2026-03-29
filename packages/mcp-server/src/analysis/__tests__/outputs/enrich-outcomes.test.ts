@@ -32,15 +32,6 @@ function makeSpec(overrides?: Partial<MeasurementSpec>): MeasurementSpec {
           ],
         }],
       },
-      customer: {
-        entities: [{
-          name: "Customer",
-          properties: [],
-          activities: [
-            { name: "activated", derivation_rule: "Sprint completed (first time)", properties_used: [] },
-          ],
-        }],
-      },
       interaction: { entities: [] },
     },
     jsonSchemas: [],
@@ -151,7 +142,6 @@ describe("enrichOutcomes", () => {
     const emptySpec = makeSpec({
       perspectives: {
         product: { entities: [] },
-        customer: { entities: [] },
         interaction: { entities: [] },
       },
     });

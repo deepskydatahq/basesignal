@@ -242,20 +242,6 @@ describe("formatProfileSummary", () => {
               },
             ],
           },
-          customer: {
-            entities: [
-              {
-                name: "User",
-                properties: [
-                  { name: "user_id", type: "id", description: "User ID", isRequired: true },
-                ],
-                activities: [
-                  { name: "signed_up", derivation_rule: "account_created" },
-                  { name: "activated", derivation_rule: "first_project_created" },
-                ],
-              },
-            ],
-          },
           interaction: {
             entities: [
               {
@@ -278,18 +264,12 @@ describe("formatProfileSummary", () => {
     // Section headings
     expect(result).toContain("## Measurement Spec");
     expect(result).toContain("### Product Entities");
-    expect(result).toContain("### Customer Entities");
     expect(result).toContain("### Interaction Entities");
 
     // Product entity details
     expect(result).toContain("**Project** [heartbeat]: A project container");
     expect(result).toContain("Properties: project_id, name");
     expect(result).toContain("Activities: project_created, project_archived");
-
-    // Customer entity details
-    expect(result).toContain("**User**");
-    expect(result).toContain("signed_up (account_created)");
-    expect(result).toContain("activated (first_project_created)");
 
     // Interaction entity details
     expect(result).toContain("**PageView**");
@@ -316,7 +296,6 @@ describe("formatProfileSummary", () => {
               },
             ],
           },
-          customer: { entities: [] },
           interaction: { entities: [] },
         },
         confidence: 0.7,
@@ -328,7 +307,6 @@ describe("formatProfileSummary", () => {
 
     expect(result).toContain("## Measurement Spec");
     expect(result).toContain("### Product Entities");
-    expect(result).not.toContain("### Customer Entities");
     expect(result).not.toContain("### Interaction Entities");
     // Non-heartbeat entity should not have [heartbeat] marker
     expect(result).toContain("**Task**:");
@@ -351,7 +329,6 @@ describe("formatProfileSummary", () => {
       measurement_spec: {
         perspectives: {
           product: { entities: [] },
-          customer: { entities: [] },
           interaction: { entities: [] },
         },
         confidence: 0.5,

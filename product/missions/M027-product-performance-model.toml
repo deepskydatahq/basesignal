@@ -1,0 +1,86 @@
+# Mission: Product Performance Model
+# Add lifecycle state flow diagram to the HTML report
+
+id = "M027"
+title = "Product Performance Model"
+status = "draft"
+created = 2026-03-26
+depends_on = ["M010", "M014"]
+
+[outcome]
+description = """
+A new "Product Performance Model" section appears in the HTML report, placed between
+Identity and Activation. It renders the lifecycle states as a visual flow diagram:
+NEW → ACTIVATED → ACTIVE → AT RISK → DORMANT, with columns showing what triggers
+entry, exit, and how to break down each state.
+
+This is a visualization of lifecycle states data that already exists. The current
+Lifecycle States section shows states as cards with entry/exit criteria. The Product
+Performance Model presents the same data as a horizontal flow with enter/leave/breakdown
+columns — giving users the "account health model at a glance."
+"""
+
+user_progress = "From 'lifecycle states listed as separate cards' to 'a visual account health flow showing how users move between states'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Product Performance Model section renders between Identity and Activation Journey",
+    "Shows lifecycle states in a flow layout: NEW → ACTIVATED → ACTIVE → AT RISK → DORMANT",
+    "Each state shows Enters, Leaves, and Breakdowns columns",
+    "Data is sourced from existing lifecycle states output",
+    "Section renders 'Account Level' label to indicate the perspective",
+    "Section degrades gracefully when lifecycle data is missing",
+    "Existing tests pass",
+    "New tests cover the flow diagram rendering",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+]
+
+[context]
+related_docs = ["VISION.md", "VALUES.md"]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/core/src/types/outputs.ts",
+]
+
+[scope]
+in_scope = [
+    "New renderProductPerformanceModel() function in view-sections.ts",
+    "Visual flow diagram using HTML/CSS (boxes with arrows, enter/leave/breakdown columns)",
+    "Wire into renderProductReport() between identity and activation journey",
+    "Add to section nav",
+    "CSS for the flow diagram layout",
+]
+out_of_scope = [
+    "Changes to lifecycle states data generation",
+    "Interactive state transitions",
+    "SVG or canvas-based diagrams — pure HTML/CSS",
+]
+acceptable_breakage = [
+    "Section nav gains a new item",
+    "Report section order changes slightly",
+]
+
+[notes]
+considerations = """
+WIREFRAME REFERENCE:
+The wireframe shows a table-like layout with states as rows:
+  NEW:       Enters: "Account created OR first event after dormant" | Leaves: "Activated, report period ends" | Breakdowns: -
+  ACTIVATED: Enters: ... | Leaves: ... | Breakdowns: ...
+  ACTIVE:    ...
+  AT RISK:   ...
+  DORMANT:   ...
+
+This is a different visualization of the same LifecycleStatesResult data that the
+existing Lifecycle States section renders. Consider whether to:
+  (a) Replace the existing Lifecycle States section with this model
+  (b) Keep both (model as overview, states as detail)
+
+Recommendation: Replace the existing Lifecycle States section with this richer
+visualization since it conveys the same information more effectively.
+"""

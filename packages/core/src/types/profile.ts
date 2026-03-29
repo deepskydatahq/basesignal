@@ -61,6 +61,10 @@ export interface CoreIdentity {
   businessModel: string;
   industry?: string;
   companyStage?: string;
+  teams?: string[];
+  companies?: string[];
+  use_cases?: string[];
+  revenue_model?: string[];
   confidence: number;
   evidence: Evidence[];
 }

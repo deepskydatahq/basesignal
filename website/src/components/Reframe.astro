@@ -1,0 +1,48 @@
+---
+const outputs = [
+  {
+    label: 'ICP profiles',
+    description: 'Your best customers, prioritized by product fit'
+  },
+  {
+    label: 'Value moments',
+    description: 'The moments that make users stay, tiered by impact'
+  },
+  {
+    label: 'Activation map',
+    description: '4-level spectrum with measurable triggers'
+  },
+  {
+    label: 'Measurement specs',
+    description: 'Every event, property, and dimension you should track'
+  }
+];
+---
+
+<section class="section-padding">
+  <div class="container-content">
+    <h2 class="heading-2 text-center mb-6">
+      What if the growth model engineered itself?
+    </h2>
+
+    <p class="body-text text-center mb-12">
+      Basesignal scans your product's public presence — marketing site, pricing page, docs — and generates structured growth intelligence automatically.
+    </p>
+
+    <!-- Output Cards -->
+    <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
+      {outputs.map((output) => (
+        <div class="card">
+          <h3 class="text-text-primary font-medium mb-1">{output.label}</h3>
+          <p class="text-text-secondary text-sm">{output.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Conclusion -->
+    <p class="body-text text-center max-w-2xl mx-auto">
+      From a URL. In 60 seconds. No data required.<br />
+      <span class="text-accent font-medium">What took consulting teams two weeks now takes a single command.</span>
+    </p>
+  </div>
+</section>

@@ -85,10 +85,8 @@ export type {
   EntityPropertyType,
   EntityProperty,
   ProductActivity,
-  CustomerActivity,
   InteractionActivity,
   ProductEntity,
-  CustomerEntity,
   InteractionEntity,
   EntityJsonSchema,
 } from "./types/outputs";

@@ -1,0 +1,56 @@
+id = "M025-E001"
+parent = "M025"
+title = "Source Material Timestamps"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Add per-category last-updated timestamps to the source material stats. The
+sourceMaterial type gains optional timestamp fields (pagesLastUpdated,
+documentsLastUpdated, videosLastUpdated). The scan command populates these
+with the scan timestamp. The HTML report renders "Last updated: YYYY-MM-DD"
+below each source material card count.
+"""
+
+[job_story]
+description = """When I view the HTML report header, I want to see when each
+source category was last scanned, so that I know how fresh the analysis data is."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "sourceMaterial type includes optional timestamp fields for each category",
+    "scan command populates timestamps when building the profile",
+    "HTML source material cards render last-updated date when timestamp is present",
+    "Cards gracefully omit timestamp line when no timestamp is available",
+    "Existing source material tests still pass",
+    "New tests cover timestamp rendering",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/storage/src/types.ts",
+    "packages/cli/src/commands/scan.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/storage/src/types.ts",
+    "packages/cli/src/commands/scan.ts",
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+The sourceMaterial type and rendering already exist — this epic adds timestamps.
+CSS classes (.source-card, .source-label) already have suitable styling.
+The timestamp can render as a small subtitle below the count/label.
+"""
+
+estimated_stories = 3

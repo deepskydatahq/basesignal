@@ -1,0 +1,49 @@
+id = "M033-E001-S001"
+parent = "M033-E001"
+title = "Remove customer types and schemas from core package"
+status = "ready"
+created = 2026-03-28
+
+[outcome]
+description = """Remove CustomerEntity, CustomerActivity types from outputs.ts, their Zod schemas
+from schema/outputs.ts, and exports from index files. Update MeasurementSpec.perspectives to only
+have product and interaction. Change Perspective type to 'product' | 'interaction'.
+Remove customer from PerspectiveDistribution."""
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "MeasurementSpec.perspectives has only product and interaction fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Perspective type is 'product' | 'interaction'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CustomerEntity and CustomerActivity types no longer exist"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CustomerEntitySchema and CustomerActivitySchema no longer exist"
+
+[context]
+relevant_paths = [
+    "packages/core/src/types/outputs.ts",
+    "packages/core/src/schema/outputs.ts",
+    "packages/core/src/index.ts",
+    "packages/core/src/schema/index.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """Remove CustomerActivity interface, CustomerEntity interface from types/outputs.ts.
+Remove CustomerActivitySchema, CustomerEntitySchema from schema/outputs.ts.
+Update MeasurementSpec.perspectives to omit customer.
+Change Perspective union to 'product' | 'interaction'.
+Remove customer from PerspectiveDistribution.
+Remove exports from core/src/index.ts and core/src/schema/index.ts."""
+reference_files = []
