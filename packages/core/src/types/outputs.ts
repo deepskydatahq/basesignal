@@ -26,6 +26,8 @@ export interface ICPProfile {
   pain_points: string[];
   success_metrics: string[];
   confidence: number;
+  value_triggers?: string[];
+  value_moment_levels?: Array<{ level: string; description: string }>;
   sources: string[];
 }
 
