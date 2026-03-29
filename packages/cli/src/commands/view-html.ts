@@ -54,6 +54,10 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .identity-target-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; }
     .identity-target-value { font-weight: 600; color: #1e40af; }
     .identity-context { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .positioning-subsection { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .positioning-group { display: flex; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap; }
+    .positioning-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; font-weight: 600; min-width: 6rem; padding-top: 0.1em; flex-shrink: 0; }
+    .positioning-badges { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     details { margin-bottom: 0.5rem; }
     details > summary { cursor: pointer; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; padding: 0.25rem 0; list-style: revert; }
     details > summary .badge { font-size: 0.7rem; vertical-align: middle; }
