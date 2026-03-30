@@ -189,7 +189,7 @@ describe("renderComparisonReport", () => {
     expect(html).toContain("compare-layout");
   });
 
-  it("includes section navigation with all 7 sections", () => {
+  it("includes section navigation with all 6 sections", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     writeMinimalProduct(productDir, "linear-app", "Linear");
@@ -197,12 +197,11 @@ describe("renderComparisonReport", () => {
 
     const html = renderComparisonReport("linear-app", "notion-so", productDir);
     expect(html).toContain('href="#identity"');
-    expect(html).toContain('href="#outcomes"');
+    expect(html).toContain('href="#lifecycle-states"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#icp-segments"');
-    expect(html).toContain('href="#value-moments"');
+    expect(html).toContain('href="#outcomes"');
+    expect(html).toContain('href="#icp-profiles"');
     expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data on either side", () => {
