@@ -9,13 +9,10 @@ import type {
   ProductEntity,
   LifecycleStatesResult,
   LifecycleState,
-  StateTransition,
-  StateCriterion,
   EntityProperty,
-  ValueMoment,
   OutcomeItem,
 } from "@basesignal/core";
-import { escapeHtml, renderPage, progressBar, confidenceBadge } from "./view-html.js";
+import { escapeHtml, renderPage, confidenceBadge } from "./view-html.js";
 
 // ---------------------------------------------------------------------------
 // Section navigation
