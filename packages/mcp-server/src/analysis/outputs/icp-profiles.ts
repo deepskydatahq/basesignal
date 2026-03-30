@@ -43,6 +43,7 @@ Each profile must include:
 - value_triggers: Array of specific product actions that indicate this persona is getting value (e.g., "Creates first audience segment with 100+ prospects"). These should be concrete, observable product interactions.
 - value_moment_levels: Array of { level: "L1" | "L2", description: string }. L1 = Core daily workflow value. L2 = Enables something at scale or unlocks advanced capability.
 - confidence: Number 0-1 reflecting how well-supported this persona is by the data
+- citations: Array of 1-3 source references from the provided source pages supporting this profile's existence and characteristics. Each must include url (from Source Pages) and excerpt (10-30 word quote).
 
 ## Persona Prioritization
 Distinguish between core daily users and evaluators/buyers:
@@ -64,6 +65,7 @@ Return ONLY a valid JSON array of 2-3 profile objects. No commentary, no markdow
 export function buildICPPrompt(
   roles: RoleInput[],
   targetCustomer: string,
+  pageUrls?: string[],
 ): string {
   const parts: string[] = [];
 
@@ -101,6 +103,13 @@ export function buildICPPrompt(
           `- [${vm.id}] ${vm.name} (Tier ${vm.tier}): ${vm.description}`,
         );
       }
+    }
+  }
+
+  if (pageUrls && pageUrls.length > 0) {
+    parts.push("\n## Source Pages");
+    for (const url of pageUrls) {
+      parts.push(url);
     }
   }
 
@@ -180,6 +189,15 @@ export function parseICPProfiles(responseText: string): ICPProfile[] {
             description: String(vml.description ?? ""),
           })),
         }),
+        ...(Array.isArray(item.citations) && {
+          citations: (item.citations as Array<Record<string, unknown>>)
+            .filter((c) => c && typeof c === "object")
+            .map((c) => ({
+              url: String(c.url || ""),
+              excerpt: String(c.excerpt || ""),
+            }))
+            .filter((c) => c.url && c.excerpt),
+        }),
         sources: [],
       };
     },
@@ -246,9 +264,10 @@ export async function generateICPProfiles(
   valueMoments: ValueMoment[],
   targetCustomer: string,
   llm: LlmProvider,
+  pageUrls?: string[],
 ): Promise<ICPProfile[]> {
   const roles = aggregateRoles(valueMoments);
-  const prompt = buildICPPrompt(roles, targetCustomer);
+  const prompt = buildICPPrompt(roles, targetCustomer, pageUrls);
 
   const responseText = await llm.complete(
     [

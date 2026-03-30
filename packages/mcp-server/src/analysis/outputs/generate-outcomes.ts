@@ -60,6 +60,10 @@ Each outcome must include:
 - description: A specific situation-change statement (2-3 sentences). Name the role/person, the concrete change, and the consequence.
 - type: One of "business", "user", or "product"
 - linkedFeatures: Array of product surface or feature names that drive this outcome
+- citations: Array of 1-3 source references from the provided source pages. Each citation must include:
+  - url: The exact URL from the Source Pages list below
+  - excerpt: A brief quote (10-30 words) from that page that supports this outcome
+  Only cite URLs that appear in the Source Pages section. If no source page directly supports a claim, omit citations for that outcome.
 
 ## Output Format
 
@@ -71,6 +75,7 @@ export function buildOutcomesPrompt(
   valueMoments: ValueMoment[],
   identity: IdentityResult | null,
   icpProfiles: ICPProfile[],
+  pageUrls?: string[],
 ): string {
   const parts: string[] = [];
 
@@ -105,6 +110,13 @@ export function buildOutcomesPrompt(
       if (profile.success_metrics.length > 0) {
         parts.push(`Success metrics: ${profile.success_metrics.join("; ")}`);
       }
+    }
+  }
+
+  if (pageUrls && pageUrls.length > 0) {
+    parts.push("\n## Source Pages");
+    for (const url of pageUrls) {
+      parts.push(url);
     }
   }
 
@@ -155,10 +167,21 @@ export function parseOutcomesResponse(responseText: string): OutcomeItem[] {
       (f: unknown) => typeof f === "string",
     ) as string[];
 
+    const citations = Array.isArray(obj.citations)
+      ? obj.citations
+          .filter((c: unknown) => c && typeof c === "object")
+          .map((c: Record<string, unknown>) => ({
+            url: String(c.url || ""),
+            excerpt: String(c.excerpt || ""),
+          }))
+          .filter((c) => c.url && c.excerpt)
+      : undefined;
+
     return {
       description: obj.description,
       type: obj.type,
       linkedFeatures,
+      ...(citations && citations.length > 0 ? { citations } : {}),
     };
   });
 
@@ -185,12 +208,13 @@ export async function generateOutcomes(
   identity: IdentityResult | null,
   icpProfiles: ICPProfile[],
   llm: LlmProvider,
+  pageUrls?: string[],
 ): Promise<OutcomeItem[]> {
   if (valueMoments.length === 0) {
     return [];
   }
 
-  const prompt = buildOutcomesPrompt(valueMoments, identity, icpProfiles);
+  const prompt = buildOutcomesPrompt(valueMoments, identity, icpProfiles, pageUrls);
 
   const responseText = await llm.complete(
     [
