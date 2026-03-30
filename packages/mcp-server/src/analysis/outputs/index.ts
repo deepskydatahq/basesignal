@@ -58,6 +58,7 @@ export async function generateAllOutputs(
       convergence.value_moments,
       identity?.targetCustomer ?? "",
       llm,
+      pageUrls,
     );
     progress?.({ phase: "outputs_icp", status: "completed", detail: `${result.icp_profiles.length} profiles` });
   } catch (e) {
