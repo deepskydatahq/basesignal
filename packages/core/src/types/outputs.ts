@@ -28,6 +28,7 @@ export interface ICPProfile {
   confidence: number;
   value_triggers?: string[];
   value_moment_levels?: Array<{ level: string; description: string }>;
+  citations?: Array<{ url: string; excerpt: string }>;
   sources: string[];
 }
 
