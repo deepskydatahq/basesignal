@@ -40,7 +40,10 @@ Return a JSON object with this schema:
 Rules:
 - Define 7 states: new, activated, engaged, at_risk, dormant, churned, resurrected
 - Each state must have entry_criteria, exit_triggers, and time_window
+- "new" and "activated" can overlap — a user can become activated on day 0 (immediately after signup). The "new" state tracks recency of signup, while "activated" tracks whether the user has completed activation criteria. These are not sequential time windows.
 - Define transitions between states with trigger conditions
+- Use product entity event names in entity.activity format (e.g., "meeting.recorded", "board.created", "user.signed_up") — NOT customer journey events like "customer.first_value_created". Entry criteria and exit triggers must reference concrete product events that can be tracked.
+- NEVER use "login", "login.occurred", "session_started", or similar authentication events as lifecycle criteria — these are too weak to indicate real engagement. Use meaningful product actions instead (creating, sharing, integrating, searching, etc.).
 - Return ONLY valid JSON, no commentary
 - confidence must be between 0 and 1`;
 
