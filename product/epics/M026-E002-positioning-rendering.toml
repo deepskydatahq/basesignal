@@ -1,0 +1,52 @@
+id = "M026-E002"
+parent = "M026"
+title = "Positioning Rendering"
+status = "active"
+created = 2026-03-27
+depends_on = ["M026-E001"]
+
+[outcome]
+description = """
+The Identity section in the HTML report renders a Positioning subsection below the
+existing description/target/badges. It shows labeled badge groups: Teams, Companies,
+High-level use cases, and Revenue Model. Each group renders its items as badges.
+Groups are omitted when empty.
+"""
+
+[job_story]
+description = """When I view the HTML report, I want to see positioning data (teams,
+companies, use cases, revenue model) as labeled badge groups in the Identity section,
+so I can quickly understand who the product serves and how."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Identity section renders a Positioning subsection with labeled badge groups",
+    "Teams, Companies, Use Cases, Revenue Model each render as badge groups",
+    "Empty positioning groups are omitted",
+    "Positioning subsection is omitted entirely when no positioning data exists",
+    "Existing view tests still pass",
+    "New tests cover positioning rendering with various data combinations",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+The existing identity section already renders description, target customer, and context
+badges. The positioning subsection goes after the context badges, inside the identity-card.
+Reuse the existing .badge CSS class. Add a .positioning-group class for the label+badges pattern.
+"""
+
+estimated_stories = 2

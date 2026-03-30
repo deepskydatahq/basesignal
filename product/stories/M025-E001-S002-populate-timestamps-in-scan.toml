@@ -1,0 +1,28 @@
+id = "M025-E001-S002"
+parent = "M025-E001"
+title = "Populate timestamps during scan"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "The scan command sets per-category timestamps when building the sourceMaterial object."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "scan builds sourceMaterial with pagesLastUpdated set to Date.now() when pagesScanned > 0"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "documentsLastUpdated and videosLastUpdated set when respective counts > 0"
+
+[context]
+relevant_paths = ["packages/cli/src/commands/scan.ts"]
+input_fixtures = []
+depends_on = ["M025-E001-S001"]
+
+[handoff]
+implementation_hints = "In scan.ts where sourceMaterial is built (~line 183), add timestamp fields conditionally based on counts."
+reference_files = []

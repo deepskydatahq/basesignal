@@ -12,6 +12,7 @@ import {
   loadProductList,
   renderProductList,
   renderProductReport,
+  renderSourceMaterial,
   startViewServer,
   type ViewServerHandle,
 } from "./view.js";
@@ -396,7 +397,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("Back to product list");
   });
 
-  it("renders ICP profiles with pain points and triggers", () => {
+  it("renders ICP segments with pain points and triggers", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -419,7 +420,7 @@ describe("renderProductReport", () => {
     ]);
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("ICP Profiles");
+    expect(html).toContain("ICP Segments");
     expect(html).toContain("Developer");
     expect(html).toContain("A software developer");
     expect(html).toContain("Typing fatigue");
@@ -430,7 +431,93 @@ describe("renderProductReport", () => {
     expect(html).toContain("85%");
   });
 
-  it("shows 'Not yet analyzed' when ICP profiles are missing", () => {
+  it("shows educational context block when ICP data exists", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A software developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("icp-context");
+    expect(html).toContain("different user types naturally");
+    expect(html).toContain("icp-identification");
+    expect(html).toContain("ask users during account creation");
+  });
+
+  it("renders value triggers when present in ICP segment", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        value_triggers: ["Completed first integration", "Shared with team"],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Value Triggers");
+    expect(html).toContain("Completed first integration");
+    expect(html).toContain("Shared with team");
+  });
+
+  it("renders value moment levels with level badges", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/icp-profiles.json", [
+      {
+        id: "icp-1",
+        name: "Developer",
+        description: "A developer",
+        pain_points: [],
+        activation_triggers: [],
+        success_metrics: [],
+        value_moment_priorities: [],
+        value_moment_levels: [
+          { level: "basic", description: "Gets started with the product" },
+          { level: "advanced", description: "Uses integrations regularly" },
+        ],
+        confidence: 0.8,
+        sources: [],
+      },
+    ]);
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("Value Moment Levels");
+    expect(html).toContain('<span class="badge">basic</span>');
+    expect(html).toContain("Gets started with the product");
+    expect(html).toContain('<span class="badge">advanced</span>');
+    expect(html).toContain("Uses integrations regularly");
+  });
+
+  it("shows 'Not yet analyzed' when ICP segments are missing", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -438,9 +525,9 @@ describe("renderProductReport", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
     // ICP section should show not analyzed (no icp-profiles.json file)
-    expect(html).toMatch(/icp-profiles[\s\S]*?Not yet analyzed/);
+    expect(html).toMatch(/icp-segments[\s\S]*?Not yet analyzed/);
   });
 
   it("renders value moments grouped by tier", () => {
@@ -549,7 +636,7 @@ describe("renderProductReport", () => {
     expect(html).toContain("Missing event coverage for onboarding");
   });
 
-  it("renders lifecycle states with transitions", () => {
+  it("renders performance model table with lifecycle state data", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -572,20 +659,20 @@ describe("renderProductReport", () => {
           time_window: "7-30 days",
         },
       ],
-      transitions: [
-        {
-          from_state: "new",
-          to_state: "activated",
-          trigger_conditions: ["completes setup"],
-          typical_timeframe: "3-5 days",
-        },
-      ],
+      transitions: [],
       confidence: 0.75,
       sources: [],
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain("Lifecycle States");
+    expect(html).toContain("Product Performance Model");
+    expect(html).toContain('id="performance-model"');
+    // Table columns
+    expect(html).toContain("State");
+    expect(html).toContain("Enters");
+    expect(html).toContain("Leaves");
+    expect(html).toContain("Breakdowns");
+    // State data
     expect(html).toContain("new");
     expect(html).toContain("activated");
     expect(html).toContain("Just signed up");
@@ -594,10 +681,54 @@ describe("renderProductReport", () => {
     expect(html).toContain("within last 7 days");
     expect(html).toContain("activate");
     expect(html).toContain("completes setup");
-    // Transitions
-    expect(html).toContain("Transitions");
-    expect(html).toContain("3-5 days");
+    // Account Level label
+    expect(html).toContain("Account Level");
+    // Confidence
     expect(html).toContain("75%");
+  });
+
+  it("renders performance model placeholder when lifecycle data is missing", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain('id="performance-model"');
+    expect(html).toMatch(/performance-model[\s\S]*?Not yet analyzed/);
+  });
+
+  it("renders performance model between identity and outcomes", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+    productDir.writeJson("test-app", "outputs/lifecycle-states.json", {
+      states: [
+        {
+          name: "new",
+          definition: "Just signed up",
+          entry_criteria: [],
+          exit_triggers: [],
+          time_window: "0-7 days",
+        },
+      ],
+      transitions: [],
+      confidence: 0.75,
+      sources: [],
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const identityPos = html.indexOf('id="identity"');
+    const performancePos = html.indexOf('id="performance-model"');
+    const outcomesPos = html.indexOf('id="outcomes"');
+    expect(identityPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(-1);
+    expect(outcomesPos).toBeGreaterThan(-1);
+    expect(performancePos).toBeGreaterThan(identityPos);
+    expect(outcomesPos).toBeGreaterThan(performancePos);
   });
 
   it("includes section navigation bar with links to all sections", () => {
@@ -612,10 +743,10 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#identity"');
     expect(html).toContain('href="#outcomes"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#icp-segments"');
     expect(html).toContain('href="#value-moments"');
     expect(html).toContain('href="#measurement-spec"');
-    expect(html).toContain('href="#lifecycle-states"');
+    expect(html).toContain('href="#performance-model"');
   });
 
   it("dims nav links for sections without data", () => {
@@ -686,10 +817,10 @@ describe("renderProductReport", () => {
     expect(html).toContain('id="identity"');
     expect(html).toContain('id="outcomes"');
     expect(html).toContain('id="journey"');
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="icp-segments"');
     expect(html).toContain('id="value-moments"');
     expect(html).toContain('id="measurement-spec"');
-    expect(html).toContain('id="lifecycle-states"');
+    expect(html).toContain('id="performance-model"');
     // Count "Not yet analyzed" — should appear 7 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
     expect(matches).toHaveLength(7);
@@ -1048,6 +1179,271 @@ describe("renderProductReport — outcomes section", () => {
     expect(journeyIdx).toBeGreaterThan(-1);
     expect(outcomesIdx).toBeGreaterThan(identityIdx);
     expect(outcomesIdx).toBeLessThan(journeyIdx);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: source material rendering
+// ---------------------------------------------------------------------------
+
+describe("renderSourceMaterial", () => {
+  it("returns empty string when sourceMaterial is undefined", () => {
+    expect(renderSourceMaterial(undefined)).toBe("");
+  });
+
+  it("returns empty string when all counts are zero or missing", () => {
+    expect(renderSourceMaterial({})).toBe("");
+    expect(renderSourceMaterial({ pagesScanned: 0 })).toBe("");
+  });
+
+  it("renders page count with timestamp", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 12,
+      pagesLastUpdated: 1709337600000, // 2024-03-02
+    });
+    expect(html).toContain("source-material");
+    expect(html).toContain("source-card");
+    expect(html).toContain("12");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders document count with timestamp", () => {
+    const html = renderSourceMaterial({
+      documentsRead: 5,
+      documentsLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("5");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("renders video count with timestamp", () => {
+    const html = renderSourceMaterial({
+      videosWatched: 3,
+      videosLastUpdated: 1709337600000,
+    });
+    expect(html).toContain("3");
+    expect(html).toContain("videos watched");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("omits timestamp line when no timestamp is available", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 8,
+    });
+    expect(html).toContain("8");
+    expect(html).toContain("pages scanned");
+    expect(html).not.toContain("Last updated");
+  });
+
+  it("renders multiple categories as separate cards", () => {
+    const html = renderSourceMaterial({
+      pagesScanned: 10,
+      pagesLastUpdated: 1709337600000,
+      documentsRead: 3,
+      documentsLastUpdated: 1709337600000,
+    });
+    const cardCount = (html.match(/source-card"/g) ?? []).length;
+    expect(cardCount).toBe(2);
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("documents read");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests: positioning badge groups in identity section
+// ---------------------------------------------------------------------------
+
+describe("renderProductReport — identity positioning", () => {
+  let tmpDir: string | undefined;
+
+  afterEach(() => {
+    if (tmpDir) {
+      rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = undefined;
+    }
+  });
+
+  it("renders source material cards when profile has sourceMaterial data", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+      sourceMaterial: {
+        pagesScanned: 15,
+        pagesLastUpdated: 1709337600000,
+        documentsRead: 4,
+        documentsLastUpdated: 1709337600000,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    // Positioning subsection should exist
+    expect(bodyContent).toContain("positioning-subsection");
+
+    // All four group labels
+    expect(bodyContent).toContain("Teams");
+    expect(bodyContent).toContain("Companies");
+    expect(bodyContent).toContain("Use Cases");
+    expect(bodyContent).toContain("Revenue Model");
+
+    // All badge values
+    expect(bodyContent).toContain("Engineering");
+    expect(bodyContent).toContain("Product");
+    expect(bodyContent).toContain("Startups");
+    expect(bodyContent).toContain("Scale-ups");
+    expect(bodyContent).toContain("CI/CD");
+    expect(bodyContent).toContain("Code review");
+    expect(bodyContent).toContain("Subscription");
+    expect(bodyContent).toContain("Usage-based");
+  });
+
+  it("renders only populated positioning groups, skipping empty ones", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ["Engineering"],
+        companies: [],
+        // use_cases omitted
+        revenue_model: ["Subscription"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).toContain("positioning-subsection");
+    expect(bodyContent).toContain("Teams");
+    expect(bodyContent).toContain("Engineering");
+    expect(bodyContent).toContain("Revenue Model");
+    expect(bodyContent).toContain("Subscription");
+
+    // Empty/missing groups should not render their labels
+    expect(bodyContent).not.toContain("Companies");
+    expect(bodyContent).not.toContain("Use Cases");
+  });
+
+  it("renders no positioning subsection when all fields are absent", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).not.toContain("positioning-subsection");
+    expect(bodyContent).not.toContain("positioning-group");
+  });
+
+  it("renders no positioning subsection when all fields are empty arrays", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: [],
+        companies: [],
+        use_cases: [],
+        revenue_model: [],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    const bodyContent = html.split("</style>")[1] ?? "";
+
+    expect(bodyContent).not.toContain("positioning-subsection");
+  });
+
+  it("existing identity fields still render when positioning is also present", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A test application",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        industry: "DevTools",
+        companyStage: "Growth",
+        confidence: 0.9,
+        teams: ["Platform"],
+        companies: ["Enterprise"],
+        use_cases: ["Automation"],
+        revenue_model: ["Enterprise"],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Existing identity fields
+    expect(html).toContain("identity-card");
+    expect(html).toContain("identity-description");
+    expect(html).toContain("A test application");
+    expect(html).toContain("Developers");
+    expect(html).toContain("SaaS");
+    expect(html).toContain("DevTools");
+    expect(html).toContain("Growth");
+    // Plus positioning groups
+    expect(html).toContain("Platform");
+    expect(html).toContain("Enterprise");
+    expect(html).toContain("Automation");
+  });
+
+  it("escapes HTML in positioning badge values", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: {
+        productName: "TestApp",
+        description: "A product",
+        targetCustomer: "Developers",
+        businessModel: "SaaS",
+        confidence: 0.9,
+        teams: ['<script>alert("xss")</script>'],
+      },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    expect(html).toContain("source-material");
+    expect(html).toContain("15");
+    expect(html).toContain("pages scanned");
+    expect(html).toContain("4");
+    expect(html).toContain("documents read");
+    expect(html).toContain("Last updated: 2024-03-02");
+  });
+
+  it("does not render source material section when profile has no sourceMaterial", () => {
+    const { dir, productDir } = createTmpProductDir();
+    tmpDir = dir;
+    productDir.writeJson("test-app", "profile.json", {
+      identity: { productName: "TestApp" },
+    });
+
+    const html = renderProductReport("test-app", productDir);
+    // Check body content only (CSS has class definitions)
+    const bodyContent = html.split("</style>")[1] ?? "";
+    expect(bodyContent).not.toContain("source-material");
+    expect(bodyContent).not.toContain("source-card");
   });
 });
 

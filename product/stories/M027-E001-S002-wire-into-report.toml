@@ -1,0 +1,49 @@
+id = "M027-E001-S002"
+parent = "M027-E001"
+title = "Wire performance model into report and replace lifecycle states"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Replace old Lifecycle States section with Product Performance Model, reposition between Identity and Outcomes, update section nav."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderProductReport includes performance model section between identity and outcomes"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Old renderLifecycleStatesSection call removed from renderProductReport"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "SECTION_NAV_ITEMS includes 'Performance Model' in place of 'Lifecycle States'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section nav tracks performance-model instead of lifecycle-states"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing lifecycle-related view tests updated to match new section"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = ["M027-E001-S001"]
+
+[handoff]
+implementation_hints = """
+In renderProductReport: replace renderLifecycleStatesSection(lifecycleStates) with
+renderProductPerformanceModel(lifecycleStates). Move it between identity and outcomes.
+Update SECTION_NAV_ITEMS: replace {id:'lifecycle-states',label:'Lifecycle States'} with
+{id:'performance-model',label:'Performance Model'}. Update analyzed set tracking.
+Update existing tests that reference lifecycle-states section.
+"""
+reference_files = []

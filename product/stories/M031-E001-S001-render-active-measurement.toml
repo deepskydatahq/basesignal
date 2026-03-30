@@ -1,0 +1,65 @@
+id = "M031-E001-S001"
+parent = "M031-E001"
+title = "Render active measurement section with per-ICP cards"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "New renderActiveMeasurementSection that shows per-ICP measurement cards with outcomes, events, activity rules, and metrics."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderActiveMeasurementSection renders a section with id 'active-measurement'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section has educational intro paragraph about bringing it all together"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each ICP gets a card with outcome descriptions listed"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card shows measurement events from outcomes' measurement_references"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card shows 'is active when' rule from lifecycle active state"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each card shows metrics from outcomes' suggested_metrics"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Side-by-side layout for measurement events and metrics"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Returns not-analyzed when ICP profiles are null/empty"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create renderActiveMeasurementSection(icpProfiles, outcomes, lifecycleStates).
+For each ICP, render a card with:
+- ICP name as h3
+- Outcomes: list outcome descriptions (all outcomes apply to all ICPs)
+- Side-by-side: measurement events (left) from all outcomes' measurement_references,
+  metrics (right) from all outcomes' suggested_metrics
+- 'Is active when': find lifecycle state named 'Active' or similar, use its entry_criteria
+Reuse .outcome-columns CSS for the side-by-side layout.
+"""
+reference_files = []

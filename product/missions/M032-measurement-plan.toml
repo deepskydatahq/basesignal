@@ -1,0 +1,83 @@
+# Mission: Measurement Plan
+# Generate a consolidated measurement plan from all outputs
+
+id = "M032"
+title = "Measurement Plan"
+status = "draft"
+created = 2026-03-26
+depends_on = ["M031", "M012"]
+
+[outcome]
+description = """
+A new "Measurement Plan" section at the bottom of the report consolidates all
+measurement-related outputs into a single implementation-ready plan. This is the
+final section that a data/analytics engineer would use to build the tracking
+implementation.
+
+It combines measurement spec entities (events and properties), activation events,
+lifecycle state criteria, and active measurement rules into a prioritized
+implementation checklist.
+
+This section replaces or subsumes the current Measurement Spec section by presenting
+the same data in a more actionable format.
+"""
+
+user_progress = "From 'measurement spec shows raw entities and properties' to 'a consolidated measurement plan ready for implementation'"
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Measurement Plan section renders at the bottom of the report",
+    "Plan consolidates events from measurement spec, activation, and lifecycle",
+    "Events are deduplicated and prioritized",
+    "Properties per event are listed",
+    "Section is implementation-oriented (what to track, not just what exists)",
+    "Existing tests pass",
+    "New tests cover plan generation and rendering",
+]
+
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+]
+
+[context]
+related_docs = ["VISION.md", "VALUES.md"]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/mcp-server/src/analysis/outputs/measurement-spec.ts",
+    "packages/core/src/types/outputs.ts",
+]
+
+[scope]
+in_scope = [
+    "Consolidation logic: merge events from measurement spec, activation map, lifecycle states",
+    "Deduplication and prioritization of events",
+    "Render as an implementation checklist or structured table",
+    "Replace or subsume current Measurement Spec section",
+]
+out_of_scope = [
+    "SDK code generation",
+    "Integration with specific analytics tools",
+    "Tracking plan export formats (Avo, Amplitude, etc.)",
+]
+acceptable_breakage = [
+    "Measurement Spec section may be replaced by Measurement Plan",
+    "Section nav changes",
+]
+
+[notes]
+considerations = """
+WIREFRAME REFERENCE:
+The wireframe shows "Measurement Plan" as the final section header. The content
+wasn't fully detailed in the wireframe, suggesting it's a future/placeholder section.
+
+APPROACH:
+This could be implemented as:
+1. A simple consolidation of existing measurement spec data into a more actionable format
+2. A new LLM-generated synthesis that produces an implementation plan
+3. A template-based output that reorganizes existing data
+
+Start with option 1 (consolidation) since the data already exists in measurement spec,
+and iterate toward more actionable formatting.
+"""

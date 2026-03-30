@@ -1,0 +1,49 @@
+id = "M027-E001-S001"
+parent = "M027-E001"
+title = "Render Product Performance Model section"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "New renderProductPerformanceModel function that renders lifecycle states as a flow table with Enter/Leave/Breakdown columns."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "renderProductPerformanceModel renders a table with State, Enters, Leaves, Breakdowns columns"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each LifecycleState renders as a row with entry_criteria as Enters and exit_triggers as Leaves"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section shows 'Account Level' label"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Returns not-analyzed placeholder when lifecycle data is null"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "CSS classes added for the performance model layout"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Create renderProductPerformanceModel(lifecycleData: LifecycleStatesResult | null).
+Use a table layout: thead with State/Enters/Leaves/Breakdowns columns.
+Each state → row. entry_criteria → Enters cell. exit_triggers → Leaves cell.
+Breakdowns can show time_window or definition as context.
+Add CSS in view-html.ts for .performance-model table styling.
+"""
+reference_files = []

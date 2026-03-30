@@ -145,6 +145,56 @@ describe("parseOutcomesResponse", () => {
     );
     expect(result[0].linkedFeatures).toEqual(["Feature1", "Feature2"]);
   });
+
+  it("parses citations when present", () => {
+    const response = JSON.stringify([
+      {
+        description: "Outcome with citations",
+        type: "business",
+        linkedFeatures: ["Feature1"],
+        citations: [
+          { url: "https://example.com/page1", excerpt: "A brief quote from the page supporting this outcome" },
+          { url: "https://example.com/page2", excerpt: "Another supporting quote from another page" },
+        ],
+      },
+    ]);
+    const result = parseOutcomesResponse(response);
+    expect(result[0].citations).toBeDefined();
+    expect(result[0].citations).toHaveLength(2);
+    expect(result[0].citations![0].url).toBe("https://example.com/page1");
+    expect(result[0].citations![0].excerpt).toBe("A brief quote from the page supporting this outcome");
+    expect(result[0].citations![1].url).toBe("https://example.com/page2");
+  });
+
+  it("omits citations field when not present (backward compat)", () => {
+    const response = JSON.stringify([
+      {
+        description: "Outcome without citations",
+        type: "user",
+        linkedFeatures: ["Feature1"],
+      },
+    ]);
+    const result = parseOutcomesResponse(response);
+    expect(result[0].citations).toBeUndefined();
+  });
+
+  it("filters citations missing url or excerpt", () => {
+    const response = JSON.stringify([
+      {
+        description: "Outcome with partial citations",
+        type: "product",
+        linkedFeatures: ["Feature1"],
+        citations: [
+          { url: "https://example.com/page1", excerpt: "Valid excerpt here from the page" },
+          { url: "", excerpt: "Missing url should be filtered" },
+          { url: "https://example.com/page2", excerpt: "" },
+        ],
+      },
+    ]);
+    const result = parseOutcomesResponse(response);
+    expect(result[0].citations).toHaveLength(1);
+    expect(result[0].citations![0].url).toBe("https://example.com/page1");
+  });
 });
 
 describe("buildOutcomesPrompt", () => {
@@ -168,6 +218,24 @@ describe("buildOutcomesPrompt", () => {
     expect(prompt).toContain("Dev Lead");
     expect(prompt).toContain("Slow setup");
     expect(prompt).toContain("Team adoption > 80%");
+  });
+
+  it("includes Source Pages section when pageUrls provided", () => {
+    const pageUrls = ["https://example.com/page1", "https://example.com/page2"];
+    const prompt = buildOutcomesPrompt([], null, [], pageUrls);
+    expect(prompt).toContain("## Source Pages");
+    expect(prompt).toContain("https://example.com/page1");
+    expect(prompt).toContain("https://example.com/page2");
+  });
+
+  it("omits Source Pages section when no pageUrls provided", () => {
+    const prompt = buildOutcomesPrompt([], null, []);
+    expect(prompt).not.toContain("## Source Pages");
+  });
+
+  it("omits Source Pages section when empty pageUrls provided", () => {
+    const prompt = buildOutcomesPrompt([], null, [], []);
+    expect(prompt).not.toContain("## Source Pages");
   });
 });
 

@@ -61,6 +61,10 @@ export interface CoreIdentity {
   businessModel: string;
   industry?: string;
   companyStage?: string;
+  teams?: string[];
+  companies?: string[];
+  use_cases?: string[];
+  revenue_model?: string[];
   confidence: number;
   evidence: Evidence[];
 }
@@ -207,6 +211,7 @@ export interface OutcomeItem {
   linkedFeatures: string[];
   measurement_references?: Array<{ entity: string; activity: string }>;
   suggested_metrics?: string[];
+  citations?: Array<{ url: string; excerpt: string }>;
 }
 
 /** Business outcomes section of a product profile. */

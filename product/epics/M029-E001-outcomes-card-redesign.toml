@@ -1,0 +1,55 @@
+id = "M029-E001"
+parent = "M029"
+title = "Outcomes Card Redesign"
+status = "active"
+created = 2026-03-27
+depends_on = []
+
+[outcome]
+description = """
+Restructure the Outcomes section: rename to "Possible Outcomes", add Active/Retention
+context block above outcomes, redesign each card with narrative description at top,
+features list below, then side-by-side measurement events (left) and metrics (right).
+CSS for the new layout. All using existing OutcomeItem data fields.
+"""
+
+[job_story]
+description = """When I view outcomes, I want to see rich narrative descriptions with
+features, measurement events, and metrics in a structured layout, so I can understand
+what each outcome involves and how to track it."""
+
+[testing]
+approach = "agent-judgment"
+criteria = [
+    "Section heading is 'Possible Outcomes' (not 'Outcomes')",
+    "Active/Retention context block renders above outcome cards",
+    "Each outcome card shows description as narrative paragraph (not h3 title)",
+    "Each card lists features involved",
+    "Each card shows measurement events in entity.activity format",
+    "Each card shows metrics in a right-side column",
+    "Measurement and metrics use side-by-side layout",
+    "Context block and cards omitted when no outcome data",
+    "Existing tests pass",
+    "New tests cover redesigned layout",
+]
+validator_context = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+]
+dependencies = []
+
+[notes]
+considerations = """
+OutcomeItem already has: description, type, linkedFeatures, measurement_references,
+suggested_metrics. No data changes needed — purely rendering.
+"""
+
+estimated_stories = 1

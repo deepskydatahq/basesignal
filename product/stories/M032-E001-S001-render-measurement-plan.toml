@@ -1,0 +1,81 @@
+id = "M032-E001-S001"
+parent = "M032-E001"
+title = "Render measurement plan section replacing measurement spec"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "Replace renderMeasurementSpecSection with renderMeasurementPlanSection that consolidates events from all sources into an implementation checklist."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section heading reads 'Measurement Plan'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Events from measurement spec product entities are included"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Activation map trigger events are included"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Lifecycle state criteria events are included"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Duplicate events across sources are merged with combined source badges"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each event shows its properties when available"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Each event shows source badges (measurement-spec, activation, lifecycle)"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Section nav updated to 'Measurement Plan'"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Returns not-analyzed when all data sources are null"
+
+[context]
+relevant_paths = [
+    "packages/cli/src/commands/view-sections.ts",
+    "packages/cli/src/commands/view-html.ts",
+    "packages/cli/src/commands/view.test.ts",
+    "packages/core/src/types/outputs.ts",
+]
+input_fixtures = []
+depends_on = []
+
+[handoff]
+implementation_hints = """
+Replace renderMeasurementSpecSection with renderMeasurementPlanSection(spec, activationMap, lifecycleStates).
+
+Consolidation logic:
+1. From MeasurementSpec: for each product entity, create events as 'entity.activity' with the entity's properties
+2. From ActivationMap: collect all trigger_events from stages
+3. From LifecycleStatesResult: collect event_name from entry_criteria and exit_triggers
+
+Build a Map<string, {name, properties, sources}> keyed by event name.
+Sources are tagged as 'measurement-spec', 'activation', 'lifecycle'.
+Dedup by event name — merge sources.
+
+Render as a table: Event Name | Properties | Sources.
+Each source as a badge. Properties as comma-separated list or expandable.
+
+Update SECTION_NAV_ITEMS: replace measurement-spec with measurement-plan.
+Update renderProductReport to call new function with all three data sources.
+Update analyzed set.
+Remove old renderMeasurementSpecSection (and its helpers if no longer needed).
+Actually keep the property helpers (renderPropertyTable) if the new section uses them.
+"""
+reference_files = []

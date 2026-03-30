@@ -1,0 +1,36 @@
+id = "M030-E001-S002"
+parent = "M030-E001"
+title = "Update ICP generation prompt for new fields"
+status = "ready"
+created = 2026-03-27
+
+[outcome]
+description = "ICP generation prompt requests value_triggers and value_moment_levels."
+
+[acceptance_criteria]
+executable = true
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT includes value_triggers in required fields"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "ICP_SYSTEM_PROMPT includes value_moment_levels with level/description structure"
+
+[[acceptance_criteria.criteria]]
+test = "unit"
+description = "Existing ICP generation tests still pass"
+
+[context]
+relevant_paths = ["packages/mcp-server/src/analysis/outputs/icp-profiles.ts"]
+input_fixtures = []
+depends_on = ["M030-E001-S001"]
+
+[handoff]
+implementation_hints = """
+Add value_triggers and value_moment_levels to the Required Fields section of ICP_SYSTEM_PROMPT.
+value_triggers: Array of specific product actions indicating this persona gets value.
+value_moment_levels: Array of {level: 'L1'|'L2', description: string} categorizing value moments.
+"""
+reference_files = []
