@@ -787,6 +787,25 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "citations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "excerpt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "excerpt"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [

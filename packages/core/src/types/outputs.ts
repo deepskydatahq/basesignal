@@ -30,6 +30,7 @@ export interface ICPProfile {
   value_moment_levels?: Array<{ level: string; description: string }>;
   citations?: Array<{ url: string; excerpt: string }>;
   sources: string[];
+  citations?: Array<{ url: string; excerpt: string }>;
 }
 
 // ---------------------------------------------------------------------------
