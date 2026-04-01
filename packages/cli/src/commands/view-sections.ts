@@ -195,10 +195,74 @@ function renderJourneySection(activationMap: ActivationMap | null): string {
   </table>`;
   }
 
-  // Track activations guidance
+  // --- Implementation: Events & Properties ---
+  const allTriggers = new Set<string>();
+  for (const s of activationMap.stages) {
+    for (const t of s.trigger_events) allTriggers.add(t);
+  }
+  const eventItems = [...allTriggers]
+    .map((t) => `<code>${escapeHtml(t)}</code>`)
+    .join(" ");
+
   const trackHtml = `<div class="guidance-box">
     <h3>Track Activations</h3>
     <p>These events and properties need to be implemented and tested.</p>
+    <div class="guidance-events">${eventItems}</div>
+  </div>`;
+
+  // --- Implementation: Segments ---
+  const segmentItems = activationMap.stages
+    .map((s: ActivationStage) => {
+      const triggers = s.trigger_events.map((t) => escapeHtml(t)).join(" AND ");
+      return `<div class="segment-item">
+        <strong>L${s.level}: ${escapeHtml(s.name)}</strong>
+        <p>Create an audience/segment in your analytics tool or data model where <code>${triggers}</code> have occurred. Use this to filter dashboards and compare behavior across levels.</p>
+      </div>`;
+    })
+    .join("\n");
+
+  const segmentHtml = `<div class="guidance-box">
+    <h3>Build Segments</h3>
+    <p>You need to create the following audiences/segments in your analytics tool or in your data model.</p>
+    ${segmentItems}
+  </div>`;
+
+  // --- Activation Metrics ---
+  const metricsHtml = `<div class="metrics-section">
+    <h3>Activation Metrics</h3>
+    <p class="section-intro">Track the following metrics for all activation levels. These are all cohort metrics &mdash; if you want to report them in weekly or monthly reports, derive the numbers from the cohort baseline.</p>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h4>Activation Rate</h4>
+        <p class="metric-formula">activated accounts / all new accounts</p>
+        <p>The essential conversion rate for your early product success. Low here, low performance in total. Use the levels to understand where people get stuck.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Activated New Subscription Rate</h4>
+        <p class="metric-formula">new subscriptions that were activated / all new subscriptions</p>
+        <p>Check for impact of activation (also broken down by level) on subscriptions.</p>
+        <div class="metric-thresholds">
+          <div class="threshold warn">If &lt;50% &mdash; your activation does not indicate subscription success and needs definition rework.</div>
+          <div class="threshold warn">If &gt;95% &mdash; your activation looks most likely too broad (like logged in). It is not a difference maker.</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <h4>30/60/90d Retention: Activated vs All</h4>
+        <p class="metric-formula">retention by activated accounts vs avg. retention</p>
+        <p>Check the core retention metrics by activated accounts on the different levels &mdash; if and how much they outperform the average retention values.</p>
+        <p>Activated accounts should outperform, and ideally stronger with each level.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Conversion Rate Delta</h4>
+        <p class="metric-formula">subscription conversion rate (activated) vs conversion rate (all)</p>
+        <p>Activated accounts should convert at a higher rate to subscriptions. Determine the x-factor to understand level differences and the impact of activation in general.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Time to Activated Smell Test</h4>
+        <p class="metric-formula">avg. time to reach each activation level</p>
+        <p>Calculate the average time to conversion metrics for each level. Any too fast is not a good definition (L1 achieved after 10s).</p>
+      </div>
+    </div>
   </div>`;
 
   return `<section id="journey">
@@ -207,6 +271,8 @@ function renderJourneySection(activationMap: ActivationMap | null): string {
   ${journeyTable}
   ${transitionHtml}
   ${trackHtml}
+  ${segmentHtml}
+  ${metricsHtml}
   <p class="confidence">Confidence: ${confidenceBadge(activationMap.confidence)}</p>
 </section>`;
 }
