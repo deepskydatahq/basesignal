@@ -221,6 +221,20 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .outcome-codes code { font-size: 0.72rem; }
 
     /* ============ JOURNEY ============ */
+    .guidance-events { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+    .segment-item { margin-top: 0.65rem; }
+    .segment-item strong { font-size: 0.88rem; }
+    .segment-item p { font-size: 0.82rem; color: var(--text-2); margin: 0.2rem 0 0; }
+    .metrics-section { margin-top: 1.5rem; }
+    .metrics-section > h3 { font-size: 1.1rem; margin-bottom: 0.25rem; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 0.75rem; }
+    .metric-card { border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; }
+    .metric-card h4 { margin: 0 0 0.35rem; font-size: 0.82rem; color: var(--navy); text-transform: none; letter-spacing: 0; }
+    .metric-formula { font-family: var(--font-m); font-size: 0.75rem; color: var(--blue); background: var(--subtle); padding: 0.3em 0.55em; border-radius: 4px; display: inline-block; margin: 0 0 0.5rem; }
+    .metric-card > p { font-size: 0.82rem; color: var(--text-2); margin: 0.25rem 0; line-height: 1.55; }
+    .metric-thresholds { margin-top: 0.5rem; }
+    .threshold { font-size: 0.78rem; padding: 0.35em 0.6em; border-radius: 4px; margin-bottom: 0.3rem; line-height: 1.5; }
+    .threshold.warn { background: var(--gold-light); color: var(--gold-dark); }
 
     .risk-low { color: var(--teal-dark); }
     .risk-medium { color: var(--gold-dark); }
