@@ -59,16 +59,19 @@ const sampleICPProfiles: ICPProfile[] = [
 
 const validOutcomesResponse = JSON.stringify([
   {
+    headline: "Faster onboarding for developers",
     description: "Reduce onboarding time for new developers",
     type: "user",
     linkedFeatures: ["Onboarding", "Dashboard"],
   },
   {
+    headline: "Team collaboration via boards",
     description: "Increase team collaboration through board sharing",
     type: "business",
     linkedFeatures: ["Boards", "Sharing"],
   },
   {
+    headline: "Guided setup drives adoption",
     description: "Improve feature adoption via guided setup flow",
     type: "product",
     linkedFeatures: ["Onboarding"],
@@ -88,11 +91,38 @@ describe("parseOutcomesResponse", () => {
     const result = parseOutcomesResponse(validOutcomesResponse);
 
     expect(result).toHaveLength(3);
+    expect(result[0].headline).toBe("Faster onboarding for developers");
     expect(result[0].description).toBe("Reduce onboarding time for new developers");
     expect(result[0].type).toBe("user");
     expect(result[0].linkedFeatures).toEqual(["Onboarding", "Dashboard"]);
     expect(result[1].type).toBe("business");
     expect(result[2].type).toBe("product");
+  });
+
+  it("auto-generates headline from description when headline is missing", () => {
+    const response = JSON.stringify([
+      {
+        description: "SDR team qualifies the same pipeline with 40% fewer hours on manual research, shifting CAC from headcount-heavy to tool-heavy.",
+        type: "business",
+        linkedFeatures: ["Scoring"],
+      },
+    ]);
+    const result = parseOutcomesResponse(response);
+    expect(result[0].headline).toBeDefined();
+    expect(result[0].headline!.length).toBeLessThanOrEqual(65); // 60 chars + " ..."
+    expect(result[0].headline!.endsWith(" ...")).toBe(true);
+  });
+
+  it("uses full description as headline when description is short", () => {
+    const response = JSON.stringify([
+      {
+        description: "Faster deploys every day",
+        type: "user",
+        linkedFeatures: ["CI/CD"],
+      },
+    ]);
+    const result = parseOutcomesResponse(response);
+    expect(result[0].headline).toBe("Faster deploys every day");
   });
 
   it("throws on non-array input", () => {

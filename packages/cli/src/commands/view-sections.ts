@@ -22,8 +22,7 @@ export const SECTION_NAV_ITEMS: Array<{ id: string; label: string }> = [
   { id: "identity", label: "Identity" },
   { id: "lifecycle-states", label: "Performance Model" },
   { id: "journey", label: "Activation" },
-  { id: "outcomes", label: "Outcomes" },
-  { id: "icp-profiles", label: "ICP Segments" },
+  { id: "active", label: "Active / Engaged" },
   { id: "measurement-spec", label: "Measurement Plan" },
 ];
 
@@ -290,97 +289,196 @@ function renderCitations(citations: Array<{ url: string; excerpt: string }> | un
 }
 
 // ---------------------------------------------------------------------------
-// Outcomes
+// Active / Engaged (combines Outcomes + ICP Segments + implementation guide)
 // ---------------------------------------------------------------------------
 
-function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
-  if (!outcomes || outcomes.length === 0) {
-    return `<section id="outcomes" class="no-data">
-  <h2>Possible Outcomes</h2>
+function renderActiveSection(outcomes: OutcomeItem[] | null, icpProfiles: ICPProfile[] | null): string {
+  const hasOutcomes = outcomes && outcomes.length > 0;
+  const hasIcps = icpProfiles && icpProfiles.length > 0;
+
+  if (!hasOutcomes && !hasIcps) {
+    return `<section id="active" class="no-data">
+  <h2>Active / Engaged</h2>
   <p class="not-analyzed">Not yet analyzed</p>
 </section>`;
   }
 
-  const introText = `<p class="section-intro">Active is driven by outcomes. Different outcomes are achieved by different groups of users. These need to be defined and measured as well.</p>`;
+  const introText = `<p class="section-intro">Active starts after initial activation and describes the ongoing process of value delivery. As long as your product delivers value to the user, their account stays active and if they are in a subscription, you can capture this value.</p>
+  <p class="section-intro">But the measurement is not straightforward since value is hard to define especially for a heterogeneous group of people your users surely are.</p>
+  <p class="section-intro">Active is driven by outcomes, therefore the definition and measurement of outcomes is essential. Different outcomes are achieved by different groups of users. These need to be defined and measured as well.</p>`;
 
-  const cards = outcomes
-    .map((o: OutcomeItem) => {
-      const features = o.linkedFeatures.length > 0
-        ? `<div class="outcome-col"><h4>Features involved</h4><ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul></div>`
-        : "";
+  // --- Possible Outcomes subsection ---
+  let outcomesHtml = "";
+  if (hasOutcomes) {
+    const outcomeCards = outcomes
+      .map((o: OutcomeItem, i: number) => {
+        const desc = o.description;
+        const headline = o.headline || (desc.length > 60 ? desc.slice(0, desc.lastIndexOf(" ", 60)) + " ..." : desc);
+        const rest = desc !== headline ? desc : "";
 
-      const measurement = (o.measurement_references && o.measurement_references.length > 0)
-        ? `<div class="outcome-col"><h4>Measurement</h4><div class="outcome-codes">${o.measurement_references.map((r) => `<code>${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</code>`).join(" ")}</div></div>`
-        : "";
+        const features = o.linkedFeatures.length > 0
+          ? `<div class="outcome-col"><h4>Features involved</h4><ul>${o.linkedFeatures.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul></div>`
+          : "";
 
-      const metrics = (o.suggested_metrics && o.suggested_metrics.length > 0)
-        ? `<div class="outcome-col"><h4>Metrics</h4><div class="outcome-codes">${o.suggested_metrics.map((s) => `<code>${escapeHtml(s)}</code>`).join(" ")}</div></div>`
-        : "";
+        const measurement = (o.measurement_references && o.measurement_references.length > 0)
+          ? `<div class="outcome-col"><h4>Measurement</h4><div class="outcome-codes">${o.measurement_references.map((r) => `<code>${escapeHtml(r.entity)}.${escapeHtml(r.activity)}</code>`).join(" ")}</div></div>`
+          : "";
 
-      const citationsHtml = renderCitations(o.citations);
+        const metrics = (o.suggested_metrics && o.suggested_metrics.length > 0)
+          ? `<div class="outcome-col"><h4>Metrics</h4><div class="outcome-codes">${o.suggested_metrics.map((s) => `<code>${escapeHtml(s)}</code>`).join(" ")}</div></div>`
+          : "";
 
-      return `<div class="outcome-card">
-      <p class="outcome-desc">${escapeHtml(o.description)}</p>
-      <div class="outcome-grid">${features}${measurement}${metrics}</div>
-      ${citationsHtml}
-    </div>`;
-    })
-    .join("\n");
+        const citationsHtml = renderCitations(o.citations);
 
-  return `<section id="outcomes">
-  <h2>Possible Outcomes</h2>
-  ${introText}
-${cards}
-</section>`;
-}
+        const hasDetails = rest || features || measurement || metrics || citationsHtml;
 
-// ---------------------------------------------------------------------------
-// ICP Segments
-// ---------------------------------------------------------------------------
+        if (hasDetails) {
+          return `<details class="outcome-card">
+      <summary><span class="outcome-label">O${i + 1}</span>${escapeHtml(headline)}</summary>
+      <div class="outcome-body">
+        ${rest ? `<p class="outcome-detail">${escapeHtml(rest)}</p>` : ""}
+        <div class="outcome-grid">${features}${measurement}${metrics}</div>
+        ${citationsHtml}
+      </div>
+    </details>`;
+        }
+        return `<div class="outcome-card"><p class="outcome-headline"><span class="outcome-label">O${i + 1}</span>${escapeHtml(headline)}</p></div>`;
+      })
+      .join("\n");
 
-function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
-  if (!icpProfiles || icpProfiles.length === 0) {
-    return `<section id="icp-profiles" class="no-data">
-  <h2>ICP Segments</h2>
-  <p class="not-analyzed">Not yet analyzed</p>
-</section>`;
+    outcomesHtml = `<h3 class="subsection-title">Possible Outcomes</h3>\n${outcomeCards}`;
   }
 
-  const introText = `<p class="section-intro">Your product has different user types naturally; they will achieve different outcomes and will have different value needs. Identification is essential. The easiest way is still to ask them during account creation.</p>`;
+  // --- ICP Segments subsection ---
+  let icpHtml = "";
+  if (hasIcps) {
+    const icpIntro = `<p class="section-intro">Your product has different user types naturally; they will achieve different outcomes and will have different value needs. Identification is essential. The easiest way is still to ask them during account creation.</p>`;
 
-  const cards = icpProfiles
-    .map((p: ICPProfile) => {
-      const painHtml = p.pain_points.length > 0
-        ? `<h4>Pain Points</h4><ul>${p.pain_points.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
-        : "";
+    const icpCards = icpProfiles
+      .map((p: ICPProfile) => {
+        const painHtml = p.pain_points.length > 0
+          ? `<h4>Pain Points</h4><ul>${p.pain_points.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+          : "";
 
-      const triggerHtml = p.activation_triggers.length > 0
-        ? `<h4>Value Triggers</h4><ul>${p.activation_triggers.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
-        : "";
+        const triggerHtml = p.activation_triggers.length > 0
+          ? `<h4>Value Triggers</h4><ul>${p.activation_triggers.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+          : "";
 
-      let vmLevels = "";
-      if (p.value_moment_priorities.length > 0) {
-        vmLevels = `<h4>Value Moment Levels</h4><ul>${p.value_moment_priorities.map((pr: ValueMomentPriority) => `<li><strong>P${pr.priority}:</strong> ${escapeHtml(pr.relevance_reason)}</li>`).join("")}</ul>`;
+        let vmLevels = "";
+        if (p.value_moment_priorities.length > 0) {
+          vmLevels = `<h4>Value Moment Levels</h4><ul>${p.value_moment_priorities.map((pr: ValueMomentPriority) => `<li><strong>P${pr.priority}:</strong> ${escapeHtml(pr.relevance_reason)}</li>`).join("")}</ul>`;
+        }
+
+        const citationsHtml = renderCitations(p.citations);
+
+        const hasDetail = painHtml || triggerHtml || vmLevels || citationsHtml;
+
+        return `<details class="icp-card">
+      <summary>
+        <strong>${escapeHtml(p.name)}</strong>
+        ${p.description ? `<span class="icp-desc">${escapeHtml(p.description)}</span>` : ""}
+      </summary>
+      <div class="icp-detail">
+        ${painHtml}
+        ${triggerHtml}
+        ${vmLevels}
+        ${citationsHtml}
+        <div class="confidence">Confidence: ${confidenceBadge(p.confidence)}</div>
+      </div>
+    </details>`;
+      })
+      .join("\n");
+
+    icpHtml = `<h3 class="subsection-title">ICP Segments</h3>\n${icpIntro}\n${icpCards}`;
+  }
+
+  // --- Implementation: Events needed ---
+  const allEvents = new Set<string>();
+  if (hasOutcomes) {
+    for (const o of outcomes) {
+      if (o.measurement_references) {
+        for (const r of o.measurement_references) allEvents.add(`${r.entity}.${r.activity}`);
       }
+    }
+  }
+  const eventsHtml = allEvents.size > 0
+    ? `<div class="guidance-box">
+    <h3>Track Active / Engagement</h3>
+    <p>These events need to be implemented to measure outcomes and engagement.</p>
+    <div class="guidance-events">${[...allEvents].map((e) => `<code>${escapeHtml(e)}</code>`).join(" ")}</div>
+  </div>`
+    : "";
 
-      const citationsHtml = renderCitations(p.citations);
+  // --- Implementation: Segments to build ---
+  const segmentItems: string[] = [];
+  if (hasIcps) {
+    for (const p of icpProfiles) {
+      segmentItems.push(`<div class="segment-item"><strong>ICP: ${escapeHtml(p.name)}</strong><p>Create an audience segment to identify this user type. Use onboarding survey data, role detection, or behavioral signals to classify accounts.</p></div>`);
+    }
+  }
+  if (hasOutcomes) {
+    for (const o of outcomes) {
+      const refs = o.measurement_references?.map((r) => `${r.entity}.${r.activity}`).join(", ") ?? "";
+      if (refs) {
+        const shortDesc = o.description.length > 80 ? o.description.slice(0, 80) + "..." : o.description;
+        segmentItems.push(`<div class="segment-item"><strong>Outcome: ${escapeHtml(shortDesc)}</strong><p>Create a segment for accounts that have achieved this outcome. Track via <code>${escapeHtml(refs)}</code>.</p></div>`);
+      }
+    }
+  }
+  const segmentsHtml = segmentItems.length > 0
+    ? `<div class="guidance-box">
+    <h3>Build Segments</h3>
+    <p>Create the following segments in your analytics tool or data model to measure active engagement per user type and outcome.</p>
+    ${segmentItems.join("\n")}
+  </div>`
+    : "";
 
-      return `<div class="icp-card">
-      <h3>${escapeHtml(p.name)}</h3>
-      ${p.description ? `<p class="icp-desc">${escapeHtml(p.description)}</p>` : ""}
-      ${painHtml}
-      ${triggerHtml}
-      ${vmLevels}
-      ${citationsHtml}
-      <div class="confidence">Confidence: ${confidenceBadge(p.confidence)}</div>
-    </div>`;
-    })
-    .join("\n");
+  // --- Active Metrics ---
+  const metricsHtml = `<div class="metrics-section">
+    <h3>Active / Engagement Metrics</h3>
+    <p class="section-intro">Track the following metrics to understand ongoing value delivery and retention health.</p>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h4>Outcome Achievement Rate</h4>
+        <p class="metric-formula">accounts achieving outcome / all active accounts</p>
+        <p>Per outcome: what share of active accounts actually reach this outcome? Low rates indicate the outcome definition is aspirational, or the product isn't delivering.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Outcome Achievement by ICP</h4>
+        <p class="metric-formula">outcome rate per ICP segment</p>
+        <p>Break down outcome achievement by ICP segment. Different user types should achieve different outcomes. If all segments behave identically, your ICP definitions aren't meaningful.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Time to Outcome</h4>
+        <p class="metric-formula">avg. days from activation to outcome achieved</p>
+        <p>How quickly do users reach each outcome after activation? Faster is better, but watch for outcomes achieved suspiciously fast &mdash; they may be too easy to qualify as real value.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Active Retention by Outcome</h4>
+        <p class="metric-formula">30/60/90d retention for accounts with outcome vs without</p>
+        <p>Accounts that achieve outcomes should retain significantly better. If they don't, the outcome isn't actually valuable &mdash; rethink the definition.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Revenue per Outcome</h4>
+        <p class="metric-formula">ARPA for accounts achieving outcome vs not</p>
+        <p>Do accounts that reach outcomes generate more revenue? This validates that outcome achievement translates to business value, not just engagement theater.</p>
+      </div>
+      <div class="metric-card">
+        <h4>Engagement Depth</h4>
+        <p class="metric-formula">outcomes achieved per account (distribution)</p>
+        <p>How many distinct outcomes does a typical active account achieve? Accounts with multiple outcomes are more deeply engaged and harder to churn.</p>
+      </div>
+    </div>
+  </div>`;
 
-  return `<section id="icp-profiles">
-  <h2>ICP Segments</h2>
+  return `<section id="active">
+  <h2>Active / Engaged</h2>
   ${introText}
-${cards}
+  ${outcomesHtml}
+  ${icpHtml}
+  ${eventsHtml}
+  ${segmentsHtml}
+  ${metricsHtml}
 </section>`;
 }
 
@@ -450,20 +548,18 @@ export function renderProductReport(slug: string, productDir: ProductDirectory):
   if (profile?.identity) analyzed.add("identity");
   if (lifecycleStates) analyzed.add("lifecycle-states");
   if (activationMap) analyzed.add("journey");
-  if (outcomes && outcomes.length > 0) analyzed.add("outcomes");
-  if (icpProfiles && icpProfiles.length > 0) analyzed.add("icp-profiles");
+  if ((outcomes && outcomes.length > 0) || (icpProfiles && icpProfiles.length > 0)) analyzed.add("active");
   if (measurementSpec) analyzed.add("measurement-spec");
 
-  // Section order matches wireframes:
-  // Identity → Performance Model → Activation → Outcomes → ICP Segments → Measurement Plan
+  // Section order:
+  // Identity → Performance Model → Activation → Active/Engaged → Measurement Plan
   const sections = [
     renderReportHeader(profile, pageCount),
     renderSectionNav(analyzed),
     renderIdentitySection(profile?.identity),
     renderLifecycleStatesSection(lifecycleStates),
     renderJourneySection(activationMap),
-    renderOutcomesSection(outcomes),
-    renderIcpSection(icpProfiles),
+    renderActiveSection(outcomes, icpProfiles),
     renderMeasurementSpecSection(measurementSpec),
   ];
 

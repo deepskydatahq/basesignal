@@ -206,6 +206,7 @@ export interface DefinitionsMap {
 
 /** A single business outcome. */
 export interface OutcomeItem {
+  headline?: string;
   description: string;
   type: string;
   linkedFeatures: string[];

@@ -57,6 +57,7 @@ For each outcome, list the product surfaces and feature names that contribute to
 ## Required Fields
 
 Each outcome must include:
+- headline: A short, scannable title for this outcome (5-10 words max, e.g., 'CRM updates complete in seconds' or 'At-risk deals caught same day')
 - description: A specific situation-change statement (2-3 sentences). Name the role/person, the concrete change, and the consequence.
 - type: One of "business", "user", or "product"
 - linkedFeatures: Array of product surface or feature names that drive this outcome
@@ -177,7 +178,17 @@ export function parseOutcomesResponse(responseText: string): OutcomeItem[] {
           .filter((c) => c.url && c.excerpt)
       : undefined;
 
+    const headline = typeof obj.headline === "string" && obj.headline
+      ? obj.headline
+      : (() => {
+          const d = obj.description as string;
+          if (d.length <= 60) return d;
+          const cut = d.lastIndexOf(" ", 60);
+          return d.slice(0, cut > 0 ? cut : 60) + " ...";
+        })();
+
     return {
+      headline,
       description: obj.description,
       type: obj.type,
       linkedFeatures,
