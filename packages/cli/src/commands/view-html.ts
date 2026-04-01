@@ -256,6 +256,14 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .prop-detail summary { font-size: 0.78rem; font-weight: 700; color: var(--text-2); cursor: pointer; }
     .prop-detail table td code { font-size: 0.75rem; }
 
+    /* ============ CITATIONS ============ */
+    .citations { margin-top: 0.65rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+    .citations h4 { margin-top: 0; }
+    .citations ul { margin: 0.15rem 0 0; padding-left: 1rem; font-size: 0.8rem; color: var(--text-2); }
+    .citations li { margin-bottom: 0.2rem; }
+    .citations a { font-size: 0.75rem; }
+    .citations em { color: var(--text-3); }
+
     /* ============ WARNINGS ============ */
     .warnings { background: var(--gold-light); border: 1px solid var(--gold); border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.75rem; }
     .warnings h4 { color: var(--gold-dark); margin: 0; }

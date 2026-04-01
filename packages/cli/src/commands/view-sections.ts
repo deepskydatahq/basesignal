@@ -212,6 +212,18 @@ function renderJourneySection(activationMap: ActivationMap | null): string {
 }
 
 // ---------------------------------------------------------------------------
+// Citation helper
+// ---------------------------------------------------------------------------
+
+function renderCitations(citations: Array<{ url: string; excerpt: string }> | undefined): string {
+  if (!citations || citations.length === 0) return "";
+  const items = citations
+    .map((c) => `<li><a href="${escapeHtml(c.url)}">${escapeHtml(c.url)}</a> — <em>${escapeHtml(c.excerpt)}</em></li>`)
+    .join("");
+  return `<div class="citations"><h4>Sources</h4><ul>${items}</ul></div>`;
+}
+
+// ---------------------------------------------------------------------------
 // Outcomes
 // ---------------------------------------------------------------------------
 
@@ -239,9 +251,12 @@ function renderOutcomesSection(outcomes: OutcomeItem[] | null): string {
         ? `<div class="outcome-col"><h4>Metrics</h4><div class="outcome-codes">${o.suggested_metrics.map((s) => `<code>${escapeHtml(s)}</code>`).join(" ")}</div></div>`
         : "";
 
+      const citationsHtml = renderCitations(o.citations);
+
       return `<div class="outcome-card">
       <p class="outcome-desc">${escapeHtml(o.description)}</p>
       <div class="outcome-grid">${features}${measurement}${metrics}</div>
+      ${citationsHtml}
     </div>`;
     })
     .join("\n");
@@ -282,12 +297,15 @@ function renderIcpSection(icpProfiles: ICPProfile[] | null): string {
         vmLevels = `<h4>Value Moment Levels</h4><ul>${p.value_moment_priorities.map((pr: ValueMomentPriority) => `<li><strong>P${pr.priority}:</strong> ${escapeHtml(pr.relevance_reason)}</li>`).join("")}</ul>`;
       }
 
+      const citationsHtml = renderCitations(p.citations);
+
       return `<div class="icp-card">
       <h3>${escapeHtml(p.name)}</h3>
       ${p.description ? `<p class="icp-desc">${escapeHtml(p.description)}</p>` : ""}
       ${painHtml}
       ${triggerHtml}
       ${vmLevels}
+      ${citationsHtml}
       <div class="confidence">Confidence: ${confidenceBadge(p.confidence)}</div>
     </div>`;
     })
