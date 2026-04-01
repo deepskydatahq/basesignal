@@ -189,7 +189,7 @@ describe("renderComparisonReport", () => {
     expect(html).toContain("compare-layout");
   });
 
-  it("includes section navigation with all 6 sections", () => {
+  it("includes section navigation with all 5 sections", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     writeMinimalProduct(productDir, "linear-app", "Linear");
@@ -199,8 +199,7 @@ describe("renderComparisonReport", () => {
     expect(html).toContain('href="#identity"');
     expect(html).toContain('href="#lifecycle-states"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#outcomes"');
-    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#active"');
     expect(html).toContain('href="#measurement-spec"');
   });
 

@@ -514,9 +514,9 @@ describe("renderProductReport", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    expect(html).toContain('id="icp-profiles"');
-    // ICP section should show not analyzed (no icp-profiles.json file)
-    expect(html).toMatch(/icp-profiles[\s\S]*?Not yet analyzed/);
+    expect(html).toContain('id="active"');
+    // Active section should show not analyzed (no icp-profiles.json or outcomes.json file)
+    expect(html).toMatch(/active[\s\S]*?Not yet analyzed/);
   });
 
   it("does not render a value moments section (removed in redesign)", () => {
@@ -662,12 +662,12 @@ describe("renderProductReport", () => {
     const html = renderProductReport("test-app", productDir);
     const identityPos = html.indexOf('id="identity"');
     const lifecyclePos = html.indexOf('id="lifecycle-states"');
-    const outcomesPos = html.indexOf('id="outcomes"');
+    const activePos = html.indexOf('id="active"');
     expect(identityPos).toBeGreaterThan(-1);
     expect(lifecyclePos).toBeGreaterThan(-1);
-    expect(outcomesPos).toBeGreaterThan(-1);
+    expect(activePos).toBeGreaterThan(-1);
     expect(lifecyclePos).toBeGreaterThan(identityPos);
-    expect(outcomesPos).toBeGreaterThan(lifecyclePos);
+    expect(activePos).toBeGreaterThan(lifecyclePos);
   });
 
   it("includes section navigation bar with links to all sections", () => {
@@ -682,8 +682,7 @@ describe("renderProductReport", () => {
     expect(html).toContain('href="#identity"');
     expect(html).toContain('href="#lifecycle-states"');
     expect(html).toContain('href="#journey"');
-    expect(html).toContain('href="#outcomes"');
-    expect(html).toContain('href="#icp-profiles"');
+    expect(html).toContain('href="#active"');
     expect(html).toContain('href="#measurement-spec"');
   });
 
@@ -744,23 +743,22 @@ describe("renderProductReport", () => {
     expect(html).not.toContain('id="identity" class="no-data"');
   });
 
-  it("renders all six sections as 'Not yet analyzed' for empty profile", () => {
+  it("renders all five sections as 'Not yet analyzed' for empty profile", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     // Create directory with no profile.json or output files
     productDir.writeJson("empty-app", "crawl/metadata.json", {});
 
     const html = renderProductReport("empty-app", productDir);
-    // All six section IDs should be present
+    // All five section IDs should be present
     expect(html).toContain('id="identity"');
     expect(html).toContain('id="lifecycle-states"');
     expect(html).toContain('id="journey"');
-    expect(html).toContain('id="outcomes"');
-    expect(html).toContain('id="icp-profiles"');
+    expect(html).toContain('id="active"');
     expect(html).toContain('id="measurement-spec"');
-    // Count "Not yet analyzed" — should appear 6 times (one per section)
+    // Count "Not yet analyzed" — should appear 5 times (one per section)
     const matches = html.match(/Not yet analyzed/g);
-    expect(matches).toHaveLength(6);
+    expect(matches).toHaveLength(5);
   });
 
   it("renders identity as card layout with description and context badges", () => {
@@ -935,9 +933,9 @@ describe("renderProductReport — outcomes section", () => {
 
     const html = renderProductReport("test-app", productDir);
     const bodyContent = html.split("</style>")[1] ?? "";
-    // Section structure
-    expect(bodyContent).toContain('id="outcomes"');
-    expect(bodyContent).toContain("Possible Outcomes");
+    // Section structure — outcomes are inside the "active" section
+    expect(bodyContent).toContain('id="active"');
+    expect(bodyContent).toContain("Active / Engaged");
     // Description as card heading
     expect(bodyContent).toContain("Reduce time to first deployment");
     // Linked features
@@ -968,8 +966,8 @@ describe("renderProductReport — outcomes section", () => {
     const html = renderProductReport("test-app", productDir);
     const bodyContent = html.split("</style>")[1] ?? "";
     // Section should render without no-data class
-    expect(bodyContent).toContain('id="outcomes"');
-    expect(bodyContent).not.toContain('id="outcomes" class="no-data"');
+    expect(bodyContent).toContain('id="active"');
+    expect(bodyContent).not.toContain('id="active" class="no-data"');
     // Description
     expect(bodyContent).toContain("Increase team collaboration");
     // Linked features
@@ -990,8 +988,8 @@ describe("renderProductReport — outcomes section", () => {
 
     const html = renderProductReport("test-app", productDir);
     // Section should exist with no-data class
-    expect(html).toContain('id="outcomes" class="no-data"');
-    expect(html).toMatch(/id="outcomes"[\s\S]*?Not yet analyzed/);
+    expect(html).toContain('id="active" class="no-data"');
+    expect(html).toMatch(/id="active"[\s\S]*?Not yet analyzed/);
   });
 
   it("outcomes section appears in navigation", () => {
@@ -1009,13 +1007,13 @@ describe("renderProductReport — outcomes section", () => {
     ]);
 
     const html = renderProductReport("test-app", productDir);
-    // Nav should include outcomes link
-    expect(html).toContain('href="#outcomes"');
-    // Outcomes has data, so the nav link should NOT be dimmed
-    expect(html).toMatch(/href="#outcomes" class=""/);
+    // Nav should include active link
+    expect(html).toContain('href="#active"');
+    // Active has data (outcomes), so the nav link should NOT be dimmed
+    expect(html).toMatch(/href="#active" class=""/);
   });
 
-  it("dims outcomes nav link when no outcomes data", () => {
+  it("dims active nav link when no outcomes data", () => {
     const { dir, productDir } = createTmpProductDir();
     tmpDir = dir;
     productDir.writeJson("test-app", "profile.json", {
@@ -1023,8 +1021,8 @@ describe("renderProductReport — outcomes section", () => {
     });
 
     const html = renderProductReport("test-app", productDir);
-    // Outcomes has no data, so nav link should be dimmed
-    expect(html).toMatch(/href="#outcomes" class=" dimmed"/);
+    // Active has no data, so nav link should be dimmed
+    expect(html).toMatch(/href="#active" class=" dimmed"/);
   });
 
   it("falls back to profile.outcomes.items when outputs/outcomes.json is missing", () => {
@@ -1093,12 +1091,12 @@ describe("renderProductReport — outcomes section", () => {
     const html = renderProductReport("test-app", productDir);
     const identityIdx = html.indexOf('id="identity"');
     const journeyIdx = html.indexOf('id="journey"');
-    const outcomesIdx = html.indexOf('id="outcomes"');
+    const activeIdx = html.indexOf('id="active"');
     expect(identityIdx).toBeGreaterThan(-1);
     expect(journeyIdx).toBeGreaterThan(-1);
-    expect(outcomesIdx).toBeGreaterThan(-1);
+    expect(activeIdx).toBeGreaterThan(-1);
     expect(journeyIdx).toBeGreaterThan(identityIdx);
-    expect(outcomesIdx).toBeGreaterThan(journeyIdx);
+    expect(activeIdx).toBeGreaterThan(journeyIdx);
   });
 });
 

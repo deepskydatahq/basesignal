@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { OutcomeItemSchema, OutcomesSchema } from "../outcomes";
 
 const validOutcome = {
+  headline: "Retention improves with onboarding",
   description: "Increase retention",
   type: "business",
   linkedFeatures: ["onboarding"],

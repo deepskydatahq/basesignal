@@ -152,12 +152,12 @@ export function renderPage(title: string, body: string, options?: { script?: str
     section h2 { position: relative; padding-bottom: 0.6rem; margin-bottom: 1.25rem; }
     section h2::after { content: ''; position: absolute; bottom: 0; left: 0; width: 32px; height: 3px; border-radius: 2px; }
     #identity h2 { color: var(--navy); } #identity h2::after { background: var(--blue); }
-    #outcomes h2 { color: var(--navy); } #outcomes h2::after { background: var(--teal); }
     #journey h2 { color: var(--navy); } #journey h2::after { background: var(--gold); }
-    #icp-profiles h2 { color: var(--navy); } #icp-profiles h2::after { background: var(--rose); }
-    #value-moments h2 { color: var(--navy); } #value-moments h2::after { background: var(--blue); }
+    #active h2 { color: var(--navy); } #active h2::after { background: var(--teal); }
     #measurement-spec h2 { color: var(--navy); } #measurement-spec h2::after { background: var(--navy); }
     #lifecycle-states h2 { color: var(--navy); } #lifecycle-states h2::after { background: var(--teal); }
+
+    .subsection-title { font-family: var(--font-d); font-size: 1.3rem; font-weight: 400; margin: 2rem 0 0.75rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
 
     /* ============ IDENTITY ============ */
     .identity-description { font-size: 1.05rem; line-height: 1.75; color: var(--text); margin: 0 0 1.25rem; }
@@ -206,12 +206,29 @@ export function renderPage(title: string, body: string, options?: { script?: str
 
     /* ============ OUTCOMES ============ */
     .outcome-card {
-      border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem;
-      margin-bottom: 0.75rem; background: var(--card);
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 0.5rem; background: var(--card); position: relative;
     }
-    .outcome-desc {
-      font-size: 0.95rem; font-weight: 600; line-height: 1.6;
-      margin: 0 0 0.85rem; color: var(--text);
+    details.outcome-card > summary {
+      padding: 0.85rem 2rem 0.85rem 1.25rem; cursor: pointer; list-style: none;
+      font-size: 0.9rem; font-weight: 600; line-height: 1.5; color: var(--text);
+    }
+    details.outcome-card > summary::-webkit-details-marker { display: none; }
+    details.outcome-card > summary::after {
+      content: '\\25B8'; position: absolute; right: 1rem; top: 0.95rem;
+      font-size: 0.65rem; color: var(--text-3); transition: transform 0.2s;
+    }
+    details[open].outcome-card > summary::after { transform: rotate(90deg); }
+    details[open].outcome-card > summary { border-bottom: 1px solid var(--border); }
+    .outcome-body { padding: 0.85rem 1.25rem; }
+    .outcome-headline {
+      font-size: 0.9rem; font-weight: 600; line-height: 1.5;
+      margin: 0; padding: 0.85rem 1.25rem; color: var(--text);
+    }
+    .outcome-label { font-family: var(--font-m); font-size: 0.72rem; color: var(--text-3); margin-right: 0.5rem; }
+    .outcome-detail {
+      font-size: 0.85rem; color: var(--text-2); line-height: 1.6;
+      margin: 0 0 0.75rem;
     }
     .outcome-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
     .outcome-col h4 { margin-top: 0; }
@@ -241,14 +258,31 @@ export function renderPage(title: string, body: string, options?: { script?: str
     .risk-high { color: var(--rose); }
 
     /* ============ ICP SEGMENTS ============ */
-    .icp-card {
-      border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem;
+    details.icp-card {
+      border: 1px solid var(--border); border-radius: 10px;
       margin-bottom: 0.75rem; background: var(--card);
     }
-    .icp-card h3 { font-family: var(--font-d); font-size: 1.15rem; font-weight: 400; margin: 0 0 0.35rem; }
-    .icp-desc { font-size: 0.88rem; color: var(--text-2); margin: 0 0 0.5rem; line-height: 1.55; }
-    .icp-card ul { margin: 0.15rem 0 0.35rem; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-2); }
-    .icp-card li { margin-bottom: 0.15rem; }
+    details.icp-card > summary {
+      padding: 1rem 1.25rem; cursor: pointer; list-style: none;
+      display: flex; flex-direction: column; gap: 0.2rem;
+    }
+    details.icp-card > summary::-webkit-details-marker { display: none; }
+    details.icp-card > summary strong {
+      font-family: var(--font-d); font-size: 1.1rem; font-weight: 400; color: var(--text); display: block;
+    }
+    details.icp-card > summary .icp-desc { font-weight: 400; }
+    details.icp-card > summary::after {
+      content: '\\25B8'; position: absolute; right: 1.25rem; top: 1.1rem;
+      font-size: 0.7rem; color: var(--text-3); transition: transform 0.2s;
+    }
+    details.icp-card { position: relative; }
+    details[open].icp-card > summary::after { transform: rotate(90deg); }
+    details[open].icp-card > summary { border-bottom: 1px solid var(--border); }
+    .icp-desc { font-size: 0.85rem; color: var(--text-2); line-height: 1.55; }
+    .icp-detail { padding: 1rem 1.25rem; }
+    .icp-detail h4 { margin-top: 0.5rem; }
+    .icp-detail ul { margin: 0.15rem 0 0.35rem; padding-left: 1.1rem; font-size: 0.85rem; color: var(--text-2); }
+    .icp-detail li { margin-bottom: 0.15rem; }
 
     /* ============ DETAILS ============ */
     details > summary { cursor: pointer; font-weight: 700; font-size: 0.85rem; color: var(--text-2); padding: 0.35rem 0; }
